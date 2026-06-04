@@ -77,3 +77,40 @@ export const CURRENT_MEMBER = {
 };
 
 export const DEMO_MODE = true;
+
+export interface Signal {
+  id: string;
+  asset: string;
+  pair: string;
+  side: "LONG" | "SHORT";
+  confidence: number;
+  payoutMultiple: number;
+  draw?: number;
+  loss?: number;
+  timeLabel: string;
+}
+
+export const SIGNALS: Signal[] = [
+  { id: "s1", asset: "BTC", pair: "BTC / USDT", side: "LONG", confidence: 0.83, payoutMultiple: 1.83, draw: 3.57, loss: 1.97, timeLabel: "Today · 20:00" },
+  { id: "s2", asset: "ETH", pair: "ETH / USDT", side: "LONG", confidence: 0.59, payoutMultiple: 3.59, draw: 2.14, loss: 1.42, timeLabel: "Today · 21:30" },
+  { id: "s3", asset: "SOL", pair: "SOL / USDT", side: "SHORT", confidence: 0.71, payoutMultiple: 2.10, draw: 1.95, loss: 1.30, timeLabel: "Tomorrow · 09:00" },
+  { id: "s4", asset: "NDX", pair: "NASDAQ 100", side: "LONG", confidence: 0.66, payoutMultiple: 1.78, draw: 2.05, loss: 1.55, timeLabel: "Mon · 15:30" },
+];
+
+export interface PopularItem {
+  id: string;
+  rank: number;
+  label: string;
+  category: string;
+  symbol: string;
+  tileTone: "blue" | "lime" | "magenta" | "violet";
+}
+
+export const POPULAR: PopularItem[] = [
+  { id: "p1", rank: 1, label: "Scalping", category: "Top Strategy", symbol: "S", tileTone: "blue" },
+  { id: "p2", rank: 2, label: "Breakouts", category: "Trending", symbol: "B", tileTone: "lime" },
+  { id: "p3", rank: 3, label: "Mean Reversion", category: "Strategy", symbol: "M", tileTone: "magenta" },
+];
+
+export const PROFIT_THIS_MONTH = 1452.23;
+export const PROFIT_TRADERS = ["A", "K", "M"];

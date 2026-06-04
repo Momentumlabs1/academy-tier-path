@@ -1,62 +1,64 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Check, Lock } from "lucide-react";
 import { CURRENT_MEMBER, TIERS, tierForDeposit } from "@/lib/academy-data";
-import { TierBadge } from "@/components/academy/TierBadge";
+import { Card } from "@/components/academy/primitives/Card";
+import { formatMoney } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/tier")({
   head: () => ({
     meta: [
-      { title: "My Tier — Agent Trading Academy" },
-      { name: "description", content: "Tier perks and how to climb." },
+      { title: "Tier — Agent Trading Academy" },
+      { name: "description", content: "Membership tiers and perks." },
     ],
   }),
   component: TierPage,
 });
 
 function TierPage() {
-  const tier = tierForDeposit(CURRENT_MEMBER.deposit);
-  const myRank = TIERS.findIndex((t) => t.key === tier.key);
+  const current = tierForDeposit(CURRENT_MEMBER.deposit);
+  const myRank = TIERS.findIndex((t) => t.key === current.key);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
-      <header>
-        <h1 className="text-3xl font-bold tracking-tight">Membership tiers</h1>
+    <div className="space-y-6">
+      <div>
+        <h1 className="font-display text-3xl font-bold tracking-tight lg:text-4xl">Membership Tiers</h1>
         <p className="mt-1 text-muted-foreground">
-          Tier is set automatically by your verified deposit. Add funds with your broker to climb.
+          Verified deposit: <span className="font-semibold text-foreground">{formatMoney(CURRENT_MEMBER.deposit)}</span>. Climb tiers by depositing through your broker.
         </p>
-      </header>
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
         {TIERS.map((t, idx) => {
-          const current = idx === myRank;
+          const isCurrent = idx === myRank;
           const unlocked = idx <= myRank;
           return (
-            <div
+            <Card
               key={t.key}
-              className="relative flex flex-col rounded-2xl border p-6"
-              style={{
-                borderColor: current ? t.color : "var(--border)",
-                background: current ? "var(--gradient-card)" : "var(--card)",
-                boxShadow: current ? "var(--shadow-glow)" : undefined,
-              }}
+              variant={isCurrent ? "hero" : "surface"}
+              className={cn(
+                "relative flex flex-col p-6",
+                isCurrent && "ring-2 ring-primary shadow-[var(--shadow-lime)]",
+              )}
             >
               <div className="flex items-center justify-between">
-                <TierBadge tier={t.key} />
-                {current && (
-                  <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase text-primary">
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: t.color }} />
+                  <span className="font-display text-lg font-bold">{t.name}</span>
+                </div>
+                {isCurrent && (
+                  <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase text-primary-foreground">
                     Current
                   </span>
                 )}
               </div>
-              <div className="mt-4">
-                <div className="text-2xl font-bold">${t.minDeposit.toLocaleString()}+</div>
-                <div className="text-xs text-muted-foreground">verified deposit</div>
-              </div>
+              <div className="mt-4 font-display text-3xl font-bold">{formatMoney(t.minDeposit)}+</div>
+              <div className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">verified deposit</div>
               <ul className="mt-5 flex-1 space-y-2 text-sm">
                 {t.perks.map((perk) => (
                   <li key={perk} className="flex items-start gap-2">
                     {unlocked ? (
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-[color:var(--success)]" />
+                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                     ) : (
                       <Lock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                     )}
@@ -64,7 +66,7 @@ function TierPage() {
                   </li>
                 ))}
               </ul>
-            </div>
+            </Card>
           );
         })}
       </div>

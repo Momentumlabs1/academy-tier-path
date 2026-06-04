@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as AppTierRouteImport } from './routes/_app.tier'
+import { Route as AppSignalsRouteImport } from './routes/_app.signals'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppLessonsRouteImport } from './routes/_app.lessons'
 import { Route as AppLessonsLessonIdRouteImport } from './routes/_app.lessons.$lessonId'
@@ -28,6 +29,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const AppTierRoute = AppTierRouteImport.update({
   id: '/tier',
   path: '/tier',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSignalsRoute = AppSignalsRouteImport.update({
+  id: '/signals',
+  path: '/signals',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -50,12 +56,14 @@ export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/lessons': typeof AppLessonsRouteWithChildren
   '/settings': typeof AppSettingsRoute
+  '/signals': typeof AppSignalsRoute
   '/tier': typeof AppTierRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
 }
 export interface FileRoutesByTo {
   '/lessons': typeof AppLessonsRouteWithChildren
   '/settings': typeof AppSettingsRoute
+  '/signals': typeof AppSignalsRoute
   '/tier': typeof AppTierRoute
   '/': typeof AppIndexRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
@@ -65,20 +73,34 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/_app/lessons': typeof AppLessonsRouteWithChildren
   '/_app/settings': typeof AppSettingsRoute
+  '/_app/signals': typeof AppSignalsRoute
   '/_app/tier': typeof AppTierRoute
   '/_app/': typeof AppIndexRoute
   '/_app/lessons/$lessonId': typeof AppLessonsLessonIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/lessons' | '/settings' | '/tier' | '/lessons/$lessonId'
+  fullPaths:
+    | '/'
+    | '/lessons'
+    | '/settings'
+    | '/signals'
+    | '/tier'
+    | '/lessons/$lessonId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/lessons' | '/settings' | '/tier' | '/' | '/lessons/$lessonId'
+  to:
+    | '/lessons'
+    | '/settings'
+    | '/signals'
+    | '/tier'
+    | '/'
+    | '/lessons/$lessonId'
   id:
     | '__root__'
     | '/_app'
     | '/_app/lessons'
     | '/_app/settings'
+    | '/_app/signals'
     | '/_app/tier'
     | '/_app/'
     | '/_app/lessons/$lessonId'
@@ -109,6 +131,13 @@ declare module '@tanstack/react-router' {
       path: '/tier'
       fullPath: '/tier'
       preLoaderRoute: typeof AppTierRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/signals': {
+      id: '/_app/signals'
+      path: '/signals'
+      fullPath: '/signals'
+      preLoaderRoute: typeof AppSignalsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/settings': {
@@ -150,6 +179,7 @@ const AppLessonsRouteWithChildren = AppLessonsRoute._addFileChildren(
 interface AppRouteChildren {
   AppLessonsRoute: typeof AppLessonsRouteWithChildren
   AppSettingsRoute: typeof AppSettingsRoute
+  AppSignalsRoute: typeof AppSignalsRoute
   AppTierRoute: typeof AppTierRoute
   AppIndexRoute: typeof AppIndexRoute
 }
@@ -157,6 +187,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppLessonsRoute: AppLessonsRouteWithChildren,
   AppSettingsRoute: AppSettingsRoute,
+  AppSignalsRoute: AppSignalsRoute,
   AppTierRoute: AppTierRoute,
   AppIndexRoute: AppIndexRoute,
 }
