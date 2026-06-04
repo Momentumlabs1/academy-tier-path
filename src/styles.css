@@ -158,5 +158,14 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    background-image: var(--gradient-stage);
+    background-attachment: fixed;
+    font-family: var(--font-sans);
+    font-feature-settings: "ss01", "cv11";
+  }
+
+  h1, h2, h3, h4, h5, .font-display {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
   }
 }
