@@ -11,8 +11,8 @@ function difficulty(tier: Lesson["tier"]): number {
 
 export function LessonRow({ lesson }: { lesson: Lesson }) {
   const memberTier = tierForDeposit(CURRENT_MEMBER.deposit);
-  const locked =
-    TIERS.findIndex((t) => t.key === lesson.tier) > TIERS.findIndex((t) => t.key === memberTier.key);
+  const memberRank = memberTier ? TIERS.findIndex((t) => t.key === memberTier.key) : -1;
+  const locked = TIERS.findIndex((t) => t.key === lesson.tier) > memberRank;
   const xp = lesson.durationMin * 10;
 
   const inner = (

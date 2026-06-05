@@ -1,9 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { HeroBento } from "@/components/academy/hero/HeroBento";
 import { LessonGroup } from "@/components/academy/lessons/LessonGroup";
 import { SectionTitle } from "@/components/academy/primitives/SectionTitle";
+import { DepositLadder } from "@/components/academy/tier/DepositLadder";
 import { LESSONS } from "@/lib/academy-data";
-import { Link } from "@tanstack/react-router";
+import { useMemberState } from "@/hooks/useMemberState";
 
 export const Route = createFileRoute("/_app/")({
   head: () => ({
@@ -16,11 +17,20 @@ export const Route = createFileRoute("/_app/")({
 });
 
 function Dashboard() {
-  const foundations = LESSONS.filter((l) => l.category === "Foundations" || l.category === "Technical").slice(0, 4);
-  const risk = LESSONS.filter((l) => l.category === "Risk" || l.category === "Psychology" || l.category === "Advanced").slice(0, 4);
+  const state = useMemberState();
+  const foundationLessons = LESSONS.filter((l) => l.tier === "foundation").slice(0, 4);
+  const tierRank = state.currentTier
+    ? ["foundation", "operator", "elite"].indexOf(state.currentTier.key)
+    : -1;
+  const unlockedLessons = LESSONS.filter((l) => {
+    const rank = ["foundation", "operator", "elite"].indexOf(l.tier);
+    return rank <= tierRank;
+  }).slice(0, 4);
 
   return (
     <div className="space-y-10">
+      <DepositLadder />
+
       <HeroBento />
 
       <section>
@@ -31,15 +41,17 @@ function Dashboard() {
             </Link>
           }
         >
-          Popular
+          Continue learning
         </SectionTitle>
-        <LessonGroup title="Foundations & Charts" lessons={foundations} />
+        <LessonGroup title="Foundation" lessons={foundationLessons} />
       </section>
 
-      <section>
-        <SectionTitle>This Week</SectionTitle>
-        <LessonGroup title="Risk & Psychology" lessons={risk} />
-      </section>
+      {unlockedLessons.length > 0 && (
+        <section>
+          <SectionTitle>Your tier unlocks</SectionTitle>
+          <LessonGroup title="Available to you" lessons={unlockedLessons} />
+        </section>
+      )}
     </div>
   );
 }

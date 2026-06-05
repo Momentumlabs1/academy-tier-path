@@ -35,8 +35,8 @@ export const Route = createFileRoute("/_app/lessons/$lessonId")({
 function LessonDetail() {
   const { lesson } = Route.useLoaderData();
   const memberTier = tierForDeposit(CURRENT_MEMBER.deposit);
-  const locked =
-    TIERS.findIndex((t) => t.key === lesson.tier) > TIERS.findIndex((t) => t.key === memberTier.key);
+  const memberRank = memberTier ? TIERS.findIndex((t) => t.key === memberTier.key) : -1;
+  const locked = TIERS.findIndex((t) => t.key === lesson.tier) > memberRank;
   const recommendations = LESSONS.filter((l) => l.id !== lesson.id && l.category === lesson.category).slice(0, 3);
 
   return (
