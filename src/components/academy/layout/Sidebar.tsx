@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Bell, BookOpen, LayoutDashboard, Radio, Settings, Trophy, Unlock } from "lucide-react";
+import { Bell, BookOpen, LayoutDashboard, Radio, Settings, ShieldCheck, Trophy, Unlock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CURRENT_MEMBER } from "@/lib/academy-data";
 import { useMemberState } from "@/hooks/useMemberState";
@@ -56,6 +56,14 @@ export function Sidebar() {
       </nav>
 
       <div className="mt-auto" />
+
+      {/* Admin shortcut */}
+      <Link
+        to="/admin"
+        className="mb-3 flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-muted-foreground/60 hover:bg-white/5 hover:text-muted-foreground transition-colors"
+      >
+        <ShieldCheck className="h-3.5 w-3.5" /> Admin panel
+      </Link>
 
       <div className="px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">Account</div>
       <div className="mt-3 flex items-center gap-3 rounded-2xl bg-white/5 p-3">
