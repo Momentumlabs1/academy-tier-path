@@ -44,8 +44,8 @@ export function LessonRow({ lesson }: { lesson: Lesson }) {
   );
 
   const baseClass = cn(
-    "flex items-center justify-between gap-3 rounded-2xl bg-[color:var(--surface-2)]/60 px-4 py-3 lg:px-5 lg:py-4 transition-colors",
-    !locked && "hover:bg-[color:var(--surface-2)]",
+    "group flex items-center justify-between gap-3 rounded-2xl bg-[color:var(--surface-2)]/60 px-4 py-3 lg:px-5 lg:py-4 transition-all duration-300",
+    !locked && "hover:bg-[color:var(--surface-2)] hover:translate-x-1 hover:shadow-[var(--shadow-card)]",
     locked && "opacity-60",
   );
 

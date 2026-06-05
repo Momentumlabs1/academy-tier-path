@@ -169,3 +169,56 @@
     letter-spacing: -0.02em;
   }
 }
+
+/* Micro-interactions */
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(12px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes pill-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 oklch(0.92 0.21 130 / 0.35); }
+  50%      { box-shadow: 0 0 0 8px oklch(0.92 0.21 130 / 0); }
+}
+
+@keyframes stagger-in {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes icon-wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25%      { transform: rotate(-10deg); }
+  75%      { transform: rotate(10deg); }
+}
+
+.animate-page-enter {
+  animation: page-enter 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-pill-pulse {
+  animation: pill-pulse 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-stagger {
+  animation: stagger-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.micro-lift {
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease;
+}
+.micro-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lime);
+}
+
+.micro-press {
+  transition: transform 0.15s ease;
+}
+.micro-press:active {
+  transform: scale(0.96);
+}
+
+.group:hover .group-icon-wiggle {
+  animation: icon-wiggle 0.45s ease;
+}
