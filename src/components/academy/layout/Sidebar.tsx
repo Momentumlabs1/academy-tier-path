@@ -23,7 +23,7 @@ export function Sidebar() {
           <span className="absolute inset-0 rounded-full bg-primary/30 blur-md" />
           <span className="relative h-5 w-5 rounded-full bg-primary" />
         </span>
-        <span className="font-display text-2xl font-bold tracking-tight">enter</span>
+        <span className="font-display text-2xl font-bold tracking-tight">EnterTrade</span>
       </Link>
 
       {/* Menu */}
