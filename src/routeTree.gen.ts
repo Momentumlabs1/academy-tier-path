@@ -11,9 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
+import { Route as AppUnlocksRouteImport } from './routes/_app.unlocks'
 import { Route as AppTierRouteImport } from './routes/_app.tier'
 import { Route as AppSignalsRouteImport } from './routes/_app.signals'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
 import { Route as AppLessonsRouteImport } from './routes/_app.lessons'
 import { Route as AppLessonsLessonIdRouteImport } from './routes/_app.lessons.$lessonId'
 
@@ -24,6 +26,11 @@ const AppRoute = AppRouteImport.update({
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppUnlocksRoute = AppUnlocksRouteImport.update({
+  id: '/unlocks',
+  path: '/unlocks',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTierRoute = AppTierRouteImport.update({
@@ -41,6 +48,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
+const AppNotificationsRoute = AppNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppLessonsRoute = AppLessonsRouteImport.update({
   id: '/lessons',
   path: '/lessons',
@@ -55,16 +67,20 @@ const AppLessonsLessonIdRoute = AppLessonsLessonIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/lessons': typeof AppLessonsRouteWithChildren
+  '/notifications': typeof AppNotificationsRoute
   '/settings': typeof AppSettingsRoute
   '/signals': typeof AppSignalsRoute
   '/tier': typeof AppTierRoute
+  '/unlocks': typeof AppUnlocksRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
 }
 export interface FileRoutesByTo {
   '/lessons': typeof AppLessonsRouteWithChildren
+  '/notifications': typeof AppNotificationsRoute
   '/settings': typeof AppSettingsRoute
   '/signals': typeof AppSignalsRoute
   '/tier': typeof AppTierRoute
+  '/unlocks': typeof AppUnlocksRoute
   '/': typeof AppIndexRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
 }
@@ -72,9 +88,11 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/_app/lessons': typeof AppLessonsRouteWithChildren
+  '/_app/notifications': typeof AppNotificationsRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/signals': typeof AppSignalsRoute
   '/_app/tier': typeof AppTierRoute
+  '/_app/unlocks': typeof AppUnlocksRoute
   '/_app/': typeof AppIndexRoute
   '/_app/lessons/$lessonId': typeof AppLessonsLessonIdRoute
 }
@@ -83,25 +101,31 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/lessons'
+    | '/notifications'
     | '/settings'
     | '/signals'
     | '/tier'
+    | '/unlocks'
     | '/lessons/$lessonId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/lessons'
+    | '/notifications'
     | '/settings'
     | '/signals'
     | '/tier'
+    | '/unlocks'
     | '/'
     | '/lessons/$lessonId'
   id:
     | '__root__'
     | '/_app'
     | '/_app/lessons'
+    | '/_app/notifications'
     | '/_app/settings'
     | '/_app/signals'
     | '/_app/tier'
+    | '/_app/unlocks'
     | '/_app/'
     | '/_app/lessons/$lessonId'
   fileRoutesById: FileRoutesById
@@ -126,6 +150,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/unlocks': {
+      id: '/_app/unlocks'
+      path: '/unlocks'
+      fullPath: '/unlocks'
+      preLoaderRoute: typeof AppUnlocksRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/tier': {
       id: '/_app/tier'
       path: '/tier'
@@ -145,6 +176,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/notifications': {
+      id: '/_app/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AppNotificationsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/lessons': {
@@ -178,17 +216,21 @@ const AppLessonsRouteWithChildren = AppLessonsRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppLessonsRoute: typeof AppLessonsRouteWithChildren
+  AppNotificationsRoute: typeof AppNotificationsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSignalsRoute: typeof AppSignalsRoute
   AppTierRoute: typeof AppTierRoute
+  AppUnlocksRoute: typeof AppUnlocksRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppLessonsRoute: AppLessonsRouteWithChildren,
+  AppNotificationsRoute: AppNotificationsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSignalsRoute: AppSignalsRoute,
   AppTierRoute: AppTierRoute,
+  AppUnlocksRoute: AppUnlocksRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
@@ -200,3 +242,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
