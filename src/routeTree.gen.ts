@@ -9,8 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppRouteImport } from './routes/_app'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
+import { Route as TSlugRouteImport } from './routes/t.$slug'
+import { Route as AdminMembersRouteImport } from './routes/admin.members'
+import { Route as AdminLessonsRouteImport } from './routes/admin.lessons'
+import { Route as AdminDepositsRouteImport } from './routes/admin.deposits'
+import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AppUnlocksRouteImport } from './routes/_app.unlocks'
 import { Route as AppTierRouteImport } from './routes/_app.tier'
 import { Route as AppSignalsRouteImport } from './routes/_app.signals'
@@ -19,14 +26,49 @@ import { Route as AppNotificationsRouteImport } from './routes/_app.notification
 import { Route as AppLessonsRouteImport } from './routes/_app.lessons'
 import { Route as AppLessonsLessonIdRouteImport } from './routes/_app.lessons.$lessonId'
 
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppRoute,
+} as any)
+const TSlugRoute = TSlugRouteImport.update({
+  id: '/t/$slug',
+  path: '/t/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminMembersRoute = AdminMembersRouteImport.update({
+  id: '/members',
+  path: '/members',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLessonsRoute = AdminLessonsRouteImport.update({
+  id: '/lessons',
+  path: '/lessons',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminDepositsRoute = AdminDepositsRouteImport.update({
+  id: '/deposits',
+  path: '/deposits',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAuditRoute = AdminAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AppUnlocksRoute = AppUnlocksRouteImport.update({
   id: '/unlocks',
@@ -66,12 +108,19 @@ const AppLessonsLessonIdRoute = AppLessonsLessonIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/lessons': typeof AppLessonsRouteWithChildren
   '/notifications': typeof AppNotificationsRoute
   '/settings': typeof AppSettingsRoute
   '/signals': typeof AppSignalsRoute
   '/tier': typeof AppTierRoute
   '/unlocks': typeof AppUnlocksRoute
+  '/admin/audit': typeof AdminAuditRoute
+  '/admin/deposits': typeof AdminDepositsRoute
+  '/admin/lessons': typeof AdminLessonsRoute
+  '/admin/members': typeof AdminMembersRoute
+  '/t/$slug': typeof TSlugRoute
+  '/admin/': typeof AdminIndexRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
 }
 export interface FileRoutesByTo {
@@ -81,31 +130,51 @@ export interface FileRoutesByTo {
   '/signals': typeof AppSignalsRoute
   '/tier': typeof AppTierRoute
   '/unlocks': typeof AppUnlocksRoute
+  '/admin/audit': typeof AdminAuditRoute
+  '/admin/deposits': typeof AdminDepositsRoute
+  '/admin/lessons': typeof AdminLessonsRoute
+  '/admin/members': typeof AdminMembersRoute
+  '/t/$slug': typeof TSlugRoute
   '/': typeof AppIndexRoute
+  '/admin': typeof AdminIndexRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
+  '/admin': typeof AdminRouteWithChildren
   '/_app/lessons': typeof AppLessonsRouteWithChildren
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/signals': typeof AppSignalsRoute
   '/_app/tier': typeof AppTierRoute
   '/_app/unlocks': typeof AppUnlocksRoute
+  '/admin/audit': typeof AdminAuditRoute
+  '/admin/deposits': typeof AdminDepositsRoute
+  '/admin/lessons': typeof AdminLessonsRoute
+  '/admin/members': typeof AdminMembersRoute
+  '/t/$slug': typeof TSlugRoute
   '/_app/': typeof AppIndexRoute
+  '/admin/': typeof AdminIndexRoute
   '/_app/lessons/$lessonId': typeof AppLessonsLessonIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/lessons'
     | '/notifications'
     | '/settings'
     | '/signals'
     | '/tier'
     | '/unlocks'
+    | '/admin/audit'
+    | '/admin/deposits'
+    | '/admin/lessons'
+    | '/admin/members'
+    | '/t/$slug'
+    | '/admin/'
     | '/lessons/$lessonId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -115,27 +184,49 @@ export interface FileRouteTypes {
     | '/signals'
     | '/tier'
     | '/unlocks'
+    | '/admin/audit'
+    | '/admin/deposits'
+    | '/admin/lessons'
+    | '/admin/members'
+    | '/t/$slug'
     | '/'
+    | '/admin'
     | '/lessons/$lessonId'
   id:
     | '__root__'
     | '/_app'
+    | '/admin'
     | '/_app/lessons'
     | '/_app/notifications'
     | '/_app/settings'
     | '/_app/signals'
     | '/_app/tier'
     | '/_app/unlocks'
+    | '/admin/audit'
+    | '/admin/deposits'
+    | '/admin/lessons'
+    | '/admin/members'
+    | '/t/$slug'
     | '/_app/'
+    | '/admin/'
     | '/_app/lessons/$lessonId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
+  AdminRoute: typeof AdminRouteWithChildren
+  TSlugRoute: typeof TSlugRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app': {
       id: '/_app'
       path: ''
@@ -143,12 +234,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_app/': {
       id: '/_app/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/t/$slug': {
+      id: '/t/$slug'
+      path: '/t/$slug'
+      fullPath: '/t/$slug'
+      preLoaderRoute: typeof TSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/members': {
+      id: '/admin/members'
+      path: '/members'
+      fullPath: '/admin/members'
+      preLoaderRoute: typeof AdminMembersRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/lessons': {
+      id: '/admin/lessons'
+      path: '/lessons'
+      fullPath: '/admin/lessons'
+      preLoaderRoute: typeof AdminLessonsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/deposits': {
+      id: '/admin/deposits'
+      path: '/deposits'
+      fullPath: '/admin/deposits'
+      preLoaderRoute: typeof AdminDepositsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/audit': {
+      id: '/admin/audit'
+      path: '/audit'
+      fullPath: '/admin/audit'
+      preLoaderRoute: typeof AdminAuditRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/_app/unlocks': {
       id: '/_app/unlocks'
@@ -236,8 +369,28 @@ const AppRouteChildren: AppRouteChildren = {
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
+interface AdminRouteChildren {
+  AdminAuditRoute: typeof AdminAuditRoute
+  AdminDepositsRoute: typeof AdminDepositsRoute
+  AdminLessonsRoute: typeof AdminLessonsRoute
+  AdminMembersRoute: typeof AdminMembersRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminAuditRoute: AdminAuditRoute,
+  AdminDepositsRoute: AdminDepositsRoute,
+  AdminLessonsRoute: AdminLessonsRoute,
+  AdminMembersRoute: AdminMembersRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
+  AdminRoute: AdminRouteWithChildren,
+  TSlugRoute: TSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
