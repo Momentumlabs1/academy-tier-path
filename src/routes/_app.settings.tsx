@@ -33,7 +33,7 @@ function SettingsPage() {
         <p className="mt-1 text-muted-foreground">Account synced from your onboarding bot. Contact support to edit.</p>
       </div>
 
-      <Card variant="surface">
+      <Card variant="surface" className="micro-lift">
         <div className="flex items-center gap-4 border-b border-white/5 p-6">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-[oklch(0.7_0.2_290)] text-lg font-bold text-primary-foreground">
             {CURRENT_MEMBER.name.charAt(0)}

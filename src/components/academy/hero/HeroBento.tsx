@@ -34,7 +34,8 @@ export function HeroBento() {
         <Card
           key={item.title}
           variant="hero"
-          className={`relative overflow-hidden ${item.span} min-h-[180px] lg:min-h-0`}
+          className={`relative overflow-hidden ${item.span} min-h-[180px] lg:min-h-0 animate-stagger`}
+          style={{ animationDelay: `${idx * 120}ms` }}
         >
           <img
             src={item.image}
