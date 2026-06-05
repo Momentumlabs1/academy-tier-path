@@ -41,8 +41,8 @@ function LessonDetail() {
 
   return (
     <div className="space-y-6">
-      <Link to="/lessons" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-        <ArrowLeft className="h-3.5 w-3.5" /> All lessons
+      <Link to="/lessons" className="group inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+        <ArrowLeft className="h-3.5 w-3.5 transition-transform group-hover:-translate-x-0.5" /> All lessons
       </Link>
 
       <Card variant="hero" className="relative aspect-video overflow-hidden">

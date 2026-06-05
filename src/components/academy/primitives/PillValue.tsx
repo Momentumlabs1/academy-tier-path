@@ -14,9 +14,9 @@ export function PillValue({
   return (
     <div
       className={cn(
-        "flex min-w-[68px] flex-col items-center justify-center rounded-full px-3 py-1.5 text-center transition-colors",
+        "flex min-w-[68px] flex-col items-center justify-center rounded-full px-3 py-1.5 text-center transition-colors micro-press",
         active
-          ? "bg-primary text-primary-foreground"
+          ? "bg-primary text-primary-foreground animate-pill-pulse"
           : "bg-[color:var(--surface-2)]/70 text-foreground",
         className,
       )}

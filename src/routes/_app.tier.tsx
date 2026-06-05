@@ -40,7 +40,7 @@ function TierPage() {
             <Card
               key={t.key}
               variant={isCurrent ? "hero" : "surface"}
-              className={cn("relative flex flex-col p-6", isCurrent && "ring-2 ring-primary shadow-[var(--shadow-lime)]")}
+              className={cn("relative flex flex-col p-6 micro-lift", isCurrent && "ring-2 ring-primary shadow-[var(--shadow-lime)]")}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">

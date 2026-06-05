@@ -57,7 +57,7 @@ function SignalsPage() {
             rel="noopener noreferrer"
             className="inline-flex shrink-0 items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-lime)] hover:opacity-90"
           >
-            <Radio className="h-4 w-4" /> Open in Telegram
+            <Radio className="h-4 w-4 group-icon-wiggle" /> Open in Telegram
           </a>
         ) : (
           <span className="inline-flex shrink-0 items-center gap-2 rounded-full bg-white/10 px-5 py-2.5 text-sm font-semibold text-muted-foreground cursor-not-allowed">
