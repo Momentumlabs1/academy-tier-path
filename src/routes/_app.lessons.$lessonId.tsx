@@ -1,6 +1,7 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { ArrowLeft, Clock, PlayCircle, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock, PlayCircle, RotateCcw } from "lucide-react";
 import { LESSONS, CURRENT_MEMBER, TIERS, tierForDeposit } from "@/lib/academy-data";
+import { useCompletedLessons } from "@/hooks/useCompletedLessons";
 import { TierTag } from "@/components/academy/primitives/TierTag";
 import { Card } from "@/components/academy/primitives/Card";
 import { LessonCardCompact } from "@/components/academy/lessons/LessonCardCompact";
@@ -21,9 +22,7 @@ export const Route = createFileRoute("/_app/lessons/$lessonId")({
   notFoundComponent: () => (
     <div className="py-20 text-center">
       <h1 className="font-display text-2xl font-bold">Lesson not found</h1>
-      <Link to="/lessons" className="mt-4 inline-block text-primary hover:underline">
-        Back to lessons
-      </Link>
+      <Link to="/lessons" className="mt-4 inline-block text-primary hover:underline">Back to lessons</Link>
     </div>
   ),
   errorComponent: ({ error }) => (
@@ -37,6 +36,9 @@ function LessonDetail() {
   const memberTier = tierForDeposit(CURRENT_MEMBER.deposit);
   const memberRank = memberTier ? TIERS.findIndex((t) => t.key === memberTier.key) : -1;
   const locked = TIERS.findIndex((t) => t.key === lesson.tier) > memberRank;
+  const { isCompleted, toggle, stats } = useCompletedLessons();
+  const completed = isCompleted(lesson.id);
+  const xp = lesson.durationMin * 10;
   const recommendations = LESSONS.filter((l) => l.id !== lesson.id && l.category === lesson.category).slice(0, 3);
 
   return (
@@ -48,31 +50,64 @@ function LessonDetail() {
       <Card variant="hero" className="relative aspect-video overflow-hidden">
         <img src={heroFloor} alt="" className="absolute inset-0 h-full w-full object-cover opacity-60" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-        <div className="relative flex h-full flex-col justify-between p-6 lg:p-10">
-          <div className="flex items-center gap-2">
+        <div className="relative flex h-full flex-col justify-between p-5 sm:p-8 lg:p-10">
+          <div className="flex flex-wrap items-center gap-2">
             <TierTag tier={lesson.tier} />
             <span className="inline-flex items-center gap-1 text-xs text-foreground/80">
               <Clock className="h-3 w-3" /> {lesson.durationMin} min
             </span>
             <span className="text-xs uppercase tracking-[0.16em] text-foreground/80">{lesson.category}</span>
+            <span className="text-xs font-semibold text-primary">+{xp} XP</span>
           </div>
           <div>
-            <h1 className="font-display text-3xl font-bold leading-tight lg:text-5xl">{lesson.title}</h1>
-            <p className="mt-3 max-w-2xl text-foreground/80">{lesson.description}</p>
-            <div className="mt-5">
+            <h1 className="font-display text-2xl font-bold leading-tight sm:text-3xl lg:text-5xl">{lesson.title}</h1>
+            <p className="mt-2 max-w-2xl text-sm text-foreground/80 sm:mt-3 sm:text-base">{lesson.description}</p>
+            <div className="mt-4 flex flex-wrap gap-2 sm:mt-5">
               {locked ? (
                 <Link to="/tier" className="inline-flex items-center gap-2 rounded-full bg-white/10 px-5 py-2.5 text-sm font-semibold">
                   Unlock with {lesson.tier} tier
                 </Link>
+              ) : completed ? (
+                <>
+                  <div className="inline-flex items-center gap-2 rounded-full bg-primary/20 px-5 py-2.5 text-sm font-semibold text-primary">
+                    <CheckCircle2 className="h-4 w-4" /> Completed · +{xp} XP earned
+                  </div>
+                  <button
+                    onClick={() => toggle(lesson.id)}
+                    className="inline-flex items-center gap-2 rounded-full bg-white/5 px-4 py-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" /> Mark incomplete
+                  </button>
+                </>
               ) : (
-                <button className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-lime)]">
-                  <PlayCircle className="h-4 w-4" /> Play lesson
-                </button>
+                <>
+                  <button className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-lime)]">
+                    <PlayCircle className="h-4 w-4" /> Play lesson
+                  </button>
+                  <button
+                    onClick={() => toggle(lesson.id)}
+                    className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-2.5 text-sm font-semibold hover:bg-white/15 transition-colors"
+                  >
+                    <CheckCircle2 className="h-4 w-4" /> Mark as done
+                  </button>
+                </>
               )}
             </div>
           </div>
         </div>
       </Card>
+
+      {/* Progress nudge */}
+      <div className="flex items-center justify-between rounded-2xl bg-[color:var(--surface-2)]/60 px-4 py-3 text-sm">
+        <span className="text-muted-foreground">Your progress</span>
+        <div className="flex items-center gap-3">
+          <div className="h-1.5 w-28 overflow-hidden rounded-full bg-white/10">
+            <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${stats.completionPct}%` }} />
+          </div>
+          <span className="font-semibold text-primary">{stats.completedCount} / {stats.totalLessons}</span>
+          <span className="font-mono text-xs text-muted-foreground">{stats.earnedXp} XP</span>
+        </div>
+      </div>
 
       <Card variant="surface" className="p-6">
         <h2 className="font-display text-lg font-bold">What you'll learn</h2>
@@ -90,9 +125,7 @@ function LessonDetail() {
         <div>
           <h2 className="mb-3 font-display text-lg font-bold">Recommended next</h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {recommendations.map((l) => (
-              <LessonCardCompact key={l.id} lesson={l} />
-            ))}
+            {recommendations.map((l) => <LessonCardCompact key={l.id} lesson={l} />)}
           </div>
         </div>
       )}
