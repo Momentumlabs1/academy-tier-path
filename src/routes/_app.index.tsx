@@ -4,6 +4,7 @@ import { HeroBento } from "@/components/academy/hero/HeroBento";
 import { LessonGroup } from "@/components/academy/lessons/LessonGroup";
 import { SectionTitle } from "@/components/academy/primitives/SectionTitle";
 import { DepositLadder } from "@/components/academy/tier/DepositLadder";
+import { ProgressStats } from "@/components/academy/progress/ProgressStats";
 import { Card } from "@/components/academy/primitives/Card";
 import { LESSONS, CURRENT_MEMBER } from "@/lib/academy-data";
 import { useMemberState } from "@/hooks/useMemberState";
@@ -122,6 +123,8 @@ function Dashboard() {
       <DepositLadder />
 
       {/* Hero bento */}
+      <ProgressStats />
+
       <HeroBento />
 
       <section>
