@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as HegemonyRouteImport } from './routes/hegemony'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as AppTierRouteImport } from './routes/_app.tier'
@@ -17,6 +18,11 @@ import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppLessonsRouteImport } from './routes/_app.lessons'
 import { Route as AppLessonsLessonIdRouteImport } from './routes/_app.lessons.$lessonId'
 
+const HegemonyRoute = HegemonyRouteImport.update({
+  id: '/hegemony',
+  path: '/hegemony',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
@@ -54,6 +60,7 @@ const AppLessonsLessonIdRoute = AppLessonsLessonIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
+  '/hegemony': typeof HegemonyRoute
   '/lessons': typeof AppLessonsRouteWithChildren
   '/settings': typeof AppSettingsRoute
   '/signals': typeof AppSignalsRoute
@@ -61,6 +68,7 @@ export interface FileRoutesByFullPath {
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
 }
 export interface FileRoutesByTo {
+  '/hegemony': typeof HegemonyRoute
   '/lessons': typeof AppLessonsRouteWithChildren
   '/settings': typeof AppSettingsRoute
   '/signals': typeof AppSignalsRoute
@@ -71,6 +79,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
+  '/hegemony': typeof HegemonyRoute
   '/_app/lessons': typeof AppLessonsRouteWithChildren
   '/_app/settings': typeof AppSettingsRoute
   '/_app/signals': typeof AppSignalsRoute
@@ -82,6 +91,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/hegemony'
     | '/lessons'
     | '/settings'
     | '/signals'
@@ -89,6 +99,7 @@ export interface FileRouteTypes {
     | '/lessons/$lessonId'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/hegemony'
     | '/lessons'
     | '/settings'
     | '/signals'
@@ -98,6 +109,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_app'
+    | '/hegemony'
     | '/_app/lessons'
     | '/_app/settings'
     | '/_app/signals'
@@ -108,10 +120,18 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
+  HegemonyRoute: typeof HegemonyRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/hegemony': {
+      id: '/hegemony'
+      path: '/hegemony'
+      fullPath: '/hegemony'
+      preLoaderRoute: typeof HegemonyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app': {
       id: '/_app'
       path: ''
@@ -196,7 +216,18 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
+  HegemonyRoute: HegemonyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
