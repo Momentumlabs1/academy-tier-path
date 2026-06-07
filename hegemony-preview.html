@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>US Hegemoniezyklen 1898–2026</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    min-height: 100vh;
+    background: linear-gradient(160deg, #1a0a2e 0%, #0f0820 50%, #080614 100%);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    color: white;
+    overflow-x: hidden;
+  }
+  .header {
+    padding: 32px 28px 0;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: #a8f0a0;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  h1 {
+    font-size: clamp(22px, 4vw, 38px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+  }
+  .subtitle {
+    font-size: 13px;
+    color: rgba(255,255,255,0.38);
+    margin-top: 6px;
+  }
+  .phase-chips {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 8px;
+  }
+  .phase-chip {
+    padding: 4px 10px;
+    border-radius: 99px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: transparent;
+    color: rgba(255,255,255,0.4);
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-family: inherit;
+  }
+  .chart-wrap {
+    padding: 20px 0 0;
+    overflow-x: auto;
+  }
+  svg { display: block; }
+  .tooltip {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: none;
+    z-index: 50;
+    padding: 12px 18px;
+    border-radius: 16px;
+    background: rgba(22, 10, 45, 0.97);
+    border: 1px solid rgba(255,255,255,0.12);
+    backdrop-filter: blur(16px);
+    max-width: min(420px, 90vw);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    display: none;
+  }
+  .tooltip.show { display: block; }
+  .tooltip-year {
+    font-size: 10px; font-weight: 800; color: #a8f0a0;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    display: inline-block; margin-right: 8px;
+  }
+  .tooltip-badge {
+    padding: 2px 8px; border-radius: 99px;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.10em;
+    text-transform: uppercase; display: inline-block;
+  }
+  .tooltip-title { font-weight: 700; font-size: 15px; margin: 5px 0 3px; }
+  .tooltip-body { font-size: 12.5px; color: rgba(255,255,255,0.5); line-height: 1.45; }
+  .legend {
+    padding: 8px 28px 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-label { font-size: 11px; color: rgba(255,255,255,0.38); letter-spacing: 0.06em; }
+  .phase-cards {
+    padding: 0 28px 48px;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+    gap: 10px;
+  }
+  .phase-card {
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.07);
+    background: rgba(255,255,255,0.03);
+    cursor: default;
+    transition: all 0.18s;
+  }
+  .phase-card:hover { background: rgba(255,255,255,0.06); border-color: rgba(255,255,255,0.15); }
+  .phase-card-years { font-size: 10px; font-weight: 800; letter-spacing: 0.10em; text-transform: uppercase; margin-bottom: 4px; }
+  .phase-card-name { font-size: 12.5px; font-weight: 700; margin-bottom: 2px; }
+  .phase-card-sub { font-size: 11px; color: rgba(255,255,255,0.35); line-height: 1.35; }
+  .source { text-align: center; padding: 0 20px 32px; font-size: 10.5px; color: rgba(255,255,255,0.16); letter-spacing: 0.05em; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="eyebrow">Geopolitische Analyse</div>
+    <h1>US-Hegemoniezyklen</h1>
+    <p class="subtitle">Relative Weltmacht-Intensität 1898–2026 · Phasenmodell nach Wallerstein / Modelski</p>
+  </div>
+  <div id="phaseChips" class="phase-chips"></div>
+</div>
+
+<div class="chart-wrap">
+  <svg id="chart" viewBox="0 0 1200 520" style="width:100%;min-width:600px;height:auto;"></svg>
+</div>
+
+<div class="tooltip" id="tooltip">
+  <div>
+    <span class="tooltip-year" id="tt-year"></span>
+    <span class="tooltip-badge" id="tt-badge"></span>
+  </div>
+  <div class="tooltip-title" id="tt-title"></div>
+  <div class="tooltip-body" id="tt-body"></div>
+</div>
+
+<div class="legend">
+  <div class="legend-item">
+    <svg width="28" height="4"><rect width="28" height="3" rx="1.5" fill="url(#legGrad)"/></svg>
+    <span class="legend-label">Relative Macht-Kurve</span>
+  </div>
+  <div class="legend-item">
+    <svg width="12" height="12"><circle cx="6" cy="6" r="5" fill="rgba(255,255,255,0.65)"/></svg>
+    <span class="legend-label">Schlüsselereignis</span>
+  </div>
+  <div class="legend-item">
+    <svg width="12" height="12"><circle cx="6" cy="6" r="4" fill="rgba(255,255,255,0.65)"/></svg>
+    <span class="legend-label">Wendepunkt</span>
+  </div>
+  <div class="legend-item">
+    <svg width="12" height="12"><circle cx="6" cy="6" r="3" fill="rgba(255,255,255,0.65)"/></svg>
+    <span class="legend-label">Ereignis</span>
+  </div>
+  <span class="legend-label" style="margin-left:auto">Hover über Marker für Details</span>
+</div>
+
+<div id="phaseCards" class="phase-cards"></div>
+
+<div class="source">Modell basiert auf Weltsystemtheorie (Wallerstein) &amp; Long-Cycle-Theorie (Modelski) · Daten indexiert, nicht amtlich</div>
+
+<script>
+const DATA = [
+  {y:1898,p:18},{y:1900,p:22},{y:1905,p:27},{y:1910,p:32},{y:1914,p:34},
+  {y:1917,p:36},{y:1919,p:42},{y:1922,p:38},{y:1925,p:44},{y:1929,p:50},
+  {y:1932,p:40},{y:1935,p:43},{y:1939,p:48},{y:1941,p:52},{y:1944,p:66},
+  {y:1945,p:74},{y:1948,p:80},{y:1950,p:82},{y:1955,p:86},{y:1960,p:88},
+  {y:1963,p:85},{y:1965,p:83},{y:1968,p:78},{y:1971,p:74},{y:1973,p:70},
+  {y:1975,p:67},{y:1979,p:63},{y:1981,p:66},{y:1985,p:70},{y:1989,p:73},
+  {y:1991,p:82},{y:1995,p:84},{y:2000,p:83},{y:2003,p:79},{y:2008,p:72},
+  {y:2010,p:69},{y:2012,p:67},{y:2015,p:64},{y:2017,p:61},{y:2020,p:57},
+  {y:2022,p:55},{y:2024,p:52},{y:2026,p:49}
+];
+
+const PHASES = [
+  {from:1898,to:1918,label:"Aufstieg",sub:"Industrial Rise",color:"#9b59f5"},
+  {from:1918,to:1939,label:"Interkriegszeit",sub:"War & Depression",color:"#e060a0"},
+  {from:1939,to:1955,label:"Hegemoniale Blüte",sub:"WWII & Bretton Woods",color:"#f07030"},
+  {from:1955,to:1975,label:"Relativer Niedergang",sub:"Vietnam & Nixon Shock",color:"#e0b020"},
+  {from:1975,to:1995,label:"Unipolarer Moment",sub:"Reagan & USSR Collapse",color:"#40c870"},
+  {from:1995,to:2012,label:"Überdehnungsphase",sub:"Iraq & Financial Crisis",color:"#20c0c0"},
+  {from:2012,to:2026,label:"Transition",sub:"Multipolar Shift",color:"#4080e0"},
+];
+
+const EVENTS = [
+  {year:1898,label:"Span.-Am. Krieg",detail:"USA wird zur imperialen Seemacht. Kuba, Puerto Rico, Philippinen.",tier:"major"},
+  {year:1913,label:"Federal Reserve",detail:"Gründung der Fed — Grundstein des Dollar-Imperiums.",tier:"mid"},
+  {year:1914,label:"Erster Weltkrieg",detail:"Europa blutet, USA rüstet und kreditiert beide Seiten.",tier:"major"},
+  {year:1919,label:"Versailles",detail:"USA lehnt Völkerbund ab — erster Rückzug aus globaler Führung.",tier:"mid"},
+  {year:1929,label:"Schwarzer Donnerstag",detail:"Wall-Street-Crash. 25% Arbeitslosigkeit. Globale Depression.",tier:"major"},
+  {year:1941,label:"Pearl Harbor / WK II",detail:"USA tritt in den Weltkrieg ein. Industriemaschinerie auf Hochtouren.",tier:"major"},
+  {year:1944,label:"Bretton Woods",detail:"Dollar = Weltreservewährung. Gold-Dollar-Standard etabliert.",tier:"major"},
+  {year:1950,label:"Koreakrieg",detail:"Erste Intervention im Kalten Krieg. NATO-Ausbau beschleunigt.",tier:"mid"},
+  {year:1962,label:"Kubakrise",detail:"Schärfste nukleare Konfrontation. USA zeigt maximale Stärke.",tier:"mid"},
+  {year:1965,label:"Vietnam-Eskalation",detail:"Beginn des teuersten Krieges in US-Geschichte. Erosion der Glaubwürdigkeit.",tier:"mid"},
+  {year:1971,label:"Nixon-Schock",detail:"USA hebt Gold-Deckung des Dollars auf. Ende von Bretton Woods.",tier:"major"},
+  {year:1973,label:"Ölkrise",detail:"OPEC-Embargo. Stagflation. Vertrauensverlust in Petrodollar.",tier:"mid"},
+  {year:1979,label:"Volcker-Schock",detail:"Fed hebt Zinsen auf 20%. Dollar gerettet, Rezession erzwungen.",tier:"mid"},
+  {year:1989,label:"Mauerfall",detail:"Berlin. Der Kalte Krieg endet. USA auf dem Gipfel.",tier:"major"},
+  {year:1991,label:"USSR-Kollaps",detail:"Sowjetunion aufgelöst. USA = einzige Supermacht.",tier:"major"},
+  {year:2001,label:"9/11 / War on Terror",detail:"Anschläge verändern US-Strategie. Afghanistan, dann Irak.",tier:"major"},
+  {year:2008,label:"Finanzkrise",detail:"Lehman Brothers. Subprime-Kollaps. Globales Vertrauen erschüttert.",tier:"major"},
+  {year:2013,label:"Snowden / NSA",detail:"Überwachungsskandal. Soft-Power-Verlust der USA.",tier:"minor"},
+  {year:2017,label:"Trump I",detail:"America First. Multilateralismus wird geschwächt.",tier:"mid"},
+  {year:2022,label:"Ukraine-Krieg",detail:"NATO-Einheit vs. China-Russland-Achse. Neue Blockbildung.",tier:"major"},
+  {year:2025,label:"Trump II / Zölle",detail:"Handelskrieg mit China. Dollar-Hegemonie unter Druck.",tier:"major"},
+];
+
+const VW=1200,VH=520,ML=54,MT=60,MR=30,MB=90;
+const PW=VW-ML-MR, PH=VH-MT-MB;
+const YMIN=1898, YMAX=2026;
+
+function xS(y){ return ((y-YMIN)/(YMAX-YMIN))*PW; }
+function yS(p){ return PH-(p/100)*PH; }
+
+function catmull(pts, t=0.4){
+  if(pts.length<2)return "";
+  let d=`M${pts[0][0]},${pts[0][1]}`;
+  for(let i=0;i<pts.length-1;i++){
+    const p0=pts[Math.max(i-1,0)],p1=pts[i],p2=pts[i+1],p3=pts[Math.min(i+2,pts.length-1)];
+    const cp1x=p1[0]+(p2[0]-p0[0])*t, cp1y=p1[1]+(p2[1]-p0[1])*t;
+    const cp2x=p2[0]-(p3[0]-p1[0])*t, cp2y=p2[1]-(p3[1]-p1[1])*t;
+    d+=` C${cp1x},${cp1y},${cp2x},${cp2y},${p2[0]},${p2[1]}`;
+  }
+  return d;
+}
+
+const ns="http://www.w3.org/2000/svg";
+function el(tag,attrs={},parent){
+  const e=document.createElementNS(ns,tag);
+  for(const [k,v] of Object.entries(attrs)) e.setAttribute(k,v);
+  if(parent) parent.appendChild(e);
+  return e;
+}
+function txt(str,attrs={},parent){
+  const e=el("text",attrs,parent);
+  e.textContent=str;
+  return e;
+}
+
+const svg=document.getElementById("chart");
+
+// Defs
+const defs=el("defs",{},svg);
+// Area gradient (horizontal)
+const ag=el("linearGradient",{id:"areaG",x1:0,y1:0,x2:PW,y2:0,gradientUnits:"userSpaceOnUse"},defs);
+[[0,"#9b59f5",0.5],[15,"#e060a0",0.55],[30,"#f07030",0.6],[45,"#e0b020",0.6],
+ [60,"#40c870",0.55],[75,"#20c0c0",0.5],[100,"#2050d0",0.45]].forEach(([off,c,op])=>{
+  const s=el("stop",{offset:off+"%","stop-color":c,"stop-opacity":op},ag);
+});
+// Line gradient
+const lg=el("linearGradient",{id:"lineG",x1:0,y1:0,x2:PW,y2:0,gradientUnits:"userSpaceOnUse"},defs);
+[[0,"#c090ff"],[15,"#ff80c0"],[30,"#ff8040"],[45,"#ffd040"],[60,"#60ff90"],[75,"#40e0d0"],[100,"#6090ff"]].forEach(([off,c])=>{
+  el("stop",{offset:off+"%","stop-color":c},lg);
+});
+// Glow filter
+const filt=el("filter",{id:"glow"},defs);
+const gb=el("feGaussianBlur",{stdDeviation:"3",result:"blur"},filt);
+const fm=el("feMerge",{},filt);
+el("feMergeNode",{in:"blur"},fm); el("feMergeNode",{in:"SourceGraphic"},fm);
+// Clip
+const cp=el("clipPath",{id:"clip"},defs);
+el("rect",{x:0,y:0,width:PW,height:PH},cp);
+// Legend gradient swatch
+const legG=el("linearGradient",{id:"legGrad",x1:0,y1:0,x2:1,y2:0},defs);
+[["0%","#c090ff"],["50%","#ffd040"],["100%","#6090ff"]].forEach(([o,c])=>el("stop",{offset:o,"stop-color":c},legG));
+
+// Main group
+const g=el("g",{transform:`translate(${ML},${MT})`},svg);
+
+// Phase bands
+PHASES.forEach(p=>{
+  const x=xS(p.from), w=xS(p.to)-xS(p.from);
+  el("rect",{x,y:0,width:w,height:PH,fill:"rgba(255,255,255,0.01)",stroke:"rgba(255,255,255,0.05)","stroke-width":0.5,rx:1},g);
+  // divider
+  el("line",{x1:x,y1:0,x2:x,y2:PH,stroke:"rgba(255,255,255,0.07)","stroke-width":1,"stroke-dasharray":"3 4"},g);
+  // phase label
+  txt(p.label,{x:x+w/2,y:-11,fill:"rgba(255,255,255,0.3)","font-size":"9.5","font-weight":"700","text-anchor":"middle","letter-spacing":"0.10em"},g).style.textTransform="uppercase";
+  txt(p.sub,{x:x+w/2,y:-2,fill:"rgba(255,255,255,0.18)","font-size":"7.5","text-anchor":"middle"},g);
+});
+
+// Y-axis grid
+[0,25,50,75,100].forEach(v=>{
+  const y2=yS(v);
+  el("line",{x1:0,y1:y2,x2:PW,y2:y2,stroke:"rgba(255,255,255,0.06)","stroke-width":v===50?1.5:0.75,"stroke-dasharray":v===50?"6 4":"3 5"},g);
+  txt(v+"",{x:-8,y:y2+3.5,fill:"rgba(255,255,255,0.3)","font-size":"9.5","text-anchor":"end","font-weight":"500"},g);
+});
+
+// Area + line
+const pts=DATA.map(d=>[xS(d.y),yS(d.p)]);
+const line=catmull(pts);
+const area=line+` L${pts[pts.length-1][0]},${PH} L${pts[0][0]},${PH} Z`;
+
+const cg=el("g",{clipPath:"url(#clip)"},g);
+el("path",{d:area,fill:"url(#areaG)"},cg);
+el("path",{d:line,fill:"none",stroke:"url(#lineG)","stroke-width":"5","stroke-opacity":"0.25",filter:"url(#glow)"},cg);
+el("path",{d:line,fill:"none",stroke:"url(#lineG)","stroke-width":"2.5","stroke-linecap":"round","stroke-linejoin":"round",filter:"url(#glow)"},cg);
+
+// X-axis ticks
+for(let y=1900;y<=2026;y+=10){
+  const x2=xS(y);
+  el("line",{x1:x2,y1:PH,x2:x2,y2:PH+6,stroke:"rgba(255,255,255,0.2)","stroke-width":"1"},g);
+  txt(y+"",{x:x2,y:PH+18,fill:"rgba(255,255,255,0.35)","font-size":"9.5","text-anchor":"middle","font-weight":"500"},g);
+}
+
+// Now marker
+const nx=xS(2026);
+el("line",{x1:nx,y1:0,x2:nx,y2:PH,stroke:"#a8f0a0","stroke-width":"1.5","stroke-dasharray":"4 3","stroke-opacity":"0.6"},g);
+txt("JETZT",{x:nx,y:-16,fill:"#a8f0a0","font-size":"9","font-weight":"700","text-anchor":"middle","letter-spacing":"0.08em"},g);
+
+// Y label
+const yl=txt("Relative Macht-Intensität (0–100)",{fill:"rgba(255,255,255,0.22)","font-size":"9","text-anchor":"middle","letter-spacing":"0.14em"},g);
+yl.setAttribute("transform",`rotate(-90) translate(${-PH/2},${-42})`);
+yl.style.textTransform="uppercase";
+
+// Event markers (interactive)
+const tooltip=document.getElementById("tooltip");
+const ttYear=document.getElementById("tt-year");
+const ttBadge=document.getElementById("tt-badge");
+const ttTitle=document.getElementById("tt-title");
+const ttBody=document.getElementById("tt-body");
+
+EVENTS.forEach(ev=>{
+  const x=xS(ev.year);
+  const near=DATA.reduce((a,b)=>Math.abs(a.y-ev.year)<=Math.abs(b.y-ev.year)?a:b);
+  const y=yS(near.p);
+  const sz=ev.tier==="major"?5.5:ev.tier==="mid"?4:3;
+
+  const mg=el("g",{transform:`translate(${x},${y})`,style:"cursor:pointer"},g);
+  el("line",{y1:0,y2:PH-y+8,stroke:"rgba(255,255,255,0.08)","stroke-width":"0.8","stroke-dasharray":"2 3"},mg);
+  const dot=el("circle",{r:sz,fill:"rgba(255,255,255,0.7)",stroke:"rgba(255,255,255,0.25)","stroke-width":"1"},mg);
+  txt(ev.year+"",{y:PH-y+22,fill:"rgba(255,255,255,0.32)","font-size":ev.tier==="major"?"8.5":"7.5","text-anchor":"middle","font-weight":"500"},mg);
+
+  mg.addEventListener("mouseenter",()=>{
+    dot.setAttribute("fill","white");
+    dot.setAttribute("stroke","#a8f0a0");
+    dot.setAttribute("stroke-width","2");
+    ttYear.textContent=ev.year;
+    const tierLabel=ev.tier==="major"?"Schlüsselereignis":ev.tier==="mid"?"Wendepunkt":"Ereignis";
+    const tierColor=ev.tier==="major"?"rgba(240,100,50,0.25)":"rgba(255,255,255,0.07)";
+    const tierText=ev.tier==="major"?"#ff9060":"rgba(255,255,255,0.45)";
+    ttBadge.textContent=tierLabel;
+    ttBadge.style.background=tierColor;
+    ttBadge.style.color=tierText;
+    ttTitle.textContent=ev.label;
+    ttBody.textContent=ev.detail;
+    tooltip.classList.add("show");
+  });
+  mg.addEventListener("mouseleave",()=>{
+    dot.setAttribute("fill","rgba(255,255,255,0.7)");
+    dot.setAttribute("stroke","rgba(255,255,255,0.25)");
+    dot.setAttribute("stroke-width","1");
+    tooltip.classList.remove("show");
+  });
+});
+
+// Phase chips
+const chipsEl=document.getElementById("phaseChips");
+PHASES.forEach(p=>{
+  const btn=document.createElement("button");
+  btn.className="phase-chip";
+  btn.textContent=p.label;
+  btn.addEventListener("mouseenter",()=>{
+    btn.style.borderColor=p.color;
+    btn.style.color=p.color;
+    btn.style.background=p.color+"22";
+    // highlight band
+    Array.from(g.children).forEach((child,i)=>{
+      if(child.tagName==="g") return;
+    });
+  });
+  btn.addEventListener("mouseleave",()=>{
+    btn.style.borderColor="";
+    btn.style.color="";
+    btn.style.background="";
+  });
+  chipsEl.appendChild(btn);
+});
+
+// Phase cards
+const cardsEl=document.getElementById("phaseCards");
+PHASES.forEach(p=>{
+  const card=document.createElement("div");
+  card.className="phase-card";
+  card.innerHTML=`
+    <div class="phase-card-years" style="color:${p.color}">${p.from}–${p.to}</div>
+    <div class="phase-card-name">${p.label}</div>
+    <div class="phase-card-sub">${p.sub}</div>
+  `;
+  cardsEl.appendChild(card);
+});
+</script>
+</body>
+</html>
