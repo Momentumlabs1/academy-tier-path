@@ -6,165 +6,149 @@
 <title>US Hegemoniezyklen 1898–2026</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{
-  --bg0:#0d0618;--bg1:#140a28;--surface:#1c1030;
-  --border:rgba(255,255,255,0.07);
-  --muted:rgba(255,255,255,0.35);--faint:rgba(255,255,255,0.12);
-  --green:#a8f0a0;
+html,body{height:100%}
+body{
+  min-height:100vh;
+  background:#0b0515;
+  font-family:'Segoe UI',system-ui,sans-serif;
+  color:#fff;
+  overflow-x:hidden;
 }
-html{scroll-behavior:smooth}
-body{min-height:100vh;background:radial-gradient(ellipse 120% 80% at 60% -10%,#1e0840 0%,var(--bg0) 60%);font-family:'Segoe UI',system-ui,sans-serif;color:#fff;overflow-x:hidden}
+/* subtle noise texture via svg bg */
+body::before{
+  content:"";position:fixed;inset:0;
+  background:radial-gradient(ellipse 140% 70% at 55% -5%,#1a0535 0%,transparent 65%),
+             radial-gradient(ellipse 60% 50% at 10% 80%,#0a0220 0%,transparent 60%);
+  pointer-events:none;z-index:0;
+}
+.wrap{position:relative;z-index:1;max-width:1340px;margin:0 auto;padding:0 28px}
 
-/* ── HEADER ─────────────────────────────────────── */
-.header{padding:28px 28px 0;max-width:1280px;margin:0 auto}
-.eyebrow{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:var(--green);font-weight:700;margin-bottom:5px}
-h1{font-size:clamp(20px,3.5vw,36px);font-weight:800;line-height:1.1;letter-spacing:-.025em}
-.subtitle{font-size:12.5px;color:rgba(255,255,255,.32);margin-top:5px}
+/* ── HEADER ── */
+.header{padding-top:30px;padding-bottom:18px}
+.eyebrow{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#7effa0;font-weight:700;margin-bottom:6px}
+h1{font-size:clamp(22px,3.2vw,38px);font-weight:800;line-height:1.05;letter-spacing:-.03em}
+.subtitle{font-size:12px;color:rgba(255,255,255,.28);margin-top:5px;letter-spacing:.01em}
 
-/* ── CHIPS ───────────────────────────────────────── */
-.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px}
-.chip{padding:5px 11px;border-radius:99px;border:1px solid var(--border);background:transparent;
-  color:var(--muted);font-size:10px;font-weight:700;cursor:pointer;transition:all .18s;
-  letter-spacing:.05em;text-transform:uppercase;font-family:inherit}
-.chip:hover,.chip.active{color:#fff}
+/* ── PHASE CHIPS ── */
+.chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:14px}
+.chip{
+  padding:4px 11px;border-radius:6px;
+  border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);
+  color:rgba(255,255,255,.38);font-size:10px;font-weight:700;cursor:pointer;
+  transition:all .15s;letter-spacing:.06em;text-transform:uppercase;font-family:inherit;
+}
+.chip:hover,.chip.on{color:#fff;border-color:rgba(255,255,255,.25);background:rgba(255,255,255,.07)}
 
-/* ── CHART WRAPPER ───────────────────────────────── */
-.chart-outer{position:relative;margin-top:18px;user-select:none}
-.chart-scroll{overflow-x:auto;overflow-y:visible}
+/* ── READOUT ── */
+.readout{
+  display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:16px;
+  padding:12px 0 14px;border-bottom:1px solid rgba(255,255,255,.06);
+  margin-bottom:4px;min-height:52px;
+}
+.rd-year{font-size:28px;font-weight:800;letter-spacing:-.04em;line-height:1;min-width:58px;color:#fff}
+.rd-mid{display:flex;flex-direction:column;gap:5px}
+.rd-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.14em;color:rgba(255,255,255,.28);font-weight:600}
+.rd-bar-track{height:3px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden}
+.rd-bar-fill{height:100%;border-radius:2px;transition:width .07s linear,background .25s;width:0%}
+.rd-right{text-align:right}
+.rd-phase-name{font-size:12px;font-weight:700;letter-spacing:.02em;transition:color .2s}
+.rd-pow-num{font-size:11px;color:rgba(255,255,255,.38);margin-top:2px}
+.rd-hint{font-size:10px;color:rgba(255,255,255,.18);margin-top:2px}
+
+/* ── CHART ── */
+.chart-scroll{overflow-x:auto;overflow-y:visible;padding-bottom:2px}
+.chart-scroll::-webkit-scrollbar{height:3px}
+.chart-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
 #chart{display:block;cursor:crosshair}
-.chart-scroll::-webkit-scrollbar{height:4px}
-.chart-scroll::-webkit-scrollbar-track{background:transparent}
-.chart-scroll::-webkit-scrollbar-thumb{background:var(--faint);border-radius:2px}
 
-/* ── CROSSHAIR TOOLTIP (follows cursor) ─────────── */
-#xhair-tip{
-  position:fixed;pointer-events:none;z-index:60;
-  padding:10px 14px;border-radius:12px;
-  background:rgba(14,6,30,.95);border:1px solid rgba(255,255,255,.14);
-  backdrop-filter:blur(18px);font-size:12px;white-space:nowrap;
-  box-shadow:0 6px 28px rgba(0,0,0,.55);opacity:0;transition:opacity .12s;
-  transform:translate(14px,-50%)
+/* ── EVENT LIST (bottom) ── */
+.ev-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:8px;padding:16px 0 44px;
 }
-#xhair-tip b{font-size:13px;font-weight:800;color:var(--green)}
-#xhair-tip .xh-pow{color:rgba(255,255,255,.6);font-size:11px;margin-top:1px}
-
-/* ── EVENT TOOLTIP (pinned, bottom-center) ───────── */
-#ev-tip{
-  position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
-  z-index:70;padding:13px 18px;border-radius:16px;
-  background:rgba(14,6,30,.97);border:1px solid rgba(255,255,255,.13);
-  backdrop-filter:blur(20px);max-width:min(420px,90vw);
-  box-shadow:0 10px 40px rgba(0,0,0,.65);
-  opacity:0;transition:opacity .18s,transform .18s;transform:translateX(-50%) translateY(8px);
-  pointer-events:none
+.ev-card{
+  padding:10px 12px;border-radius:10px;
+  border:1px solid rgba(255,255,255,.055);background:rgba(255,255,255,.02);
+  cursor:pointer;transition:all .15s;
 }
-#ev-tip.show{opacity:1;transform:translateX(-50%) translateY(0)}
-.et-top{display:flex;align-items:center;gap:8px;margin-bottom:5px}
-.et-year{font-size:10px;font-weight:800;color:var(--green);letter-spacing:.14em;text-transform:uppercase}
-.et-badge{padding:2px 8px;border-radius:99px;font-size:9px;font-weight:700;letter-spacing:.10em;text-transform:uppercase}
-.et-title{font-weight:700;font-size:15px;margin-bottom:3px}
-.et-body{font-size:12.5px;color:rgba(255,255,255,.5);line-height:1.5}
-.et-close{position:absolute;top:10px;right:12px;font-size:14px;cursor:pointer;color:rgba(255,255,255,.35);pointer-events:all;background:none;border:none;font-family:inherit;line-height:1}
-.et-close:hover{color:#fff}
+.ev-card:hover,.ev-card.pin{border-color:rgba(255,255,255,.15);background:rgba(255,255,255,.05)}
+.ev-yr{font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:3px}
+.ev-name{font-size:11.5px;font-weight:700;margin-bottom:2px}
+.ev-body{font-size:10.5px;color:rgba(255,255,255,.32);line-height:1.4;display:none}
+.ev-card.pin .ev-body,.ev-card:hover .ev-body{display:block}
+.ev-badge{display:inline-block;padding:1px 6px;border-radius:4px;font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
 
-/* ── POWER READOUT BAR ───────────────────────────── */
-#readout{
-  display:flex;align-items:center;gap:12px;
-  padding:10px 28px;max-width:1280px;margin:0 auto;
-  font-size:11px;color:var(--muted);
-  border-bottom:1px solid var(--border);
+/* ── CROSSHAIR TOOLTIP ── */
+#xh{
+  position:fixed;z-index:80;pointer-events:none;
+  padding:8px 12px;border-radius:9px;
+  background:rgba(10,3,22,.95);border:1px solid rgba(255,255,255,.12);
+  backdrop-filter:blur(16px);font-size:11px;white-space:nowrap;
+  box-shadow:0 4px 24px rgba(0,0,0,.5);opacity:0;transition:opacity .1s;
 }
-#readout .rd-year{font-size:22px;font-weight:800;color:#fff;letter-spacing:-.03em;min-width:52px}
-#readout .rd-pow-wrap{flex:1;max-width:280px}
-#readout .rd-pow-label{display:flex;justify-content:space-between;margin-bottom:4px;font-size:10.5px}
-#readout .rd-bar{height:5px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden}
-#readout .rd-fill{height:100%;border-radius:3px;transition:width .08s linear,background .3s}
-#readout .rd-phase{font-size:11px;font-weight:700;letter-spacing:.04em}
-#readout .rd-hint{margin-left:auto;font-size:10px;opacity:.4}
+#xh b{font-size:13px;font-weight:800;display:block;margin-bottom:1px}
+#xh span{color:rgba(255,255,255,.45)}
 
-/* ── PHASE CARDS ─────────────────────────────────── */
-.phase-cards{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
-  gap:9px;padding:16px 28px 44px;max-width:1280px;margin:0 auto
-}
-.pc{padding:11px 13px;border-radius:13px;border:1px solid var(--border);
-  background:rgba(255,255,255,.025);cursor:pointer;transition:all .18s}
-.pc:hover,.pc.active{background:rgba(255,255,255,.055);border-color:rgba(255,255,255,.15)}
-.pc-yr{font-size:9.5px;font-weight:800;letter-spacing:.10em;text-transform:uppercase;margin-bottom:3px}
-.pc-name{font-size:12px;font-weight:700;margin-bottom:2px}
-.pc-sub{font-size:10.5px;color:rgba(255,255,255,.33);line-height:1.35}
+/* ── PHASE SECTION ── */
+.phase-section{padding:0 0 18px}
+.phase-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:8px}
+.pc{padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.055);background:rgba(255,255,255,.02);cursor:pointer;transition:all .15s}
+.pc:hover,.pc.on{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.14)}
+.pc-yr{font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px}
+.pc-name{font-size:11.5px;font-weight:700;margin-bottom:1px}
+.pc-sub{font-size:10px;color:rgba(255,255,255,.3);line-height:1.35}
 
-.source{text-align:center;padding:0 20px 28px;font-size:10px;color:rgba(255,255,255,.14);letter-spacing:.05em}
+.divider{border:none;border-top:1px solid rgba(255,255,255,.05);margin:4px 0 16px}
+.section-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.16em;color:rgba(255,255,255,.25);font-weight:700;margin-bottom:10px}
 
-/* ── LEGEND ──────────────────────────────────────── */
-.legend{display:flex;gap:18px;flex-wrap:wrap;align-items:center;padding:8px 28px 14px;max-width:1280px;margin:0 auto}
-.li{display:flex;align-items:center;gap:5px;font-size:10.5px;color:rgba(255,255,255,.35)}
+.source{text-align:center;padding:0 0 28px;font-size:9.5px;color:rgba(255,255,255,.13);letter-spacing:.05em}
 
-/* ── ANIMATIONS ──────────────────────────────────── */
-@keyframes draw{from{stroke-dashoffset:var(--len)}to{stroke-dashoffset:0}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-.anim-line{animation:draw 1.6s cubic-bezier(.4,0,.2,1) forwards}
-.anim-area{animation:fadeUp .8s .4s both}
+/* animations */
+@keyframes drawLine{from{stroke-dashoffset:var(--l)}to{stroke-dashoffset:0}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
 </style>
 </head>
 <body>
+<div class="wrap">
 
-<div class="header">
-  <div class="eyebrow">Geopolitische Analyse</div>
-  <h1>US-Hegemoniezyklen 1898–2026</h1>
-  <p class="subtitle">Relative Weltmacht-Intensität · Phasenmodell nach Wallerstein / Modelski · Hover &amp; Klick für Details</p>
-  <div class="chips" id="chips"></div>
-</div>
+  <div class="header">
+    <div class="eyebrow">Geopolitische Analyse</div>
+    <h1>US-Hegemoniezyklen 1898–2026</h1>
+    <p class="subtitle">Relative Weltmacht-Intensität · Modell nach Wallerstein / Modelski · Hover &amp; Klick für Details</p>
+    <div class="chips" id="chips"></div>
+  </div>
 
-<div id="readout">
-  <div class="rd-year" id="rd-year">—</div>
-  <div class="rd-pow-wrap">
-    <div class="rd-pow-label">
-      <span>Machtindex</span>
-      <span id="rd-pow-val" style="font-weight:700;color:#fff">—</span>
+  <div class="readout" id="readout">
+    <div class="rd-year" id="rd-yr">—</div>
+    <div class="rd-mid">
+      <div class="rd-label">Machtindex</div>
+      <div class="rd-bar-track"><div class="rd-bar-fill" id="rd-fill"></div></div>
     </div>
-    <div class="rd-bar"><div class="rd-fill" id="rd-fill" style="width:0%"></div></div>
+    <div class="rd-right">
+      <div class="rd-phase-name" id="rd-phase">Maus über Chart bewegen</div>
+      <div class="rd-pow-num" id="rd-pownum"></div>
+      <div class="rd-hint">← scrollen für Vollbild</div>
+    </div>
   </div>
-  <div class="rd-phase" id="rd-phase">Bewege die Maus über den Chart</div>
-  <div class="rd-hint">← scrollen für Vollbild →</div>
-</div>
 
-<div class="chart-outer">
   <div class="chart-scroll">
-    <svg id="chart" viewBox="0 0 1280 480" style="width:100%;min-width:640px;height:auto"></svg>
+    <svg id="chart" viewBox="0 0 1280 430" style="width:100%;min-width:640px;height:auto"></svg>
   </div>
+
+  <hr class="divider">
+  <div class="section-label">Phasen</div>
+  <div class="phase-section"><div class="phase-cards" id="pcards"></div></div>
+
+  <hr class="divider">
+  <div class="section-label">Ereignisse — klicken für Details</div>
+  <div class="ev-grid" id="evgrid"></div>
+
+  <div class="source">Modell: Weltsystemtheorie (Wallerstein) · Long-Cycle-Theorie (Modelski) · Daten indexiert, nicht amtlich</div>
 </div>
 
-<div class="legend">
-  <div class="li"><svg width="26" height="3"><rect width="26" height="3" rx="1.5" fill="url(#legG)"/></svg> Relative Machtkurve</div>
-  <div class="li"><svg width="11" height="11"><circle cx="5.5" cy="5.5" r="5" fill="rgba(255,255,255,.65)"/></svg> Schlüsselereignis</div>
-  <div class="li"><svg width="11" height="11"><circle cx="5.5" cy="5.5" r="3.5" fill="rgba(255,255,255,.6)"/></svg> Wendepunkt</div>
-  <div class="li"><svg width="11" height="11"><circle cx="5.5" cy="5.5" r="2.5" fill="rgba(255,255,255,.55)"/></svg> Ereignis</div>
-  <span class="li" style="margin-left:auto">Klick auf Marker = Details fixieren &nbsp;·&nbsp; ESC schließen</span>
-</div>
-
-<div class="phase-cards" id="pcards"></div>
-<div class="source">Modell basiert auf Weltsystemtheorie (Wallerstein) &amp; Long-Cycle-Theorie (Modelski) · Daten indexiert, nicht amtlich</div>
-
-<!-- Pinned event tooltip -->
-<div id="ev-tip">
-  <button class="et-close" id="ev-close">✕</button>
-  <div class="et-top">
-    <span class="et-year" id="et-year"></span>
-    <span class="et-badge" id="et-badge"></span>
-  </div>
-  <div class="et-title" id="et-title"></div>
-  <div class="et-body" id="et-body"></div>
-</div>
-
-<!-- Crosshair tooltip -->
-<div id="xhair-tip">
-  <b id="xh-year"></b>
-  <div class="xh-pow" id="xh-pow"></div>
-</div>
+<div id="xh"><b id="xh-yr"></b><span id="xh-info"></span></div>
 
 <script>
-// ── DATA ─────────────────────────────────────────────────────────────────────
 const DATA=[
   {y:1898,p:18},{y:1900,p:22},{y:1905,p:27},{y:1910,p:32},{y:1914,p:34},
   {y:1917,p:36},{y:1919,p:42},{y:1922,p:38},{y:1925,p:44},{y:1929,p:50},
@@ -176,326 +160,309 @@ const DATA=[
   {y:2010,p:69},{y:2012,p:67},{y:2015,p:64},{y:2017,p:61},{y:2020,p:57},
   {y:2022,p:55},{y:2024,p:52},{y:2026,p:49}
 ];
-
 const PHASES=[
-  {from:1898,to:1918,label:"Aufstieg",sub:"Industrial Rise",color:"#a06aff"},
-  {from:1918,to:1939,label:"Interkriegszeit",sub:"War & Depression",color:"#f060a8"},
-  {from:1939,to:1955,label:"Hegemoniale Blüte",sub:"WWII & Bretton Woods",color:"#f07830"},
-  {from:1955,to:1975,label:"Relativer Niedergang",sub:"Vietnam & Nixon Shock",color:"#e8c020"},
-  {from:1975,to:1995,label:"Unipolarer Moment",sub:"Reagan & USSR Collapse",color:"#30d870"},
-  {from:1995,to:2012,label:"Überdehnungsphase",sub:"Iraq & Financial Crisis",color:"#20ccc0"},
-  {from:2012,to:2026,label:"Transition",sub:"Multipolar Shift",color:"#4888f0"},
+  {from:1898,to:1918,label:"Aufstieg",sub:"Industrial Rise",c:"#a06aff"},
+  {from:1918,to:1939,label:"Interkriegszeit",sub:"War & Depression",c:"#f060a8"},
+  {from:1939,to:1955,label:"Hegemoniale Blüte",sub:"WWII & Bretton Woods",c:"#f07830"},
+  {from:1955,to:1975,label:"Relativer Niedergang",sub:"Vietnam & Nixon Shock",c:"#e8c020"},
+  {from:1975,to:1995,label:"Unipolarer Moment",sub:"Reagan & USSR Collapse",c:"#30d870"},
+  {from:1995,to:2012,label:"Überdehnungsphase",sub:"Iraq & Financial Crisis",c:"#20ccc0"},
+  {from:2012,to:2026,label:"Transition",sub:"Multipolar Shift",c:"#4888f0"},
 ];
-
 const EVENTS=[
-  {year:1898,label:"Span.-Am. Krieg",detail:"USA wird zur imperialen Seemacht. Kuba, Puerto Rico, Philippinen fallen unter US-Kontrolle.",tier:"major"},
-  {year:1913,label:"Federal Reserve",detail:"Gründung der Fed. Zentralisierung des Geldsystems — Grundstein für Dollar-Dominanz.",tier:"mid"},
-  {year:1914,label:"Erster Weltkrieg",detail:"Europa blutet. USA rüstet und kreditiert beide Seiten — und steigt als Gläubiger auf.",tier:"major"},
-  {year:1919,label:"Versailles / Völkerbund",detail:"USA lehnt den Völkerbund ab. Isolationismus siegt. Erster Rückzug aus globaler Führung.",tier:"mid"},
-  {year:1929,label:"Schwarzer Donnerstag",detail:"Wall-Street-Crash. 25% Arbeitslosigkeit. Globale Depression erschüttert das liberale System.",tier:"major"},
-  {year:1941,label:"Pearl Harbor / WK II",detail:"USA tritt dem Krieg bei. Industriemaschinerie läuft auf Hochtouren — BIP explodiert.",tier:"major"},
-  {year:1944,label:"Bretton Woods",detail:"Dollar wird Weltreservewährung. Gold-Dollar-Standard etabliert US-Finanzhegemonie.",tier:"major"},
-  {year:1950,label:"Koreakrieg",detail:"Erste heiße Intervention im Kalten Krieg. NATO-Struktur und Rüstungshaushalt werden ausgebaut.",tier:"mid"},
-  {year:1962,label:"Kubakrise",detail:"13 Tage nuklearer Abgrund. USA demonstriert maximale Stärke — und Besonnenheit.",tier:"mid"},
-  {year:1965,label:"Vietnam-Eskalation",detail:"Beginn des teuersten Krieges in US-Geschichte. Soziale Spaltung. Erosion der Glaubwürdigkeit.",tier:"mid"},
-  {year:1971,label:"Nixon-Schock",detail:"USA hebt Gold-Dollar-Deckung auf. Ende von Bretton Woods. Dollar bleibt — aber ohne Anker.",tier:"major"},
-  {year:1973,label:"Ölkrise",detail:"OPEC-Embargo als Reaktion auf Yom-Kippur-Krieg. Stagflation. Erste echte Energievulnerabilität.",tier:"mid"},
-  {year:1979,label:"Volcker-Schock",detail:"Fed-Chef Volcker hebt Leitzins auf 20%. Rezession erzwungen. Dollar-Hegemonie stabilisiert.",tier:"mid"},
-  {year:1989,label:"Mauerfall",detail:"Berlin. Das Symbol des Kalten Krieges fällt. USA steht als unbestrittener Sieger da.",tier:"major"},
-  {year:1991,label:"USSR-Kollaps",detail:"Sowjetunion aufgelöst. USA = einzige Supermacht. Francis Fukuyama schreibt 'Ende der Geschichte'.",tier:"major"},
-  {year:2001,label:"9/11 / War on Terror",detail:"Terroranschläge verändern US-Strategie. Afghanistan, dann Irak. Überdehnungsphase beginnt.",tier:"major"},
-  {year:2008,label:"Finanzkrise",detail:"Lehman Brothers kollabiert. Subprime-Kollaps. Globales Vertrauen in US-Finanzarchitektur erschüttert.",tier:"major"},
-  {year:2013,label:"Snowden / NSA",detail:"Globaler Überwachungsskandal. Massenhafte Soft-Power-Erosion. Vertrauen in US-Tech-Dominanz sinkt.",tier:"minor"},
-  {year:2017,label:"Trump I",detail:"America First. Multilateralismus geschwächt. NATO-Zweifel. Beginn institutioneller Erosion.",tier:"mid"},
-  {year:2022,label:"Ukraine-Krieg",detail:"NATO-Einheit einerseits — China-Russland-Achse andererseits. Neue Blockbildung beschleunigt.",tier:"major"},
-  {year:2025,label:"Trump II / Zölle",detail:"Handelskrieg mit China eskaliert. Dollar-Hegemonie unter strukturellem Druck. BRICS-Expansion.",tier:"major"},
+  {year:1898,label:"Span.-Am. Krieg",detail:"USA wird zur imperialen Seemacht. Kuba, Puerto Rico, Philippinen fallen unter US-Kontrolle.",tier:"M"},
+  {year:1913,label:"Federal Reserve",detail:"Gründung der Fed. Grundstein des Dollar-Imperiums und zentralisierter Geldpolitik.",tier:"S"},
+  {year:1914,label:"Erster Weltkrieg",detail:"Europa blutet, USA rüstet und kreditiert beide Seiten — steigt als Gläubigernation auf.",tier:"M"},
+  {year:1919,label:"Versailles",detail:"USA lehnt den Völkerbund ab. Isolationismus siegt. Erster Rückzug aus globaler Führung.",tier:"S"},
+  {year:1929,label:"Schwarzer Donnerstag",detail:"Wall-Street-Crash. 25% Arbeitslosigkeit. Globale Depression erschüttert das liberale System.",tier:"M"},
+  {year:1941,label:"Pearl Harbor",detail:"USA tritt in den Weltkrieg ein. Industriemaschinerie läuft auf Hochtouren.",tier:"M"},
+  {year:1944,label:"Bretton Woods",detail:"Dollar wird Weltreservewährung. Gold-Dollar-Standard etabliert US-Finanzhegemonie.",tier:"M"},
+  {year:1950,label:"Koreakrieg",detail:"Erste heiße Intervention im Kalten Krieg. NATO-Struktur und Rüstungshaushalt ausgebaut.",tier:"S"},
+  {year:1962,label:"Kubakrise",detail:"13 Tage nuklearer Abgrund. USA demonstriert maximale Stärke — und Besonnenheit.",tier:"S"},
+  {year:1965,label:"Vietnam-Eskalation",detail:"Beginn des teuersten Krieges in US-Geschichte. Erosion von Glaubwürdigkeit und Budget.",tier:"S"},
+  {year:1971,label:"Nixon-Schock",detail:"USA hebt Gold-Dollar-Deckung auf. Ende von Bretton Woods. Dollar bleibt — ohne Anker.",tier:"M"},
+  {year:1973,label:"Ölkrise",detail:"OPEC-Embargo. Stagflation. Erste echte Energievulnerabilität der US-Wirtschaft.",tier:"S"},
+  {year:1979,label:"Volcker-Schock",detail:"Fed-Chef Volcker hebt Leitzins auf 20%. Rezession erzwungen. Dollar-Hegemonie stabilisiert.",tier:"S"},
+  {year:1989,label:"Mauerfall",detail:"Berlin. Der Kalte Krieg endet. USA steht als unbestrittener Sieger da.",tier:"M"},
+  {year:1991,label:"USSR-Kollaps",detail:"Sowjetunion aufgelöst. USA = einzige Supermacht. Fukuyama: 'Ende der Geschichte'.",tier:"M"},
+  {year:2001,label:"9/11 / War on Terror",detail:"Terroranschläge. Afghanistan, dann Irak. Überdehnungsphase beginnt.",tier:"M"},
+  {year:2008,label:"Finanzkrise",detail:"Lehman Brothers. Subprime-Kollaps. Vertrauen in US-Finanzarchitektur erschüttert.",tier:"M"},
+  {year:2013,label:"Snowden / NSA",detail:"Globaler Überwachungsskandal. Soft-Power-Erosion. Vertrauen in US-Tech-Dominanz sinkt.",tier:"S"},
+  {year:2017,label:"Trump I",detail:"America First. Multilateralismus geschwächt. Institutionelle Erosion beginnt.",tier:"S"},
+  {year:2022,label:"Ukraine-Krieg",detail:"NATO-Einheit vs. China-Russland-Achse. Neue Blockbildung beschleunigt sich.",tier:"M"},
+  {year:2025,label:"Trump II / Zölle",detail:"Handelskrieg mit China. Dollar-Hegemonie unter strukturellem Druck. BRICS-Expansion.",tier:"M"},
 ];
 
-// ── SVG CONFIG ───────────────────────────────────────────────────────────────
-const VW=1280,VH=480,ML=52,MT=56,MR=28,MB=80;
+// ── layout ───────────────────────────────────────────────────────────────────
+const VW=1280,VH=430,ML=50,MT=48,MR=24,MB=72;
 const PW=VW-ML-MR,PH=VH-MT-MB;
-const YMIN=1898,YMAX=2026;
-
-function xS(y){return ((y-YMIN)/(YMAX-YMIN))*PW}
-function yS(p){return PH-(p/100)*PH}
-function lerp(a,b,t){return a+(b-a)*t}
-
-// Interpolate power at any year
-function powerAt(year){
-  if(year<=DATA[0].y)return DATA[0].p;
-  if(year>=DATA[DATA.length-1].y)return DATA[DATA.length-1].p;
-  for(let i=0;i<DATA.length-1;i++){
-    if(year>=DATA[i].y&&year<=DATA[i+1].y){
-      const t=(year-DATA[i].y)/(DATA[i+1].y-DATA[i].y);
-      return lerp(DATA[i].p,DATA[i+1].p,t);
-    }
-  }
+const Y0=1898,Y1=2026;
+const xS=y=>((y-Y0)/(Y1-Y0))*PW;
+const yS=p=>PH-(p/100)*PH;
+const lerp=(a,b,t)=>a+(b-a)*t;
+function powerAt(yr){
+  if(yr<=DATA[0].y)return DATA[0].p;
+  if(yr>=DATA[DATA.length-1].y)return DATA[DATA.length-1].p;
+  for(let i=0;i<DATA.length-1;i++)
+    if(yr>=DATA[i].y&&yr<=DATA[i+1].y)
+      return lerp(DATA[i].p,DATA[i+1].p,(yr-DATA[i].y)/(DATA[i+1].y-DATA[i].y));
   return 50;
 }
+function phaseAt(yr){return PHASES.find(p=>yr>=p.from&&yr<p.to)||PHASES[PHASES.length-1]}
 
-function phaseAt(year){
-  return PHASES.find(p=>year>=p.from&&year<p.to)||PHASES[PHASES.length-1];
-}
-
-// Catmull-Rom spline
-function catmull(pts,t=0.4){
-  let d=`M${pts[0][0].toFixed(2)},${pts[0][1].toFixed(2)}`;
+function catmull(pts,t=0.38){
+  let d=`M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
   for(let i=0;i<pts.length-1;i++){
     const p0=pts[Math.max(i-1,0)],p1=pts[i],p2=pts[i+1],p3=pts[Math.min(i+2,pts.length-1)];
-    const c1x=p1[0]+(p2[0]-p0[0])*t,c1y=p1[1]+(p2[1]-p0[1])*t;
-    const c2x=p2[0]-(p3[0]-p1[0])*t,c2y=p2[1]-(p3[1]-p1[1])*t;
-    d+=` C${c1x.toFixed(2)},${c1y.toFixed(2)},${c2x.toFixed(2)},${c2y.toFixed(2)},${p2[0].toFixed(2)},${p2[1].toFixed(2)}`;
+    d+=` C${(p1[0]+(p2[0]-p0[0])*t).toFixed(1)},${(p1[1]+(p2[1]-p0[1])*t).toFixed(1)},${(p2[0]-(p3[0]-p1[0])*t).toFixed(1)},${(p2[1]-(p3[1]-p1[1])*t).toFixed(1)},${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
   }
   return d;
 }
 
-// ── BUILD SVG ────────────────────────────────────────────────────────────────
+// ── SVG build ────────────────────────────────────────────────────────────────
 const ns="http://www.w3.org/2000/svg";
 const svg=document.getElementById("chart");
-function mk(tag,a={},p){const e=document.createElementNS(ns,tag);for(const[k,v]of Object.entries(a))e.setAttribute(k,v);if(p)p.appendChild(e);return e}
-function tx(s,a={},p){const e=mk("text",a,p);e.textContent=s;return e}
+const mk=(t,a,p)=>{const e=document.createElementNS(ns,t);for(const[k,v]of Object.entries(a))e.setAttribute(k,v);p&&p.appendChild(e);return e};
+const tx=(s,a,p)=>{const e=mk("text",a,p);e.textContent=s;return e};
 
-// defs
 const defs=mk("defs",{},svg);
-// area fill gradient (horizontal x-axis spectrum)
+
+// gradients
 const ag=mk("linearGradient",{id:"aG",x1:0,y1:0,x2:PW,y2:0,gradientUnits:"userSpaceOnUse"},defs);
-[[0,"#a06aff",.45],[14,"#f060a8",.5],[28,"#f07830",.55],[43,"#e8c020",.58],[58,"#30d870",.52],[73,"#20ccc0",.48],[100,"#3060e0",.44]].forEach(([o,c,op])=>mk("stop",{offset:o+"%","stop-color":c,"stop-opacity":op},ag));
+[[0,"#9050f0",.38],[13,"#e050a0",.44],[27,"#e86820",.5],[42,"#d8b010",.54],[58,"#28cc60",.46],[73,"#18b8b8",.42],[100,"#3070d8",.38]].forEach(([o,c,op])=>mk("stop",{offset:o+"%","stop-color":c,"stop-opacity":op},ag));
+
 const lg=mk("linearGradient",{id:"lG",x1:0,y1:0,x2:PW,y2:0,gradientUnits:"userSpaceOnUse"},defs);
-[[0,"#c090ff"],[14,"#ff80c8"],[28,"#ff9050"],[43,"#ffe040"],[58,"#50ff90"],[73,"#40e8e0"],[100,"#70a0ff"]].forEach(([o,c])=>mk("stop",{offset:o+"%","stop-color":c},lg));
+[[0,"#b880ff"],[13,"#ff80c0"],[27,"#ff9050"],[42,"#ffd030"],[58,"#40f080"],[73,"#30d8d8"],[100,"#60a0ff"]].forEach(([o,c])=>mk("stop",{offset:o+"%","stop-color":c},lg));
+
 // legend swatch
 const legG=mk("linearGradient",{id:"legG",x1:0,y1:0,x2:1,y2:0},defs);
-[["0%","#c090ff"],["50%","#ffe040"],["100%","#70a0ff"]].forEach(([o,c])=>mk("stop",{offset:o,"stop-color":c},legG));
-// glow
-const flt=mk("filter",{id:"glow","x":"-20%","y":"-20%","width":"140%","height":"140%"},defs);
-const gb=mk("feGaussianBlur",{stdDeviation:"3.5",result:"blur"},flt);const fm=mk("feMerge",{},flt);mk("feMergeNode",{in:"blur"},fm);mk("feMergeNode",{in:"SourceGraphic"},fm);
-// softer glow for area edge
-const flt2=mk("filter",{id:"glow2","x":"-30%","y":"-30%","width":"160%","height":"160%"},defs);
-mk("feGaussianBlur",{stdDeviation:"6",result:"blur"},flt2);const fm2=mk("feMerge",{},flt2);mk("feMergeNode",{in:"blur"},fm2);mk("feMergeNode",{in:"SourceGraphic"},fm2);
-// clip
-const cp=mk("clipPath",{id:"clip"},defs);mk("rect",{x:0,y:0,width:PW,height:PH},cp);
+[["0%","#b880ff"],["50%","#ffd030"],["100%","#60a0ff"]].forEach(([o,c])=>mk("stop",{offset:o,"stop-color":c},legG));
 
-// main group
+// glow
+const flt=mk("filter",{id:"gl",x:"-25%",y:"-25%",width:"150%",height:"150%"},defs);
+mk("feGaussianBlur",{stdDeviation:"3",result:"b"},flt);const fm=mk("feMerge",{},flt);mk("feMergeNode",{in:"b"},fm);mk("feMergeNode",{in:"SourceGraphic"},fm);
+const flt2=mk("filter",{id:"gl2",x:"-30%",y:"-30%",width:"160%",height:"160%"},defs);
+mk("feGaussianBlur",{stdDeviation:"7",result:"b"},flt2);const fm2=mk("feMerge",{},flt2);mk("feMergeNode",{in:"b"},fm2);mk("feMergeNode",{in:"SourceGraphic"},fm2);
+
+const clip=mk("clipPath",{id:"cl"},defs);mk("rect",{x:0,y:0,width:PW,height:PH},clip);
+
 const G=mk("g",{transform:`translate(${ML},${MT})`},svg);
 
-// ── Phase bands (interactive) ────────────────────────────────────────────────
-const phaseBands={};
-PHASES.forEach((p,i)=>{
+// ── Phase bands ──────────────────────────────────────────────────────────────
+const pBands={};
+PHASES.forEach(p=>{
   const x=xS(p.from),w=xS(p.to)-xS(p.from);
-  const bg=mk("rect",{x,y:0,width:w,height:PH,fill:"rgba(255,255,255,0)",stroke:"rgba(255,255,255,0.05)","stroke-width":.6,rx:1,"data-phase":p.label},G);
-  bg.style.cursor="pointer";
-  phaseBands[p.label]={rect:bg,x,w,color:p.color};
-  mk("line",{x1:x,y1:0,x2:x,y2:PH,stroke:"rgba(255,255,255,.06)","stroke-width":.8,"stroke-dasharray":"3 4"},G);
+  const r=mk("rect",{x,y:0,width:w,height:PH,fill:"transparent",stroke:"rgba(255,255,255,.04)","stroke-width":.6,"data-ph":p.label},G);
+  r.style.cursor="pointer";
+  mk("line",{x1:x,y1:0,x2:x,y2:PH,stroke:"rgba(255,255,255,.05)","stroke-width":.7,"stroke-dasharray":"2 4"},G);
   const tg=mk("g",{},G);
-  tx(p.label,{x:x+w/2,y:-12,fill:"rgba(255,255,255,.25)","font-size":"9","font-weight":"700","text-anchor":"middle","letter-spacing":".10em","text-transform":"uppercase"},tg).style.textTransform="uppercase";
-  tx(p.sub,{x:x+w/2,y:-3,fill:"rgba(255,255,255,.14)","font-size":"7","text-anchor":"middle"},tg);
-  phaseBands[p.label].labelG=tg;
+  tx(p.label,{x:x+w/2,y:-13,fill:"rgba(255,255,255,.2)","font-size":"8.5","font-weight":"700","text-anchor":"middle","letter-spacing":".09em"},tg).style.textTransform="uppercase";
+  tx(p.sub,{x:x+w/2,y:-4,fill:"rgba(255,255,255,.11)","font-size":"7","text-anchor":"middle"},tg);
+  pBands[p.label]={r,tg,x,w,c:p.c};
 });
 
-// ── Y-grid ────────────────────────────────────────────────────────────────────
+// ── Y grid ───────────────────────────────────────────────────────────────────
 [0,25,50,75,100].forEach(v=>{
   const y=yS(v);
-  mk("line",{x1:0,y1:y,x2:PW,y2:y,stroke:"rgba(255,255,255,.055)","stroke-width":v===50?1.2:.6,"stroke-dasharray":v===50?"5 4":"2 5"},G);
-  tx(v,{x:-7,y:y+3.5,fill:"rgba(255,255,255,.28)","font-size":"9","text-anchor":"end","font-weight":"500"},G);
+  mk("line",{x1:0,y1:y,x2:PW,y2:y,stroke:"rgba(255,255,255,.05)","stroke-width":v===50?1:.6,"stroke-dasharray":v===50?"4 4":"2 5"},G);
+  tx(v,{x:-6,y:y+3.5,fill:"rgba(255,255,255,.22)","font-size":"9","text-anchor":"end","font-weight":"600"},G);
 });
 
-// ── Area + line ────────────────────────────────────────────────────────────────
+// ── Area + line ──────────────────────────────────────────────────────────────
 const pts=DATA.map(d=>[xS(d.y),yS(d.p)]);
 const linePath=catmull(pts);
 const areaPath=linePath+` L${pts[pts.length-1][0]},${PH} L${pts[0][0]},${PH} Z`;
+const cg=mk("g",{clipPath:"url(#cl)"},G);
+const areaEl=mk("path",{d:areaPath,fill:"url(#aG)",opacity:"0"},cg);
+setTimeout(()=>{areaEl.style.transition="opacity .8s .4s";areaEl.style.opacity=".92";},50);
+mk("path",{d:linePath,fill:"none",stroke:"url(#lG)","stroke-width":"5.5","stroke-opacity":".18",filter:"url(#gl2)"},cg);
+const L=3800;
+const mainLine=mk("path",{d:linePath,fill:"none",stroke:"url(#lG)","stroke-width":"2.4","stroke-linecap":"round","stroke-linejoin":"round",filter:"url(#gl)","stroke-dasharray":L,"stroke-dashoffset":L},cg);
+mainLine.style.cssText=`animation:drawLine 2s cubic-bezier(.4,0,.2,1) .05s forwards;--l:${L}`;
 
-const cg=mk("g",{clipPath:"url(#clip)"},G);
-// area
-const areaSel=mk("path",{d:areaPath,fill:"url(#aG)","opacity":"0"},cg);
-areaSel.style.animation="fadeUp .9s .3s both";
-areaSel.style.animationFillMode="forwards";
-// glow line shadow
-mk("path",{d:linePath,fill:"none",stroke:"url(#lG)","stroke-width":"6","stroke-opacity":".2",filter:"url(#glow2)"},cg);
-// main line with draw animation
-const pathLen=3600; // approx length
-const mainLine=mk("path",{d:linePath,fill:"none",stroke:"url(#lG)","stroke-width":"2.6","stroke-linecap":"round","stroke-linejoin":"round",filter:"url(#glow)","stroke-dasharray":pathLen,"stroke-dashoffset":pathLen},cg);
-mainLine.style.animation=`draw 1.8s cubic-bezier(.4,0,.2,1) .1s forwards`;
-
-// ── X-axis ticks ───────────────────────────────────────────────────────────────
+// ── X ticks ──────────────────────────────────────────────────────────────────
 for(let y=1900;y<=2026;y+=10){
   const x=xS(y);
-  mk("line",{x1:x,y1:PH,x2:x,y2:PH+5,stroke:"rgba(255,255,255,.18)","stroke-width":"1"},G);
-  tx(y,{x,y:PH+16,fill:"rgba(255,255,255,.3)","font-size":"9","text-anchor":"middle","font-weight":"500"},G);
+  mk("line",{x1:x,y1:PH,x2:x,y2:PH+4,stroke:"rgba(255,255,255,.15)","stroke-width":"1"},G);
+  tx(y,{x,y:PH+14,fill:"rgba(255,255,255,.28)","font-size":"8.5","text-anchor":"middle","font-weight":"500"},G);
 }
 
-// "JETZT" marker
+// JETZT
 const nx=xS(2026);
-mk("line",{x1:nx,y1:-4,x2:nx,y2:PH,stroke:"#a8f0a0","stroke-width":"1.3","stroke-dasharray":"4 3","stroke-opacity":".5"},G);
-tx("JETZT",{x:nx,y:-16,fill:"#a8f0a0","font-size":"8.5","font-weight":"800","text-anchor":"middle","letter-spacing":".10em"},G);
+mk("line",{x1:nx,y1:-4,x2:nx,y2:PH,stroke:"#7effa0","stroke-width":"1.2","stroke-dasharray":"3 3","stroke-opacity":".45"},G);
+tx("JETZT",{x:nx,y:-15,fill:"#7effa0","font-size":"8","font-weight":"800","text-anchor":"middle","letter-spacing":".10em"},G);
 
-// Y-axis label
-const yl=tx("Relative Macht-Intensität (0–100)",{fill:"rgba(255,255,255,.18)","font-size":"8.5","text-anchor":"middle","letter-spacing":".12em"},G);
-yl.setAttribute("transform",`rotate(-90) translate(${-PH/2},${-40})`);
+// Y label
+const yl=tx("Machtindex (0–100)",{fill:"rgba(255,255,255,.15)","font-size":"8","text-anchor":"middle","letter-spacing":".12em"},G);
+yl.setAttribute("transform",`rotate(-90) translate(${-PH/2},${-38})`);
 yl.style.textTransform="uppercase";
 
-// ── Crosshair line ─────────────────────────────────────────────────────────────
-const xhLine=mk("line",{x1:0,y1:0,x2:0,y2:PH,stroke:"rgba(255,255,255,.18)","stroke-width":"1","stroke-dasharray":"4 4",opacity:0},G);
-const xhDot=mk("circle",{r:5,fill:"white",stroke:"rgba(255,255,255,.3)","stroke-width":"2",opacity:0,filter:"url(#glow)"},G);
-
-// ── Event markers ──────────────────────────────────────────────────────────────
-let pinnedEvent=null;
-const evTip=document.getElementById("ev-tip");
-
+// ── Event markers: thin vertical lines + tick at bottom ──────────────────────
+// No fat dots — just a hairline from curve down + small tick + year label
+const evLineGroup=mk("g",{opacity:"1"},G);
 EVENTS.forEach(ev=>{
   const x=xS(ev.year);
   const near=DATA.reduce((a,b)=>Math.abs(a.y-ev.year)<=Math.abs(b.y-ev.year)?a:b);
-  const y=yS(near.p);
-  const sz=ev.tier==="major"?5.5:ev.tier==="mid"?4:2.8;
-  const mg=mk("g",{transform:`translate(${x},${y})`,cursor:"pointer"},G);
-  // connector
-  mk("line",{y1:2,y2:PH-y+6,stroke:"rgba(255,255,255,.07)","stroke-width":".8","stroke-dasharray":"2 3"},mg);
-  // year label at bottom
-  const yrLbl=tx(ev.year,{y:PH-y+18,fill:"rgba(255,255,255,.28)","font-size":ev.tier==="major"?"8":"7.5","text-anchor":"middle","font-weight":"600"},mg);
-  // dot
-  const dot=mk("circle",{r:sz,fill:"rgba(255,255,255,.68)",stroke:"rgba(255,255,255,.22)","stroke-width":"1"},mg);
-  // pulse ring (hidden by default)
-  const pulse=mk("circle",{r:sz+8,fill:"rgba(255,255,255,.06)",opacity:0},mg);
+  const curveY=yS(near.p);
+  const isMajor=ev.tier==="M";
 
-  function showTooltip(){
-    document.getElementById("et-year").textContent=ev.year;
-    const badge=document.getElementById("et-badge");
-    const isM=ev.tier==="major";
-    badge.textContent=isM?"Schlüsselereignis":ev.tier==="mid"?"Wendepunkt":"Ereignis";
-    badge.style.background=isM?"rgba(255,120,50,.25)":"rgba(255,255,255,.07)";
-    badge.style.color=isM?"#ff9060":"rgba(255,255,255,.5)";
-    document.getElementById("et-title").textContent=ev.label;
-    document.getElementById("et-body").textContent=ev.detail;
-    evTip.classList.add("show");
-  }
+  // hairline from curve top down to x-axis bottom area
+  const line=mk("line",{
+    x1:x,y1:curveY+3,x2:x,y2:PH+6,
+    stroke:isMajor?"rgba(255,255,255,.22)":"rgba(255,255,255,.11)",
+    "stroke-width":isMajor?"1":".7",
+    "stroke-dasharray":isMajor?"none":"2 3",
+    "data-ev":ev.year
+  },evLineGroup);
 
-  mg.addEventListener("mouseenter",()=>{
-    if(pinnedEvent)return;
-    dot.setAttribute("fill","white");dot.setAttribute("stroke","#a8f0a0");dot.setAttribute("stroke-width","2");
-    pulse.setAttribute("opacity","1");yrLbl.setAttribute("fill","rgba(255,255,255,.8)");
-    showTooltip();
+  // small tick mark on curve
+  const tick=mk("line",{
+    x1:x-2,y1:curveY,x2:x+2,y2:curveY,
+    stroke:"rgba(255,255,255,.6)","stroke-width":"1.5","stroke-linecap":"round",
+    "data-ev":ev.year
+  },evLineGroup);
+
+  // year label below x-axis
+  const lbl=tx(ev.year,{
+    x,y:PH+24,
+    fill:isMajor?"rgba(255,255,255,.38)":"rgba(255,255,255,.18)",
+    "font-size":isMajor?"8":"7.5","text-anchor":"middle","font-weight":isMajor?"700":"500",
+    "data-ev":ev.year
+  },evLineGroup);
+
+  // hover hitbox (invisible wide rect)
+  const hit=mk("rect",{x:x-6,y:curveY-8,width:12,height:PH-curveY+24,fill:"transparent",cursor:"pointer","data-ev":ev.year},G);
+  hit.addEventListener("mouseenter",()=>{
+    line.setAttribute("stroke",isMajor?"rgba(255,255,255,.7)":"rgba(255,255,255,.5)");
+    tick.setAttribute("stroke","#fff");
+    lbl.setAttribute("fill","rgba(255,255,255,.8)");
+    showEvCard(ev.year);
   });
-  mg.addEventListener("mouseleave",()=>{
-    if(pinnedEvent)return;
-    dot.setAttribute("fill","rgba(255,255,255,.68)");dot.setAttribute("stroke","rgba(255,255,255,.22)");dot.setAttribute("stroke-width","1");
-    pulse.setAttribute("opacity","0");yrLbl.setAttribute("fill","rgba(255,255,255,.28)");
-    evTip.classList.remove("show");
+  hit.addEventListener("mouseleave",()=>{
+    if(pinned===ev.year)return;
+    line.setAttribute("stroke",isMajor?"rgba(255,255,255,.22)":"rgba(255,255,255,.11)");
+    tick.setAttribute("stroke","rgba(255,255,255,.6)");
+    lbl.setAttribute("fill",isMajor?"rgba(255,255,255,.38)":"rgba(255,255,255,.18)");
+    unpinCard(ev.year);
   });
-  mg.addEventListener("click",(e)=>{
+  hit.addEventListener("click",e=>{
     e.stopPropagation();
-    if(pinnedEvent===ev.year){pinnedEvent=null;evTip.classList.remove("show");dot.setAttribute("stroke","rgba(255,255,255,.22)");pulse.setAttribute("opacity","0");return;}
-    // unpin previous
-    pinnedEvent=ev.year;
-    dot.setAttribute("fill","white");dot.setAttribute("stroke","#a8f0a0");dot.setAttribute("stroke-width","2.5");
-    pulse.setAttribute("opacity","1");
-    showTooltip();
+    pinned===ev.year?setPin(null):setPin(ev.year);
   });
 });
 
-// Close pinned tooltip
-document.getElementById("ev-close").addEventListener("click",()=>{pinnedEvent=null;evTip.classList.remove("show");});
-document.addEventListener("keydown",e=>{if(e.key==="Escape"){pinnedEvent=null;evTip.classList.remove("show");}});
+// ── Crosshair ────────────────────────────────────────────────────────────────
+const xhLine=mk("line",{x1:0,y1:0,x2:0,y2:PH,stroke:"rgba(255,255,255,.14)","stroke-width":"1","stroke-dasharray":"3 4",opacity:0},G);
+const xhDot=mk("circle",{r:3.5,fill:"white",opacity:0,filter:"url(#gl)"},G);
 
-// ── Mouse tracking (crosshair + readout bar) ───────────────────────────────────
-const xhTip=document.getElementById("xhair-tip");
-const chartScroll=document.querySelector(".chart-scroll");
+const xhEl=document.getElementById("xh");
+svg.addEventListener("mousemove",e=>{
+  const r=svg.getBoundingClientRect();
+  const sx=((e.clientX-r.left)/r.width)*VW-ML;
+  if(sx<0||sx>PW){xhLine.setAttribute("opacity",0);xhDot.setAttribute("opacity",0);xhEl.style.opacity=0;return;}
+  const yr=Math.round(Y0+(sx/PW)*(Y1-Y0));
+  const pw=powerAt(yr);
+  const ph=phaseAt(yr);
+  xhLine.setAttribute("x1",sx);xhLine.setAttribute("x2",sx);xhLine.setAttribute("opacity",1);
+  xhDot.setAttribute("cx",sx);xhDot.setAttribute("cy",yS(pw));xhDot.setAttribute("opacity",1);
 
-svg.addEventListener("mousemove",(e)=>{
-  const rect=svg.getBoundingClientRect();
-  const svgX=((e.clientX-rect.left)/rect.width)*VW;
-  const svgY=((e.clientY-rect.top)/rect.height)*VH;
-  const chartX=svgX-ML;
-  if(chartX<0||chartX>PW){xhLine.setAttribute("opacity",0);xhDot.setAttribute("opacity",0);xhTip.style.opacity=0;return;}
-  const year=Math.round(YMIN+(chartX/PW)*(YMAX-YMIN));
-  const power=powerAt(year);
-  const phase=phaseAt(year);
-  const dotY=yS(power);
+  document.getElementById("xh-yr").textContent=yr;
+  document.getElementById("xh-info").textContent=`Index: ${Math.round(pw)}  ·  ${ph.label}`;
+  let tx2=e.clientX+14,ty=e.clientY-36;
+  if(tx2+180>window.innerWidth)tx2=e.clientX-194;
+  xhEl.style.left=tx2+"px";xhEl.style.top=ty+"px";xhEl.style.opacity=1;
 
-  // crosshair line + dot
-  xhLine.setAttribute("x1",chartX);xhLine.setAttribute("x2",chartX);xhLine.setAttribute("opacity",1);
-  xhDot.setAttribute("cx",chartX);xhDot.setAttribute("cy",dotY);xhDot.setAttribute("opacity",1);
-
-  // crosshair tooltip (follows cursor)
-  document.getElementById("xh-year").textContent=year;
-  document.getElementById("xh-pow").textContent=`Machtindex: ${Math.round(power)} · ${phase.label}`;
-  xhTip.style.opacity=1;
-  let tipX=e.clientX+16,tipY=e.clientY;
-  if(tipX+220>window.innerWidth)tipX=e.clientX-220;
-  xhTip.style.left=tipX+"px";
-  xhTip.style.top=tipY+"px";
-
-  // readout bar
-  document.getElementById("rd-year").textContent=year;
-  document.getElementById("rd-pow-val").textContent=Math.round(power);
-  const fill=document.getElementById("rd-fill");
-  fill.style.width=power+"%";
-  fill.style.background=phase.color;
-  document.getElementById("rd-phase").textContent=phase.label;
-  document.getElementById("rd-phase").style.color=phase.color;
+  document.getElementById("rd-yr").textContent=yr;
+  document.getElementById("rd-pownum").textContent=`Index ${Math.round(pw)}`;
+  document.getElementById("rd-fill").style.width=pw+"%";
+  document.getElementById("rd-fill").style.background=ph.c;
+  const pn=document.getElementById("rd-phase");pn.textContent=ph.label;pn.style.color=ph.c;
 });
-
 svg.addEventListener("mouseleave",()=>{
-  xhLine.setAttribute("opacity",0);xhDot.setAttribute("opacity",0);xhTip.style.opacity=0;
-  document.getElementById("rd-year").textContent="—";
-  document.getElementById("rd-pow-val").textContent="—";
+  xhLine.setAttribute("opacity",0);xhDot.setAttribute("opacity",0);xhEl.style.opacity=0;
+  document.getElementById("rd-yr").textContent="—";
+  document.getElementById("rd-pownum").textContent="";
   document.getElementById("rd-fill").style.width="0%";
-  document.getElementById("rd-phase").textContent="Bewege die Maus über den Chart";
-  document.getElementById("rd-phase").style.color="var(--muted)";
+  const pn=document.getElementById("rd-phase");pn.textContent="Maus über Chart bewegen";pn.style.color="";
 });
 
-// ── Phase chip + card interactivity ────────────────────────────────────────────
-function setActivePhase(label){
-  Object.entries(phaseBands).forEach(([name,band])=>{
-    const active=name===label;
-    band.rect.setAttribute("fill",active?band.color+"1a":"rgba(255,255,255,0)");
-    band.rect.setAttribute("stroke",active?band.color+"55":"rgba(255,255,255,.05)");
-    const labels=band.labelG.querySelectorAll("text");
-    labels[0]&&labels[0].setAttribute("fill",active?band.color:"rgba(255,255,255,.25)");
-    labels[1]&&labels[1].setAttribute("fill",active?band.color+"99":"rgba(255,255,255,.14)");
-  });
-  document.querySelectorAll(".chip").forEach(c=>{
-    c.classList.toggle("active",c.dataset.phase===label);
-    if(c.dataset.phase===label){c.style.borderColor=PHASES.find(p=>p.label===label)?.color||"";c.style.color=PHASES.find(p=>p.label===label)?.color||"";}
-    else{c.style.borderColor="";c.style.color="";}
-  });
-  document.querySelectorAll(".pc").forEach(c=>{
-    c.classList.toggle("active",c.dataset.phase===label);
-  });
+// ── Event cards ───────────────────────────────────────────────────────────────
+let pinned=null;
+const evCards={};
+const evGrid=document.getElementById("evgrid");
+EVENTS.forEach(ev=>{
+  const card=document.createElement("div");
+  card.className="ev-card";card.dataset.ev=ev.year;
+  const bdgColor=ev.tier==="M"?"rgba(255,120,50,.18)":"rgba(255,255,255,.05)";
+  const bdgTxt=ev.tier==="M"?"Schlüsselereignis":"Wendepunkt";
+  const bdgTxtColor=ev.tier==="M"?"#ff9060":"rgba(255,255,255,.4)";
+  card.innerHTML=`<div class="ev-badge" style="background:${bdgColor};color:${bdgTxtColor}">${bdgTxt}</div><div class="ev-yr">${ev.year}</div><div class="ev-name">${ev.label}</div><div class="ev-body">${ev.detail}</div>`;
+  card.addEventListener("click",()=>pinned===ev.year?setPin(null):setPin(ev.year));
+  evGrid.appendChild(card);
+  evCards[ev.year]=card;
+});
+
+function showEvCard(yr){evCards[yr]?.classList.add("pin")}
+function unpinCard(yr){if(pinned!==yr)evCards[yr]?.classList.remove("pin")}
+function setPin(yr){
+  if(pinned&&pinned!==yr)evCards[pinned]?.classList.remove("pin");
+  pinned=yr;
+  if(yr){evCards[yr]?.classList.add("pin");evCards[yr]?.scrollIntoView({behavior:"smooth",block:"nearest"});}
 }
 
-// Build chips
+// ── Phase chips + cards ───────────────────────────────────────────────────────
+function setPhase(label){
+  Object.entries(pBands).forEach(([n,b])=>{
+    const on=n===label;
+    b.r.setAttribute("fill",on?b.c+"18":"transparent");
+    b.r.setAttribute("stroke",on?b.c+"44":"rgba(255,255,255,.04)");
+    const txts=b.tg.querySelectorAll("text");
+    txts[0]?.setAttribute("fill",on?b.c:"rgba(255,255,255,.2)");
+    txts[1]?.setAttribute("fill",on?b.c+"88":"rgba(255,255,255,.11)");
+  });
+  document.querySelectorAll(".chip").forEach(c=>{
+    const on=c.dataset.ph===label;
+    c.classList.toggle("on",on);
+    c.style.borderColor=on?(PHASES.find(p=>p.label===label)?.c||""):"";
+    c.style.color=on?(PHASES.find(p=>p.label===label)?.c||""):"";
+  });
+  document.querySelectorAll(".pc").forEach(c=>c.classList.toggle("on",c.dataset.ph===label));
+}
+
 const chipsEl=document.getElementById("chips");
 PHASES.forEach(p=>{
-  const btn=document.createElement("button");
-  btn.className="chip";btn.textContent=p.label;btn.dataset.phase=p.label;
-  btn.addEventListener("mouseenter",()=>setActivePhase(p.label));
-  btn.addEventListener("mouseleave",()=>setActivePhase(null));
-  btn.addEventListener("click",()=>setActivePhase(btn.classList.contains("active")?null:p.label));
-  chipsEl.appendChild(btn);
+  const b=document.createElement("button");
+  b.className="chip";b.textContent=p.label;b.dataset.ph=p.label;
+  b.addEventListener("mouseenter",()=>setPhase(p.label));
+  b.addEventListener("mouseleave",()=>setPhase(null));
+  b.addEventListener("click",()=>b.classList.contains("on")?setPhase(null):setPhase(p.label));
+  chipsEl.appendChild(b);
 });
 
-// Build phase cards
-const pcardsEl=document.getElementById("pcards");
+const pcards=document.getElementById("pcards");
 PHASES.forEach(p=>{
-  const card=document.createElement("div");
-  card.className="pc";card.dataset.phase=p.label;
-  card.innerHTML=`<div class="pc-yr" style="color:${p.color}">${p.from}–${p.to}</div><div class="pc-name">${p.label}</div><div class="pc-sub">${p.sub}</div>`;
-  card.addEventListener("mouseenter",()=>setActivePhase(p.label));
-  card.addEventListener("mouseleave",()=>setActivePhase(null));
-  pcardsEl.appendChild(card);
+  const c=document.createElement("div");
+  c.className="pc";c.dataset.ph=p.label;
+  c.innerHTML=`<div class="pc-yr" style="color:${p.c}">${p.from}–${p.to}</div><div class="pc-name">${p.label}</div><div class="pc-sub">${p.sub}</div>`;
+  c.addEventListener("mouseenter",()=>setPhase(p.label));
+  c.addEventListener("mouseleave",()=>setPhase(null));
+  c.addEventListener("click",()=>c.classList.contains("on")?setPhase(null):setPhase(p.label));
+  pcards.appendChild(c);
 });
 
-// Band hover
-Object.entries(phaseBands).forEach(([name,band])=>{
-  band.rect.addEventListener("mouseenter",()=>setActivePhase(name));
-  band.rect.addEventListener("mouseleave",()=>setActivePhase(null));
+// Phase band hover
+Object.entries(pBands).forEach(([n,b])=>{
+  b.r.addEventListener("mouseenter",()=>setPhase(n));
+  b.r.addEventListener("mouseleave",()=>setPhase(null));
 });
 
-// ── CSS for draw animation ─────────────────────────────────────────────────────
-const style=document.createElement("style");
-style.textContent=`
-@keyframes draw{from{stroke-dashoffset:${pathLen}}to{stroke-dashoffset:0}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:.95;transform:none}}
-`;
-document.head.appendChild(style);
+// ESC
+document.addEventListener("keydown",e=>{if(e.key==="Escape")setPin(null)});
+
+// draw animation style
+const st=document.createElement("style");
+st.textContent=`@keyframes drawLine{from{stroke-dashoffset:${L}}to{stroke-dashoffset:0}}`;
+document.head.appendChild(st);
 </script>
 </body>
 </html>
