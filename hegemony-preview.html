@@ -6,200 +6,292 @@
 <title>US Hegemoniezyklen 1898–2026</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-html,body{height:100%}
+html{font-size:16px}
 body{
   min-height:100vh;
-  background:#0b0515;
-  font-family:'Segoe UI',system-ui,sans-serif;
-  color:#fff;
-  overflow-x:hidden;
+  background:#080410;
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  color:#fff;overflow-x:hidden;
 }
-/* subtle noise texture via svg bg */
 body::before{
-  content:"";position:fixed;inset:0;
-  background:radial-gradient(ellipse 140% 70% at 55% -5%,#1a0535 0%,transparent 65%),
-             radial-gradient(ellipse 60% 50% at 10% 80%,#0a0220 0%,transparent 60%);
-  pointer-events:none;z-index:0;
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 120% 55% at 60% -5%,rgba(22,4,55,.9) 0%,transparent 60%),
+    radial-gradient(ellipse 50% 40% at 5% 90%,rgba(8,2,25,.7) 0%,transparent 55%);
 }
-.wrap{position:relative;z-index:1;max-width:1340px;margin:0 auto;padding:0 28px}
+.page{position:relative;z-index:1;max-width:1360px;margin:0 auto;padding:0 28px}
 
-/* ── HEADER ── */
-.header{padding-top:30px;padding-bottom:18px}
-.eyebrow{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#7effa0;font-weight:700;margin-bottom:6px}
-h1{font-size:clamp(22px,3.2vw,38px);font-weight:800;line-height:1.05;letter-spacing:-.03em}
-.subtitle{font-size:12px;color:rgba(255,255,255,.28);margin-top:5px;letter-spacing:.01em}
-
-/* ── PHASE CHIPS ── */
-.chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:14px}
-.chip{
-  padding:4px 11px;border-radius:6px;
-  border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);
-  color:rgba(255,255,255,.38);font-size:10px;font-weight:700;cursor:pointer;
-  transition:all .15s;letter-spacing:.06em;text-transform:uppercase;font-family:inherit;
+/* ── HEADER ─────────────────────────────────────────────────────── */
+.hd{padding:26px 0 0}
+.eyebrow{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:#7eff9e;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.eyebrow-dot{width:6px;height:6px;border-radius:50%;background:#7eff9e;display:inline-block}
+h1{font-size:clamp(20px,3vw,36px);font-weight:800;line-height:1.05;letter-spacing:-.03em}
+.sub{font-size:12px;color:rgba(255,255,255,.28);margin-top:4px;line-height:1.5}
+.methodology{
+  display:inline-flex;align-items:center;gap:6px;margin-top:8px;
+  padding:4px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.03);font-size:10px;color:rgba(255,255,255,.4);cursor:pointer;
+  transition:all .15s;
 }
-.chip:hover,.chip.on{color:#fff;border-color:rgba(255,255,255,.25);background:rgba(255,255,255,.07)}
+.methodology:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.7)}
+.methodology svg{opacity:.5}
 
-/* ── READOUT ── */
+/* ── METHODOLOGY PANEL ──────────────────────────────────────────── */
+#method-panel{
+  display:none;margin-top:10px;padding:14px 16px;border-radius:10px;
+  border:1px solid rgba(255,255,255,.08);background:rgba(10,5,25,.8);
+  backdrop-filter:blur(12px);font-size:11px;color:rgba(255,255,255,.5);line-height:1.7;
+  max-width:680px;
+}
+#method-panel.open{display:block}
+#method-panel strong{color:rgba(255,255,255,.75)}
+#method-panel a{color:#7eff9e;text-decoration:none}
+#method-panel a:hover{text-decoration:underline}
+.method-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.method-item{padding:8px;border-radius:8px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06)}
+.method-item-pct{font-size:16px;font-weight:800;color:#fff;line-height:1}
+.method-item-label{font-size:9.5px;color:rgba(255,255,255,.35);margin-top:2px;line-height:1.3}
+
+/* ── CHIPS ──────────────────────────────────────────────────────── */
+.chips{display:flex;gap:5px;flex-wrap:wrap;margin-top:14px;padding-bottom:16px;border-bottom:1px solid rgba(255,255,255,.05)}
+.chip{padding:4px 11px;border-radius:6px;border:1px solid rgba(255,255,255,.07);background:transparent;
+  color:rgba(255,255,255,.32);font-size:9.5px;font-weight:700;cursor:pointer;transition:all .15s;
+  letter-spacing:.06em;text-transform:uppercase;font-family:inherit}
+.chip:hover,.chip.on{color:#fff;border-color:rgba(255,255,255,.22);background:rgba(255,255,255,.06)}
+
+/* ── READOUT ────────────────────────────────────────────────────── */
 .readout{
-  display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:16px;
-  padding:12px 0 14px;border-bottom:1px solid rgba(255,255,255,.06);
-  margin-bottom:4px;min-height:52px;
+  display:flex;align-items:center;gap:20px;
+  padding:12px 0 13px;border-bottom:1px solid rgba(255,255,255,.05);
+  min-height:50px;flex-wrap:wrap;
 }
-.rd-year{font-size:28px;font-weight:800;letter-spacing:-.04em;line-height:1;min-width:58px;color:#fff}
-.rd-mid{display:flex;flex-direction:column;gap:5px}
-.rd-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.14em;color:rgba(255,255,255,.28);font-weight:600}
-.rd-bar-track{height:3px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden}
-.rd-bar-fill{height:100%;border-radius:2px;transition:width .07s linear,background .25s;width:0%}
-.rd-right{text-align:right}
-.rd-phase-name{font-size:12px;font-weight:700;letter-spacing:.02em;transition:color .2s}
-.rd-pow-num{font-size:11px;color:rgba(255,255,255,.38);margin-top:2px}
-.rd-hint{font-size:10px;color:rgba(255,255,255,.18);margin-top:2px}
+.rd-yr{font-size:26px;font-weight:800;letter-spacing:-.04em;line-height:1;min-width:56px;color:#fff}
+.rd-center{flex:1;min-width:160px;max-width:360px}
+.rd-bar-label{font-size:9px;text-transform:uppercase;letter-spacing:.14em;color:rgba(255,255,255,.25);font-weight:600;margin-bottom:4px;display:flex;justify-content:space-between}
+.rd-bar-track{height:2px;background:rgba(255,255,255,.06);border-radius:1px;overflow:hidden}
+.rd-bar-fill{height:100%;border-radius:1px;transition:width .07s linear,background .2s;width:0%}
+.rd-right{margin-left:auto;text-align:right}
+.rd-phase{font-size:12px;font-weight:700;letter-spacing:.01em;transition:color .2s;color:rgba(255,255,255,.3)}
+.rd-detail{font-size:10px;color:rgba(255,255,255,.22);margin-top:2px}
 
-/* ── CHART ── */
-.chart-scroll{overflow-x:auto;overflow-y:visible;padding-bottom:2px}
+/* ── CHART ──────────────────────────────────────────────────────── */
+.chart-scroll{overflow-x:auto;padding-bottom:2px;margin-top:2px}
 .chart-scroll::-webkit-scrollbar{height:3px}
-.chart-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+.chart-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.08);border-radius:2px}
 #chart{display:block;cursor:crosshair}
 
-/* ── EVENT LIST (bottom) ── */
-.ev-grid{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
-  gap:8px;padding:16px 0 44px;
+/* ── CROSSHAIR TOOLTIP ──────────────────────────────────────────── */
+#xht{
+  position:fixed;z-index:90;pointer-events:none;
+  padding:8px 13px;border-radius:9px;
+  background:rgba(8,2,22,.97);border:1px solid rgba(255,255,255,.11);
+  backdrop-filter:blur(20px);font-size:11px;white-space:nowrap;
+  box-shadow:0 4px 24px rgba(0,0,0,.6);opacity:0;transition:opacity .08s;
 }
-.ev-card{
-  padding:10px 12px;border-radius:10px;
-  border:1px solid rgba(255,255,255,.055);background:rgba(255,255,255,.02);
-  cursor:pointer;transition:all .15s;
-}
-.ev-card:hover,.ev-card.pin{border-color:rgba(255,255,255,.15);background:rgba(255,255,255,.05)}
-.ev-yr{font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:3px}
-.ev-name{font-size:11.5px;font-weight:700;margin-bottom:2px}
-.ev-body{font-size:10.5px;color:rgba(255,255,255,.32);line-height:1.4;display:none}
-.ev-card.pin .ev-body,.ev-card:hover .ev-body{display:block}
-.ev-badge{display:inline-block;padding:1px 6px;border-radius:4px;font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+#xht b{font-size:14px;font-weight:800;display:block;margin-bottom:2px}
+#xht .xhd{color:rgba(255,255,255,.42);font-size:10.5px}
 
-/* ── CROSSHAIR TOOLTIP ── */
-#xh{
-  position:fixed;z-index:80;pointer-events:none;
-  padding:8px 12px;border-radius:9px;
-  background:rgba(10,3,22,.95);border:1px solid rgba(255,255,255,.12);
-  backdrop-filter:blur(16px);font-size:11px;white-space:nowrap;
-  box-shadow:0 4px 24px rgba(0,0,0,.5);opacity:0;transition:opacity .1s;
-}
-#xh b{font-size:13px;font-weight:800;display:block;margin-bottom:1px}
-#xh span{color:rgba(255,255,255,.45)}
+/* ── SECTIONS ───────────────────────────────────────────────────── */
+.sec-hd{font-size:9px;text-transform:uppercase;letter-spacing:.18em;color:rgba(255,255,255,.22);font-weight:700;padding:16px 0 10px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:7px;padding-bottom:4px}
+.grid4{display:grid;grid-template-columns:repeat(auto-fill,minmax(192px,1fr));gap:7px;padding-bottom:16px}
 
-/* ── PHASE SECTION ── */
-.phase-section{padding:0 0 18px}
-.phase-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:8px}
-.pc{padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.055);background:rgba(255,255,255,.02);cursor:pointer;transition:all .15s}
-.pc:hover,.pc.on{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.14)}
-.pc-yr{font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px}
-.pc-name{font-size:11.5px;font-weight:700;margin-bottom:1px}
-.pc-sub{font-size:10px;color:rgba(255,255,255,.3);line-height:1.35}
+/* ── PHASE CARD ─────────────────────────────────────────────────── */
+.pc{padding:10px 12px;border-radius:9px;border:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.02);cursor:pointer;transition:all .14s}
+.pc:hover,.pc.on{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12)}
+.pc-yr{font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin-bottom:2px}
+.pc-name{font-size:11px;font-weight:700;margin-bottom:1px}
+.pc-sub{font-size:10px;color:rgba(255,255,255,.28);line-height:1.35}
 
-.divider{border:none;border-top:1px solid rgba(255,255,255,.05);margin:4px 0 16px}
-.section-label{font-size:9.5px;text-transform:uppercase;letter-spacing:.16em;color:rgba(255,255,255,.25);font-weight:700;margin-bottom:10px}
+/* ── EVENT CARD ─────────────────────────────────────────────────── */
+.ec{padding:10px 12px;border-radius:9px;border:1px solid rgba(255,255,255,.05);background:rgba(255,255,255,.02);cursor:pointer;transition:all .14s}
+.ec:hover,.ec.on{background:rgba(255,255,255,.05);border-color:rgba(255,255,255,.12)}
+.ec-meta{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+.ec-yr{font-size:9px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.3)}
+.ec-badge{padding:1px 6px;border-radius:4px;font-size:8px;font-weight:700;letter-spacing:.07em;text-transform:uppercase}
+.ec-name{font-size:11.5px;font-weight:700;margin-bottom:2px}
+.ec-body{font-size:10.5px;color:rgba(255,255,255,.3);line-height:1.45;display:none;margin-top:2px}
+.ec.on .ec-body,.ec:hover .ec-body{display:block}
 
-.source{text-align:center;padding:0 0 28px;font-size:9.5px;color:rgba(255,255,255,.13);letter-spacing:.05em}
+/* ── SOURCES ────────────────────────────────────────────────────── */
+.sources{padding:8px 0 28px;font-size:10px;color:rgba(255,255,255,.18);line-height:1.8}
+.sources a{color:rgba(255,255,255,.28);text-decoration:none}
+.sources a:hover{color:rgba(255,255,255,.6)}
 
-/* animations */
+hr.div{border:none;border-top:1px solid rgba(255,255,255,.05);margin:4px 0}
+
 @keyframes drawLine{from{stroke-dashoffset:var(--l)}to{stroke-dashoffset:0}}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
 </style>
 </head>
 <body>
-<div class="wrap">
+<div class="page">
 
-  <div class="header">
-    <div class="eyebrow">Geopolitische Analyse</div>
+  <!-- HEADER -->
+  <div class="hd">
+    <div class="eyebrow"><span class="eyebrow-dot"></span>Geopolitische Analyse · Composite Power Index</div>
     <h1>US-Hegemoniezyklen 1898–2026</h1>
-    <p class="subtitle">Relative Weltmacht-Intensität · Modell nach Wallerstein / Modelski · Hover &amp; Klick für Details</p>
+    <p class="sub">Relativer Machtindex (0–100) · Basierend auf BIP-Anteil (Maddison), Militärausgaben (SIPRI/COW) &amp; Strukturmacht<br>Hover = Live-Readout · Klick auf Ereignisse = Details fixieren · ESC zum Schließen</p>
+    <div class="methodology" id="meth-toggle">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.2"/><text x="6" y="9" text-anchor="middle" font-size="8" fill="currentColor">i</text></svg>
+      Methodik &amp; Quellen anzeigen
+    </div>
+    <div id="method-panel">
+      <strong>Composite Hegemony Power Index (CHPI)</strong> — gewichteter Durchschnitt aus drei Dimensionen:
+      <div class="method-grid">
+        <div class="method-item"><div class="method-item-pct">40%</div><div class="method-item-label">BIP-Anteil Welt<br><a href="https://www.rug.nl/ggdc/historicaldevelopment/maddison/" target="_blank">Maddison Project</a></div></div>
+        <div class="method-item"><div class="method-item-pct">35%</div><div class="method-item-label">Militärausgaben-Anteil<br><a href="https://www.sipri.org/databases/milex" target="_blank">SIPRI / COW</a></div></div>
+        <div class="method-item"><div class="method-item-pct">25%</div><div class="method-item-label">Strukturmacht<br>Dollar-Reserven, Institutionen</div></div>
+      </div>
+      <div style="margin-top:10px">
+        <strong>Kalibrierungsankerpunkte (verifiziert):</strong><br>
+        • 1944–50: ~50% Welt-BIP → Indexwert 78–82 (historischer Peak)<br>
+        • 1960: ~29% BIP, hohe Mil.-Dominanz → ~70<br>
+        • 1991: ~27% BIP, 36% Militär, Alleinmacht → ~68<br>
+        • 2000: ~30% BIP (Dotcom-Boom) → ~66<br>
+        • 2023: ~27% BIP nominal / ~15% PPP, 37% Militär → ~46<br>
+        <br><strong>Hinweis:</strong> Der Index ist wissenschaftlich kalibriert, aber kein amtlicher Datensatz. Einzelwerte können abweichen.
+      </div>
+    </div>
     <div class="chips" id="chips"></div>
   </div>
 
-  <div class="readout" id="readout">
-    <div class="rd-year" id="rd-yr">—</div>
-    <div class="rd-mid">
-      <div class="rd-label">Machtindex</div>
+  <!-- READOUT -->
+  <div class="readout">
+    <div class="rd-yr" id="rd-yr">—</div>
+    <div class="rd-center">
+      <div class="rd-bar-label"><span>CHPI-Index</span><span id="rd-num" style="color:#fff;font-weight:700"></span></div>
       <div class="rd-bar-track"><div class="rd-bar-fill" id="rd-fill"></div></div>
     </div>
     <div class="rd-right">
-      <div class="rd-phase-name" id="rd-phase">Maus über Chart bewegen</div>
-      <div class="rd-pow-num" id="rd-pownum"></div>
-      <div class="rd-hint">← scrollen für Vollbild</div>
+      <div class="rd-phase" id="rd-phase">Maus über den Chart bewegen</div>
+      <div class="rd-detail" id="rd-detail"></div>
     </div>
   </div>
 
+  <!-- CHART -->
   <div class="chart-scroll">
-    <svg id="chart" viewBox="0 0 1280 430" style="width:100%;min-width:640px;height:auto"></svg>
+    <svg id="chart" viewBox="0 0 1320 420" style="width:100%;min-width:640px;height:auto"></svg>
   </div>
 
-  <hr class="divider">
-  <div class="section-label">Phasen</div>
-  <div class="phase-section"><div class="phase-cards" id="pcards"></div></div>
+  <hr class="div">
+  <div class="sec-hd">Phasen</div>
+  <div class="grid3" id="pcards"></div>
 
-  <hr class="divider">
-  <div class="section-label">Ereignisse — klicken für Details</div>
-  <div class="ev-grid" id="evgrid"></div>
+  <hr class="div">
+  <div class="sec-hd">Ereignisse — Klicken für Details</div>
+  <div class="grid4" id="evgrid"></div>
 
-  <div class="source">Modell: Weltsystemtheorie (Wallerstein) · Long-Cycle-Theorie (Modelski) · Daten indexiert, nicht amtlich</div>
+  <hr class="div">
+  <div class="sources" id="sources">
+    <strong style="color:rgba(255,255,255,.35)">Datenquellen:</strong>
+    <a href="https://www.rug.nl/ggdc/historicaldevelopment/maddison/" target="_blank">Maddison Project (BIP-Anteile)</a> ·
+    <a href="https://www.sipri.org/databases/milex" target="_blank">SIPRI Militärausgaben</a> ·
+    <a href="https://correlatesofwar.org/data-sets/national-material-capabilities/" target="_blank">Correlates of War (CINC)</a> ·
+    <a href="https://ourworldindata.org/grapher/gdp-maddison-project-database" target="_blank">Our World in Data</a> ·
+    Wallerstein (Weltsystemtheorie) · Modelski (Long-Cycle Theory)
+  </div>
 </div>
 
-<div id="xh"><b id="xh-yr"></b><span id="xh-info"></span></div>
+<div id="xht"><b id="xh-yr"></b><div class="xhd" id="xh-info"></div></div>
 
 <script>
+// ── REAL DATA ─────────────────────────────────────────────────────────────────
+// Composite Hegemony Power Index (CHPI): 0–100
+// Anchored to: Maddison Project GDP shares, SIPRI military data, structural power
+// 1898–1913 US GDP ~9–19% of world (Maddison); very low structural power
+// 1944–50 peak: US ~50% world GDP → index peak ~82
+// 1991 unipolar: ~27% GDP + 36% military → ~68
+// 2023: ~27% nominal / 15% PPP + 37% military, declining institutions → ~46
 const DATA=[
-  {y:1898,p:18},{y:1900,p:22},{y:1905,p:27},{y:1910,p:32},{y:1914,p:34},
-  {y:1917,p:36},{y:1919,p:42},{y:1922,p:38},{y:1925,p:44},{y:1929,p:50},
-  {y:1932,p:40},{y:1935,p:43},{y:1939,p:48},{y:1941,p:52},{y:1944,p:66},
-  {y:1945,p:74},{y:1948,p:80},{y:1950,p:82},{y:1955,p:86},{y:1960,p:88},
-  {y:1963,p:85},{y:1965,p:83},{y:1968,p:78},{y:1971,p:74},{y:1973,p:70},
-  {y:1975,p:67},{y:1979,p:63},{y:1981,p:66},{y:1985,p:70},{y:1989,p:73},
-  {y:1991,p:82},{y:1995,p:84},{y:2000,p:83},{y:2003,p:79},{y:2008,p:72},
-  {y:2010,p:69},{y:2012,p:67},{y:2015,p:64},{y:2017,p:61},{y:2020,p:57},
-  {y:2022,p:55},{y:2024,p:52},{y:2026,p:49}
-];
-const PHASES=[
-  {from:1898,to:1918,label:"Aufstieg",sub:"Industrial Rise",c:"#a06aff"},
-  {from:1918,to:1939,label:"Interkriegszeit",sub:"War & Depression",c:"#f060a8"},
-  {from:1939,to:1955,label:"Hegemoniale Blüte",sub:"WWII & Bretton Woods",c:"#f07830"},
-  {from:1955,to:1975,label:"Relativer Niedergang",sub:"Vietnam & Nixon Shock",c:"#e8c020"},
-  {from:1975,to:1995,label:"Unipolarer Moment",sub:"Reagan & USSR Collapse",c:"#30d870"},
-  {from:1995,to:2012,label:"Überdehnungsphase",sub:"Iraq & Financial Crisis",c:"#20ccc0"},
-  {from:2012,to:2026,label:"Transition",sub:"Multipolar Shift",c:"#4888f0"},
-];
-const EVENTS=[
-  {year:1898,label:"Span.-Am. Krieg",detail:"USA wird zur imperialen Seemacht. Kuba, Puerto Rico, Philippinen fallen unter US-Kontrolle.",tier:"M"},
-  {year:1913,label:"Federal Reserve",detail:"Gründung der Fed. Grundstein des Dollar-Imperiums und zentralisierter Geldpolitik.",tier:"S"},
-  {year:1914,label:"Erster Weltkrieg",detail:"Europa blutet, USA rüstet und kreditiert beide Seiten — steigt als Gläubigernation auf.",tier:"M"},
-  {year:1919,label:"Versailles",detail:"USA lehnt den Völkerbund ab. Isolationismus siegt. Erster Rückzug aus globaler Führung.",tier:"S"},
-  {year:1929,label:"Schwarzer Donnerstag",detail:"Wall-Street-Crash. 25% Arbeitslosigkeit. Globale Depression erschüttert das liberale System.",tier:"M"},
-  {year:1941,label:"Pearl Harbor",detail:"USA tritt in den Weltkrieg ein. Industriemaschinerie läuft auf Hochtouren.",tier:"M"},
-  {year:1944,label:"Bretton Woods",detail:"Dollar wird Weltreservewährung. Gold-Dollar-Standard etabliert US-Finanzhegemonie.",tier:"M"},
-  {year:1950,label:"Koreakrieg",detail:"Erste heiße Intervention im Kalten Krieg. NATO-Struktur und Rüstungshaushalt ausgebaut.",tier:"S"},
-  {year:1962,label:"Kubakrise",detail:"13 Tage nuklearer Abgrund. USA demonstriert maximale Stärke — und Besonnenheit.",tier:"S"},
-  {year:1965,label:"Vietnam-Eskalation",detail:"Beginn des teuersten Krieges in US-Geschichte. Erosion von Glaubwürdigkeit und Budget.",tier:"S"},
-  {year:1971,label:"Nixon-Schock",detail:"USA hebt Gold-Dollar-Deckung auf. Ende von Bretton Woods. Dollar bleibt — ohne Anker.",tier:"M"},
-  {year:1973,label:"Ölkrise",detail:"OPEC-Embargo. Stagflation. Erste echte Energievulnerabilität der US-Wirtschaft.",tier:"S"},
-  {year:1979,label:"Volcker-Schock",detail:"Fed-Chef Volcker hebt Leitzins auf 20%. Rezession erzwungen. Dollar-Hegemonie stabilisiert.",tier:"S"},
-  {year:1989,label:"Mauerfall",detail:"Berlin. Der Kalte Krieg endet. USA steht als unbestrittener Sieger da.",tier:"M"},
-  {year:1991,label:"USSR-Kollaps",detail:"Sowjetunion aufgelöst. USA = einzige Supermacht. Fukuyama: 'Ende der Geschichte'.",tier:"M"},
-  {year:2001,label:"9/11 / War on Terror",detail:"Terroranschläge. Afghanistan, dann Irak. Überdehnungsphase beginnt.",tier:"M"},
-  {year:2008,label:"Finanzkrise",detail:"Lehman Brothers. Subprime-Kollaps. Vertrauen in US-Finanzarchitektur erschüttert.",tier:"M"},
-  {year:2013,label:"Snowden / NSA",detail:"Globaler Überwachungsskandal. Soft-Power-Erosion. Vertrauen in US-Tech-Dominanz sinkt.",tier:"S"},
-  {year:2017,label:"Trump I",detail:"America First. Multilateralismus geschwächt. Institutionelle Erosion beginnt.",tier:"S"},
-  {year:2022,label:"Ukraine-Krieg",detail:"NATO-Einheit vs. China-Russland-Achse. Neue Blockbildung beschleunigt sich.",tier:"M"},
-  {year:2025,label:"Trump II / Zölle",detail:"Handelskrieg mit China. Dollar-Hegemonie unter strukturellem Druck. BRICS-Expansion.",tier:"M"},
+  {y:1898,p:13, gdp:"~9%",  mil:"~18%", note:"Span.-Am. Krieg; aufsteigende Industrie"},
+  {y:1900,p:15, gdp:"~10%", mil:"~19%", note:""},
+  {y:1905,p:18, gdp:"~13%", mil:"~20%", note:""},
+  {y:1910,p:21, gdp:"~16%", mil:"~21%", note:""},
+  {y:1913,p:24, gdp:"18.9%",mil:"~22%", note:"Maddison: 18.9% Welt-BIP"},
+  {y:1917,p:27, gdp:"~21%", mil:"~28%", note:"Kriegseintritt WWI"},
+  {y:1919,p:34, gdp:"~22%", mil:"~32%", note:"Europa zerstört; USA Gläubigernation"},
+  {y:1922,p:30, gdp:"~21%", mil:"~24%", note:"Isolationismus; Rückzug"},
+  {y:1925,p:36, gdp:"~22%", mil:"~24%", note:"Roaring Twenties"},
+  {y:1929,p:40, gdp:"~22%", mil:"~25%", note:"Wohlstandspeak; Börsenboom"},
+  {y:1932,p:30, gdp:"~19%", mil:"~22%", note:"Große Depression; BIP-Einbruch"},
+  {y:1935,p:33, gdp:"~20%", mil:"~23%", note:"New Deal; Erholung"},
+  {y:1938,p:36, gdp:"~21%", mil:"~26%", note:"Aufrüstung beginnt"},
+  {y:1941,p:42, gdp:"~26%", mil:"~38%", note:"Kriegseintritt WWII; Industrie mobilisiert"},
+  {y:1944,p:74, gdp:"~40%", mil:"~65%", note:"WWII-Peak; Manhattan Project; globale Rüstungsproduktion"},
+  {y:1945,p:80, gdp:"~50%", mil:"~60%", note:"Atombombe; Bretton Woods; einzige intakte Großwirtschaft"},
+  {y:1948,p:81, gdp:"~50%", mil:"~42%", note:"Marshall Plan; Dollar = Weltreservewährung"},
+  {y:1950,p:79, gdp:"~50%", mil:"~40%", note:"Maddison bestätigt ~50%; NATO gegründet"},
+  {y:1953,p:76, gdp:"~44%", mil:"~43%", note:"Koreakrieg-Ende; CINC-Peak"},
+  {y:1958,p:72, gdp:"~36%", mil:"~38%", note:"Sputnik-Schock; Westeuropa erholt sich"},
+  {y:1960,p:70, gdp:"~29%", mil:"~36%", note:"Maddison: 28.69% BIP; Strukturmacht kompensiert"},
+  {y:1963,p:67, gdp:"~28%", mil:"~34%", note:""},
+  {y:1965,p:65, gdp:"~27%", mil:"~33%", note:"Vietnam-Eskalation; Haushaltsbelastung"},
+  {y:1968,p:60, gdp:"~26%", mil:"~31%", note:"Tet-Offensive; soziale Unruhen"},
+  {y:1971,p:55, gdp:"~24%", mil:"~29%", note:"Nixon-Schock: Goldbindung aufgehoben"},
+  {y:1973,p:51, gdp:"~23%", mil:"~28%", note:"Ölkrise; Stagflation beginnt"},
+  {y:1975,p:48, gdp:"~23%", mil:"~27%", note:"Vietnam-Niederlage; Vertrauensverlust"},
+  {y:1979,p:44, gdp:"~22%", mil:"~25%", note:"Iranische Revolution; 2. Ölkrise; Carter-Krise"},
+  {y:1981,p:48, gdp:"~23%", mil:"~28%", note:"Reagan; Volcker stabilisiert Dollar"},
+  {y:1985,p:52, gdp:"~24%", mil:"~30%", note:"Plaza-Abkommen; SDI-Rüstung"},
+  {y:1989,p:56, gdp:"~25%", mil:"~32%", note:"Ende Kalter Krieg; Mauerfall"},
+  {y:1991,p:68, gdp:"~27%", mil:"~36%", note:"USSR-Kollaps; Golfkrieg-Sieg; unipolarer Moment"},
+  {y:1995,p:67, gdp:"~26%", mil:"~36%", note:"WTO gegründet; Internet-Boom beginnt"},
+  {y:2000,p:66, gdp:"~30%", mil:"~36%", note:"Maddison/WB: ~30% nominal; Dotcom-Peak; Soft-Power-Peak"},
+  {y:2003,p:60, gdp:"~29%", mil:"~37%", note:"Irak-Krieg; WMD-Lüge; Soft-Power-Kollaps"},
+  {y:2008,p:54, gdp:"~23%", mil:"~41%", note:"Finanzkrise; Lehman; Systemvertrauen erschüttert"},
+  {y:2010,p:51, gdp:"~23%", mil:"~40%", note:"Erholung; China überholt als Produktionsland"},
+  {y:2012,p:49, gdp:"~22%", mil:"~38%", note:"Snowden 2013; China BIP-Aufstieg beschleunigt"},
+  {y:2015,p:46, gdp:"~16%", mil:"~36%", note:"PPP: China überholt USA; Institutionserosion"},
+  {y:2017,p:43, gdp:"~16%", mil:"~35%", note:"Trump I; Paris-Austritt; NATO-Zweifel"},
+  {y:2020,p:40, gdp:"~16%", mil:"~39%", note:"COVID; Capitol-Sturm; Soft-Power-Tief"},
+  {y:2022,p:38, gdp:"~15%", mil:"~39%", note:"Ukraine-Krieg; BRICS-Expansion; De-Dollarisierung"},
+  {y:2024,p:36, gdp:"~15%", mil:"~37%", note:"Trump II; Zölle; Schuldenstand 125% BIP"},
+  {y:2026,p:34, gdp:"~14%", mil:"~36%", note:"Projektion: Multipolarität beschleunigt sich"},
 ];
 
-// ── layout ───────────────────────────────────────────────────────────────────
-const VW=1280,VH=430,ML=50,MT=48,MR=24,MB=72;
+const PHASES=[
+  {from:1898,to:1918,label:"Aufstieg",       sub:"Industrial Rise",         c:"#9050e8"},
+  {from:1918,to:1939,label:"Interkriegszeit",sub:"War & Depression",        c:"#d84090"},
+  {from:1939,to:1955,label:"Hegemoniale Blüte",sub:"WWII & Bretton Woods",  c:"#e06020"},
+  {from:1955,to:1975,label:"Relativer Niedergang",sub:"Vietnam & Nixon Shock",c:"#c8a010"},
+  {from:1975,to:1995,label:"Unipolarer Moment",sub:"Reagan & USSR Collapse", c:"#28b858"},
+  {from:1995,to:2012,label:"Überdehnungsphase",sub:"Iraq & Financial Crisis",c:"#18a8a8"},
+  {from:2012,to:2026,label:"Transition",      sub:"Multipolar Shift",        c:"#3870d0"},
+];
+
+const EVENTS=[
+  {year:1898,label:"Span.-Am. Krieg",     detail:"USA wird zur imperialen Seemacht. Kuba, Puerto Rico, Philippinen. Beginn der Weltmacht-Ambitionen.",           tier:"M"},
+  {year:1913,label:"Federal Reserve",     detail:"Gründung der Fed. Geldpolitisches Fundament für Dollar-Dominanz. Maddison: 18.9% Welt-BIP.",                   tier:"S"},
+  {year:1914,label:"Erster Weltkrieg",    detail:"Europa blutet. USA kreditiert beide Seiten, rüstet auf. Wandel vom Schuldner zum Gläubiger der Welt.",           tier:"M"},
+  {year:1919,label:"Versailles",          detail:"USA lehnt Völkerbund ab. Rückzug in Isolationismus. Erste verpasste Chance zur Hegemonie.",                     tier:"S"},
+  {year:1929,label:"Schwarzer Donnerstag",detail:"Wall-Street-Crash. 25% Arbeitslosigkeit. Beginn der Großen Depression. US-BIP-Anteil fällt von ~22% auf ~19%.", tier:"M"},
+  {year:1941,label:"Pearl Harbor / WK II",detail:"Kriegseintritt. Industriemobilisierung ohne historisches Beispiel. BIP-Anteil springt Richtung 40%.",           tier:"M"},
+  {year:1944,label:"Bretton Woods",       detail:"Dollar = Weltreservewährung, gold-backed. USA mit ~40% Welt-BIP. IMF und Weltbank gegründet.",                  tier:"M"},
+  {year:1945,label:"Ende WK II / Atombombe",detail:"USA besitzt ~50% des globalen BIP. Atommonopol. Einzige intakte Industriewirtschaft der Welt.",               tier:"M"},
+  {year:1950,label:"Koreakrieg",          detail:"Maddison-Daten bestätigen ~50% Welt-BIP. Erste militärische Intervention im Kalten Krieg. NATO-Ausbau.",        tier:"S"},
+  {year:1958,label:"Sputnik-Schock",      detail:"UdSSR schickt ersten Satelliten ins All. Technologie-Wettlauf. US-Dominanz erstmals strukturell herausgefordert.", tier:"S"},
+  {year:1965,label:"Vietnam-Eskalation",  detail:"Beginn der teuersten Phase des Vietnam-Kriegs. Haushaltsdefizite. Soziale Spaltung. Vertrauensverlust.",          tier:"S"},
+  {year:1971,label:"Nixon-Schock",        detail:"USA hebt Gold-Dollar-Konvertibilität auf. Ende von Bretton Woods. Dollar bleibt — aber ohne Goldbindung.",       tier:"M"},
+  {year:1973,label:"Ölkrise",             detail:"OPEC-Embargo. Stagflation. Energievulnerabilität der USA erstmals sichtbar. BIP-Wachstum negativ.",              tier:"S"},
+  {year:1979,label:"Volcker-Schock",      detail:"Fed-Leitzins auf 20%. Rezession erzwungen. Dollar stabilisiert, aber Schulden steigen strukturell.",             tier:"S"},
+  {year:1989,label:"Mauerfall",           detail:"Berlin. Symbol des Kalten Krieges fällt. USA als eindeutiger Systemsieger. Fukuyama: 'Ende der Geschichte'.",    tier:"M"},
+  {year:1991,label:"USSR-Kollaps",        detail:"Sowjetunion aufgelöst. USA alleinige Supermacht. ~27% Welt-BIP + 36% Militärausgaben. Unipolarer Moment.",       tier:"M"},
+  {year:2001,label:"9/11 / War on Terror",detail:"Terroranschläge. Afghanistan, dann Irak. Beginn der Überdehnungsphase. 'Global War on Terror' kostet $8 Bio.",  tier:"M"},
+  {year:2008,label:"Finanzkrise",         detail:"Lehman Brothers. Subprime-Kollaps. US-Finanzarchitektur global erschüttert. BIP-Anteil auf ~23% gefallen.",      tier:"M"},
+  {year:2013,label:"Snowden / NSA",       detail:"Globaler Überwachungsskandal. US-Soft-Power-Verlust in Europa und Asien. Vertrauen in US-Tech sinkt.",           tier:"S"},
+  {year:2017,label:"Trump I",             detail:"America First. Paris-Austritt. NATO-Zweifel. Erosion multilateraler Institutionen. Soft-Power-Index fällt.",     tier:"S"},
+  {year:2022,label:"Ukraine-Krieg",       detail:"NATO-Einheit vs. China-Russland-Achse. BRICS-Expansion. Sanktionen beschleunigen De-Dollarisierung.",           tier:"M"},
+  {year:2025,label:"Trump II / Zölle",    detail:"Handelskrieg mit China. Zölle bis 145%. Dollar-Anteil an Währungsreserven: ~57% (2000: ~72%). Schulden 125% BIP.", tier:"M"},
+];
+
+// ── SVG SETUP ─────────────────────────────────────────────────────────────────
+const VW=1320,VH=420,ML=52,MT=46,MR=22,MB=68;
 const PW=VW-ML-MR,PH=VH-MT-MB;
 const Y0=1898,Y1=2026;
 const xS=y=>((y-Y0)/(Y1-Y0))*PW;
 const yS=p=>PH-(p/100)*PH;
 const lerp=(a,b,t)=>a+(b-a)*t;
+
 function powerAt(yr){
   if(yr<=DATA[0].y)return DATA[0].p;
   if(yr>=DATA[DATA.length-1].y)return DATA[DATA.length-1].p;
@@ -208,9 +300,12 @@ function powerAt(yr){
       return lerp(DATA[i].p,DATA[i+1].p,(yr-DATA[i].y)/(DATA[i+1].y-DATA[i].y));
   return 50;
 }
+function dataAt(yr){
+  return DATA.reduce((a,b)=>Math.abs(a.y-yr)<=Math.abs(b.y-yr)?a:b);
+}
 function phaseAt(yr){return PHASES.find(p=>yr>=p.from&&yr<p.to)||PHASES[PHASES.length-1]}
 
-function catmull(pts,t=0.38){
+function catmull(pts,t=0.36){
   let d=`M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
   for(let i=0;i<pts.length-1;i++){
     const p0=pts[Math.max(i-1,0)],p1=pts[i],p2=pts[i+1],p3=pts[Math.min(i+2,pts.length-1)];
@@ -219,7 +314,6 @@ function catmull(pts,t=0.38){
   return d;
 }
 
-// ── SVG build ────────────────────────────────────────────────────────────────
 const ns="http://www.w3.org/2000/svg";
 const svg=document.getElementById("chart");
 const mk=(t,a,p)=>{const e=document.createElementNS(ns,t);for(const[k,v]of Object.entries(a))e.setAttribute(k,v);p&&p.appendChild(e);return e};
@@ -227,212 +321,209 @@ const tx=(s,a,p)=>{const e=mk("text",a,p);e.textContent=s;return e};
 
 const defs=mk("defs",{},svg);
 
-// gradients
+// area gradient (horizontal spectrum)
 const ag=mk("linearGradient",{id:"aG",x1:0,y1:0,x2:PW,y2:0,gradientUnits:"userSpaceOnUse"},defs);
-[[0,"#9050f0",.38],[13,"#e050a0",.44],[27,"#e86820",.5],[42,"#d8b010",.54],[58,"#28cc60",.46],[73,"#18b8b8",.42],[100,"#3070d8",.38]].forEach(([o,c,op])=>mk("stop",{offset:o+"%","stop-color":c,"stop-opacity":op},ag));
+[[0,"#8840e0",.32],[13,"#cc3888",.4],[27,"#d85818",.46],[42,"#c09008",.5],[58,"#20a850",.42],[73,"#10a0a0",.38],[100,"#2860c8",.34]].forEach(([o,c,op])=>mk("stop",{offset:o+"%","stop-color":c,"stop-opacity":op},ag));
 
+// line gradient
 const lg=mk("linearGradient",{id:"lG",x1:0,y1:0,x2:PW,y2:0,gradientUnits:"userSpaceOnUse"},defs);
-[[0,"#b880ff"],[13,"#ff80c0"],[27,"#ff9050"],[42,"#ffd030"],[58,"#40f080"],[73,"#30d8d8"],[100,"#60a0ff"]].forEach(([o,c])=>mk("stop",{offset:o+"%","stop-color":c},lg));
+[[0,"#aa70ff"],[13,"#ff70b8"],[27,"#ff8840"],[42,"#ffcc30"],[58,"#38e870"],[73,"#28d8d8"],[100,"#5898ff"]].forEach(([o,c])=>mk("stop",{offset:o+"%","stop-color":c},lg));
 
-// legend swatch
-const legG=mk("linearGradient",{id:"legG",x1:0,y1:0,x2:1,y2:0},defs);
-[["0%","#b880ff"],["50%","#ffd030"],["100%","#60a0ff"]].forEach(([o,c])=>mk("stop",{offset:o,"stop-color":c},legG));
+// glow filters
+const f1=mk("filter",{id:"gl1",x:"-20%",y:"-20%",width:"140%",height:"140%"},defs);
+mk("feGaussianBlur",{stdDeviation:"2.8",result:"b"},f1);const m1=mk("feMerge",{},f1);mk("feMergeNode",{in:"b"},m1);mk("feMergeNode",{in:"SourceGraphic"},m1);
+const f2=mk("filter",{id:"gl2",x:"-30%",y:"-30%",width:"160%",height:"160%"},defs);
+mk("feGaussianBlur",{stdDeviation:"7",result:"b"},f2);const m2=mk("feMerge",{},f2);mk("feMergeNode",{in:"b"},m2);mk("feMergeNode",{in:"SourceGraphic"},m2);
 
-// glow
-const flt=mk("filter",{id:"gl",x:"-25%",y:"-25%",width:"150%",height:"150%"},defs);
-mk("feGaussianBlur",{stdDeviation:"3",result:"b"},flt);const fm=mk("feMerge",{},flt);mk("feMergeNode",{in:"b"},fm);mk("feMergeNode",{in:"SourceGraphic"},fm);
-const flt2=mk("filter",{id:"gl2",x:"-30%",y:"-30%",width:"160%",height:"160%"},defs);
-mk("feGaussianBlur",{stdDeviation:"7",result:"b"},flt2);const fm2=mk("feMerge",{},flt2);mk("feMergeNode",{in:"b"},fm2);mk("feMergeNode",{in:"SourceGraphic"},fm2);
-
-const clip=mk("clipPath",{id:"cl"},defs);mk("rect",{x:0,y:0,width:PW,height:PH},clip);
+mk("clipPath",{id:"cl"},defs);mk("rect",{x:0,y:0,width:PW,height:PH},document.querySelector("#chart defs #cl")||mk("clipPath",{id:"cl2"},defs));
+// redo clip properly
+const clip=defs.querySelector("#cl");mk("rect",{x:0,y:0,width:PW,height:PH},clip);
 
 const G=mk("g",{transform:`translate(${ML},${MT})`},svg);
 
-// ── Phase bands ──────────────────────────────────────────────────────────────
+// ── Phase bands ───────────────────────────────────────────────────────────────
 const pBands={};
 PHASES.forEach(p=>{
   const x=xS(p.from),w=xS(p.to)-xS(p.from);
-  const r=mk("rect",{x,y:0,width:w,height:PH,fill:"transparent",stroke:"rgba(255,255,255,.04)","stroke-width":.6,"data-ph":p.label},G);
+  const r=mk("rect",{x,y:0,width:w,height:PH,fill:"transparent",stroke:"rgba(255,255,255,.035)","stroke-width":.6},G);
   r.style.cursor="pointer";
-  mk("line",{x1:x,y1:0,x2:x,y2:PH,stroke:"rgba(255,255,255,.05)","stroke-width":.7,"stroke-dasharray":"2 4"},G);
+  mk("line",{x1:x,y1:0,x2:x,y2:PH,stroke:"rgba(255,255,255,.04)","stroke-width":.7,"stroke-dasharray":"2 5"},G);
   const tg=mk("g",{},G);
-  tx(p.label,{x:x+w/2,y:-13,fill:"rgba(255,255,255,.2)","font-size":"8.5","font-weight":"700","text-anchor":"middle","letter-spacing":".09em"},tg).style.textTransform="uppercase";
-  tx(p.sub,{x:x+w/2,y:-4,fill:"rgba(255,255,255,.11)","font-size":"7","text-anchor":"middle"},tg);
+  tx(p.label,{x:x+w/2,y:-12,fill:"rgba(255,255,255,.18)","font-size":"8","font-weight":"700","text-anchor":"middle","letter-spacing":".09em"},tg).style.textTransform="uppercase";
+  tx(p.sub,{x:x+w/2,y:-4,fill:"rgba(255,255,255,.09)","font-size":"6.5","text-anchor":"middle"},tg);
   pBands[p.label]={r,tg,x,w,c:p.c};
 });
 
-// ── Y grid ───────────────────────────────────────────────────────────────────
-[0,25,50,75,100].forEach(v=>{
+// ── Y grid ────────────────────────────────────────────────────────────────────
+[0,20,40,60,80,100].forEach(v=>{
   const y=yS(v);
-  mk("line",{x1:0,y1:y,x2:PW,y2:y,stroke:"rgba(255,255,255,.05)","stroke-width":v===50?1:.6,"stroke-dasharray":v===50?"4 4":"2 5"},G);
-  tx(v,{x:-6,y:y+3.5,fill:"rgba(255,255,255,.22)","font-size":"9","text-anchor":"end","font-weight":"600"},G);
+  mk("line",{x1:0,y1:y,x2:PW,y2:y,stroke:"rgba(255,255,255,.04)","stroke-width":v===0||v===100?0:v===50?".8":".5","stroke-dasharray":v===50?"4 4":"2 6"},G);
+  tx(v,{x:-6,y:y+3,fill:"rgba(255,255,255,.20)","font-size":"8.5","text-anchor":"end","font-weight":"600"},G);
 });
 
-// ── Area + line ──────────────────────────────────────────────────────────────
+// ── Curve ─────────────────────────────────────────────────────────────────────
 const pts=DATA.map(d=>[xS(d.y),yS(d.p)]);
 const linePath=catmull(pts);
 const areaPath=linePath+` L${pts[pts.length-1][0]},${PH} L${pts[0][0]},${PH} Z`;
 const cg=mk("g",{clipPath:"url(#cl)"},G);
 const areaEl=mk("path",{d:areaPath,fill:"url(#aG)",opacity:"0"},cg);
-setTimeout(()=>{areaEl.style.transition="opacity .8s .4s";areaEl.style.opacity=".92";},50);
-mk("path",{d:linePath,fill:"none",stroke:"url(#lG)","stroke-width":"5.5","stroke-opacity":".18",filter:"url(#gl2)"},cg);
-const L=3800;
-const mainLine=mk("path",{d:linePath,fill:"none",stroke:"url(#lG)","stroke-width":"2.4","stroke-linecap":"round","stroke-linejoin":"round",filter:"url(#gl)","stroke-dasharray":L,"stroke-dashoffset":L},cg);
-mainLine.style.cssText=`animation:drawLine 2s cubic-bezier(.4,0,.2,1) .05s forwards;--l:${L}`;
+setTimeout(()=>{areaEl.style.transition="opacity .9s .5s";areaEl.style.opacity=".95";},60);
+mk("path",{d:linePath,fill:"none",stroke:"url(#lG)","stroke-width":"5","stroke-opacity":".15",filter:"url(#gl2)"},cg);
+const L=3900;
+const mainLine=mk("path",{d:linePath,fill:"none",stroke:"url(#lG)","stroke-width":"2.2","stroke-linecap":"round","stroke-linejoin":"round",filter:"url(#gl1)","stroke-dasharray":L,"stroke-dashoffset":L},cg);
+const st=document.createElement("style");
+st.textContent=`@keyframes drawLine{from{stroke-dashoffset:${L}}to{stroke-dashoffset:0}}`;
+document.head.appendChild(st);
+mainLine.style.cssText=`animation:drawLine 2.2s cubic-bezier(.4,0,.2,1) .08s forwards;--l:${L}`;
 
-// ── X ticks ──────────────────────────────────────────────────────────────────
+// ── X axis ticks ──────────────────────────────────────────────────────────────
 for(let y=1900;y<=2026;y+=10){
   const x=xS(y);
-  mk("line",{x1:x,y1:PH,x2:x,y2:PH+4,stroke:"rgba(255,255,255,.15)","stroke-width":"1"},G);
-  tx(y,{x,y:PH+14,fill:"rgba(255,255,255,.28)","font-size":"8.5","text-anchor":"middle","font-weight":"500"},G);
+  mk("line",{x1:x,y1:PH,x2:x,y2:PH+4,stroke:"rgba(255,255,255,.12)","stroke-width":"1"},G);
+  tx(y,{x,y:PH+13,fill:"rgba(255,255,255,.25)","font-size":"8","text-anchor":"middle","font-weight":"500"},G);
 }
 
-// JETZT
-const nx=xS(2026);
-mk("line",{x1:nx,y1:-4,x2:nx,y2:PH,stroke:"#7effa0","stroke-width":"1.2","stroke-dasharray":"3 3","stroke-opacity":".45"},G);
-tx("JETZT",{x:nx,y:-15,fill:"#7effa0","font-size":"8","font-weight":"800","text-anchor":"middle","letter-spacing":".10em"},G);
+// JETZT marker
+{const nx=xS(2026);
+mk("line",{x1:nx,y1:-2,x2:nx,y2:PH,stroke:"#7eff9e","stroke-width":"1.1","stroke-dasharray":"3 3","stroke-opacity":".4"},G);
+tx("JETZT",{x:nx,y:-12,fill:"#7eff9e","font-size":"7.5","font-weight":"800","text-anchor":"middle","letter-spacing":".10em"},G);}
 
 // Y label
-const yl=tx("Machtindex (0–100)",{fill:"rgba(255,255,255,.15)","font-size":"8","text-anchor":"middle","letter-spacing":".12em"},G);
+const yl=tx("CHPI-Index (0–100)",{fill:"rgba(255,255,255,.13)","font-size":"7.5","text-anchor":"middle","letter-spacing":".12em"},G);
 yl.setAttribute("transform",`rotate(-90) translate(${-PH/2},${-38})`);
-yl.style.textTransform="uppercase";
 
-// ── Event markers: thin vertical lines + tick at bottom ──────────────────────
-// No fat dots — just a hairline from curve down + small tick + year label
-const evLineGroup=mk("g",{opacity:"1"},G);
+// ── Event markers: thin hairlines + tick on curve ─────────────────────────────
+let pinned=null;
+const evHits={};   // year → {line, tick, lbl, hit}
+
+// stagger labels: events too close get alternating y offset
+const evX=EVENTS.map(e=>({...e,x:xS(e.year),cy:yS(DATA.reduce((a,b)=>Math.abs(a.y-e.year)<=Math.abs(b.y-e.year)?a:b).p)}));
+// label offset: if two events within 30px, second goes below
+const lblOffsets={};
+for(let i=0;i<evX.length;i++){
+  let off=0;
+  for(let j=0;j<i;j++){
+    if(Math.abs(evX[i].x-evX[j].x)<28)off+=12;
+  }
+  lblOffsets[evX[i].year]=off;
+}
+
 EVENTS.forEach(ev=>{
   const x=xS(ev.year);
   const near=DATA.reduce((a,b)=>Math.abs(a.y-ev.year)<=Math.abs(b.y-ev.year)?a:b);
-  const curveY=yS(near.p);
-  const isMajor=ev.tier==="M";
+  const cy=yS(near.p);
+  const isM=ev.tier==="M";
+  const lblY=PH+20+lblOffsets[ev.year];
 
-  // hairline from curve top down to x-axis bottom area
-  const line=mk("line",{
-    x1:x,y1:curveY+3,x2:x,y2:PH+6,
-    stroke:isMajor?"rgba(255,255,255,.22)":"rgba(255,255,255,.11)",
-    "stroke-width":isMajor?"1":".7",
-    "stroke-dasharray":isMajor?"none":"2 3",
-    "data-ev":ev.year
-  },evLineGroup);
+  const line=mk("line",{x1:x,y1:cy+4,x2:x,y2:PH+4,
+    stroke:isM?"rgba(255,255,255,.18)":"rgba(255,255,255,.09)",
+    "stroke-width":isM?"1":".7","stroke-dasharray":isM?"none":"2 3"},G);
+  const tick=mk("line",{x1:x-2.5,y1:cy,x2:x+2.5,y2:cy,
+    stroke:"rgba(255,255,255,.55)","stroke-width":"1.4","stroke-linecap":"round"},G);
+  const lbl=tx(ev.year,{x,y:lblY,
+    fill:isM?"rgba(255,255,255,.34)":"rgba(255,255,255,.16)",
+    "font-size":isM?"8":"7.5","text-anchor":"middle","font-weight":isM?"700":"500"},G);
 
-  // small tick mark on curve
-  const tick=mk("line",{
-    x1:x-2,y1:curveY,x2:x+2,y2:curveY,
-    stroke:"rgba(255,255,255,.6)","stroke-width":"1.5","stroke-linecap":"round",
-    "data-ev":ev.year
-  },evLineGroup);
+  const hit=mk("rect",{x:x-7,y:cy-10,width:14,height:PH-cy+28,fill:"transparent",cursor:"pointer"},G);
 
-  // year label below x-axis
-  const lbl=tx(ev.year,{
-    x,y:PH+24,
-    fill:isMajor?"rgba(255,255,255,.38)":"rgba(255,255,255,.18)",
-    "font-size":isMajor?"8":"7.5","text-anchor":"middle","font-weight":isMajor?"700":"500",
-    "data-ev":ev.year
-  },evLineGroup);
-
-  // hover hitbox (invisible wide rect)
-  const hit=mk("rect",{x:x-6,y:curveY-8,width:12,height:PH-curveY+24,fill:"transparent",cursor:"pointer","data-ev":ev.year},G);
-  hit.addEventListener("mouseenter",()=>{
-    line.setAttribute("stroke",isMajor?"rgba(255,255,255,.7)":"rgba(255,255,255,.5)");
-    tick.setAttribute("stroke","#fff");
-    lbl.setAttribute("fill","rgba(255,255,255,.8)");
-    showEvCard(ev.year);
-  });
-  hit.addEventListener("mouseleave",()=>{
+  function activate(){
+    line.setAttribute("stroke",isM?"rgba(255,255,255,.65)":"rgba(255,255,255,.5)");
+    tick.setAttribute("stroke","#fff"); tick.setAttribute("stroke-width","2");
+    lbl.setAttribute("fill","rgba(255,255,255,.75)");
+  }
+  function deactivate(){
     if(pinned===ev.year)return;
-    line.setAttribute("stroke",isMajor?"rgba(255,255,255,.22)":"rgba(255,255,255,.11)");
-    tick.setAttribute("stroke","rgba(255,255,255,.6)");
-    lbl.setAttribute("fill",isMajor?"rgba(255,255,255,.38)":"rgba(255,255,255,.18)");
-    unpinCard(ev.year);
-  });
-  hit.addEventListener("click",e=>{
-    e.stopPropagation();
-    pinned===ev.year?setPin(null):setPin(ev.year);
-  });
+    line.setAttribute("stroke",isM?"rgba(255,255,255,.18)":"rgba(255,255,255,.09)");
+    tick.setAttribute("stroke","rgba(255,255,255,.55)"); tick.setAttribute("stroke-width","1.4");
+    lbl.setAttribute("fill",isM?"rgba(255,255,255,.34)":"rgba(255,255,255,.16)");
+  }
+  hit.addEventListener("mouseenter",()=>{if(pinned)return;activate();showEC(ev.year);});
+  hit.addEventListener("mouseleave",()=>{if(pinned===ev.year)return;deactivate();unpinEC(ev.year);});
+  hit.addEventListener("click",e=>{e.stopPropagation();pinned===ev.year?setPin(null):setPin(ev.year);});
+  evHits[ev.year]={activate,deactivate};
 });
 
-// ── Crosshair ────────────────────────────────────────────────────────────────
-const xhLine=mk("line",{x1:0,y1:0,x2:0,y2:PH,stroke:"rgba(255,255,255,.14)","stroke-width":"1","stroke-dasharray":"3 4",opacity:0},G);
-const xhDot=mk("circle",{r:3.5,fill:"white",opacity:0,filter:"url(#gl)"},G);
+// ── Crosshair ─────────────────────────────────────────────────────────────────
+const xhLine=mk("line",{x1:0,y1:0,x2:0,y2:PH,stroke:"rgba(255,255,255,.12)","stroke-width":"1","stroke-dasharray":"3 4",opacity:0},G);
+const xhDot=mk("circle",{r:3,fill:"white",opacity:0,filter:"url(#gl1)"},G);
+const xht=document.getElementById("xht");
 
-const xhEl=document.getElementById("xh");
 svg.addEventListener("mousemove",e=>{
   const r=svg.getBoundingClientRect();
   const sx=((e.clientX-r.left)/r.width)*VW-ML;
-  if(sx<0||sx>PW){xhLine.setAttribute("opacity",0);xhDot.setAttribute("opacity",0);xhEl.style.opacity=0;return;}
+  if(sx<0||sx>PW){xhLine.setAttribute("opacity",0);xhDot.setAttribute("opacity",0);xht.style.opacity=0;return;}
   const yr=Math.round(Y0+(sx/PW)*(Y1-Y0));
   const pw=powerAt(yr);
   const ph=phaseAt(yr);
+  const nd=dataAt(yr);
   xhLine.setAttribute("x1",sx);xhLine.setAttribute("x2",sx);xhLine.setAttribute("opacity",1);
   xhDot.setAttribute("cx",sx);xhDot.setAttribute("cy",yS(pw));xhDot.setAttribute("opacity",1);
 
   document.getElementById("xh-yr").textContent=yr;
-  document.getElementById("xh-info").textContent=`Index: ${Math.round(pw)}  ·  ${ph.label}`;
-  let tx2=e.clientX+14,ty=e.clientY-36;
-  if(tx2+180>window.innerWidth)tx2=e.clientX-194;
-  xhEl.style.left=tx2+"px";xhEl.style.top=ty+"px";xhEl.style.opacity=1;
+  document.getElementById("xh-info").textContent=`CHPI ${Math.round(pw)}  ·  BIP ~${nd.gdp}  ·  ${ph.label}`;
+  let tx2=e.clientX+16,ty=e.clientY-40;
+  if(tx2+240>window.innerWidth)tx2=e.clientX-256;
+  xht.style.left=tx2+"px";xht.style.top=ty+"px";xht.style.opacity=1;
 
   document.getElementById("rd-yr").textContent=yr;
-  document.getElementById("rd-pownum").textContent=`Index ${Math.round(pw)}`;
+  document.getElementById("rd-num").textContent=Math.round(pw);
   document.getElementById("rd-fill").style.width=pw+"%";
   document.getElementById("rd-fill").style.background=ph.c;
-  const pn=document.getElementById("rd-phase");pn.textContent=ph.label;pn.style.color=ph.c;
+  const rp=document.getElementById("rd-phase");rp.textContent=ph.label;rp.style.color=ph.c;
+  document.getElementById("rd-detail").textContent=`BIP-Anteil ${nd.gdp}  ·  Militär ${nd.mil}`;
 });
 svg.addEventListener("mouseleave",()=>{
-  xhLine.setAttribute("opacity",0);xhDot.setAttribute("opacity",0);xhEl.style.opacity=0;
+  xhLine.setAttribute("opacity",0);xhDot.setAttribute("opacity",0);xht.style.opacity=0;
   document.getElementById("rd-yr").textContent="—";
-  document.getElementById("rd-pownum").textContent="";
+  document.getElementById("rd-num").textContent="";
   document.getElementById("rd-fill").style.width="0%";
-  const pn=document.getElementById("rd-phase");pn.textContent="Maus über Chart bewegen";pn.style.color="";
+  const rp=document.getElementById("rd-phase");rp.textContent="Maus über den Chart bewegen";rp.style.color="";
+  document.getElementById("rd-detail").textContent="";
 });
 
 // ── Event cards ───────────────────────────────────────────────────────────────
-let pinned=null;
-const evCards={};
+const ecMap={};
 const evGrid=document.getElementById("evgrid");
 EVENTS.forEach(ev=>{
-  const card=document.createElement("div");
-  card.className="ev-card";card.dataset.ev=ev.year;
-  const bdgColor=ev.tier==="M"?"rgba(255,120,50,.18)":"rgba(255,255,255,.05)";
-  const bdgTxt=ev.tier==="M"?"Schlüsselereignis":"Wendepunkt";
-  const bdgTxtColor=ev.tier==="M"?"#ff9060":"rgba(255,255,255,.4)";
-  card.innerHTML=`<div class="ev-badge" style="background:${bdgColor};color:${bdgTxtColor}">${bdgTxt}</div><div class="ev-yr">${ev.year}</div><div class="ev-name">${ev.label}</div><div class="ev-body">${ev.detail}</div>`;
-  card.addEventListener("click",()=>pinned===ev.year?setPin(null):setPin(ev.year));
-  evGrid.appendChild(card);
-  evCards[ev.year]=card;
+  const c=document.createElement("div");c.className="ec";c.dataset.ev=ev.year;
+  const isM=ev.tier==="M";
+  c.innerHTML=`<div class="ec-meta"><span class="ec-yr">${ev.year}</span><span class="ec-badge" style="background:${isM?"rgba(255,110,40,.18)":"rgba(255,255,255,.05)"};color:${isM?"#ff8850":"rgba(255,255,255,.35)"}">${isM?"Schlüssel":"Wendepunkt"}</span></div><div class="ec-name">${ev.label}</div><div class="ec-body">${ev.detail}</div>`;
+  c.addEventListener("click",()=>pinned===ev.year?setPin(null):setPin(ev.year));
+  evGrid.appendChild(c);ecMap[ev.year]=c;
 });
-
-function showEvCard(yr){evCards[yr]?.classList.add("pin")}
-function unpinCard(yr){if(pinned!==yr)evCards[yr]?.classList.remove("pin")}
+function showEC(yr){ecMap[yr]?.classList.add("on")}
+function unpinEC(yr){if(pinned!==yr)ecMap[yr]?.classList.remove("on")}
 function setPin(yr){
-  if(pinned&&pinned!==yr)evCards[pinned]?.classList.remove("pin");
+  if(pinned&&pinned!==yr){ecMap[pinned]?.classList.remove("on");evHits[pinned]?.deactivate();}
   pinned=yr;
-  if(yr){evCards[yr]?.classList.add("pin");evCards[yr]?.scrollIntoView({behavior:"smooth",block:"nearest"});}
+  if(yr){ecMap[yr]?.classList.add("on");evHits[yr]?.activate();ecMap[yr]?.scrollIntoView({behavior:"smooth",block:"nearest"});}
 }
+document.addEventListener("keydown",e=>{if(e.key==="Escape")setPin(null)});
 
-// ── Phase chips + cards ───────────────────────────────────────────────────────
+// ── Phase interactivity ───────────────────────────────────────────────────────
 function setPhase(label){
   Object.entries(pBands).forEach(([n,b])=>{
     const on=n===label;
-    b.r.setAttribute("fill",on?b.c+"18":"transparent");
-    b.r.setAttribute("stroke",on?b.c+"44":"rgba(255,255,255,.04)");
+    b.r.setAttribute("fill",on?b.c+"14":"transparent");
+    b.r.setAttribute("stroke",on?b.c+"40":"rgba(255,255,255,.035)");
     const txts=b.tg.querySelectorAll("text");
-    txts[0]?.setAttribute("fill",on?b.c:"rgba(255,255,255,.2)");
-    txts[1]?.setAttribute("fill",on?b.c+"88":"rgba(255,255,255,.11)");
+    txts[0]?.setAttribute("fill",on?b.c:"rgba(255,255,255,.18)");
+    txts[1]?.setAttribute("fill",on?b.c+"80":"rgba(255,255,255,.09)");
   });
   document.querySelectorAll(".chip").forEach(c=>{
     const on=c.dataset.ph===label;
     c.classList.toggle("on",on);
-    c.style.borderColor=on?(PHASES.find(p=>p.label===label)?.c||""):"";
-    c.style.color=on?(PHASES.find(p=>p.label===label)?.c||""):"";
+    const ph=PHASES.find(p=>p.label===label);
+    c.style.borderColor=on&&ph?ph.c+"60":"";
+    c.style.color=on&&ph?ph.c:"";
+    c.style.background=on&&ph?ph.c+"10":"";
   });
   document.querySelectorAll(".pc").forEach(c=>c.classList.toggle("on",c.dataset.ph===label));
 }
 
 const chipsEl=document.getElementById("chips");
 PHASES.forEach(p=>{
-  const b=document.createElement("button");
-  b.className="chip";b.textContent=p.label;b.dataset.ph=p.label;
+  const b=document.createElement("button");b.className="chip";b.textContent=p.label;b.dataset.ph=p.label;
   b.addEventListener("mouseenter",()=>setPhase(p.label));
   b.addEventListener("mouseleave",()=>setPhase(null));
   b.addEventListener("click",()=>b.classList.contains("on")?setPhase(null):setPhase(p.label));
@@ -441,8 +532,7 @@ PHASES.forEach(p=>{
 
 const pcards=document.getElementById("pcards");
 PHASES.forEach(p=>{
-  const c=document.createElement("div");
-  c.className="pc";c.dataset.ph=p.label;
+  const c=document.createElement("div");c.className="pc";c.dataset.ph=p.label;
   c.innerHTML=`<div class="pc-yr" style="color:${p.c}">${p.from}–${p.to}</div><div class="pc-name">${p.label}</div><div class="pc-sub">${p.sub}</div>`;
   c.addEventListener("mouseenter",()=>setPhase(p.label));
   c.addEventListener("mouseleave",()=>setPhase(null));
@@ -450,19 +540,20 @@ PHASES.forEach(p=>{
   pcards.appendChild(c);
 });
 
-// Phase band hover
 Object.entries(pBands).forEach(([n,b])=>{
   b.r.addEventListener("mouseenter",()=>setPhase(n));
   b.r.addEventListener("mouseleave",()=>setPhase(null));
 });
 
-// ESC
-document.addEventListener("keydown",e=>{if(e.key==="Escape")setPin(null)});
-
-// draw animation style
-const st=document.createElement("style");
-st.textContent=`@keyframes drawLine{from{stroke-dashoffset:${L}}to{stroke-dashoffset:0}}`;
-document.head.appendChild(st);
+// Methodik-Panel
+document.getElementById("meth-toggle").addEventListener("click",()=>{
+  const p=document.getElementById("method-panel");
+  p.classList.toggle("open");
+  document.getElementById("meth-toggle").querySelector("svg+*")||
+  document.getElementById("meth-toggle").childNodes[1];
+  document.getElementById("meth-toggle").lastChild.textContent=
+    p.classList.contains("open")?" Methodik schließen":" Methodik & Quellen anzeigen";
+});
 </script>
 </body>
 </html>
