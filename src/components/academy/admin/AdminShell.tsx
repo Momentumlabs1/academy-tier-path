@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { BarChart2, BookOpen, FileText, LayoutDashboard, LogOut, ScrollText, Users } from "lucide-react";
+import { BarChart2, BookOpen, FileText, LayoutDashboard, LogOut, Palette, ScrollText, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const MENU = [
@@ -7,6 +7,7 @@ const MENU = [
   { to: "/admin/members", label: "Members", icon: Users },
   { to: "/admin/deposits", label: "Deposits", icon: BarChart2 },
   { to: "/admin/lessons", label: "Content", icon: BookOpen },
+  { to: "/admin/tenants", label: "White-Label", icon: Palette },
   { to: "/admin/audit", label: "Audit Log", icon: ScrollText },
 ];
 
