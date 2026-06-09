@@ -7,7 +7,7 @@ import type { Lesson } from "@/lib/academy-data";
 export function LessonCardCompact({ lesson }: { lesson: Lesson }) {
   return (
     <Link to="/lessons/$lessonId" params={{ lessonId: lesson.id }} className="block">
-      <Card variant="surface" className="p-4 transition-colors hover:bg-[color:var(--surface-3)]/40">
+      <Card variant="surface" className="p-4 transition-colors hover:bg-[color:var(--surface-3)]/40 micro-press">
         <div className="flex items-center justify-between">
           <TierTag tier={lesson.tier} />
           <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">

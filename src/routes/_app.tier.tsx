@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Check, Lock } from "lucide-react";
-import { CURRENT_MEMBER, TIERS, tierForDeposit } from "@/lib/academy-data";
+import { TIERS } from "@/lib/academy-data";
+import { useMemberState } from "@/hooks/useMemberState";
 import { Card } from "@/components/academy/primitives/Card";
+import { DepositLadder } from "@/components/academy/tier/DepositLadder";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -16,19 +18,21 @@ export const Route = createFileRoute("/_app/tier")({
 });
 
 function TierPage() {
-  const current = tierForDeposit(CURRENT_MEMBER.deposit);
-  const myRank = TIERS.findIndex((t) => t.key === current.key);
+  const state = useMemberState();
+  const myRank = state.currentTier ? TIERS.findIndex((t) => t.key === state.currentTier!.key) : -1;
 
   return (
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-3xl font-bold tracking-tight lg:text-4xl">Membership Tiers</h1>
         <p className="mt-1 text-muted-foreground">
-          Verified deposit: <span className="font-semibold text-foreground">{formatMoney(CURRENT_MEMBER.deposit)}</span>. Climb tiers by depositing through your broker.
+          Verified deposit: <span className="font-semibold text-foreground">{formatMoney(state.lifetimeDeposits, "€")}</span>. Climb tiers by depositing through your broker.
         </p>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+      <DepositLadder compact />
+
+      <div className="grid gap-4 lg:grid-cols-3">
         {TIERS.map((t, idx) => {
           const isCurrent = idx === myRank;
           const unlocked = idx <= myRank;
@@ -36,10 +40,7 @@ function TierPage() {
             <Card
               key={t.key}
               variant={isCurrent ? "hero" : "surface"}
-              className={cn(
-                "relative flex flex-col p-6",
-                isCurrent && "ring-2 ring-primary shadow-[var(--shadow-lime)]",
-              )}
+              className={cn("relative flex flex-col p-6 micro-lift", isCurrent && "ring-2 ring-primary shadow-[var(--shadow-lime)]")}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -47,12 +48,10 @@ function TierPage() {
                   <span className="font-display text-lg font-bold">{t.name}</span>
                 </div>
                 {isCurrent && (
-                  <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase text-primary-foreground">
-                    Current
-                  </span>
+                  <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase text-primary-foreground">Current</span>
                 )}
               </div>
-              <div className="mt-4 font-display text-3xl font-bold">{formatMoney(t.minDeposit)}+</div>
+              <div className="mt-4 font-display text-3xl font-bold">{formatMoney(t.minDeposit, "€")}+</div>
               <div className="text-[11px] uppercase tracking-[0.14em] text-muted-foreground">verified deposit</div>
               <ul className="mt-5 flex-1 space-y-2 text-sm">
                 {t.perks.map((perk) => (

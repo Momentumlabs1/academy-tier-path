@@ -23,7 +23,7 @@ export function SignalOddsCard({ signal, dense = true }: { signal: Signal; dense
         </div>
       )}
 
-      <button className="mt-4 w-full rounded-xl bg-white/5 px-3 py-2.5 text-left text-sm text-muted-foreground hover:bg-white/10">
+      <button className="mt-4 w-full rounded-xl bg-white/5 px-3 py-2.5 text-left text-sm text-muted-foreground hover:bg-white/10 micro-press">
         Amount
       </button>
     </Card>

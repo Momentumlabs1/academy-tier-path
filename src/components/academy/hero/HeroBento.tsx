@@ -1,55 +1,74 @@
+import { Link } from "@tanstack/react-router";
 import heroFloor from "@/assets/hero-floor.jpg";
 import heroSignals from "@/assets/hero-signals.jpg";
 import heroMentors from "@/assets/hero-mentors.jpg";
 import { Card } from "../primitives/Card";
+import { ArrowRight } from "lucide-react";
 
 const ITEMS = [
   {
     title: "Master Live Markets in Real Time",
     image: heroFloor,
     eyebrow: "Live Trading Floor",
-    span: "lg:col-span-2 lg:row-span-2",
-    titleClass: "font-display text-3xl lg:text-5xl font-bold leading-[1.05]",
+    to: "/lessons",
+    cta: "Start learning",
+    span: "col-span-2 lg:col-span-2 lg:row-span-2",
+    titleClass: "font-display text-2xl sm:text-3xl lg:text-4xl font-bold leading-[1.1]",
+    minH: "min-h-[220px] sm:min-h-[260px]",
   },
   {
     title: "Daily Signals",
     image: heroSignals,
     eyebrow: "Realtime",
+    to: "/signals",
+    cta: "Open channel",
     span: "",
-    titleClass: "font-display text-2xl lg:text-3xl font-bold",
+    titleClass: "font-display text-xl font-bold",
+    minH: "min-h-[150px]",
   },
   {
     title: "Mentor Network",
     image: heroMentors,
     eyebrow: "1:1 reviews",
+    to: "/tier",
+    cta: "Unlock Elite",
     span: "",
-    titleClass: "font-display text-2xl lg:text-3xl font-bold",
+    titleClass: "font-display text-xl font-bold",
+    minH: "min-h-[150px]",
   },
 ];
 
 export function HeroBento() {
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:grid-rows-2">
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 lg:grid-rows-2 lg:gap-4">
       {ITEMS.map((item, idx) => (
-        <Card
+        <Link
           key={item.title}
-          variant="hero"
-          className={`relative overflow-hidden ${item.span} min-h-[180px] lg:min-h-0`}
+          to={item.to}
+          className={`group relative overflow-hidden rounded-[var(--radius)] shadow-[var(--shadow-card)] ${item.span} ${item.minH} block animate-stagger`}
+          style={{ animationDelay: `${idx * 100}ms` }}
         >
-          <img
-            src={item.image}
-            alt=""
-            loading={idx === 0 ? "eager" : "lazy"}
-            className="absolute inset-0 h-full w-full object-cover opacity-80"
-          />
-          <div className="absolute inset-0 bg-gradient-to-tr from-black/70 via-black/20 to-transparent" />
-          <div className="relative flex h-full flex-col justify-between p-6 lg:p-8">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
-              {item.eyebrow}
+          <Card variant="hero" className="h-full w-full">
+            <img
+              src={item.image}
+              alt=""
+              loading={idx === 0 ? "eager" : "lazy"}
+              className="absolute inset-0 h-full w-full object-cover opacity-80 transition-transform duration-500 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+            <div className="relative flex h-full flex-col justify-between p-4 lg:p-6">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
+                {item.eyebrow}
+              </div>
+              <div>
+                <h2 className={item.titleClass}>{item.title}</h2>
+                <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold text-white/90 backdrop-blur-sm transition-colors group-hover:bg-primary group-hover:text-primary-foreground">
+                  {item.cta} <ArrowRight className="h-3 w-3" />
+                </div>
+              </div>
             </div>
-            <h2 className={item.titleClass}>{item.title}</h2>
-          </div>
-        </Card>
+          </Card>
+        </Link>
       ))}
     </div>
   );

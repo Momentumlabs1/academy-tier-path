@@ -18,7 +18,7 @@ export function Card({
     <div
       {...rest}
       className={cn(
-        "rounded-[var(--radius)] shadow-[var(--shadow-card)]",
+        "rounded-[var(--radius)] shadow-[var(--shadow-card)] micro-lift",
         styles[variant],
         className,
       )}

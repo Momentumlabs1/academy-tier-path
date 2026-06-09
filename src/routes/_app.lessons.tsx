@@ -89,7 +89,7 @@ function Chip({ active, onClick, children }: { active: boolean; onClick: () => v
     <button
       onClick={onClick}
       className={cn(
-        "h-9 rounded-full px-4 text-xs font-semibold uppercase tracking-wider transition-colors",
+        "h-9 rounded-full px-4 text-xs font-semibold uppercase tracking-wider transition-colors micro-press",
         active
           ? "bg-primary text-primary-foreground shadow-[var(--shadow-lime)]"
           : "bg-white/5 text-muted-foreground hover:text-foreground",
