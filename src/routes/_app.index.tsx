@@ -8,8 +8,6 @@ import { ProgressStats } from "@/components/academy/progress/ProgressStats";
 import { Card } from "@/components/academy/primitives/Card";
 import { LESSONS, CURRENT_MEMBER } from "@/lib/academy-data";
 import { useMemberState } from "@/hooks/useMemberState";
-import { formatMoney } from "@/lib/format";
-import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/")({
   head: () => ({
@@ -29,10 +27,10 @@ function greeting() {
 }
 
 const QUICK_ACTIONS = [
-  { label: "Open Telegram", sub: "Live signals", icon: MessageSquare, to: "/signals", color: "text-[oklch(0.78_0.16_150)]", bg: "bg-[oklch(0.78_0.16_150)]/10" },
-  { label: "Next lesson", sub: "Continue learning", icon: BookOpen, to: "/lessons", color: "text-primary", bg: "bg-primary/10" },
-  { label: "View progress", sub: "Deposit ladder", icon: TrendingUp, to: "/tier", color: "text-[oklch(0.82_0.16_80)]", bg: "bg-[oklch(0.82_0.16_80)]/10" },
-];
+  { label: "Open Telegram", sub: "Live signals", icon: MessageSquare, to: "/signals", accent: "oklch(0.78 0.16 150)" },
+  { label: "Next lesson", sub: "Continue learning", icon: BookOpen, to: "/lessons", accent: "oklch(0.9 0.2 140)" },
+  { label: "View tiers", sub: "Deposit path", icon: TrendingUp, to: "/tier", accent: "oklch(0.82 0.16 80)" },
+] as const;
 
 function Dashboard() {
   const state = useMemberState();
@@ -46,12 +44,10 @@ function Dashboard() {
     return rank <= tierRank;
   }).slice(0, 4);
 
-  const pct = Math.round(state.progressPctToNext * 100);
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
 
-      {/* Greeting hero */}
+      {/* Greeting + action launcher — orientation only; tier/deposit/progress live in the Deposit Path card below */}
       <Card variant="hero" className="relative overflow-hidden px-5 py-6 sm:px-7 sm:py-7">
         {/* Ambient glow blob */}
         <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-primary/20 blur-3xl" />
@@ -62,67 +58,40 @@ function Dashboard() {
           <h1 className="mt-0.5 font-display text-2xl font-bold tracking-tight sm:text-3xl">
             {CURRENT_MEMBER.name.split(" ")[0]} 👋
           </h1>
+          <p className="mt-1 text-sm text-muted-foreground">Pick up where you left off.</p>
 
-          {state.currentTier && (
-            <div className="mt-1 flex items-center gap-2">
-              <span
-                className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-[0.12em]"
-                style={{ backgroundColor: `color-mix(in oklch, ${state.currentTier.color} 20%, transparent)`, color: state.currentTier.color }}
-              >
-                <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: state.currentTier.color }} />
-                {state.currentTier.name} Member
-              </span>
-              <span className="text-[11px] text-muted-foreground">
-                {formatMoney(state.lifetimeDeposits, "€")} deposited
-              </span>
-            </div>
-          )}
-
-          {state.nextTier && (
-            <div className="mt-4">
-              <div className="mb-1.5 flex items-center justify-between text-[11px]">
-                <span className="text-muted-foreground">Progress to {state.nextTier.name}</span>
-                <span className="font-semibold text-foreground">{pct}%</span>
-              </div>
-              <div className="h-2 w-full overflow-hidden rounded-full bg-white/10">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-primary/80 to-primary transition-all duration-700"
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
-              <p className="mt-1.5 text-[11px] text-muted-foreground">
-                {formatMoney(state.nextTierRemaining, "€")} more to unlock {state.nextTier.name}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Quick-action chips */}
-        <div className="relative mt-5 flex flex-wrap gap-2">
-          {QUICK_ACTIONS.map((a) => {
-            const Icon = a.icon;
-            return (
-              <Link
-                key={a.to}
-                to={a.to}
-                className={cn(
-                  "flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold transition-opacity hover:opacity-80",
-                  a.bg, a.color,
-                )}
-              >
-                <Icon className="h-3.5 w-3.5" />
-                {a.label}
-                <ArrowRight className="h-3 w-3 opacity-60" />
-              </Link>
-            );
-          })}
+          {/* Quick-action launcher */}
+          <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+            {QUICK_ACTIONS.map((a) => {
+              const Icon = a.icon;
+              return (
+                <Link
+                  key={a.to}
+                  to={a.to}
+                  className="group flex items-center gap-3 rounded-2xl bg-[color:var(--surface-2)]/60 px-4 py-3 transition-all duration-300 hover:-translate-y-0.5 hover:bg-[color:var(--surface-2)] hover:shadow-[var(--shadow-card)]"
+                >
+                  <span
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                    style={{ backgroundColor: `color-mix(in oklch, ${a.accent} 16%, transparent)`, color: a.accent }}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold leading-tight">{a.label}</span>
+                    <span className="block text-[11px] text-muted-foreground">{a.sub}</span>
+                  </span>
+                  <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </Card>
 
-      {/* Deposit Ladder */}
+      {/* Money — single source of truth for tier, deposits & progress */}
       <DepositLadder />
 
-      {/* Hero bento */}
+      {/* Learning — lessons & XP */}
       <ProgressStats />
 
       <HeroBento />
