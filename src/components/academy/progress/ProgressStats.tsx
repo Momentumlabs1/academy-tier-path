@@ -5,6 +5,7 @@ import { useCompletedLessons } from "@/hooks/useCompletedLessons";
 import { LESSONS } from "@/lib/academy-data";
 import { useMemberState } from "@/hooks/useMemberState";
 import { cn } from "@/lib/utils";
+import { formatNumber } from "@/lib/format";
 
 export function ProgressStats({ compact = false }: { compact?: boolean }) {
   const { stats, isCompleted } = useCompletedLessons();
