@@ -91,7 +91,7 @@ function TenantLanding() {
 
         {/* Stats row */}
         <div className="mx-auto mt-12 grid max-w-3xl grid-cols-2 gap-4 sm:grid-cols-4">
-          {tenant.stats.map((s) => (
+          {tenant.stats.map((s: { label: string; value: string }) => (
             <div key={s.label} className="rounded-2xl bg-white/5 px-4 py-4 text-center">
               <div className="font-display text-2xl font-bold" style={{ color: tenant.primaryColor }}>{s.value}</div>
               <div className="mt-0.5 text-[11px] text-muted-foreground uppercase tracking-[0.12em]">{s.label}</div>
@@ -104,7 +104,7 @@ function TenantLanding() {
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-8">
         <h2 className="mb-8 text-center font-display text-2xl font-bold sm:text-3xl">What you get</h2>
         <div className="grid gap-4 sm:grid-cols-3">
-          {tenant.features.map((f) => (
+          {tenant.features.map((f: { title: string; body: string; icon: string }) => (
             <div key={f.title} className="rounded-3xl border border-white/5 bg-white/[0.04] p-6">
               <div className="mb-3 text-3xl">{f.icon}</div>
               <h3 className="font-display text-lg font-bold">{f.title}</h3>
