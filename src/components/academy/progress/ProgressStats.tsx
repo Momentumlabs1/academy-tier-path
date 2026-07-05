@@ -32,7 +32,7 @@ export function ProgressStats({ compact = false }: { compact?: boolean }) {
         </div>
         <div className="text-right">
           <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">XP</div>
-          <div className="font-display text-base font-bold text-primary">{stats.earnedXp.toLocaleString()}</div>
+          <div className="font-display text-base font-bold text-primary">{formatNumber(stats.earnedXp)}</div>
         </div>
       </div>
     );
@@ -54,8 +54,8 @@ export function ProgressStats({ compact = false }: { compact?: boolean }) {
             />
           </div>
           <div className="mt-2 flex flex-wrap gap-3">
-            <StatChip icon={Star} label="XP earned" value={stats.earnedXp.toLocaleString()} />
-            <StatChip icon={Zap} label="XP total" value={stats.totalXp.toLocaleString()} tone="muted" />
+            <StatChip icon={Star} label="XP earned" value={formatNumber(stats.earnedXp)} />
+            <StatChip icon={Zap} label="XP total" value={formatNumber(stats.totalXp)} tone="muted" />
             <StatChip icon={Flame} label="Completion" value={`${stats.completionPct}%`} tone="primary" />
           </div>
         </div>
