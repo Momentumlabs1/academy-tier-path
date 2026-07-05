@@ -102,7 +102,7 @@ function AdminLessons() {
                           style={{
                             backgroundColor: `color-mix(in oklch, ${TIER_COLOR[tk]} 20%, transparent)`,
                             color: TIER_COLOR[tk],
-                            ringColor: TIER_COLOR[tk],
+                            ["--tw-ring-color" as string]: TIER_COLOR[tk],
                           }}
                         >
                           {tk}
