@@ -1,6 +1,7 @@
+import { Link } from "@tanstack/react-router";
 import { PROFIT_THIS_MONTH, PROFIT_TRADERS } from "@/lib/academy-data";
 import { formatMoney } from "@/lib/format";
-import { MoreHorizontal } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 export function ProfitWidget() {
   return (
@@ -20,9 +21,13 @@ export function ProfitWidget() {
             </div>
           ))}
         </div>
-        <button aria-label="More" className="ml-auto text-muted-foreground hover:text-foreground">
-          <MoreHorizontal className="h-5 w-5" />
-        </button>
+        <Link
+          to="/signals"
+          aria-label="View signals behind this profit"
+          className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground"
+        >
+          Details <ArrowRight className="h-3.5 w-3.5" />
+        </Link>
       </div>
     </div>
   );

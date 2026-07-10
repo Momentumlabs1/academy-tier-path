@@ -4,6 +4,7 @@ import { SIGNALS } from "@/lib/academy-data";
 import { useMemberState } from "@/hooks/useMemberState";
 import { Card } from "@/components/academy/primitives/Card";
 import { SignalOddsCard } from "@/components/academy/right-rail/SignalOddsCard";
+import { TelegramConnectCard } from "@/components/academy/signals/TelegramConnectCard";
 import { PopularList } from "@/components/academy/right-rail/PopularList";
 import { ProfitWidget } from "@/components/academy/right-rail/ProfitWidget";
 import { cn } from "@/lib/utils";
@@ -65,6 +66,9 @@ function SignalsPage() {
           </span>
         )}
       </Card>
+
+      {/* Onboarding into the gated channel */}
+      <TelegramConnectCard />
 
       <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
         <div>

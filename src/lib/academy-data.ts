@@ -29,20 +29,41 @@ export interface Lesson {
   tier: TierKey;
   category: "Foundations" | "Technical" | "Risk" | "Psychology" | "Advanced";
   completed?: boolean;
+  /** YouTube video id for the lesson recording. Demo uses a stable placeholder; swap per lesson in production. */
+  youtubeId: string;
+  /** Concrete, per-lesson learning outcomes shown on the detail page. */
+  objectives: string[];
 }
+
+// Demo placeholder recording (Ray Dalio — "How the Economic Machine Works").
+// Replace per-lesson with the real Academy recording id.
+const DEMO_VIDEO = "PHe0bXAIuk0";
+
 export const LESSONS: Lesson[] = [
-  { id: "l1", title: "What Markets Actually Are", description: "Order books, liquidity, and why price moves.", durationMin: 12, tier: "foundation", category: "Foundations", completed: true },
-  { id: "l2", title: "Reading a Candlestick Chart", description: "Open, high, low, close — and what each tells you.", durationMin: 15, tier: "foundation", category: "Foundations", completed: true },
-  { id: "l3", title: "Position Sizing 101", description: "Never risk more than 1% per trade.", durationMin: 10, tier: "foundation", category: "Risk", completed: false },
-  { id: "l4", title: "Support, Resistance & Trend", description: "The three lines every chart needs.", durationMin: 18, tier: "operator", category: "Technical" },
-  { id: "l5", title: "Moving Averages Demystified", description: "EMA, SMA, and the 200-day mythology.", durationMin: 14, tier: "operator", category: "Technical" },
-  { id: "l6", title: "Risk-Reward Ratios", description: "Why 1:3 changes everything.", durationMin: 11, tier: "operator", category: "Risk" },
-  { id: "l7", title: "The Live Trading Room", description: "Watch our head trader execute in real time.", durationMin: 60, tier: "operator", category: "Advanced" },
-  { id: "l8", title: "Reading Smart Money Flow", description: "Volume, open interest, and institutional footprints.", durationMin: 22, tier: "operator", category: "Advanced" },
-  { id: "l9", title: "Managing Trader Emotions", description: "The four states that cost you money.", durationMin: 17, tier: "operator", category: "Psychology" },
-  { id: "l10", title: "Building a Personal Edge", description: "Mentor-led: design your own system.", durationMin: 45, tier: "elite", category: "Advanced" },
-  { id: "l11", title: "Portfolio Audit Walkthrough", description: "We tear apart a real €50k portfolio.", durationMin: 35, tier: "elite", category: "Advanced" },
-  { id: "l12", title: "Tail Risk & Black Swans", description: "Hedging against the trades you can't see coming.", durationMin: 28, tier: "elite", category: "Risk" },
+  { id: "l1", title: "What Markets Actually Are", description: "Order books, liquidity, and why price moves.", durationMin: 12, tier: "foundation", category: "Foundations", completed: true, youtubeId: DEMO_VIDEO,
+    objectives: ["How an order book matches buyers and sellers", "Why liquidity — not news — moves price first", "Bid/ask spread and what it costs you", "Market vs. limit orders in practice"] },
+  { id: "l2", title: "Reading a Candlestick Chart", description: "Open, high, low, close — and what each tells you.", durationMin: 15, tier: "foundation", category: "Foundations", completed: true, youtubeId: DEMO_VIDEO,
+    objectives: ["Decode open, high, low and close at a glance", "Spot indecision: dojis, wicks and rejection", "Read momentum from candle bodies", "Combine timeframes without confusion"] },
+  { id: "l3", title: "Position Sizing 101", description: "Never risk more than 1% per trade.", durationMin: 10, tier: "foundation", category: "Risk", completed: false, youtubeId: DEMO_VIDEO,
+    objectives: ["Calculate position size from your stop distance", "The 1%-rule and why it keeps you in the game", "Convert risk in € to lot size", "Avoid the #1 account-killer: oversizing"] },
+  { id: "l4", title: "Support, Resistance & Trend", description: "The three lines every chart needs.", durationMin: 18, tier: "operator", category: "Technical", youtubeId: DEMO_VIDEO,
+    objectives: ["Draw support and resistance that actually hold", "Identify trend direction objectively", "Trade the retest instead of the breakout", "Mark invalidation levels before you enter"] },
+  { id: "l5", title: "Moving Averages Demystified", description: "EMA, SMA, and the 200-day mythology.", durationMin: 14, tier: "operator", category: "Technical", youtubeId: DEMO_VIDEO,
+    objectives: ["EMA vs. SMA — when each one wins", "Use the 200-day as a regime filter", "Read moving-average crossovers correctly", "Why most MA signals are noise"] },
+  { id: "l6", title: "Risk-Reward Ratios", description: "Why 1:3 changes everything.", durationMin: 11, tier: "operator", category: "Risk", youtubeId: DEMO_VIDEO,
+    objectives: ["Compute reward-to-risk before every trade", "Why a 40% win-rate can still be profitable", "Set targets at structure, not at round numbers", "Track expectancy across a series of trades"] },
+  { id: "l7", title: "The Live Trading Room", description: "Watch our head trader execute in real time.", durationMin: 60, tier: "operator", category: "Advanced", youtubeId: DEMO_VIDEO,
+    objectives: ["See a full session from idea to exit", "Hear the reasoning behind each entry", "Manage a trade as conditions change", "Journal a session like a professional"] },
+  { id: "l8", title: "Reading Smart Money Flow", description: "Volume, open interest, and institutional footprints.", durationMin: 22, tier: "operator", category: "Advanced", youtubeId: DEMO_VIDEO,
+    objectives: ["Read volume as confirmation or warning", "Interpret open interest in derivatives", "Spot accumulation and distribution", "Follow institutional footprints, not retail noise"] },
+  { id: "l9", title: "Managing Trader Emotions", description: "The four states that cost you money.", durationMin: 17, tier: "operator", category: "Psychology", youtubeId: DEMO_VIDEO,
+    objectives: ["Recognise fear, greed, hope and revenge live", "Build a pre-trade checklist that stops tilt", "Size down to regain control", "Design a routine that compounds discipline"] },
+  { id: "l10", title: "Building a Personal Edge", description: "Mentor-led: design your own system.", durationMin: 45, tier: "elite", category: "Advanced", youtubeId: DEMO_VIDEO,
+    objectives: ["Define your market, timeframe and setup", "Backtest a rule set without fooling yourself", "Turn a setup into a written playbook", "Iterate using real performance data"] },
+  { id: "l11", title: "Portfolio Audit Walkthrough", description: "We tear apart a real €50k portfolio.", durationMin: 35, tier: "elite", category: "Advanced", youtubeId: DEMO_VIDEO,
+    objectives: ["Measure true exposure and correlation", "Find hidden concentration risk", "Rebalance with intention, not emotion", "Set portfolio-level stop rules"] },
+  { id: "l12", title: "Tail Risk & Black Swans", description: "Hedging against the trades you can't see coming.", durationMin: 28, tier: "elite", category: "Risk", youtubeId: DEMO_VIDEO,
+    objectives: ["Understand fat tails vs. normal distributions", "Price simple hedges against crashes", "Size for survival, not just returns", "Stress-test a portfolio against 2008/2020"] },
 ];
 export const CURRENT_MEMBER = {
   name: "Demo Trader",

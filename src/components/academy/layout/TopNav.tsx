@@ -85,11 +85,14 @@ export function TopNav() {
           )}
         </Link>
 
-        <button className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-[var(--shadow-lime)] transition-transform hover:-translate-y-0.5 md:px-4 md:py-2.5 md:text-sm">
+        <Link
+          to="/tier"
+          className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-[var(--shadow-lime)] transition-transform hover:-translate-y-0.5 md:px-4 md:py-2.5 md:text-sm"
+        >
           <span className="hidden sm:inline">Connect Broker</span>
           <span className="sm:hidden">Top up</span>
           <ArrowRight className="h-3.5 w-3.5" />
-        </button>
+        </Link>
       </div>
     </header>
   );

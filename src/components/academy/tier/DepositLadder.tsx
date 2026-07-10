@@ -28,10 +28,12 @@ export function DepositLadder({ compact = false }: { compact?: boolean }) {
           </h2>
         </div>
         {state.nextTier && (
-          <div className="hidden sm:block text-right">
+          <div className="shrink-0 text-right">
             <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Next milestone</div>
             <div className="font-display text-base font-bold">{state.nextTier.name}</div>
-            <div className="font-mono text-xs text-muted-foreground">{formatMoney(state.nextTierRemaining, "€")} to go</div>
+            <div className="font-mono text-xs text-muted-foreground">
+              {formatMoney(state.nextTierRemaining, "€")} to go · {Math.round(state.progressPctToNext * 100)}%
+            </div>
           </div>
         )}
       </div>
@@ -77,16 +79,15 @@ export function DepositLadder({ compact = false }: { compact?: boolean }) {
       <div className={cn("grid gap-3", compact ? "mt-4 grid-cols-3" : "mt-6 grid-cols-1 sm:grid-cols-3")}>
         <StatTile label="Lifetime deposits" value={formatMoney(state.lifetimeDeposits, "€")} sub="verified at broker" />
         <StatTile
-          label="Current tier"
-          value={state.currentTier?.name ?? "Below Foundation"}
-          dot={state.currentTier?.color}
-          sub={state.nextTier ? `${formatMoney(state.nextTierRemaining, "€")} to ${state.nextTier.name}` : "Top tier reached"}
-        />
-        <StatTile
           label="Activity"
           value={state.isActive ? "Active" : "Inactive"}
           tone={state.isActive ? "ok" : "warn"}
           sub={`${state.monthlyLots.toFixed(2)} / ${state.monthlyLotsRequired.toFixed(2)} lots this month`}
+        />
+        <StatTile
+          label="Products unlocked"
+          value={`${state.unlockedProducts.length} of ${state.unlockedProducts.length + state.lockedProducts.length}`}
+          sub="across all tiers"
         />
       </div>
 

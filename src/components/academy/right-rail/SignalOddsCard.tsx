@@ -1,3 +1,5 @@
+import { Link } from "@tanstack/react-router";
+import { ArrowRight } from "lucide-react";
 import { Card } from "../primitives/Card";
 import { PillValue } from "../primitives/PillValue";
 import type { Signal } from "@/lib/academy-data";
@@ -23,9 +25,13 @@ export function SignalOddsCard({ signal, dense = true }: { signal: Signal; dense
         </div>
       )}
 
-      <button className="mt-4 w-full rounded-xl bg-white/5 px-3 py-2.5 text-left text-sm text-muted-foreground hover:bg-white/10 micro-press">
-        Amount
-      </button>
+      <Link
+        to="/signals"
+        className="mt-4 flex w-full items-center justify-between rounded-xl bg-white/5 px-3 py-2.5 text-sm font-semibold text-foreground/80 hover:bg-white/10 hover:text-foreground micro-press"
+      >
+        Trade this signal
+        <ArrowRight className="h-4 w-4" />
+      </Link>
     </Card>
   );
 }

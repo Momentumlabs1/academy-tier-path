@@ -142,3 +142,22 @@ export const ADMIN_KPI = {
     { tier: "Elite",      count: 2, color: "oklch(0.82 0.16 80)" },
   ],
 };
+
+// ── Telegram signal relay (demo log until Supabase is live) ──────────────────────
+
+export interface SignalRelay {
+  id: string;
+  createdAt: string; // ISO
+  preview: string;
+  /** tenant slug → delivery result */
+  delivered: Record<string, { ok: boolean; error?: string }>;
+}
+
+export const SIGNAL_RELAY_LOG: SignalRelay[] = [
+  { id: "r1", createdAt: "2026-07-10T08:42:00Z", preview: "🟢 LONG EURUSD @ 1.0842 · SL 1.0810 · TP1 1.0890 · TP2 1.0935", delivered: { "agent-trading": { ok: true }, "crypto-masters": { ok: true }, "fx-elite": { ok: true } } },
+  { id: "r2", createdAt: "2026-07-10T07:15:00Z", preview: "📚 New lesson dropped: Position Sizing 101 — 10 min, watch before NY open", delivered: { "agent-trading": { ok: true }, "crypto-masters": { ok: true }, "fx-elite": { ok: true } } },
+  { id: "r3", createdAt: "2026-07-09T19:30:00Z", preview: "🔴 SHORT BTCUSD @ 61,240 · SL 62,100 · TP 59,400 — closed +1.8R ✅", delivered: { "agent-trading": { ok: true }, "crypto-masters": { ok: true }, "fx-elite": { ok: false, error: "bot not admin" } } },
+  { id: "r4", createdAt: "2026-07-09T14:05:00Z", preview: "⚠️ FOMC in 25 min — flat or tight stops, no new entries until release", delivered: { "agent-trading": { ok: true }, "crypto-masters": { ok: true }, "fx-elite": { ok: true } } },
+  { id: "r5", createdAt: "2026-07-09T09:58:00Z", preview: "🟢 LONG XAUUSD @ 2,318 · SL 2,306 · TP 2,341 — London breakout setup", delivered: { "agent-trading": { ok: true }, "crypto-masters": { ok: true }, "fx-elite": { ok: true } } },
+  { id: "r6", createdAt: "2026-07-08T16:22:00Z", preview: "🎥 Weekly recap live in 1h — bring your questions to the trainer group", delivered: { "agent-trading": { ok: true }, "crypto-masters": { ok: true }, "fx-elite": { ok: true } } },
+];

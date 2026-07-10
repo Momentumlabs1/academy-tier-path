@@ -9,11 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as HegemonyRouteImport } from './routes/hegemony'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as TSlugRouteImport } from './routes/t.$slug'
+import { Route as AdminTenantsRouteImport } from './routes/admin.tenants'
 import { Route as AdminMembersRouteImport } from './routes/admin.members'
 import { Route as AdminLessonsRouteImport } from './routes/admin.lessons'
 import { Route as AdminDepositsRouteImport } from './routes/admin.deposits'
@@ -26,6 +28,11 @@ import { Route as AppNotificationsRouteImport } from './routes/_app.notification
 import { Route as AppLessonsRouteImport } from './routes/_app.lessons'
 import { Route as AppLessonsLessonIdRouteImport } from './routes/_app.lessons.$lessonId'
 
+const HegemonyRoute = HegemonyRouteImport.update({
+  id: '/hegemony',
+  path: '/hegemony',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -49,6 +56,11 @@ const TSlugRoute = TSlugRouteImport.update({
   id: '/t/$slug',
   path: '/t/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminTenantsRoute = AdminTenantsRouteImport.update({
+  id: '/tenants',
+  path: '/tenants',
+  getParentRoute: () => AdminRoute,
 } as any)
 const AdminMembersRoute = AdminMembersRouteImport.update({
   id: '/members',
@@ -109,6 +121,7 @@ const AppLessonsLessonIdRoute = AppLessonsLessonIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/hegemony': typeof HegemonyRoute
   '/lessons': typeof AppLessonsRouteWithChildren
   '/notifications': typeof AppNotificationsRoute
   '/settings': typeof AppSettingsRoute
@@ -119,11 +132,13 @@ export interface FileRoutesByFullPath {
   '/admin/deposits': typeof AdminDepositsRoute
   '/admin/lessons': typeof AdminLessonsRoute
   '/admin/members': typeof AdminMembersRoute
+  '/admin/tenants': typeof AdminTenantsRoute
   '/t/$slug': typeof TSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
 }
 export interface FileRoutesByTo {
+  '/hegemony': typeof HegemonyRoute
   '/lessons': typeof AppLessonsRouteWithChildren
   '/notifications': typeof AppNotificationsRoute
   '/settings': typeof AppSettingsRoute
@@ -134,6 +149,7 @@ export interface FileRoutesByTo {
   '/admin/deposits': typeof AdminDepositsRoute
   '/admin/lessons': typeof AdminLessonsRoute
   '/admin/members': typeof AdminMembersRoute
+  '/admin/tenants': typeof AdminTenantsRoute
   '/t/$slug': typeof TSlugRoute
   '/': typeof AppIndexRoute
   '/admin': typeof AdminIndexRoute
@@ -143,6 +159,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
+  '/hegemony': typeof HegemonyRoute
   '/_app/lessons': typeof AppLessonsRouteWithChildren
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/settings': typeof AppSettingsRoute
@@ -153,6 +170,7 @@ export interface FileRoutesById {
   '/admin/deposits': typeof AdminDepositsRoute
   '/admin/lessons': typeof AdminLessonsRoute
   '/admin/members': typeof AdminMembersRoute
+  '/admin/tenants': typeof AdminTenantsRoute
   '/t/$slug': typeof TSlugRoute
   '/_app/': typeof AppIndexRoute
   '/admin/': typeof AdminIndexRoute
@@ -163,6 +181,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/hegemony'
     | '/lessons'
     | '/notifications'
     | '/settings'
@@ -173,11 +192,13 @@ export interface FileRouteTypes {
     | '/admin/deposits'
     | '/admin/lessons'
     | '/admin/members'
+    | '/admin/tenants'
     | '/t/$slug'
     | '/admin/'
     | '/lessons/$lessonId'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/hegemony'
     | '/lessons'
     | '/notifications'
     | '/settings'
@@ -188,6 +209,7 @@ export interface FileRouteTypes {
     | '/admin/deposits'
     | '/admin/lessons'
     | '/admin/members'
+    | '/admin/tenants'
     | '/t/$slug'
     | '/'
     | '/admin'
@@ -196,6 +218,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/_app'
     | '/admin'
+    | '/hegemony'
     | '/_app/lessons'
     | '/_app/notifications'
     | '/_app/settings'
@@ -206,6 +229,7 @@ export interface FileRouteTypes {
     | '/admin/deposits'
     | '/admin/lessons'
     | '/admin/members'
+    | '/admin/tenants'
     | '/t/$slug'
     | '/_app/'
     | '/admin/'
@@ -215,11 +239,19 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
+  HegemonyRoute: typeof HegemonyRoute
   TSlugRoute: typeof TSlugRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/hegemony': {
+      id: '/hegemony'
+      path: '/hegemony'
+      fullPath: '/hegemony'
+      preLoaderRoute: typeof HegemonyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -254,6 +286,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/t/$slug'
       preLoaderRoute: typeof TSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/tenants': {
+      id: '/admin/tenants'
+      path: '/tenants'
+      fullPath: '/admin/tenants'
+      preLoaderRoute: typeof AdminTenantsRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/admin/members': {
       id: '/admin/members'
@@ -374,6 +413,7 @@ interface AdminRouteChildren {
   AdminDepositsRoute: typeof AdminDepositsRoute
   AdminLessonsRoute: typeof AdminLessonsRoute
   AdminMembersRoute: typeof AdminMembersRoute
+  AdminTenantsRoute: typeof AdminTenantsRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
@@ -382,6 +422,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminDepositsRoute: AdminDepositsRoute,
   AdminLessonsRoute: AdminLessonsRoute,
   AdminMembersRoute: AdminMembersRoute,
+  AdminTenantsRoute: AdminTenantsRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 
@@ -390,6 +431,7 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
+  HegemonyRoute: HegemonyRoute,
   TSlugRoute: TSlugRoute,
 }
 export const routeTree = rootRouteImport
