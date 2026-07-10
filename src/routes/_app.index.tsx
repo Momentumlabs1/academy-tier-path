@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, BookOpen, MessageSquare, TrendingUp } from "lucide-react";
+import { ArrowRight, BookOpen, Calculator, MessageSquare } from "lucide-react";
 import { HeroBento } from "@/components/academy/hero/HeroBento";
 import { LessonGroup } from "@/components/academy/lessons/LessonGroup";
 import { SectionTitle } from "@/components/academy/primitives/SectionTitle";
@@ -29,7 +29,7 @@ function greeting() {
 const QUICK_ACTIONS = [
   { label: "Open Telegram", sub: "Live signals", icon: MessageSquare, to: "/signals", accent: "oklch(0.78 0.16 150)" },
   { label: "Next lesson", sub: "Continue learning", icon: BookOpen, to: "/lessons", accent: "oklch(0.9 0.2 140)" },
-  { label: "View tiers", sub: "Deposit path", icon: TrendingUp, to: "/tier", accent: "oklch(0.82 0.16 80)" },
+  { label: "Trader tools", sub: "Size & risk calculators", icon: Calculator, to: "/tools", accent: "oklch(0.82 0.16 80)" },
 ] as const;
 
 function Dashboard() {

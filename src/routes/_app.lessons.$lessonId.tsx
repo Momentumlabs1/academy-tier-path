@@ -7,6 +7,7 @@ import { TierTag } from "@/components/academy/primitives/TierTag";
 import { Card } from "@/components/academy/primitives/Card";
 import { LessonCardCompact } from "@/components/academy/lessons/LessonCardCompact";
 import { LessonVideo } from "@/components/academy/lessons/LessonVideo";
+import { LessonQuiz } from "@/components/academy/lessons/LessonQuiz";
 
 export const Route = createFileRoute("/_app/lessons/$lessonId")({
   loader: ({ params }) => {
@@ -138,6 +139,9 @@ function LessonDetail() {
           ))}
         </ul>
       </Card>
+
+      {/* Interactive knowledge check */}
+      {!locked && <LessonQuiz lessonId={lesson.id} />}
 
       {recommendations.length > 0 && (
         <div>
