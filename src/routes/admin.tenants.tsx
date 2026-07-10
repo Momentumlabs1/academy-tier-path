@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { AdminPageHeader, AdminKpiCard } from "@/components/academy/admin/AdminShell";
 import { TENANTS } from "@/lib/tenants";
+import { useTelegramConfig } from "@/hooks/useTelegramConfig";
 import { Check, Copy, ExternalLink, MessageCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +13,7 @@ export const Route = createFileRoute("/admin/tenants")({
 
 function AdminTenants() {
   const [copied, setCopied] = useState<string | null>(null);
+  const { cfg, updateTenant } = useTelegramConfig();
   const origin = typeof window !== "undefined" ? window.location.origin : "";
 
   function copyLink(slug: string) {
@@ -79,6 +81,33 @@ function AdminTenants() {
                 ))}
               </div>
 
+              {/* Telegram wiring — paste real channel link + id, ready to go */}
+              <div className="rounded-xl bg-white/[0.03] p-3">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Telegram-Channel</span>
+                  <span className={cn(
+                    "rounded-full px-2 py-0.5 text-[9px] font-bold uppercase",
+                    cfg.tenants[t.slug]?.channelId ? "bg-primary/15 text-primary" : "bg-amber-400/15 text-amber-400",
+                  )}>
+                    {cfg.tenants[t.slug]?.channelId ? "verbunden" : "ID eintragen"}
+                  </span>
+                </div>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <input
+                    value={cfg.tenants[t.slug]?.channelUrl ?? ""}
+                    onChange={(e) => updateTenant(t.slug, { channelUrl: e.target.value })}
+                    placeholder="https://t.me/+AbCdEf…"
+                    className="w-full rounded-lg bg-white/5 px-2.5 py-1.5 font-mono text-[11px] outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                  <input
+                    value={cfg.tenants[t.slug]?.channelId ?? ""}
+                    onChange={(e) => updateTenant(t.slug, { channelId: e.target.value })}
+                    placeholder="Channel-ID: -100…"
+                    className="w-full rounded-lg bg-white/5 px-2.5 py-1.5 font-mono text-[11px] outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                </div>
+              </div>
+
               {/* actions */}
               <div className="flex flex-wrap gap-2 pt-1">
                 <a
@@ -97,12 +126,12 @@ function AdminTenants() {
                   {copied === t.slug ? "Copied!" : "Copy link"}
                 </button>
                 <a
-                  href={t.telegramChannel}
+                  href={cfg.tenants[t.slug]?.channelUrl || t.telegramChannel}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-4 py-2 text-xs font-semibold hover:bg-white/15 transition-colors"
                 >
-                  <MessageCircle className="h-3.5 w-3.5" /> Channel
+                  <MessageCircle className="h-3.5 w-3.5" /> Channel öffnen
                 </a>
               </div>
             </div>

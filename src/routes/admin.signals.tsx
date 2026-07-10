@@ -3,6 +3,7 @@ import { useState } from "react";
 import { AdminPageHeader, AdminKpiCard } from "@/components/academy/admin/AdminShell";
 import { SIGNAL_RELAY_LOG } from "@/lib/admin-data";
 import { TENANTS } from "@/lib/tenants";
+import { useTelegramConfig } from "@/hooks/useTelegramConfig";
 import { ArrowRight, Check, CheckCircle2, Copy, MessageCircle, Radio, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -20,8 +21,10 @@ const SETUP_STEPS = [
   { title: "Channel-IDs eintragen", body: "telegram_channel_id pro Tenant in der Datenbank setzen — ab dann läuft der Fan-out automatisch." },
 ];
 
+// Academy Supabase project — the function URL is fixed; only the token/secret stay placeholders.
+const FUNCTION_URL = "https://knmcbivssuwilppajhou.supabase.co/functions/v1/telegram-webhook";
 const WEBHOOK_CMD = `curl "https://api.telegram.org/bot<BOT_TOKEN>/setWebhook" \\
-  -d "url=https://<project>.supabase.co/functions/v1/telegram-webhook" \\
+  -d "url=${FUNCTION_URL}" \\
   -d "secret_token=<TELEGRAM_WEBHOOK_SECRET>"`;
 
 function timeAgo(iso: string): string {
@@ -34,6 +37,7 @@ function timeAgo(iso: string): string {
 
 function AdminSignals() {
   const [copied, setCopied] = useState(false);
+  const { cfg, update } = useTelegramConfig();
   const totalDeliveries = SIGNAL_RELAY_LOG.reduce((s, r) => s + Object.keys(r.delivered).length, 0);
   const failed = SIGNAL_RELAY_LOG.reduce((s, r) => s + Object.values(r.delivered).filter((d) => !d.ok).length, 0);
   const rate = Math.round(((totalDeliveries - failed) / totalDeliveries) * 100);
@@ -50,6 +54,43 @@ function AdminSignals() {
         title="Signal Relay"
         sub="Ein Main-Channel, ein Bot — jede Brand bekommt jedes Signal automatisch in ihren eigenen Channel, mit eigenem Broker-Link."
       />
+
+      {/* Connection settings — ready to go: paste real values once the bot exists */}
+      <div className="rounded-2xl border border-white/5 bg-[oklch(0.16_0.06_250)] p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Verbindung</div>
+          <span className={cn(
+            "rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase",
+            cfg.botUsername && cfg.mainChannelId ? "bg-primary/15 text-primary" : "bg-amber-400/15 text-amber-400",
+          )}>
+            {cfg.botUsername && cfg.mainChannelId ? "Konfiguriert" : "Werte eintragen"}
+          </span>
+        </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <label className="block">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Bot-Username (von @BotFather)</span>
+            <input
+              value={cfg.botUsername}
+              onChange={(e) => update({ botUsername: e.target.value.replace(/^@/, "") })}
+              placeholder="AgentTradingRelayBot"
+              className="mt-1 w-full rounded-xl bg-white/5 px-3 py-2 font-mono text-sm outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </label>
+          <label className="block">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Main-Channel-ID</span>
+            <input
+              value={cfg.mainChannelId}
+              onChange={(e) => update({ mainChannelId: e.target.value })}
+              placeholder="-1001234567890"
+              className="mt-1 w-full rounded-xl bg-white/5 px-3 py-2 font-mono text-sm outline-none focus:ring-2 focus:ring-primary/50"
+            />
+          </label>
+        </div>
+        <p className="mt-2 text-[11px] text-muted-foreground">
+          Bot-Token &amp; Webhook-Secret gehören <b>nur</b> in Supabase → Edge Functions → Secrets — nie hierher.
+          Channel-IDs findest du, indem du eine Channel-Nachricht an @userinfobot weiterleitest.
+        </p>
+      </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <AdminKpiCard label="Main channel" value="Demo" sub="wire up via setup below" />
