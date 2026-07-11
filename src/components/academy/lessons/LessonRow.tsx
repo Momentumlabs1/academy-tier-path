@@ -3,7 +3,7 @@ import { PillValue } from "../primitives/PillValue";
 import { TierTag } from "../primitives/TierTag";
 import { CURRENT_MEMBER, TIERS, tierForDeposit, type Lesson } from "@/lib/academy-data";
 import { useCompletedLessons } from "@/hooks/useCompletedLessons";
-import { ArrowUpRight, CheckCircle2, Lock, PlayCircle } from "lucide-react";
+import { CheckCircle2, Lock, PlayCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function difficulty(tier: Lesson["tier"]): number {
@@ -22,53 +22,70 @@ export function LessonRow({ lesson }: { lesson: Lesson }) {
 
   const inner = (
     <>
-      <div className="flex min-w-0 flex-1 items-center gap-4">
-        <div className="hidden sm:block text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
-          {lesson.category}
+      {/* Video thumbnail */}
+      <div className="relative hidden h-16 w-28 shrink-0 overflow-hidden rounded-xl bg-black sm:block">
+        <img
+          src={`https://i.ytimg.com/vi/${lesson.youtubeId}/mqdefault.jpg`}
+          alt=""
+          loading="lazy"
+          className={cn("h-full w-full object-cover transition-transform duration-300 group-hover:scale-105", locked && "opacity-40 blur-[1px]")}
+        />
+        <div className="absolute inset-0 flex items-center justify-center">
+          {locked ? (
+            <Lock className="h-4 w-4 text-white/70" />
+          ) : completed ? (
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/90 text-primary-foreground"><CheckCircle2 className="h-4 w-4" /></span>
+          ) : (
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-transform group-hover:scale-110"><PlayCircle className="h-4 w-4" /></span>
+          )}
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <TierTag tier={lesson.tier} />
-            {completed ? (
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary">
-                <CheckCircle2 className="h-3.5 w-3.5" /> Done
-              </span>
-            ) : locked ? (
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
-                <Lock className="h-3.5 w-3.5" /> Unlocks at {tierName}
-              </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary">
-                <PlayCircle className="h-3.5 w-3.5" /> Watch
-              </span>
-            )}
-          </div>
-          <div className={cn("mt-1 truncate font-display text-base font-bold", completed && "text-foreground/70")}>
-            {lesson.title}
-          </div>
-        </div>
+        <span className="absolute bottom-1 right-1 rounded bg-black/70 px-1 py-0.5 font-mono text-[9px] font-semibold text-white">{lesson.durationMin}m</span>
       </div>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <TierTag tier={lesson.tier} />
+          {completed ? (
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-primary">
+              <CheckCircle2 className="h-3.5 w-3.5" /> Done
+            </span>
+          ) : locked ? (
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
+              <Lock className="h-3.5 w-3.5" /> Unlocks at {tierName}
+            </span>
+          ) : null}
+        </div>
+        <div className={cn("mt-1 truncate font-display text-base font-bold", completed && "text-foreground/70")}>
+          {lesson.title}
+        </div>
+        <div className="mt-0.5 hidden truncate text-xs text-muted-foreground md:block">{lesson.description}</div>
+      </div>
+
       <div className="flex shrink-0 items-center gap-2">
         <PillValue label="LVL" value={difficulty(lesson.tier)} />
-        <PillValue label="MIN" value={lesson.durationMin} active={!locked && !completed} />
-        <PillValue label="XP" value={xp} />
+        <span className="hidden sm:block"><PillValue label="XP" value={xp} /></span>
         {locked ? (
-          <span className="ml-1 hidden h-7 items-center rounded-lg bg-white/5 px-2 text-[10px] font-semibold text-muted-foreground sm:flex">
-            <ArrowUpRight className="h-3.5 w-3.5" />
+          <span className="ml-1 inline-flex h-9 items-center gap-1.5 rounded-full bg-white/5 px-3.5 text-xs font-semibold text-muted-foreground">
+            <Lock className="h-3.5 w-3.5" /> <span className="hidden sm:inline">Unlock</span>
           </span>
         ) : (
-          <button
-            onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggle(lesson.id); }}
-            className={cn(
-              "ml-1 flex h-7 w-7 items-center justify-center rounded-lg transition-all",
-              completed
-                ? "bg-primary/20 text-primary hover:bg-primary/30"
-                : "bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground",
-            )}
-            title={completed ? "Mark as incomplete" : "Mark as complete"}
-          >
-            <CheckCircle2 className="h-4 w-4" />
-          </button>
+          <>
+            <span className="ml-1 inline-flex h-9 items-center gap-1.5 rounded-full bg-primary px-3.5 text-xs font-bold text-primary-foreground shadow-[var(--shadow-lime)] transition-transform group-hover:scale-105">
+              <PlayCircle className="h-3.5 w-3.5" /> <span className="hidden sm:inline">{completed ? "Rewatch" : "Watch"}</span>
+            </span>
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggle(lesson.id); }}
+              className={cn(
+                "flex h-9 w-9 items-center justify-center rounded-full transition-all",
+                completed
+                  ? "bg-primary/20 text-primary hover:bg-primary/30"
+                  : "bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground",
+              )}
+              title={completed ? "Mark as incomplete" : "Mark as complete"}
+            >
+              <CheckCircle2 className="h-4 w-4" />
+            </button>
+          </>
         )}
       </div>
     </>
@@ -76,7 +93,7 @@ export function LessonRow({ lesson }: { lesson: Lesson }) {
 
   // Every row is clickable — locked rows open the detail page, which explains the unlock.
   const baseClass = cn(
-    "group flex items-center justify-between gap-3 rounded-2xl bg-[color:var(--surface-2)]/60 px-4 py-3 lg:px-5 lg:py-4 transition-all duration-300 hover:bg-[color:var(--surface-2)] hover:translate-x-1 hover:shadow-[var(--shadow-card)]",
+    "group flex items-center justify-between gap-3 rounded-2xl bg-[color:var(--surface-2)]/60 px-3 py-3 lg:px-4 transition-all duration-300 hover:bg-[color:var(--surface-2)] hover:shadow-[var(--shadow-card)]",
     locked && "opacity-70 hover:opacity-100",
   );
 

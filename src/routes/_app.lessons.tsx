@@ -1,8 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
-import { LESSONS, TIERS } from "@/lib/academy-data";
+import { PlayCircle, Search } from "lucide-react";
+import { CURRENT_MEMBER, LESSONS, TIERS, tierForDeposit } from "@/lib/academy-data";
 import { LessonGroup } from "@/components/academy/lessons/LessonGroup";
+import { useCompletedLessons } from "@/hooks/useCompletedLessons";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/lessons")({
@@ -14,6 +15,43 @@ export const Route = createFileRoute("/_app/lessons")({
   }),
   component: LessonsPage,
 });
+
+function ContinueHero() {
+  const { isCompleted, stats } = useCompletedLessons();
+  const memberTier = tierForDeposit(CURRENT_MEMBER.deposit);
+  const memberRank = memberTier ? TIERS.findIndex((t) => t.key === memberTier.key) : -1;
+  const next = LESSONS.find(
+    (l) => TIERS.findIndex((t) => t.key === l.tier) <= memberRank && !isCompleted(l.id),
+  );
+  if (!next) return null;
+
+  return (
+    <Link
+      to="/lessons/$lessonId"
+      params={{ lessonId: next.id }}
+      className="group relative block overflow-hidden rounded-[var(--radius)] shadow-[var(--shadow-card)]"
+    >
+      <img
+        src={`https://i.ytimg.com/vi/${next.youtubeId}/maxresdefault.jpg`}
+        alt=""
+        className="absolute inset-0 h-full w-full object-cover opacity-50 transition-transform duration-500 group-hover:scale-105"
+      />
+      <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/50 to-transparent" />
+      <div className="relative flex items-center gap-5 p-5 sm:p-7">
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[var(--shadow-lime)] transition-transform duration-300 group-hover:scale-110">
+          <PlayCircle className="h-7 w-7" />
+        </span>
+        <div className="min-w-0">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
+            Continue learning · {stats.completedCount}/{stats.totalLessons} done
+          </div>
+          <div className="mt-1 truncate font-display text-xl font-bold sm:text-2xl">{next.title}</div>
+          <div className="mt-0.5 truncate text-sm text-foreground/70">{next.description} · {next.durationMin} min · +{next.durationMin * 10} XP</div>
+        </div>
+      </div>
+    </Link>
+  );
+}
 
 function LessonsPage() {
   const [q, setQ] = useState("");
@@ -48,6 +86,8 @@ function LessonsPage() {
           {LESSONS.length} lessons. Locked items unlock as your verified deposit grows.
         </p>
       </div>
+
+      <ContinueHero />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="relative flex-1">
