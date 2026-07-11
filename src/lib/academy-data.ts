@@ -27,43 +27,43 @@ export function nextTierFor(deposit: number): Tier | undefined {
 export interface Lesson {
   id: string; title: string; description: string; durationMin: number;
   tier: TierKey;
-  category: "Foundations" | "Technical" | "Risk" | "Psychology" | "Advanced";
+  category: "Foundations" | "Mindset" | "Risk" | "Orderflow" | "Practice";
   completed?: boolean;
-  /** YouTube video id for the lesson recording. Demo uses a stable placeholder; swap per lesson in production. */
+  /** YouTube video id for the lesson recording. Placeholder until the real course recordings are uploaded — swap per lesson. */
   youtubeId: string;
   /** Concrete, per-lesson learning outcomes shown on the detail page. */
   objectives: string[];
 }
 
-// Demo placeholder recording (Ray Dalio — "How the Economic Machine Works").
-// Replace per-lesson with the real Academy recording id.
+// Placeholder until the real course videos are uploaded — replace youtubeId per lesson.
 const DEMO_VIDEO = "PHe0bXAIuk0";
 
+// Curriculum based on the head trader's course script (Level-2 / orderflow strategy).
 export const LESSONS: Lesson[] = [
-  { id: "l1", title: "What Markets Actually Are", description: "Order books, liquidity, and why price moves.", durationMin: 12, tier: "foundation", category: "Foundations", completed: true, youtubeId: DEMO_VIDEO,
-    objectives: ["How an order book matches buyers and sellers", "Why liquidity — not news — moves price first", "Bid/ask spread and what it costs you", "Market vs. limit orders in practice"] },
-  { id: "l2", title: "Reading a Candlestick Chart", description: "Open, high, low, close — and what each tells you.", durationMin: 15, tier: "foundation", category: "Foundations", completed: true, youtubeId: DEMO_VIDEO,
-    objectives: ["Decode open, high, low and close at a glance", "Spot indecision: dojis, wicks and rejection", "Read momentum from candle bodies", "Combine timeframes without confusion"] },
-  { id: "l3", title: "Position Sizing 101", description: "Never risk more than 1% per trade.", durationMin: 10, tier: "foundation", category: "Risk", completed: false, youtubeId: DEMO_VIDEO,
-    objectives: ["Calculate position size from your stop distance", "The 1%-rule and why it keeps you in the game", "Convert risk in € to lot size", "Avoid the #1 account-killer: oversizing"] },
-  { id: "l4", title: "Support, Resistance & Trend", description: "The three lines every chart needs.", durationMin: 18, tier: "operator", category: "Technical", youtubeId: DEMO_VIDEO,
-    objectives: ["Draw support and resistance that actually hold", "Identify trend direction objectively", "Trade the retest instead of the breakout", "Mark invalidation levels before you enter"] },
-  { id: "l5", title: "Moving Averages Demystified", description: "EMA, SMA, and the 200-day mythology.", durationMin: 14, tier: "operator", category: "Technical", youtubeId: DEMO_VIDEO,
-    objectives: ["EMA vs. SMA — when each one wins", "Use the 200-day as a regime filter", "Read moving-average crossovers correctly", "Why most MA signals are noise"] },
-  { id: "l6", title: "Risk-Reward Ratios", description: "Why 1:3 changes everything.", durationMin: 11, tier: "operator", category: "Risk", youtubeId: DEMO_VIDEO,
-    objectives: ["Compute reward-to-risk before every trade", "Why a 40% win-rate can still be profitable", "Set targets at structure, not at round numbers", "Track expectancy across a series of trades"] },
-  { id: "l7", title: "The Live Trading Room", description: "Watch our head trader execute in real time.", durationMin: 60, tier: "operator", category: "Advanced", youtubeId: DEMO_VIDEO,
-    objectives: ["See a full session from idea to exit", "Hear the reasoning behind each entry", "Manage a trade as conditions change", "Journal a session like a professional"] },
-  { id: "l8", title: "Reading Smart Money Flow", description: "Volume, open interest, and institutional footprints.", durationMin: 22, tier: "operator", category: "Advanced", youtubeId: DEMO_VIDEO,
-    objectives: ["Read volume as confirmation or warning", "Interpret open interest in derivatives", "Spot accumulation and distribution", "Follow institutional footprints, not retail noise"] },
-  { id: "l9", title: "Managing Trader Emotions", description: "The four states that cost you money.", durationMin: 17, tier: "operator", category: "Psychology", youtubeId: DEMO_VIDEO,
-    objectives: ["Recognise fear, greed, hope and revenge live", "Build a pre-trade checklist that stops tilt", "Size down to regain control", "Design a routine that compounds discipline"] },
-  { id: "l10", title: "Building a Personal Edge", description: "Mentor-led: design your own system.", durationMin: 45, tier: "elite", category: "Advanced", youtubeId: DEMO_VIDEO,
-    objectives: ["Define your market, timeframe and setup", "Backtest a rule set without fooling yourself", "Turn a setup into a written playbook", "Iterate using real performance data"] },
-  { id: "l11", title: "Portfolio Audit Walkthrough", description: "We tear apart a real €50k portfolio.", durationMin: 35, tier: "elite", category: "Advanced", youtubeId: DEMO_VIDEO,
-    objectives: ["Measure true exposure and correlation", "Find hidden concentration risk", "Rebalance with intention, not emotion", "Set portfolio-level stop rules"] },
-  { id: "l12", title: "Tail Risk & Black Swans", description: "Hedging against the trades you can't see coming.", durationMin: 28, tier: "elite", category: "Risk", youtubeId: DEMO_VIDEO,
-    objectives: ["Understand fat tails vs. normal distributions", "Price simple hedges against crashes", "Size for survival, not just returns", "Stress-test a portfolio against 2008/2020"] },
+  { id: "l1", title: "What Is Trading?", description: "Long & short, the markets, and why trading is not investing.", durationMin: 14, tier: "foundation", category: "Foundations", completed: true, youtubeId: DEMO_VIDEO,
+    objectives: ["Trading = actively buying & selling — profit in both directions (long & short)", "The markets: stocks, indices (DAX, S&P 500, NASDAQ), commodities, currencies", "Why trading ≠ investing: investors only profit from rising prices", "Profiting from short-term and long-term price moves"] },
+  { id: "l2", title: "Trading vs. a Traditional Business", description: "Freedom, scalability, performance — the most capital-efficient business model.", durationMin: 12, tier: "foundation", category: "Foundations", completed: true, youtubeId: DEMO_VIDEO,
+    objectives: ["The 3 reasons: freedom (location & time independent), scalability, only performance counts", "No employees, no inventory, no customers, tiny startup costs — a few hundred euros is enough", "Why more trading does NOT mean more profit — 1–3 focused hours a day is all it takes", "Full self-responsibility: you alone own your results"] },
+  { id: "l3", title: "Why 90% of Traders Lose", description: "The avoidable mistakes: no plan, overtrading, revenge trading.", durationMin: 16, tier: "foundation", category: "Risk", completed: false, youtubeId: DEMO_VIDEO,
+    objectives: ["The majority doesn't lose because of the market — but because of their decisions", "Mistake #1: no clear rulebook — gut feeling is not a system", "Overtrading & revenge trading: how accounts get destroyed fast", "Strategy hopping: a strategy needs 3–12 months before it truly sticks"] },
+  { id: "l4", title: "The Formula for Profitability", description: "Knowledge + experience + discipline + execution.", durationMin: 10, tier: "foundation", category: "Foundations", youtubeId: DEMO_VIDEO,
+    objectives: ["The 4 building blocks: knowledge → experience → discipline → execution", "Knowing is not doing: practice works like learning to drive", "Unrealistic expectations: social media shows the end result, never the road", "Trading is no get-rich-quick scheme — but what's possible in 2–3 years exists almost nowhere else"] },
+  { id: "l5", title: "The 4 Emotions That Destroy Accounts", description: "Fear, greed, hope, frustration — and how to control them.", durationMin: 15, tier: "operator", category: "Mindset", youtubeId: DEMO_VIDEO,
+    objectives: ["Fear: closing winners too early, skipping setups, not entering at all", "The 2 kinds of greed: feeling 'untouchable' after win streaks & 'I want it back' after losses", "Hope: removing the stop-loss and letting losers run — the account killer", "Whoever doesn't control their emotions gets controlled by the market"] },
+  { id: "l6", title: "What Profitable Traders Do Differently", description: "System, risk management, statistics, long-term thinking.", durationMin: 14, tier: "operator", category: "Mindset", youtubeId: DEMO_VIDEO,
+    objectives: ["A system: fixed rules and a repeatable, explainable process", "Risk management: protecting capital comes BEFORE making profits", "Trading is calculated betting — everything is probability, no trade is certain", "Never judge a day or a week — monthly and yearly performance is what counts"] },
+  { id: "l7", title: "The Trading Journal", description: "Log trades, analyse mistakes, collect data.", durationMin: 11, tier: "operator", category: "Practice", youtubeId: DEMO_VIDEO,
+    objectives: ["Why nearly all profitable traders document their trading", "Data is gold: the more data on your system, the better you can improve it", "Log setup, reasoning, execution quality and emotions — not just P&L", "Mistake analysis as a weekly routine"] },
+  { id: "l8", title: "What Is Retail Money?", description: "How the crowd trades — and why that's the wrong approach.", durationMin: 13, tier: "operator", category: "Orderflow", youtubeId: DEMO_VIDEO,
+    objectives: ["Retail = private traders like you and me: small capital, limited information", "The problem: everyone learns the same concepts (S/R, trendlines, RSI, MACD) and places the same stops", "Why identical stop-losses become liquidity for the big players", "If the majority loses — why would you trade like the majority?"] },
+  { id: "l9", title: "Level 1 vs. Level 2 Data", description: "The information gap between retail and institutions.", durationMin: 15, tier: "operator", category: "Orderflow", youtubeId: DEMO_VIDEO,
+    objectives: ["Level 1: price, candles, indicators — shows only the RESULT (speculation)", "Level 2: order book, liquidity, market participants — shows the CAUSE of the move", "Retail sees the price; institutions see every order, liquidity and your stops", "The market moves through orders — nothing else"] },
+  { id: "l10", title: "The Order Book: Active vs. Passive Orders", description: "How to see where the big money steps in.", durationMin: 18, tier: "elite", category: "Orderflow", youtubeId: DEMO_VIDEO,
+    objectives: ["Every order routed through an official exchange is recorded in the order book", "Passive orders (limit/stop) vs. active market executions", "Bubbles: market executions of 30+ contracts = institutional money made visible", "Why this insight fundamentally changes your entry timing"] },
+  { id: "l11", title: "Volume Profile: Value Area, HVN & LVN", description: "Where the market feels comfortable — and where the fast moves happen.", durationMin: 20, tier: "elite", category: "Orderflow", youtubeId: DEMO_VIDEO,
+    objectives: ["Value Area: the zone holding 70% of the day's volume (VAH above, VAL below)", "The market returns to the Value Area — breaks out and comes straight back in", "Avoid High Volume Nodes (market feels at home), trade Low Volume Nodes (market fills them fast)", "The volume profile defines WHERE you enter — your point of interest"] },
+  { id: "l12", title: "The Footprint Chart: Timing Precise Entries", description: "Delta, buy vs. sell pressure — reading candles from the inside.", durationMin: 22, tier: "elite", category: "Orderflow", youtubeId: DEMO_VIDEO,
+    objectives: ["The footprint shows per candle how many contracts were bought vs. sold", "Reading delta: a bullish candle with negative delta = passive buyers absorbing — a strong signal", "Volume profile (WHERE) + footprint & bubbles (WHEN) = precisely timed entries", "This alone means trading with data 90% of market participants never use"] },
 ];
 export const CURRENT_MEMBER = {
   name: "Demo Trader",
@@ -99,7 +99,7 @@ export interface Notification {
 }
 export const NOTIFICATIONS: Notification[] = [
   { id: "n1", type: "close_to_next_tier", title: "€500 to Operator", body: "You're closing in on Operator. Top up to unlock the automated Telegram trader.", link: "/tier", createdAt: "2026-06-05T08:12:00Z", readAt: null },
-  { id: "n2", type: "new_lesson", title: "New lesson: Support, Resistance & Trend", body: "Just published in Operator → Technical.", link: "/lessons", createdAt: "2026-06-04T14:30:00Z", readAt: null },
+  { id: "n2", type: "new_lesson", title: "New lesson: Volume Profile — Value Area, HVN & LVN", body: "Just published in Elite → Orderflow.", link: "/lessons", createdAt: "2026-06-04T14:30:00Z", readAt: null },
   { id: "n3", type: "tier_unlocked", title: "Foundation unlocked", body: "Signal group access is live. Tap to open Telegram.", link: "/signals", createdAt: "2026-05-22T10:02:00Z", readAt: "2026-05-22T10:05:00Z" },
   { id: "n4", type: "announcement", title: "Live session Friday 19:00 CET", body: "Live trading room — bring questions.", link: "/", createdAt: "2026-05-18T09:00:00Z", readAt: "2026-05-19T07:00:00Z" },
   { id: "n5", type: "inactive_warning", title: "Stay active this month", body: "Trade at least 0.1 lots before the month ends to keep your access active.", link: "/", createdAt: "2026-05-12T18:00:00Z", readAt: "2026-05-13T07:30:00Z" },

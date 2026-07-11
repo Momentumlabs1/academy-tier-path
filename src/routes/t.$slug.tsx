@@ -1,8 +1,10 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { useState } from "react";
 import { ArrowRight, CheckCircle2, Lock, Shield } from "lucide-react";
 import { getTenant } from "@/lib/tenants";
 import { TIERS } from "@/lib/academy-data";
 import { formatMoney } from "@/lib/format";
+import { JoinFunnel } from "@/components/academy/tenant/JoinFunnel";
 
 export const Route = createFileRoute("/t/$slug")({
   loader: ({ params }) => {
@@ -30,6 +32,7 @@ export const Route = createFileRoute("/t/$slug")({
 
 function TenantLanding() {
   const { tenant } = Route.useLoaderData();
+  const [funnelOpen, setFunnelOpen] = useState(false);
 
   return (
     <div
@@ -72,13 +75,13 @@ function TenantLanding() {
         </p>
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <a
-            href={tenant.brokerUrl}
+          <button
+            onClick={() => setFunnelOpen(true)}
             className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
             style={{ background: tenant.primaryColor }}
           >
-            Start with {tenant.brokerName} <ArrowRight className="h-4 w-4" />
-          </a>
+            Get free access <ArrowRight className="h-4 w-4" />
+          </button>
           <a
             href={tenant.telegramChannel}
             target="_blank"
@@ -91,7 +94,7 @@ function TenantLanding() {
 
         {/* Stats row */}
         <div className="mx-auto mt-12 grid max-w-3xl grid-cols-2 gap-4 sm:grid-cols-4">
-          {tenant.stats.map((s: { label: string; value: string }) => (
+          {tenant.stats.map((s) => (
             <div key={s.label} className="rounded-2xl bg-white/5 px-4 py-4 text-center">
               <div className="font-display text-2xl font-bold" style={{ color: tenant.primaryColor }}>{s.value}</div>
               <div className="mt-0.5 text-[11px] text-muted-foreground uppercase tracking-[0.12em]">{s.label}</div>
@@ -104,7 +107,7 @@ function TenantLanding() {
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-8">
         <h2 className="mb-8 text-center font-display text-2xl font-bold sm:text-3xl">What you get</h2>
         <div className="grid gap-4 sm:grid-cols-3">
-          {tenant.features.map((f: { title: string; body: string; icon: string }) => (
+          {tenant.features.map((f) => (
             <div key={f.title} className="rounded-3xl border border-white/5 bg-white/[0.04] p-6">
               <div className="mb-3 text-3xl">{f.icon}</div>
               <h3 className="font-display text-lg font-bold">{f.title}</h3>
@@ -147,15 +150,15 @@ function TenantLanding() {
                   </li>
                 ))}
               </ul>
-              <a
-                href={tenant.brokerUrl}
+              <button
+                onClick={() => setFunnelOpen(true)}
                 className="mt-6 inline-flex items-center justify-center gap-2 rounded-full py-2.5 text-sm font-bold transition-opacity hover:opacity-90"
                 style={idx === 1
                   ? { background: tenant.primaryColor, color: "white" }
                   : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.9)" }}
               >
                 Get started <ArrowRight className="h-4 w-4" />
-              </a>
+              </button>
             </div>
           ))}
         </div>
@@ -167,7 +170,7 @@ function TenantLanding() {
         <div className="grid gap-4 sm:grid-cols-3">
           {[
             { step: "01", title: "Open & fund your broker", body: `Deposit at least €100 at ${tenant.brokerName} using the link above.` },
-            { step: "02", title: "Join Telegram", body: "Send your deposit screenshot to our bot. Access is granted within minutes." },
+            { step: "02", title: "Join Telegram", body: "Connect your Telegram — our bot verifies your deposit automatically and sends your personal invite." },
             { step: "03", title: "Trade with confidence", body: "Follow signals, complete lessons, and grow your account tier-by-tier." },
           ].map((s) => (
             <div key={s.step} className="rounded-3xl border border-white/5 bg-white/[0.04] p-6">
@@ -190,19 +193,21 @@ function TenantLanding() {
             Join {tenant.name} today. Deposit at {tenant.brokerName}, verify via Telegram, and unlock your first signals within minutes.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <a
-              href={tenant.brokerUrl}
+            <button
+              onClick={() => setFunnelOpen(true)}
               className="inline-flex items-center gap-2 rounded-full px-8 py-3.5 text-sm font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
               style={{ background: tenant.primaryColor }}
             >
-              Fund your account <ArrowRight className="h-4 w-4" />
-            </a>
+              Get free access <ArrowRight className="h-4 w-4" />
+            </button>
           </div>
           <p className="mt-4 text-[11px] text-muted-foreground">
             Questions? <a href={`mailto:${tenant.affiliateEmail}`} className="underline hover:text-foreground">{tenant.affiliateEmail}</a>
           </p>
         </div>
       </section>
+
+      <JoinFunnel tenant={tenant} open={funnelOpen} onClose={() => setFunnelOpen(false)} />
 
       {/* Footer */}
       <footer className="border-t border-white/5 px-4 py-6 text-center text-[11px] text-muted-foreground">
