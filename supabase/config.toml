@@ -1,1 +1,10 @@
-project_id = "knmcbivssuwilppajhou"
+project_id = "fymbblasfpfuyhpsesxk"
+
+# Webhooks are called by external services (broker / Telegram), not by a
+# logged-in Supabase user — so they must NOT require a Supabase JWT.
+# They authenticate themselves via their own shared secret / HMAC.
+[functions.broker-webhook]
+verify_jwt = false
+
+[functions.telegram-webhook]
+verify_jwt = false
