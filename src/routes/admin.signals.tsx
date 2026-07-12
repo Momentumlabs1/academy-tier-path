@@ -22,7 +22,7 @@ const SETUP_STEPS = [
 ];
 
 // Academy Supabase project — the function URL is fixed; only the token/secret stay placeholders.
-const FUNCTION_URL = "https://knmcbivssuwilppajhou.supabase.co/functions/v1/telegram-webhook";
+const FUNCTION_URL = "https://fymbblasfpfuyhpsesxk.supabase.co/functions/v1/telegram-webhook";
 const WEBHOOK_CMD = `curl "https://api.telegram.org/bot<BOT_TOKEN>/setWebhook" \\
   -d "url=${FUNCTION_URL}" \\
   -d "secret_token=<TELEGRAM_WEBHOOK_SECRET>"`;
