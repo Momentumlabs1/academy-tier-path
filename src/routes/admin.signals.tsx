@@ -25,7 +25,9 @@ const SETUP_STEPS = [
 const FUNCTION_URL = "https://fymbblasfpfuyhpsesxk.supabase.co/functions/v1/telegram-webhook";
 const WEBHOOK_CMD = `curl "https://api.telegram.org/bot<BOT_TOKEN>/setWebhook" \\
   -d "url=${FUNCTION_URL}" \\
-  -d "secret_token=<TELEGRAM_WEBHOOK_SECRET>"`;
+  -d "secret_token=<TELEGRAM_WEBHOOK_SECRET>" \\
+  -d "drop_pending_updates=true" \\
+  --data-urlencode 'allowed_updates=["channel_post","edited_channel_post","message","chat_join_request"]'`;
 
 function timeAgo(iso: string): string {
   const mins = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
