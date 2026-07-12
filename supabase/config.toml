@@ -9,4 +9,7 @@ verify_jwt = false
 [functions.telegram-webhook]
 verify_jwt = false
 
-# GitHub integration connected 2026-07-12 — first sync trigger.
+# Called from the public website (the "Connect Telegram" button); it verifies
+# the member itself, so no Supabase user JWT is required.
+[functions.create-telegram-link]
+verify_jwt = false

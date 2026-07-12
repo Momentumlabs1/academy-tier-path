@@ -1,19 +1,22 @@
 import { useState } from "react";
-import { CheckCircle2, Link2, Send } from "lucide-react";
+import { CheckCircle2, Link2, Loader2, Send } from "lucide-react";
 import { Card } from "@/components/academy/primitives/Card";
 import { useMemberState } from "@/hooks/useMemberState";
+import { CURRENT_MEMBER } from "@/lib/academy-data";
 import { cn } from "@/lib/utils";
 
-// Replace with the real bot username once created via @BotFather.
+// Fallback bot handle for pure-demo mode (no backend). Live URL comes from the
+// create-telegram-link edge function.
 const BOT_USERNAME = "AgentTradingRelayBot";
 const STORAGE_KEY = "academy_telegram_linked";
+const FN_URL = "https://fymbblasfpfuyhpsesxk.supabase.co/functions/v1/create-telegram-link";
 
 /**
  * 3-step onboarding into the signal channel:
  * deposit verified → link Telegram account → join channel.
- * Until Supabase is live, the "linked" state is a local demo toggle;
- * in production the deep link carries a per-member token issued
- * server-side (telegram_links table) and the bot flips the status.
+ * connect() asks the backend for a personal deep-link token; if the backend
+ * isn't reachable yet (pure demo), it falls back to a generic bot link so the
+ * flow still demonstrates.
  */
 export function TelegramConnectCard() {
   const state = useMemberState();
@@ -22,12 +25,24 @@ export function TelegramConnectCard() {
     if (typeof window === "undefined") return false;
     return localStorage.getItem(STORAGE_KEY) === "1";
   });
+  const [loading, setLoading] = useState(false);
 
-  function connect() {
-    // Production: open t.me/<bot>?start=<link_token from telegram_links>.
-    window.open(`https://t.me/${BOT_USERNAME}?start=demo`, "_blank", "noopener");
+  async function connect() {
+    setLoading(true);
+    let url = `https://t.me/${BOT_USERNAME}?start=demo`;
+    try {
+      const res = await fetch(FN_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: CURRENT_MEMBER.email }),
+      });
+      const data = await res.json();
+      if (res.ok && data?.url) url = data.url;
+    } catch { /* backend not live yet → fall back to the demo link */ }
+    window.open(url, "_blank", "noopener");
     localStorage.setItem(STORAGE_KEY, "1");
     setLinked(true);
+    setLoading(false);
   }
 
   const steps = [
@@ -92,9 +107,11 @@ export function TelegramConnectCard() {
               {s.title === "Connect Telegram" && isNext && depositVerified && (
                 <button
                   onClick={connect}
-                  className="mt-2.5 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-[var(--shadow-lime)] hover:opacity-90"
+                  disabled={loading}
+                  className="mt-2.5 inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-[var(--shadow-lime)] hover:opacity-90 disabled:opacity-60"
                 >
-                  <Send className="h-3.5 w-3.5" /> Connect now
+                  {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                  {loading ? "Connecting…" : "Connect now"}
                 </button>
               )}
             </div>
