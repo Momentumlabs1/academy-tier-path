@@ -9,6 +9,8 @@ export const getRouter = () => {
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
+    // Preload route chunks on hover/touchstart so clicks feel instant.
+    defaultPreload: "intent",
     defaultPreloadStaleTime: 0,
   });
 

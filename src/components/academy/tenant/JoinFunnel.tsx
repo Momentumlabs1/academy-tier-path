@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { ArrowRight, CheckCircle2, Mail, X } from "lucide-react";
 import type { TenantConfig } from "@/lib/tenants";
 
@@ -117,7 +118,7 @@ export function JoinFunnel({ tenant, open, onClose }: {
 
             <p className="mt-3 text-center text-[11px] text-foreground/40">
               Already deposited?{" "}
-              <a href="/signals" className="underline hover:text-foreground/70">Connect your Telegram →</a>
+              <Link to="/signals" className="underline hover:text-foreground/70">Connect your Telegram →</Link>
             </p>
           </form>
         )}
