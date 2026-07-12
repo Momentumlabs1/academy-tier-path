@@ -7,11 +7,11 @@
  *  A relay to a handful of channels finishes in ~1s, well within Telegram's
  *  webhook timeout, and update_id dedup guards against redelivery.)
  *
- * SOURCE detection (which channel is the MAIN one):
- *   - If the MAIN_CHANNEL_ID secret is set → strict: only that channel relays.
- *   - If it is NOT set → any channel post that is NOT itself a configured
- *     destination is treated as the source. This makes the bot self-configure
- *     from the tenants table, so a missing/incorrect secret can't break it.
+ * SOURCE detection: a channel post is relayed if it comes from the configured
+ * MAIN_CHANNEL_ID or from any channel that is not itself a destination
+ * (channels are broadcast-only, so the only non-destination channel the bot
+ * sees posts from is the main one). Works whether MAIN_CHANNEL_ID is set
+ * correctly, wrong, or not at all — and never relays a destination back out.
  *
  * THREE JOBS: fan-out (copyMessage / copyMessages for albums), /start account
  * linking, and chat_join_request gating (deposit ≥ €100).
@@ -253,9 +253,12 @@ async function processUpdate(update: TgUpdate) {
     const tenants = await activeTenants(db);
     const destIds = new Set(tenants.map((t) => Number(t.telegram_channel_id)));
     const mainId = Number(Deno.env.get("MAIN_CHANNEL_ID") ?? 0);
-    // Source = the configured main channel, or (if unset) any channel that
-    // is not itself a destination. Never relay a destination back out.
-    const isSource = mainId ? post.chat.id === mainId : !destIds.has(post.chat.id);
+    // Source = the configured main channel OR any channel that is not itself a
+    // destination (channels are broadcast-only, so the only non-destination
+    // channel the bot sees posts from is the main one). This works whether
+    // MAIN_CHANNEL_ID is set correctly, wrong, or not at all — and never
+    // relays a destination back out.
+    const isSource = post.chat.id === mainId || !destIds.has(post.chat.id);
     if (isSource && tenants.length) {
       if (post.media_group_id) await relayAlbum(db, post, tenants);
       else await relaySingle(db, post, tenants);
