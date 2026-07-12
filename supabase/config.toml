@@ -13,3 +13,7 @@ verify_jwt = false
 # the member itself, so no Supabase user JWT is required.
 [functions.create-telegram-link]
 verify_jwt = false
+
+# Admin settings API — guarded by its own ADMIN_KEY header, not a Supabase JWT.
+[functions.admin-tenants]
+verify_jwt = false
