@@ -8,3 +8,5 @@ verify_jwt = false
 
 [functions.telegram-webhook]
 verify_jwt = false
+
+# GitHub integration connected 2026-07-12 — first sync trigger.
