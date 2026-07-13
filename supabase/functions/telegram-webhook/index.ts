@@ -68,6 +68,8 @@ interface TgMessage {
   text?: string;
   caption?: string;
   media_group_id?: string;
+  entities?: unknown[];
+  caption_entities?: unknown[];
 }
 interface TgUpdate {
   update_id: number;
@@ -173,6 +175,52 @@ async function logRelay(db: SupabaseClient, chatId: number, messageId: number, t
   );
 }
 
+// ── Edit sync: propagate an edit of the source post to every relayed copy ─────
+//
+// The original fan-out stored each brand's copied message_id in
+// signal_relays.delivered ({ "<slug>": { ok, message_id } }). On an
+// edited_channel_post we look that row up and call editMessageText /
+// editMessageCaption on each copy so all channels stay in sync.
+//
+// Limitation: albums are copied with copyMessages (no per-part id map), so a
+// caption edit inside an album can't be targeted — only single messages sync.
+
+interface DeliveredEntry { ok?: boolean; message_id?: number }
+
+async function relayEdit(db: SupabaseClient, post: TgMessage, tenants: TenantRow[]) {
+  const { data: row } = await db
+    .from("signal_relays")
+    .select("delivered")
+    .eq("source_chat_id", post.chat.id)
+    .eq("source_message_id", post.message_id)
+    .maybeSingle();
+
+  const delivered = (row?.delivered ?? null) as Record<string, DeliveredEntry> | null;
+  if (!delivered) return; // never relayed (or album) — nothing to edit
+
+  const isCaption = post.text == null && post.caption != null;
+  const results: Record<string, unknown> = {};
+
+  for (const t of tenants) {
+    const d = delivered[t.slug];
+    if (!d?.ok || !d.message_id) { results[t.slug] = { ok: false, error: "no original copy" }; continue; }
+
+    const payload = isCaption
+      ? { chat_id: t.telegram_channel_id, message_id: d.message_id, caption: post.caption, caption_entities: post.caption_entities }
+      : { chat_id: t.telegram_channel_id, message_id: d.message_id, text: post.text, entities: post.entities };
+
+    const res = await tg(isCaption ? "editMessageCaption" : "editMessageText", payload);
+    // "message is not modified" means the copy already matches — treat as ok.
+    const notModified = !res.ok && (res.description ?? "").includes("not modified");
+    results[t.slug] = res.ok || notModified ? { ok: true, message_id: d.message_id } : { ok: false, error: res.description };
+  }
+
+  await db.from("signal_relays")
+    .update({ edited_at: new Date().toISOString(), edit_delivered: results })
+    .eq("source_chat_id", post.chat.id)
+    .eq("source_message_id", post.message_id);
+}
+
 // ── /start <token>: bind Telegram account → member ──────────────────────────
 
 async function handleStart(db: SupabaseClient, msg: TgMessage) {
@@ -248,20 +296,30 @@ async function handleJoinRequest(db: SupabaseClient, reqObj: { chat: TgChat; fro
 async function processUpdate(update: TgUpdate) {
   const db = admin();
 
+  // Shared source check: the main channel OR any channel that isn't itself a
+  // destination (channels are broadcast-only, so the only non-destination
+  // channel the bot sees posts from is the main one).
+  const isSourceChat = (chatId: number, destIds: Set<number>) =>
+    chatId === Number(Deno.env.get("MAIN_CHANNEL_ID") ?? 0) || !destIds.has(chatId);
+
   const post = update.channel_post;
   if (post) {
     const tenants = await activeTenants(db);
     const destIds = new Set(tenants.map((t) => Number(t.telegram_channel_id)));
-    const mainId = Number(Deno.env.get("MAIN_CHANNEL_ID") ?? 0);
-    // Source = the configured main channel OR any channel that is not itself a
-    // destination (channels are broadcast-only, so the only non-destination
-    // channel the bot sees posts from is the main one). This works whether
-    // MAIN_CHANNEL_ID is set correctly, wrong, or not at all — and never
-    // relays a destination back out.
-    const isSource = post.chat.id === mainId || !destIds.has(post.chat.id);
-    if (isSource && tenants.length) {
+    if (isSourceChat(post.chat.id, destIds) && tenants.length) {
       if (post.media_group_id) await relayAlbum(db, post, tenants);
       else await relaySingle(db, post, tenants);
+    }
+    return;
+  }
+
+  // Edit in the main channel → edit every relayed copy so channels stay in sync.
+  const edited = update.edited_channel_post;
+  if (edited) {
+    const tenants = await activeTenants(db);
+    const destIds = new Set(tenants.map((t) => Number(t.telegram_channel_id)));
+    if (isSourceChat(edited.chat.id, destIds) && tenants.length) {
+      await relayEdit(db, edited, tenants);
     }
     return;
   }
