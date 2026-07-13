@@ -127,10 +127,93 @@ async function copyOne(t: TenantRow, fromChat: number, messageId: number) {
   }
 }
 
+// ── Auto-formatter (Tim's spec) ──────────────────────────────────────────────
+//
+// Tim types a shorthand in the main channel; the bot renders a clean signal
+// and relays THAT (instead of copying the shorthand). Only Gold & NAS100 get
+// auto-calculated take-profits:
+//   R = |entry − stop|;  TP1..4 = 0.5R,1R,1.5R,2R (in trade direction);
+//   TP5 = Open.  Calculated prices are rounded to the nearest 0.50.
+// Anything that isn't a recognisable Gold/NAS100 signal returns null and is
+// copied verbatim, so normal announcements are never mangled.
+
+const roundHalf = (x: number) => (Math.round(x * 2) / 2).toFixed(2);
+
+function formatSignal(raw: string): string | null {
+  const lower = raw.toLowerCase();
+
+  const dir = /\b(buy|long)\b/.test(lower) ? "BUY" : /\b(sell|short)\b/.test(lower) ? "SELL" : null;
+  if (!dir) return null;
+
+  let asset: string | null = null;
+  if (/\bgold\b|xau/.test(lower)) asset = "GOLD (XAU/USD)";
+  else if (/nas\s?100|us\s?100|nasdaq/.test(lower)) asset = "NAS100";
+  if (!asset) return null; // spec: auto-format applies to Gold & NAS100 only
+
+  // Strip asset tokens so "nas100" doesn't leak a "100" into the number scan.
+  const numStr = lower.replace(/nas\s?100|us\s?100/g, " ").replace(/gold|xau\/?usd/g, " ");
+
+  const slMatch = numStr.match(/(?:sl|stop(?:\s*loss)?)\s*[:=]?\s*(\d+(?:\.\d+)?)/);
+  if (!slMatch) return null;
+  const sl = parseFloat(slMatch[1]);
+
+  let entry: number | null = null;
+  const entryMatch = numStr.match(/(?:entry|@)\s*[:=]?\s*(\d+(?:\.\d+)?)/);
+  if (entryMatch) entry = parseFloat(entryMatch[1]);
+  if (entry == null) {
+    const nums = (numStr.match(/\d+(?:\.\d+)?/g) ?? []).map(parseFloat);
+    const idx = nums.indexOf(sl);
+    if (idx > -1) nums.splice(idx, 1);
+    entry = nums[0] ?? null;
+  }
+  if (entry == null || !isFinite(entry) || !isFinite(sl) || entry === sl) return null;
+
+  const R = Math.abs(entry - sl);
+  const sign = dir === "BUY" ? 1 : -1;
+  const tp = (m: number) => roundHalf(entry! + sign * m * R);
+
+  const arrow = dir === "BUY" ? "🟢 BUY NOW" : "🔴 SELL NOW";
+  return [
+    `${arrow} — ${asset}`,
+    ``,
+    `📍 Entry     ${entry.toFixed(2)}`,
+    `🛑 Stop      ${sl.toFixed(2)}`,
+    ``,
+    `🎯 TP1 (0.5R)   ${tp(0.5)}`,
+    `🎯 TP2 (1.0R)   ${tp(1)}`,
+    `🎯 TP3 (1.5R)   ${tp(1.5)}`,
+    `🎯 TP4 (2.0R)   ${tp(2)}`,
+    `🎯 TP5          Open`,
+  ].join("\n");
+}
+
+// Send our own formatted signal (+ brand footer inline) instead of a raw copy.
+async function sendFormatted(t: TenantRow, body: string) {
+  try {
+    const footer = footerFor(t);
+    const text = footer ? `${body}\n\n${footer}` : body;
+    const res = await tg<{ message_id: number }>("sendMessage", {
+      chat_id: t.telegram_channel_id, text, disable_web_page_preview: true,
+    });
+    if (!res.ok) throw new Error(res.description ?? "sendMessage failed");
+    return { ok: true, message_id: res.result?.message_id };
+  } catch (e) {
+    console.error(`[relay] formatted → ${t.slug} failed:`, e);
+    return { ok: false, error: String(e) };
+  }
+}
+
 async function relaySingle(db: SupabaseClient, post: TgMessage, tenants: TenantRow[]) {
+  // A recognisable Gold/NAS100 signal is rendered clean; everything else is
+  // copied verbatim (footer sent separately, preserving original formatting).
+  const rendered = post.text ? formatSignal(post.text) : null;
   const delivered: Record<string, unknown> = {};
-  for (const t of tenants) delivered[t.slug] = await copyOne(t, post.chat.id, post.message_id);
-  await logRelay(db, post.chat.id, post.message_id, post.text ?? post.caption ?? "[media]", delivered);
+  for (const t of tenants) {
+    delivered[t.slug] = rendered
+      ? await sendFormatted(t, rendered)
+      : await copyOne(t, post.chat.id, post.message_id);
+  }
+  await logRelay(db, post.chat.id, post.message_id, rendered ?? post.text ?? post.caption ?? "[media]", delivered);
 }
 
 // ── Fan-out: media album (multiple parts, same media_group_id) ───────────────
@@ -199,17 +282,30 @@ async function relayEdit(db: SupabaseClient, post: TgMessage, tenants: TenantRow
   if (!delivered) return; // never relayed (or album) — nothing to edit
 
   const isCaption = post.text == null && post.caption != null;
+  // If the edited post is a recognisable signal, re-render it the same way the
+  // original relay did, so formatted copies stay formatted after an edit.
+  const rendered = post.text ? formatSignal(post.text) : null;
   const results: Record<string, unknown> = {};
 
   for (const t of tenants) {
     const d = delivered[t.slug];
     if (!d?.ok || !d.message_id) { results[t.slug] = { ok: false, error: "no original copy" }; continue; }
 
-    const payload = isCaption
-      ? { chat_id: t.telegram_channel_id, message_id: d.message_id, caption: post.caption, caption_entities: post.caption_entities }
-      : { chat_id: t.telegram_channel_id, message_id: d.message_id, text: post.text, entities: post.entities };
+    let method: string;
+    let payload: Record<string, unknown>;
+    if (rendered) {
+      const footer = footerFor(t);
+      method = "editMessageText";
+      payload = { chat_id: t.telegram_channel_id, message_id: d.message_id, text: footer ? `${rendered}\n\n${footer}` : rendered, disable_web_page_preview: true };
+    } else if (isCaption) {
+      method = "editMessageCaption";
+      payload = { chat_id: t.telegram_channel_id, message_id: d.message_id, caption: post.caption, caption_entities: post.caption_entities };
+    } else {
+      method = "editMessageText";
+      payload = { chat_id: t.telegram_channel_id, message_id: d.message_id, text: post.text, entities: post.entities };
+    }
 
-    const res = await tg(isCaption ? "editMessageCaption" : "editMessageText", payload);
+    const res = await tg(method, payload);
     // "message is not modified" means the copy already matches — treat as ok.
     const notModified = !res.ok && (res.description ?? "").includes("not modified");
     results[t.slug] = res.ok || notModified ? { ok: true, message_id: d.message_id } : { ok: false, error: res.description };
