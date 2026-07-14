@@ -6,7 +6,6 @@ import { TIERS } from "@/lib/academy-data";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { JoinFunnel } from "@/components/academy/tenant/JoinFunnel";
-import { ZekoMascot } from "@/components/academy/tenant/ZekoMascot";
 
 const DEMO_SIGNALS = [
   { dir: "LONG", pair: "XAU/USD · Gold", entry: "2,318.40", sl: "2,311.00", tps: ["2,326", "2,334", "Open"], status: "TP2 hit", won: true },
@@ -104,12 +103,14 @@ function TenantLanding() {
           </div>
 
           {tenant.mascot === "zeko" && (
-            <div className="relative mx-auto w-full max-w-[340px]">
+            <div className="relative mx-auto w-full max-w-[360px]">
               <div
-                className="absolute inset-6 rounded-full blur-3xl"
-                style={{ background: `color-mix(in oklch, ${tenant.primaryColor} 35%, transparent)` }}
+                className="absolute inset-4 rounded-full blur-3xl"
+                style={{ background: `color-mix(in oklch, ${tenant.primaryColor} 40%, transparent)` }}
               />
-              <ZekoMascot className="relative w-full drop-shadow-2xl" />
+              <div className="relative aspect-square overflow-hidden rounded-full ring-4 ring-white/10 shadow-2xl">
+                <img src="/zeko-hero.png" alt="Zeko" className="h-full w-full scale-[1.35] object-cover object-top" />
+              </div>
             </div>
           )}
         </div>
