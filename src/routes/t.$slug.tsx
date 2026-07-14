@@ -296,6 +296,9 @@ function TenantLanding() {
           className="rounded-3xl p-8 text-center sm:p-12"
           style={{ background: `linear-gradient(135deg, color-mix(in oklch, ${tenant.primaryColor} 15%, transparent), color-mix(in oklch, ${tenant.accentColor} 10%, transparent))`, border: `1px solid color-mix(in oklch, ${tenant.primaryColor} 20%, transparent)` }}
         >
+          {tenant.mascot === "zeko" && (
+            <img src="/zeko-point.png" alt="" className="mx-auto mb-2 h-28 w-28 rounded-full object-cover object-top" />
+          )}
           <h2 className="font-display text-2xl font-bold sm:text-3xl">Ready to start?</h2>
           <p className="mx-auto mt-3 max-w-md text-foreground/70">
             Join {tenant.name} today. Deposit at {tenant.brokerName}, verify via Telegram, and unlock your first signals within minutes.
