@@ -102,6 +102,32 @@ export const TENANTS: TenantConfig[] = [
       { icon: "🤝", title: "Prop Firm Prep", body: "Challenge-ready risk rules and position sizing." },
     ],
   },
+  {
+    slug: "zekoglobal",
+    name: "Zeko Global",
+    tagline: "Build your first $10k month — from zero.",
+    description: "Learn what the wealthy actually do with money. Real trade signals, a step-by-step playbook, and a community of 155K+ — no fluff, no gurus.",
+    logoInitials: "Z",
+    primaryColor: "oklch(0.82 0.1 168)",
+    accentColor: "oklch(0.85 0.15 90)",
+    bgFrom: "oklch(0.15 0.015 168)",
+    bgTo: "oklch(0.08 0.008 168)",
+    brokerName: "Your Broker",
+    brokerUrl: "#",
+    telegramChannel: "https://t.me/zekoglobal",
+    affiliateEmail: "zekoglobalhq@gmail.com",
+    stats: [
+      { label: "Community", value: "155K+" },
+      { label: "Signal accuracy", value: "74%" },
+      { label: "Target", value: "$10k / mo" },
+      { label: "Cost to join", value: "€0" },
+    ],
+    features: [
+      { icon: "📡", title: "Live Wealth Signals", body: "Real-time trade calls straight to your phone — copy the desk, not the hype." },
+      { icon: "🔑", title: "The Wealth Playbook", body: "What wealthy people actually do with money — a clear path from zero to your first $10k month." },
+      { icon: "💸", title: "Free to Join", body: "Fund with our partner broker and unlock every signal and lesson for free." },
+    ],
+  },
 ];
 
 export function getTenant(slug: string): TenantConfig | undefined {
