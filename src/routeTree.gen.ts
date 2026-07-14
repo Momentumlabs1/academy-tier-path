@@ -16,16 +16,19 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as TSlugRouteImport } from './routes/t.$slug'
 import { Route as AdminTenantsRouteImport } from './routes/admin.tenants'
+import { Route as AdminSignalsRouteImport } from './routes/admin.signals'
 import { Route as AdminMembersRouteImport } from './routes/admin.members'
 import { Route as AdminLessonsRouteImport } from './routes/admin.lessons'
 import { Route as AdminDepositsRouteImport } from './routes/admin.deposits'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AppUnlocksRouteImport } from './routes/_app.unlocks'
+import { Route as AppToolsRouteImport } from './routes/_app.tools'
 import { Route as AppTierRouteImport } from './routes/_app.tier'
 import { Route as AppSignalsRouteImport } from './routes/_app.signals'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppNotificationsRouteImport } from './routes/_app.notifications'
 import { Route as AppLessonsRouteImport } from './routes/_app.lessons'
+import { Route as AppLessonsIndexRouteImport } from './routes/_app.lessons.index'
 import { Route as AppLessonsLessonIdRouteImport } from './routes/_app.lessons.$lessonId'
 
 const HegemonyRoute = HegemonyRouteImport.update({
@@ -62,6 +65,11 @@ const AdminTenantsRoute = AdminTenantsRouteImport.update({
   path: '/tenants',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSignalsRoute = AdminSignalsRouteImport.update({
+  id: '/signals',
+  path: '/signals',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminMembersRoute = AdminMembersRouteImport.update({
   id: '/members',
   path: '/members',
@@ -85,6 +93,11 @@ const AdminAuditRoute = AdminAuditRouteImport.update({
 const AppUnlocksRoute = AppUnlocksRouteImport.update({
   id: '/unlocks',
   path: '/unlocks',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppToolsRoute = AppToolsRouteImport.update({
+  id: '/tools',
+  path: '/tools',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTierRoute = AppTierRouteImport.update({
@@ -112,6 +125,11 @@ const AppLessonsRoute = AppLessonsRouteImport.update({
   path: '/lessons',
   getParentRoute: () => AppRoute,
 } as any)
+const AppLessonsIndexRoute = AppLessonsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppLessonsRoute,
+} as any)
 const AppLessonsLessonIdRoute = AppLessonsLessonIdRouteImport.update({
   id: '/$lessonId',
   path: '/$lessonId',
@@ -127,33 +145,38 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRoute
   '/signals': typeof AppSignalsRoute
   '/tier': typeof AppTierRoute
+  '/tools': typeof AppToolsRoute
   '/unlocks': typeof AppUnlocksRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/deposits': typeof AdminDepositsRoute
   '/admin/lessons': typeof AdminLessonsRoute
   '/admin/members': typeof AdminMembersRoute
+  '/admin/signals': typeof AdminSignalsRoute
   '/admin/tenants': typeof AdminTenantsRoute
   '/t/$slug': typeof TSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
+  '/lessons/': typeof AppLessonsIndexRoute
 }
 export interface FileRoutesByTo {
   '/hegemony': typeof HegemonyRoute
-  '/lessons': typeof AppLessonsRouteWithChildren
   '/notifications': typeof AppNotificationsRoute
   '/settings': typeof AppSettingsRoute
   '/signals': typeof AppSignalsRoute
   '/tier': typeof AppTierRoute
+  '/tools': typeof AppToolsRoute
   '/unlocks': typeof AppUnlocksRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/deposits': typeof AdminDepositsRoute
   '/admin/lessons': typeof AdminLessonsRoute
   '/admin/members': typeof AdminMembersRoute
+  '/admin/signals': typeof AdminSignalsRoute
   '/admin/tenants': typeof AdminTenantsRoute
   '/t/$slug': typeof TSlugRoute
   '/': typeof AppIndexRoute
   '/admin': typeof AdminIndexRoute
   '/lessons/$lessonId': typeof AppLessonsLessonIdRoute
+  '/lessons': typeof AppLessonsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -165,16 +188,19 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/signals': typeof AppSignalsRoute
   '/_app/tier': typeof AppTierRoute
+  '/_app/tools': typeof AppToolsRoute
   '/_app/unlocks': typeof AppUnlocksRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/deposits': typeof AdminDepositsRoute
   '/admin/lessons': typeof AdminLessonsRoute
   '/admin/members': typeof AdminMembersRoute
+  '/admin/signals': typeof AdminSignalsRoute
   '/admin/tenants': typeof AdminTenantsRoute
   '/t/$slug': typeof TSlugRoute
   '/_app/': typeof AppIndexRoute
   '/admin/': typeof AdminIndexRoute
   '/_app/lessons/$lessonId': typeof AppLessonsLessonIdRoute
+  '/_app/lessons/': typeof AppLessonsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -187,33 +213,38 @@ export interface FileRouteTypes {
     | '/settings'
     | '/signals'
     | '/tier'
+    | '/tools'
     | '/unlocks'
     | '/admin/audit'
     | '/admin/deposits'
     | '/admin/lessons'
     | '/admin/members'
+    | '/admin/signals'
     | '/admin/tenants'
     | '/t/$slug'
     | '/admin/'
     | '/lessons/$lessonId'
+    | '/lessons/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/hegemony'
-    | '/lessons'
     | '/notifications'
     | '/settings'
     | '/signals'
     | '/tier'
+    | '/tools'
     | '/unlocks'
     | '/admin/audit'
     | '/admin/deposits'
     | '/admin/lessons'
     | '/admin/members'
+    | '/admin/signals'
     | '/admin/tenants'
     | '/t/$slug'
     | '/'
     | '/admin'
     | '/lessons/$lessonId'
+    | '/lessons'
   id:
     | '__root__'
     | '/_app'
@@ -224,16 +255,19 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/signals'
     | '/_app/tier'
+    | '/_app/tools'
     | '/_app/unlocks'
     | '/admin/audit'
     | '/admin/deposits'
     | '/admin/lessons'
     | '/admin/members'
+    | '/admin/signals'
     | '/admin/tenants'
     | '/t/$slug'
     | '/_app/'
     | '/admin/'
     | '/_app/lessons/$lessonId'
+    | '/_app/lessons/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -294,6 +328,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminTenantsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/signals': {
+      id: '/admin/signals'
+      path: '/signals'
+      fullPath: '/admin/signals'
+      preLoaderRoute: typeof AdminSignalsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/members': {
       id: '/admin/members'
       path: '/members'
@@ -327,6 +368,13 @@ declare module '@tanstack/react-router' {
       path: '/unlocks'
       fullPath: '/unlocks'
       preLoaderRoute: typeof AppUnlocksRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/tools': {
+      id: '/_app/tools'
+      path: '/tools'
+      fullPath: '/tools'
+      preLoaderRoute: typeof AppToolsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/tier': {
@@ -364,6 +412,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLessonsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/lessons/': {
+      id: '/_app/lessons/'
+      path: '/'
+      fullPath: '/lessons/'
+      preLoaderRoute: typeof AppLessonsIndexRouteImport
+      parentRoute: typeof AppLessonsRoute
+    }
     '/_app/lessons/$lessonId': {
       id: '/_app/lessons/$lessonId'
       path: '/$lessonId'
@@ -376,10 +431,12 @@ declare module '@tanstack/react-router' {
 
 interface AppLessonsRouteChildren {
   AppLessonsLessonIdRoute: typeof AppLessonsLessonIdRoute
+  AppLessonsIndexRoute: typeof AppLessonsIndexRoute
 }
 
 const AppLessonsRouteChildren: AppLessonsRouteChildren = {
   AppLessonsLessonIdRoute: AppLessonsLessonIdRoute,
+  AppLessonsIndexRoute: AppLessonsIndexRoute,
 }
 
 const AppLessonsRouteWithChildren = AppLessonsRoute._addFileChildren(
@@ -392,6 +449,7 @@ interface AppRouteChildren {
   AppSettingsRoute: typeof AppSettingsRoute
   AppSignalsRoute: typeof AppSignalsRoute
   AppTierRoute: typeof AppTierRoute
+  AppToolsRoute: typeof AppToolsRoute
   AppUnlocksRoute: typeof AppUnlocksRoute
   AppIndexRoute: typeof AppIndexRoute
 }
@@ -402,6 +460,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppSettingsRoute: AppSettingsRoute,
   AppSignalsRoute: AppSignalsRoute,
   AppTierRoute: AppTierRoute,
+  AppToolsRoute: AppToolsRoute,
   AppUnlocksRoute: AppUnlocksRoute,
   AppIndexRoute: AppIndexRoute,
 }
@@ -413,6 +472,7 @@ interface AdminRouteChildren {
   AdminDepositsRoute: typeof AdminDepositsRoute
   AdminLessonsRoute: typeof AdminLessonsRoute
   AdminMembersRoute: typeof AdminMembersRoute
+  AdminSignalsRoute: typeof AdminSignalsRoute
   AdminTenantsRoute: typeof AdminTenantsRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -422,6 +482,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminDepositsRoute: AdminDepositsRoute,
   AdminLessonsRoute: AdminLessonsRoute,
   AdminMembersRoute: AdminMembersRoute,
+  AdminSignalsRoute: AdminSignalsRoute,
   AdminTenantsRoute: AdminTenantsRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
@@ -437,3 +498,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
