@@ -1,10 +1,18 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowRight, CheckCircle2, Lock, Shield } from "lucide-react";
+import { ArrowRight, CheckCircle2, Lock, Shield, TrendingUp, TrendingDown, Star } from "lucide-react";
 import { getTenant } from "@/lib/tenants";
 import { TIERS } from "@/lib/academy-data";
 import { formatMoney } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { JoinFunnel } from "@/components/academy/tenant/JoinFunnel";
+import { ZekoMascot } from "@/components/academy/tenant/ZekoMascot";
+
+const DEMO_SIGNALS = [
+  { dir: "LONG", pair: "XAU/USD · Gold", entry: "2,318.40", sl: "2,311.00", tps: ["2,326", "2,334", "Open"], status: "TP2 hit", won: true },
+  { dir: "SHORT", pair: "NAS100", entry: "20,050", sl: "20,110", tps: ["19,980", "19,910"], status: "Running", won: null as boolean | null },
+  { dir: "LONG", pair: "BTC/USDT", entry: "64,200", sl: "63,400", tps: ["65,000", "65,800", "Open"], status: "TP1 hit", won: true },
+];
 
 export const Route = createFileRoute("/t/$slug")({
   loader: ({ params }) => {
@@ -59,41 +67,55 @@ function TenantLanding() {
       </header>
 
       {/* Hero */}
-      <section className="mx-auto max-w-6xl px-4 pb-20 pt-16 text-center sm:px-8">
-        <div
-          className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold"
-          style={{ background: `color-mix(in oklch, ${tenant.primaryColor} 15%, transparent)`, color: tenant.primaryColor }}
-        >
-          <Shield className="h-3.5 w-3.5" /> Powered by Agent Trading Academy
-        </div>
+      <section className="mx-auto max-w-6xl px-4 pb-16 pt-12 sm:px-8">
+        <div className={cn("grid items-center gap-8 lg:gap-12", tenant.mascot && "lg:grid-cols-[1.1fr_0.9fr]")}>
+          <div className={tenant.mascot ? "text-center lg:text-left" : "mx-auto max-w-3xl text-center"}>
+            <div
+              className="mb-6 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold"
+              style={{ background: `color-mix(in oklch, ${tenant.primaryColor} 15%, transparent)`, color: tenant.primaryColor }}
+            >
+              <Shield className="h-3.5 w-3.5" /> Powered by Agent Trading Academy
+            </div>
 
-        <h1 className="font-display text-4xl font-bold leading-tight tracking-tight sm:text-5xl lg:text-6xl">
-          {tenant.tagline}
-        </h1>
-        <p className="mx-auto mt-4 max-w-2xl text-lg text-foreground/70">
-          {tenant.description}
-        </p>
+            <h1 className="font-display text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+              {tenant.headline ?? tenant.tagline}
+            </h1>
+            <p className={cn("mt-4 text-lg text-foreground/70", tenant.mascot ? "" : "mx-auto max-w-2xl")}>
+              {tenant.subhead ?? tenant.description}
+            </p>
 
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <button
-            onClick={() => setFunnelOpen(true)}
-            className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
-            style={{ background: tenant.primaryColor }}
-          >
-            Get free access <ArrowRight className="h-4 w-4" />
-          </button>
-          <a
-            href={tenant.telegramChannel}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold hover:bg-white/10 transition-colors"
-          >
-            Join Telegram
-          </a>
+            <div className={cn("mt-8 flex flex-wrap items-center gap-3", tenant.mascot ? "justify-center lg:justify-start" : "justify-center")}>
+              <button
+                onClick={() => setFunnelOpen(true)}
+                className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
+                style={{ background: tenant.primaryColor }}
+              >
+                Get free access <ArrowRight className="h-4 w-4" />
+              </button>
+              <a
+                href={tenant.telegramChannel}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold hover:bg-white/10 transition-colors"
+              >
+                Join Telegram
+              </a>
+            </div>
+          </div>
+
+          {tenant.mascot === "zeko" && (
+            <div className="relative mx-auto w-full max-w-[340px]">
+              <div
+                className="absolute inset-6 rounded-full blur-3xl"
+                style={{ background: `color-mix(in oklch, ${tenant.primaryColor} 35%, transparent)` }}
+              />
+              <ZekoMascot className="relative w-full drop-shadow-2xl" />
+            </div>
+          )}
         </div>
 
         {/* Stats row */}
-        <div className="mx-auto mt-12 grid max-w-3xl grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="mx-auto mt-14 grid max-w-3xl grid-cols-2 gap-4 sm:grid-cols-4">
           {tenant.stats.map((s) => (
             <div key={s.label} className="rounded-2xl bg-white/5 px-4 py-4 text-center">
               <div className="font-display text-2xl font-bold" style={{ color: tenant.primaryColor }}>{s.value}</div>
@@ -101,6 +123,45 @@ function TenantLanding() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* Live signals demo */}
+      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-8">
+        <div className="mb-2 flex items-center justify-center gap-2">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-70" style={{ background: tenant.primaryColor }} />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full" style={{ background: tenant.primaryColor }} />
+          </span>
+          <h2 className="text-center font-display text-2xl font-bold sm:text-3xl">See the signals</h2>
+        </div>
+        <p className="mb-8 text-center text-sm text-muted-foreground">Real calls, exactly how members get them — entry, stop-loss, targets. No screenshots, no hindsight.</p>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {DEMO_SIGNALS.map((s) => {
+            const long = s.dir === "LONG";
+            return (
+              <div key={s.pair} className="overflow-hidden rounded-2xl border border-white/8 bg-white/[0.04]">
+                <div className="flex items-center justify-between px-4 py-3" style={{ background: long ? "rgba(52,209,122,.10)" : "rgba(255,85,102,.10)" }}>
+                  <span className={cn("inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 font-mono text-xs font-bold", long ? "text-[oklch(0.8_0.16_150)]" : "text-[oklch(0.72_0.18_20)]")}>
+                    {long ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />} {s.dir}
+                  </span>
+                  <span className="font-mono text-xs text-foreground/80">{s.pair}</span>
+                </div>
+                <div className="space-y-1.5 px-4 py-4 font-mono text-[13px]">
+                  <Row k="Entry" v={s.entry} />
+                  <Row k="Stop" v={s.sl} tone="red" />
+                  {s.tps.map((tp, i) => <Row key={i} k={`TP${i + 1}`} v={tp} tone="green" />)}
+                </div>
+                <div className="flex items-center justify-between border-t border-white/8 px-4 py-2.5 text-xs">
+                  <span className="text-muted-foreground">Status</span>
+                  <span className={cn("font-semibold", s.won ? "text-[oklch(0.8_0.16_150)]" : "text-foreground/70")}>
+                    {s.won && "✓ "}{s.status}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <p className="mt-4 text-center text-[11px] text-muted-foreground">Illustrative examples. Trading involves risk — never risk more than you can afford to lose.</p>
       </section>
 
       {/* Features */}
@@ -164,6 +225,34 @@ function TenantLanding() {
         </div>
       </section>
 
+      {/* Testimonials */}
+      {tenant.testimonials && tenant.testimonials.length > 0 && (
+        <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-8">
+          <h2 className="mb-8 text-center font-display text-2xl font-bold sm:text-3xl">Real members, real results</h2>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {tenant.testimonials.map((t) => (
+              <div key={t.handle} className="flex flex-col rounded-3xl border border-white/5 bg-white/[0.04] p-6">
+                <div className="mb-3 flex gap-0.5">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} className="h-3.5 w-3.5 fill-current" style={{ color: tenant.accentColor }} />
+                  ))}
+                </div>
+                <p className="flex-1 text-sm text-foreground/80">"{t.text}"</p>
+                <div className="mt-4 flex items-center justify-between">
+                  <div>
+                    <div className="text-sm font-bold">{t.name}</div>
+                    <div className="text-[11px] text-muted-foreground">{t.handle}</div>
+                  </div>
+                  <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background: `color-mix(in oklch, ${tenant.primaryColor} 16%, transparent)`, color: tenant.primaryColor }}>
+                    {t.result}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* How it works */}
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-8">
         <h2 className="mb-8 text-center font-display text-2xl font-bold sm:text-3xl">How it works</h2>
@@ -181,6 +270,24 @@ function TenantLanding() {
           ))}
         </div>
       </section>
+
+      {/* FAQ */}
+      {tenant.faq && tenant.faq.length > 0 && (
+        <section className="mx-auto max-w-3xl px-4 pb-20 sm:px-8">
+          <h2 className="mb-8 text-center font-display text-2xl font-bold sm:text-3xl">Questions</h2>
+          <div className="space-y-3">
+            {tenant.faq.map((f) => (
+              <details key={f.q} className="group rounded-2xl border border-white/5 bg-white/[0.04] px-5 py-4">
+                <summary className="flex cursor-pointer items-center justify-between text-sm font-semibold marker:content-['']">
+                  {f.q}
+                  <span className="ml-4 text-lg text-muted-foreground transition-transform group-open:rotate-45">+</span>
+                </summary>
+                <p className="mt-3 text-sm text-foreground/70">{f.a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* CTA */}
       <section className="mx-auto max-w-6xl px-4 pb-24 sm:px-8">
@@ -214,6 +321,19 @@ function TenantLanding() {
         {tenant.name} · Powered by <Link to="/" className="hover:text-foreground underline">Agent Trading Academy</Link>
         {" "}· <Lock className="inline h-2.5 w-2.5" /> Demo data only
       </footer>
+    </div>
+  );
+}
+
+function Row({ k, v, tone }: { k: string; v: string; tone?: "red" | "green" }) {
+  return (
+    <div className="flex items-center justify-between">
+      <span className="text-muted-foreground">{k}</span>
+      <span className={cn(
+        "tabular-nums",
+        tone === "red" && "text-[oklch(0.72_0.18_20)]",
+        tone === "green" && "text-[oklch(0.8_0.16_150)]",
+      )}>{v}</span>
     </div>
   );
 }

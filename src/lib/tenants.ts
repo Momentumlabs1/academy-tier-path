@@ -21,6 +21,12 @@ export interface TenantConfig {
   affiliateEmail: string;
   stats: { label: string; value: string }[];
   features: { icon: string; title: string; body: string }[];
+  /** Optional richer content ------------------------------------------------ */
+  mascot?: "zeko";
+  headline?: string; // overrides the big hero line if set
+  subhead?: string;  // short line under the headline
+  testimonials?: { name: string; handle: string; text: string; result: string }[];
+  faq?: { q: string; a: string }[];
 }
 
 export const TENANTS: TenantConfig[] = [
@@ -126,6 +132,20 @@ export const TENANTS: TenantConfig[] = [
       { icon: "📡", title: "Live Wealth Signals", body: "Real-time trade calls straight to your phone — copy the desk, not the hype." },
       { icon: "🔑", title: "The Wealth Playbook", body: "What wealthy people actually do with money — a clear path from zero to your first $10k month." },
       { icon: "💸", title: "Free to Join", body: "Fund with our partner broker and unlock every signal and lesson for free." },
+    ],
+    mascot: "zeko",
+    headline: "Build your first $10k month — from zero.",
+    subhead: "155,000 people already follow Zeko for one reason: no fluff, no gurus — just what actually moves money.",
+    testimonials: [
+      { name: "Marco R.", handle: "@marco.trades", text: "Followed the free signals for 3 weeks before I even deposited. Once I saw they were real, I went all in.", result: "+€1,240 first month" },
+      { name: "Sofia L.", handle: "@sofdoestrades", text: "The playbook finally made order flow click for me. I stopped gambling and started actually managing risk.", result: "First green month" },
+      { name: "Dennis K.", handle: "@dk_capital", text: "Signals hit my phone, I copy them in seconds. The Telegram community keeps me accountable.", result: "4 months consistent" },
+    ],
+    faq: [
+      { q: "Is it really free?", a: "Yes. You get the signals and the education for free — you only fund a live account with our partner broker (from €100). No course fees, no upsells." },
+      { q: "Do I need experience?", a: "No. The playbook starts from zero and the signals tell you exactly what to do — entry, stop-loss and targets. You learn while you trade." },
+      { q: "How do the signals reach me?", a: "Through a private Telegram channel. Once your deposit is verified, our bot sends you a personal invite automatically." },
+      { q: "Can I stop anytime?", a: "Of course. It's your broker account and your money — withdraw or leave the channel whenever you want." },
     ],
   },
 ];
