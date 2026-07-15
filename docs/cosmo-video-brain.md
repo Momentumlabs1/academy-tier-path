@@ -108,16 +108,11 @@ Wenn die Video-KI den kompletten Frame animiert, entstehen Artefakte an eigentli
 - Mit `ELEVENLABS_API_KEY` + `HEDRA_API_KEY` als Environment-Secrets kann die komplette Kette aus dem Chat laufen: Skript → TTS → Hedra-Clip → Chroma-Key → Remotion-Composite.
 - Ohne Keys: Claude liefert Skript + fertige Prompts/Audiotexte, User klickt in Eleven/Hedra-Web-UI.
 
-## 8. Cowork-Promo-Strategie (bis 5. August 2026)
+## 8. Cowork-Promo — geprüft & verworfen (15.07.2026)
 
-**Fakt:** Claude-Promo 5.6.–5.8.2026: In **Cowork** (Desktop-App) ist das 5-Stunden-Nutzungslimit verdoppelt. Wochenlimits unverändert; gilt NICHT für Claude Code / Web / Mobile.
+Claude-Promo 5.6.–5.8.2026 (doppeltes 5h-Limit in der Cowork-Desktop-App) wurde geprüft: **nicht relevant für uns.** Wochenlimits bleiben gleich, und die gesamte Video-/Content-Produktion läuft ohnehin in Claude Code (Repo, Rendering, Pipelines). Entscheidung: Alles bleibt in Claude Code. Der ursprünglich gesetzte Promo-Reminder wurde wieder gelöscht.
 
-**Plan, um das voll auszuschöpfen:**
-1. **Phase 1 — Workflow bauen (jetzt, in diesem Code-Chat):** Remotion-Setup ins Repo, Greenscreen-Plates, Onboarding-Skript, erstes Video komplett end-to-end, bis der Workflow steht und gut aussieht. Das ist Struktur-/Repo-Arbeit → gehört hierher.
-2. **Phase 2 — Massenproduktion (bis 5.8. bevorzugt in Cowork):** Sobald der Workflow steht, laufen die iterativen, usage-hungrigen Sessions (Video-Feintuning, viele Render-/Review-Durchläufe, die 7 Glückwunsch-Videos, Reels-Batches) in Cowork-Sessions — dort zählt das doppelte 5h-Limit.
-3. **Arbeitsteilung:** Dieser Chat = Gehirn + Repo-Executor (committet/pusht alles). Cowork = Produktions-Muskel während der Promo. Übergabe immer über diese Datei + Repo, nie über Chat-Gedächtnis.
-4. **Reminder aktiv:** Routine `trig_015px2VCeF1ykxFRsKVbJvJV` feuert am **3.8.2026, 09:00 Wien** (Push + E-Mail): letzte 2 Tage Promo nutzen.
-5. Nach dem 5.8.: Limits normal → Produktion wieder gleichmäßiger takten.
+**Arbeitsprinzip (bleibt):** Dieser Chat = Gehirn + Repo-Executor. Übergabe an andere Sessions immer über diese Datei + Repo, nie über Chat-Gedächtnis.
 
 ## 9. Session-Organisation
 
