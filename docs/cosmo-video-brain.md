@@ -91,6 +91,10 @@ Wenn die Video-KI den kompletten Frame animiert, entstehen Artefakte an eigentli
 
 ## 7. Assets & Stimme (Stand 15.07.2026)
 
+### Google Drive: Universum-Struktur (angelegt 15.07.2026)
+`CosmoTrades/Universum/` mit Unterordnern: `01 Charaktere – Cosmo` (Master + Turnaround, serverseitig einkopiert), `02 Plates (Magenta)`, `03 Räume & Hintergründe`, `04 KI-Clips (Magenta)`, `05 Final Renders`. Dazu Google Doc **„COSMO-UNIVERSUM — Index & Prompts"** mit allen paste-ready Prompts.
+**Upload-Regel:** Claude kann in Drive Ordner anlegen, Dateien kopieren und Docs schreiben — aber keine großen Binärdateien hochladen. Neue von Claude erzeugte Bilder/Videos kommen ins Repo + werden im Chat geschickt → User zieht sie in den passenden Universum-Ordner. Umgekehrt kann Claude alles aus Drive **lesen** (Public-Link-Download funktioniert).
+
 ### Google Drive: Ordner „CosmoTrades" (Meine Ablage)
 - **Cosmo-Charakterbilder (6):** `COSMO (3).png`, `Maincharaktär_1.png` (+ Duplikat), `Maincharaktär_2.jpg`, `Maincharaktär_3.png`, `Maincharaktär_4.png`, `ChatGPT Image 15. Juli 2026.png`
 - **Roh-Videos der bisherigen Lektionen** (jeweils „Face & Stimme"-Aufnahme + separate Screen-Aufnahme, Miro-basiert):
