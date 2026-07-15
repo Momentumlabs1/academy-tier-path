@@ -33,11 +33,9 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  const adminKey = Deno.env.get("ADMIN_KEY");
-  if (adminKey && req.headers.get("x-admin-key") !== adminKey) {
-    return json({ error: "unauthorized" }, 401);
-  }
-
+  // NOTE: no ADMIN_KEY gate. The whole /admin area will be locked behind real
+  // email auth (Supabase Auth + is_admin claim) before public launch — the
+  // throwaway admin key added no real security, so it's removed.
   let body: { action?: string; slug?: string; patch?: Record<string, unknown> };
   try { body = await req.json(); } catch { return json({ error: "invalid json" }, 400); }
 

@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { AdminPageHeader, AdminKpiCard } from "@/components/academy/admin/AdminShell";
 import { TENANTS } from "@/lib/tenants";
-import { Check, Copy, ExternalLink, KeyRound, Loader2, Radio, Save } from "lucide-react";
+import { Check, Copy, ExternalLink, Loader2, Radio, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/tenants")({
@@ -11,7 +11,6 @@ export const Route = createFileRoute("/admin/tenants")({
 });
 
 const FN = "https://fymbblasfpfuyhpsesxk.supabase.co/functions/v1/admin-tenants";
-const KEY_STORE = "academy_admin_key";
 
 interface TenantRow {
   slug: string;
@@ -26,10 +25,6 @@ interface TenantRow {
 const BRAND = Object.fromEntries(TENANTS.map((t) => [t.slug, t]));
 
 function AdminTenants() {
-  const [adminKey, setAdminKey] = useState<string>(() =>
-    typeof window !== "undefined" ? localStorage.getItem(KEY_STORE) ?? "" : "",
-  );
-  const [keyInput, setKeyInput] = useState("");
   const [rows, setRows] = useState<TenantRow[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,56 +34,29 @@ function AdminTenants() {
   const call = useCallback(async (payload: object) => {
     const res = await fetch(FN, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "x-admin-key": adminKey },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    if (res.status === 401) throw new Error("unauthorized");
     if (!res.ok) throw new Error((await res.json())?.error ?? "request failed");
     return res.json();
-  }, [adminKey]);
+  }, []);
 
   const load = useCallback(async () => {
-    if (!adminKey) return;
     setLoading(true); setError(null);
     try {
       const data = await call({ action: "list" });
       setRows(data.tenants ?? []);
-    } catch (e) {
-      setError(e instanceof Error && e.message === "unauthorized" ? "Wrong admin key." : "Could not load. Is the function deployed?");
-      if (e instanceof Error && e.message === "unauthorized") { localStorage.removeItem(KEY_STORE); setAdminKey(""); }
+    } catch {
+      setError("Could not load brands. Is the function deployed?");
     } finally { setLoading(false); }
-  }, [adminKey, call]);
+  }, [call]);
 
   useEffect(() => { load(); }, [load]);
-
-  function unlock(e: React.FormEvent) {
-    e.preventDefault();
-    localStorage.setItem(KEY_STORE, keyInput.trim());
-    setAdminKey(keyInput.trim());
-  }
 
   function copyLink(slug: string) {
     navigator.clipboard?.writeText(`${origin}/t/${slug}`);
     setCopied(slug);
     setTimeout(() => setCopied((c) => (c === slug ? null : c)), 1600);
-  }
-
-  // ── Key gate ──────────────────────────────────────────────────────────────
-  if (!adminKey) {
-    return (
-      <div className="space-y-6">
-        <AdminPageHeader title="White-Label Brands" sub="Configure each brand's Telegram channel and broker link." />
-        <form onSubmit={unlock} className="max-w-md rounded-2xl border border-white/5 bg-[oklch(0.16_0.06_250)] p-5">
-          <div className="flex items-center gap-2 text-sm font-semibold"><KeyRound className="h-4 w-4 text-primary" /> Admin key required</div>
-          <p className="mt-1 text-xs text-muted-foreground">Enter the ADMIN_KEY you set in Supabase → Edge Functions → Secrets. Stored locally on this device.</p>
-          <input
-            value={keyInput} onChange={(e) => setKeyInput(e.target.value)} type="password" placeholder="admin key"
-            className="mt-3 w-full rounded-xl bg-white/5 px-3 py-2 font-mono text-sm outline-none focus:ring-2 focus:ring-primary/50"
-          />
-          <button className="mt-3 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground">Unlock</button>
-        </form>
-      </div>
-    );
   }
 
   const configured = (rows ?? []).filter((r) => r.telegram_channel_id != null).length;
