@@ -39,15 +39,21 @@
 
 ---
 
-## 3. Partner-Split (Standard, flexibel)
+## 3. Partner-Split — Staffel 5 → 10 $/Lot
 
-| Position | Anteil pro Lot | Anmerkung |
+**Logik:** Ein Trader direkt beim Broker bekommt ~6–10 $/Lot (Schnitt ~8). Unser Partner geht **nicht** direkt — er bekommt das **komplette System gratis** (Website, Academy, Live-Signale, Bot, Telegram, Admin). Er „tauscht" also 2–3 $/Lot gegen ein fertiges Produkt, das ihn selbst Monate + Tausende € kosten würde. Deshalb: **niedrig starten, mit Volumen hochstaffeln.**
+
+| Kunden-Volumen unter dem Partner | Partner bekommt | Ich behalte |
 |---|---|---|
-| **Partner** (Affiliate) | **8 USD** | Startkondition — großzügig, damit Partner leicht zu gewinnen sind |
-| **Ich behalte** | **7 USD** | als Master, für System/Infrastruktur/Signale |
+| 0 – 25.000 € | **5 $/Lot** | 10 $/Lot |
+| 25.000 – 50.000 € | **6 $/Lot** | 9 $/Lot |
+| 50.000 – 100.000 € | **8 $/Lot** | 7 $/Lot |
+| **100.000 € +** | **10 $/Lot** | 5 $/Lot |
 
-- Der Partner muss **kein eigenes Produkt** bauen → er vermarktet unser fertiges System (Bio-Link, Kunden generieren).
-- Split ist **verhandelbar/flexibel** (z.B. Staffel für Top-Partner, siehe §6).
+- **Start bei 5 $** → hohe Marge in der Anlaufphase (System refinanzieren) + trotzdem attraktiv.
+- **Bis 10 $ ab 100k** → klarer Aufstieg = Partner-Motivation; auch oben hält Master **5 $/Lot auf großem Volumen** = weiter sehr profitabel.
+- Optionaler „netter" Start: **6 $** statt 5 (kostet 1 $/Lot, klingt runder beim Recruiten).
+- Der Partner muss **kein eigenes Produkt** bauen → er vermarktet unser fertiges System (Bio-Link).
 
 ---
 
