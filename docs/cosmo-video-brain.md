@@ -89,7 +89,26 @@ Wenn die Video-KI den kompletten Frame animiert, entstehen Artefakte an eigentli
 - Abos: Hedra ~30 $/Mo + ggf. Kling/Hailuo-Credits (~30 $/Mo) decken den Bedarf; Runway-only wäre die einfachste Ein-Anbieter-Lösung (~2× Clip-Kosten).
 - Code-Rendering + Voiceover: praktisch kostenlos (~1 $ Voiceover pro 10 Min).
 
-## 7. Session-Organisation
+## 7. Assets & Stimme (Stand 15.07.2026)
+
+### Google Drive: Ordner „CosmoTrades" (Meine Ablage)
+- **Cosmo-Charakterbilder (6):** `COSMO (3).png`, `Maincharaktär_1.png` (+ Duplikat), `Maincharaktär_2.jpg`, `Maincharaktär_3.png`, `Maincharaktär_4.png`, `ChatGPT Image 15. Juli 2026.png`
+- **Roh-Videos der bisherigen Lektionen** (jeweils „Face & Stimme"-Aufnahme + separate Screen-Aufnahme, Miro-basiert):
+  Signale kopieren, Video 2 „Was ist Trading", Video 3 „Warum die Mehrheit verliert", Video 4 „Was ist Retail Money", Video 5 (2 Screens), Video 6 „Gesicht & Stimme + Bildschirm"
+- Repo enthält bisher nur den **Zeko**-Charakter (`public/zeko-hero.png`, `public/zeko-point.png` — 2D-Cartoon, Salbeigrün-Hoodie). Cosmo-Bilder müssen noch ins Repo (`public/` bzw. Video-Assets-Ordner).
+- ⚠️ Falls Cosmo (wie Zeko) **Grün** trägt: Magenta-Plate `#FF00FF` statt Greenscreen verwenden.
+
+### Stimme — Entscheidung
+- **ElevenLabs bleibt die Stimme** (User hat bereits ein Eleven-Abo; deutsche Qualität besser als Hedra-eigene Voices).
+- Hedra wird **nur als Animator** genutzt: Bild + fertige Audiodatei hochladen (Kern-Feature, kein Hack).
+- Option: **Voice-Clone** aus den vorhandenen „Face & Stimme"-Aufnahmen in ElevenLabs → Cosmo spricht mit der echten Stimme, unbegrenzt neuer Text ohne Neuaufnahme.
+- Audio-first ist Pflicht: dieselbe Audiodatei steuert (a) Hedra-Lippen, (b) Remotion-Szenen-Timing.
+
+### Automatisierung (sobald API-Keys da sind)
+- Mit `ELEVENLABS_API_KEY` + `HEDRA_API_KEY` als Environment-Secrets kann die komplette Kette aus dem Chat laufen: Skript → TTS → Hedra-Clip → Chroma-Key → Remotion-Composite.
+- Ohne Keys: Claude liefert Skript + fertige Prompts/Audiotexte, User klickt in Eleven/Hedra-Web-UI.
+
+## 8. Session-Organisation
 
 - **Dieser Chat = „Cosmo-Trade-Gehirn"**: Video-Logik der Academy + darauf aufbauender Content.
 - Der bisherige Admin-Chat (Session `session_01DQYNU7oC6wYhk1ASNyHmkR`) macht die Academy fertig und läuft aus (Kontext voll).
