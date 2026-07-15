@@ -28,17 +28,19 @@ import {CandleChart, Heading} from '../lib/ui';
 
 const CLICK = 12; // Klick — Shutter öffnet
 const POWER_ON = 18; // Sensor an, HUD bootet, Belichtung fährt hoch
-const CUT_MID = 108; // Schnitt 1 (im Blur versteckt): Close-up → steht im Raum
-const FOCUS_LOCK_1 = 118; // erster AF-Lock nach dem Zurücktreten
-const HUNT_A = 204; // kleiner AF-Hunt, während die Screens booten
-const HUNT_B = 268; // zweiter AF-Hunt
-const CUT_SEAT = 348; // Schnitt 2 (im Blur-Peak): sitzt am Desk
-const FINAL_LOCK = 392; // finaler Fokus-Lock + Klammer-Confirm
-const LOWER_THIRD = 414; // „Willkommen bei CosmoTrades"
+const RETREAT_START = 66; // er beginnt, rückwärts in den Raum zu gehen (DURCHGEHEND, kein Schnitt)
+const RETREAT_END = 150; // steht mitten im Raum
+const FOCUS_LOCK_1 = 158; // AF fängt ihn, sobald er steht
+const HUNT_A = 240; // ein einzelner kleiner AF-Hunt beim Reden
+const SIT_START = 300; // er geht durchgehend zum Desk und setzt sich
+const SIT_END = 336; // sitzt
+const FINAL_LOCK = 352; // finaler Fokus-Lock + Klammer-Confirm
+const LOWER_THIRD = 436; // „Willkommen bei CosmoTrades"
 
-const SCREEN_ON_CENTER = 168;
-const SCREEN_ON_LEFT = 184;
-const SCREEN_ON_RIGHT = 200;
+// Monitore booten erst RUHIG nacheinander, wenn er sitzt (nichts fliegt rum).
+const SCREEN_ON_CENTER = 372;
+const SCREEN_ON_LEFT = 394;
+const SCREEN_ON_RIGHT = 416;
 
 /** Master-PNG-Seitenverhältnis (2160 × 3840). */
 const COSMO_AR = 2160 / 3840;
@@ -595,72 +597,77 @@ export const Scene1ColdOpen: React.FC = () => {
   /* ---- Kamera: Zoom / Fokus-Choreografie ------------------------- */
 
   const rigKeyframes: CameraKeyframe[] = [
-    // Zoom: Close-up leicht reingedrückt → beruhigt sich → finaler Push-in.
+    // Zoom: Close-up leicht reingedrückt → beruhigt sich, während er zurückgeht → finaler Push-in.
     {frame: 0, zoom: 1.12},
-    {frame: CUT_MID, zoom: 1.12},
-    {frame: 150, zoom: 1.03},
-    {frame: 330, zoom: 1.06},
-    {frame: CUT_SEAT, zoom: 1.0},
+    {frame: RETREAT_START, zoom: 1.12},
+    {frame: RETREAT_END, zoom: 1.02},
+    {frame: SIT_START, zoom: 1.035},
+    {frame: SIT_END, zoom: 1.0},
     {frame: FINAL_LOCK, zoom: 1.015},
-    {frame: 539, zoom: 1.055},
-    // Grund-Blur: Close-up komplett unscharf, löst nach Schnitt 1 auf.
+    {frame: 539, zoom: 1.05},
+    // Grund-Blur: Close-up unscharf → löst sich auf, WÄHREND er zurückgeht (AF folgt ihm).
     {frame: 0, blur: 18},
-    {frame: 96, blur: 15},
-    {frame: FOCUS_LOCK_1, blur: 1.4},
-    {frame: 134, blur: 0},
+    {frame: 40, blur: 15},
+    {frame: RETREAT_START, blur: 14},
+    {frame: 110, blur: 5},
+    {frame: FOCUS_LOCK_1, blur: 0.8},
+    {frame: 170, blur: 0},
   ];
 
-  // AF-Pumps: kleine Hunts beim Reden, große Pumps verstecken die Schnitte.
+  // AF-Pumps: klein und motiviert — beim Reden, beim Hinsetzen (Distanzwechsel), beim Final-Lock.
   const pumpBlur = Math.max(
-    afPump(frame, [HUNT_A, HUNT_B], {maxBlur: 6, attack: 12, release: 16}),
-    afPump(frame, [CUT_SEAT], {maxBlur: 13, attack: 10, release: 20}),
-    afPump(frame, [FINAL_LOCK], {maxBlur: 8, attack: 12, release: 13}),
+    afPump(frame, [HUNT_A], {maxBlur: 4, attack: 12, release: 16}),
+    afPump(frame, [SIT_START + 18], {maxBlur: 9, attack: 10, release: 18}),
+    afPump(frame, [FINAL_LOCK], {maxBlur: 5, attack: 12, release: 13}),
   );
 
   // Handheld: nervös beim Zurechtrücken, ruhig sobald er sitzt.
-  const shakeAmount = frame < CUT_MID ? 2.4 : frame < CUT_SEAT ? 0.9 : 0.55;
+  const shakeAmount = frame < RETREAT_START ? 2.4 : frame < SIT_END ? 0.9 : 0.5;
 
-  /* ---- Parallax-Pfad der drei Raum-Ebenen ------------------------- */
+  /* ---- Parallax-Pfad der drei Raum-Ebenen (deutlich beruhigt) ------ */
 
   const panX =
-    interpolate(frame, [CUT_MID, CUT_SEAT, 539], [-44, 26, -12], EASE) +
-    Math.sin(frame * 0.011) * 6;
+    interpolate(frame, [RETREAT_START, SIT_END, 539], [-20, 12, -6], EASE) +
+    Math.sin(frame * 0.011) * 4;
   const panY =
-    interpolate(frame, [CUT_MID, CUT_SEAT, 539], [12, -8, 4], EASE) +
-    Math.sin(frame * 0.017 + 2) * 4;
+    interpolate(frame, [RETREAT_START, SIT_END, 539], [8, -6, 3], EASE) +
+    Math.sin(frame * 0.017 + 2) * 3;
 
   const back: Parallax = {x: panX * 0.35, y: panY * 0.35};
   const mid: Parallax = {x: panX * 0.7, y: panY * 0.7};
   const front: Parallax = {x: panX * 1.3, y: panY * 1.3};
 
-  /* ---- Beat A: Extreme Close-up (zu nah an der Linse) ------------- */
+  /* ---- Cosmo: EINE durchgehende Bewegung, kein Teleport ------------ */
+  // Close-up (Brust füllt den Frame) → geht sichtbar rückwärts in den Raum → geht zum Desk und setzt sich.
 
-  const showCloseup = frame < CUT_MID;
-  // Ruckartige „Zurechtrück"-Bewegungen (schnelle, geeaste Sprünge)…
-  const joltX = interpolate(frame, [POWER_ON, 34, 40, 62, 68, 88, 94, CUT_MID], [0, 0, -70, -70, 55, 55, -15, -20], EASE);
-  const joltY = interpolate(frame, [POWER_ON, 34, 40, 62, 68, 88, 94, CUT_MID], [0, 0, 35, 35, -30, -30, 8, 10], EASE);
-  const joltRot = interpolate(frame, [POWER_ON, 34, 40, 62, 68, 88, 94, CUT_MID], [0, 0, -1.6, -1.6, 1.1, 1.1, -0.3, -0.3], EASE);
-  // …plus hektisches Handheld-Zittern obendrauf.
+  const cosmoH = interpolate(frame, [RETREAT_START, RETREAT_END, SIT_START, SIT_END], [3400, 735, 735, 640], EASE);
+  const cosmoBottom = interpolate(frame, [RETREAT_START, RETREAT_END, SIT_START, SIT_END], [2760, 1014, 1014, 1078], EASE);
+  const cosmoCx = interpolate(frame, [RETREAT_START, RETREAT_END, SIT_START, SIT_END], [960, 892, 892, 960], EASE);
+  const cosmoW = cosmoH * COSMO_AR;
+
+  // Geh-Wippen (Schritt-Rhythmus), nur während er sich bewegt.
+  const walkEnv = Math.max(
+    interpolate(frame, [RETREAT_START, RETREAT_START + 10, RETREAT_END - 12, RETREAT_END], [0, 1, 1, 0], CLAMP),
+    interpolate(frame, [SIT_START, SIT_START + 8, SIT_END - 8, SIT_END], [0, 1, 1, 0], CLAMP),
+  );
+  const stepBob = -Math.abs(Math.sin(frame * 0.6)) * 16 * walkEnv;
+  const stepTilt = Math.sin(frame * 0.3) * 2.0 * walkEnv;
+
+  // Ruckartige „Zurechtrück"-Bewegungen im Close-up (blenden aus, sobald er losgeht).
+  const joltFade = interpolate(frame, [RETREAT_START - 6, RETREAT_START + 6], [1, 0], CLAMP);
+  const joltX = interpolate(frame, [POWER_ON, 26, 32, 44, 50, 58, 62, RETREAT_START], [0, 0, -70, -70, 55, 55, -15, -15], EASE) * joltFade;
+  const joltY = interpolate(frame, [POWER_ON, 26, 32, 44, 50, 58, 62, RETREAT_START], [0, 0, 35, 35, -30, -30, 8, 8], EASE) * joltFade;
+  const joltRot = interpolate(frame, [POWER_ON, 26, 32, 44, 50, 58, 62, RETREAT_START], [0, 0, -1.6, -1.6, 1.1, 1.1, -0.3, -0.3], EASE) * joltFade;
   const closeJitter = microReframe(frame, 5, 3.4);
-  const closeupH = 3400;
-  const closeupW = closeupH * COSMO_AR;
 
-  /* ---- Beat B: steht mitten im Raum, tritt zurück ------------------ */
+  // Er wird heller, sobald er im Raumlicht steht (im Close-up schattet er die Kamera ab).
+  const cosmoBright = interpolate(frame, [RETREAT_START, RETREAT_END], [0.62, 0.97], CLAMP);
 
-  const showStanding = frame >= CUT_MID && frame < CUT_SEAT;
-  const standH = interpolate(frame, [CUT_MID, 205, 300, CUT_SEAT], [830, 735, 735, 702], EASE);
-  const standBottom = interpolate(frame, [CUT_MID, 205, 300, CUT_SEAT], [1058, 1014, 1014, 1002], EASE);
-  const standCx = interpolate(frame, [CUT_MID, 205, 300, CUT_SEAT], [880, 892, 892, 930], EASE);
-  const standW = standH * COSMO_AR;
+  // Beim Hinsetzen wandert er HINTER den Desk: Crossfade exakt im Blur-Peak, Position bleibt identisch.
+  const behindDesk = interpolate(frame, [SIT_START + 14, SIT_START + 26], [0, 1], CLAMP);
 
-  /* ---- Beat C: sitzt am Desk (Blende verdeckt den Unterkörper) ---- */
-
-  const showSeated = frame >= CUT_SEAT;
-  const seatSettle = interpolate(frame, [CUT_SEAT, 384], [1.045, 1], EASE);
-  const seatH = 640;
-  const seatW = seatH * COSMO_AR;
-  const seatCx = 960;
-  const seatBottom = 1078; // unter der Desk-Kante — nur Kopf + Brust sichtbar
+  // Kontakt-Schatten erst, wenn er sichtbar im Raum steht.
+  const shadowOp = interpolate(frame, [RETREAT_START + 30, RETREAT_END], [0, 0.55], CLAMP) * (1 - behindDesk);
 
   /* ---- Power-on: Shutter, Belichtung, Scanlines, HUD --------------- */
 
@@ -705,29 +712,23 @@ export const Scene1ColdOpen: React.FC = () => {
       >
         <RoomBackPlane parallax={back} />
 
-        {/* Beat C: Cosmo sitzt HINTER dem Desk (Ebene zwischen Wand und Desk) */}
-        {showSeated && (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              transform: `translate(${panX * 0.66}px, ${panY * 0.66}px)`,
-            }}
-          >
+        {/* Cosmo hinter dem Desk (Crossfade-Ziel beim Hinsetzen — Position identisch) */}
+        {behindDesk > 0.001 && (
+          <div style={{position: 'absolute', inset: 0, opacity: behindDesk, transform: `translate(${panX * 0.8}px, ${panY * 0.8}px)`}}>
             <div
               style={{
                 position: 'absolute',
-                left: seatCx - seatW / 2,
-                top: seatBottom - seatH,
-                transform: `scale(${seatSettle})`,
+                left: cosmoCx - cosmoW / 2,
+                top: cosmoBottom - cosmoH + stepBob,
+                transform: `rotate(${stepTilt}deg)`,
                 transformOrigin: 'bottom center',
               }}
             >
               <Cosmo
                 variant="master"
-                height={seatH}
-                idleSeed={9}
-                style={{filter: 'brightness(0.96) drop-shadow(0 14px 20px rgba(0,0,0,0.45))'}}
+                height={cosmoH}
+                idleSeed={4}
+                style={{filter: `brightness(${cosmoBright}) drop-shadow(0 14px 20px rgba(0,0,0,0.45))`}}
               />
             </div>
           </div>
@@ -735,64 +736,41 @@ export const Scene1ColdOpen: React.FC = () => {
 
         <RoomMidPlane parallax={mid} />
 
-        {/* Beat B: Cosmo steht mittig im Raum und tritt zurück */}
-        {showStanding && (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              transform: `translate(${panX * 0.85}px, ${panY * 0.85}px)`,
-            }}
-          >
+        {/* Cosmo VOR dem Desk: eine durchgehende Bewegung vom Close-up bis zum Desk */}
+        {behindDesk < 0.999 && (
+          <div style={{position: 'absolute', inset: 0, opacity: 1 - behindDesk, transform: `translate(${panX * 0.8}px, ${panY * 0.8}px)`}}>
             {/* Kontakt-Schatten unter den Sneakern */}
             <div
               style={{
                 position: 'absolute',
-                left: standCx - standW * 0.42,
-                top: standBottom - 16,
-                width: standW * 0.84,
+                left: cosmoCx - cosmoW * 0.42,
+                top: cosmoBottom - 16 + stepBob * 0.3,
+                width: cosmoW * 0.84,
                 height: 34,
+                opacity: shadowOp,
                 background: 'radial-gradient(ellipse 50% 50% at 50% 50%, rgba(0,0,0,0.5), transparent 70%)',
               }}
             />
             <div
               style={{
                 position: 'absolute',
-                left: standCx - standW / 2,
-                top: standBottom - standH,
+                left: cosmoCx - cosmoW / 2 + joltX + closeJitter.x * 2 * joltFade,
+                top: cosmoBottom - cosmoH + joltY + closeJitter.y * 2 * joltFade + stepBob,
+                transform: `rotate(${joltRot + stepTilt + closeJitter.rotation * joltFade}deg)`,
+                transformOrigin: 'bottom center',
               }}
             >
               <Cosmo
                 variant="master"
-                height={standH}
+                height={cosmoH}
                 idleSeed={4}
-                style={{filter: 'brightness(0.97) drop-shadow(0 18px 26px rgba(0,0,0,0.45))'}}
+                style={{filter: `brightness(${cosmoBright}) contrast(1.04) drop-shadow(0 16px 24px rgba(0,0,0,0.4))`}}
               />
             </div>
           </div>
         )}
 
         <RoomFrontPlane parallax={front} />
-
-        {/* Beat A: viel zu nah — Brust füllt den unscharfen Frame */}
-        {showCloseup && (
-          <div
-            style={{
-              position: 'absolute',
-              left: (1920 - closeupW) / 2 + joltX + closeJitter.x * 2,
-              top: -640 + joltY + closeJitter.y * 2,
-              transform: `rotate(${joltRot + closeJitter.rotation}deg)`,
-              transformOrigin: 'center center',
-            }}
-          >
-            <Cosmo
-              variant="master"
-              height={closeupH}
-              idleSeed={1}
-              style={{filter: 'brightness(0.6) contrast(1.06) saturate(0.92)'}}
-            />
-          </div>
-        )}
       </CameraRig>
 
       {/* Sensor-Scanlines (POV-Textur) */}
@@ -815,7 +793,7 @@ export const Scene1ColdOpen: React.FC = () => {
         <CameraPOV
           batteryLevel={0.64}
           timecodeStartFrame={-POWER_ON}
-          focusPulseFrames={[FOCUS_LOCK_1, HUNT_A, HUNT_B, CUT_SEAT, FINAL_LOCK]}
+          focusPulseFrames={[FOCUS_LOCK_1, HUNT_A, FINAL_LOCK]}
         />
         {/* kleine Format-Zeile unten rechts */}
         <div
