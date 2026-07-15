@@ -61,7 +61,33 @@ Wenn die Video-KI den kompletten Frame animiert, entstehen Artefakte an eigentli
 
 ## 6. Tech-Stack (Empfehlung aus Recherche Juli 2026)
 
-> _Wird nach Abschluss der Framework- & Compositing-Recherche hier eingetragen._
+### 6.1 Code-Videos (Hintergrund, UI, Charts, Kamerafahrten)
+
+- **Remotion 4.0.x** (React) — 2026 der klare Standard. Motion Canvas ist tot (Projekt aufgegeben, nur Community-Fork „Canvas Commons"), Revideo wurde von Midrender absorbiert.
+  - Eingebaute Effekte für unseren Look: **Progressive Blur & Zoom-Blur** (Rack-Focus/Autofokus-Wobble), Transitions, Shapes.
+  - **Lizenz:** kostenlos bis 3 Personen im Team; ab 4 Personen „Creators"-Lizenz 25 $/Seat/Monat (min. 3 Seats).
+  - Lange Videos: pro Szene eine Composition, Chunk-Rendering (`h264-ts` + `combineChunks()`), lokal rendern (10-Min-1080p ≈ 10–30 Min auf starker Maschine). 4K nur fürs finale Master.
+- **Audio-first-Workflow:** Erst deutsche Voiceover pro Szene generieren, Dauer auslesen (Word-Timestamps), Szenen-Timing vom Audio ableiten — nie umgekehrt.
+- **Voiceover (Deutsch):** **ElevenLabs v3** für final (beste deutsche Qualität, ~1 $ pro 10-Min-Video via API); OpenAI `gpt-4o-mini-tts` für billige Entwürfe (~0,15 $).
+- **Musik:** Epidemic Sound Commercial (19 $/Mo) oder Artlist (~40 $/Mo); Ducking unter der Stimme per Volume-Keyframes/`sidechaincompress`.
+- Optional echte App-Aufnahmen: Playwright ≥1.59 Screencast-API → FFmpeg → als `<OffthreadVideo>` in Remotion einbetten; Zooms/Schwenks trotzdem in Remotion machen (wirkt organischer als FFmpeg-`zoompan`).
+
+### 6.2 Cosmo-Charakter (KI-animiert, isoliert)
+
+**Kein Modell liefert 2026 nativ Alpha aus der Generierung → Greenscreen-Workflow ist Standard:**
+
+1. **Green-Plate bauen (der entscheidende Trick):** Cosmo-PNG **vorher per Code auf flaches Chroma-Grün `#00FF00` setzen** (Magenta, falls Cosmo Grün enthält), kein Schatten, statisches Framing. Image-to-Video-Modelle erhalten das erste Frame stark → Hintergrund bleibt keybar. 2–3 Pose-Plates anlegen.
+2. **Sprech-Clips (Deutsch):** ElevenLabs-Audio + **Hedra Character-3** (Bild + Audiodatei → sprechender Charakter, Hintergrund bleibt fast pixelgenau grün). ~0,45 $ pro 10-s-Clip (Creator 30 $/Mo). Alternative für gespielte Gesten: **Runway Act-Two** (selbst auf Deutsch vorspielen, Performance wird auf Cosmo übertragen, ~0,50 $/10 s).
+3. **Gesten-/Idle-Clips (ohne Sprache):** **Kling 2.6/3.0** oder **Hailuo 2.3** i2v von denselben Plates, Prompt „static camera, solid green background unchanged". **Bibliothek aus 5–10-s-Idle-Loops aufbauen und wiederverwenden** → spart massiv Credits. (Achtung: Kling-Lipsync kann kein Deutsch.)
+4. **Keying:** FFmpeg `chromakey` + `despill` → ProRes 4444 (Master) + VP9-Alpha-WebM (Proxy).
+5. **Fallback bei dreckigem Key:** Sammie-Roto 2 (SAM-2 + MatAnyone 2, gratis) oder Runway Remove Background.
+6. **Compositing:** In Remotion `<OffthreadVideo transparent />` als Charakter-Layer über den Code-Hintergrund. WebM-Alpha in einem Pass lokal rendern (flackert bei Chunk-Rendering), ProRes für Lambda.
+
+### 6.3 Kostenrahmen
+
+- 60-s-Explainer mit ~4 Sprech- + 3 Gesten-Clips ≈ **3–6 $ Generierungskosten**.
+- Abos: Hedra ~30 $/Mo + ggf. Kling/Hailuo-Credits (~30 $/Mo) decken den Bedarf; Runway-only wäre die einfachste Ein-Anbieter-Lösung (~2× Clip-Kosten).
+- Code-Rendering + Voiceover: praktisch kostenlos (~1 $ Voiceover pro 10 Min).
 
 ## 7. Session-Organisation
 
