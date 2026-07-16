@@ -260,7 +260,7 @@ const TrailStop: React.FC<{
 };
 
 // scenario indicator pill, in the same design language as the chart labels
-const ScenarioPill: React.FC<{t: number; at: number; out: number; x: number; y: number; num: string; label: string}> = ({
+const ScenarioPill: React.FC<{t: number; at: number; out: number; x: number; y: number; num?: string; label: string}> = ({
   t,
   at,
   out,
@@ -272,14 +272,18 @@ const ScenarioPill: React.FC<{t: number; at: number; out: number; x: number; y: 
   const inP = easeOut(prog(t, at, 0.45));
   const o = inP * (1 - easeOut(prog(t, out, 0.5)));
   if (o <= 0) return null;
-  const text = `${num} · ${label}`;
+  const text = num ? `${num} · ${label}` : label;
   const w = text.length * 26 * 0.66 + 56;
   return (
     <g opacity={o} transform={`translate(${x} ${y + (1 - inP) * 14})`}>
       <rect x={-w / 2} y={-30} width={w} height={60} rx={12} fill="rgba(10,10,12,0.92)" stroke="rgba(235,238,245,0.30)" strokeWidth={2} />
       <text x={0} y={9} textAnchor="middle" fontFamily={FONT} fontWeight={800} fontSize={26} letterSpacing="0.08em">
-        <tspan fill={COLORS.blueBright}>{num}</tspan>
-        <tspan fill={COLORS.grey}> · </tspan>
+        {num ? (
+          <>
+            <tspan fill={COLORS.blueBright}>{num}</tspan>
+            <tspan fill={COLORS.grey}> · </tspan>
+          </>
+        ) : null}
         <tspan fill={COLORS.white}>{label}</tspan>
       </text>
     </g>
@@ -346,14 +350,40 @@ export const Chart: React.FC<{tSrc: number}> = ({tSrc}) => {
         viewBox="0 0 1080 1920"
         style={{transform: `scale(${zoom})`, transformOrigin: '58% 62%'}}
       >
-        {/* faint grid */}
+        {/* faint grid — draws in staggered while he teases "der einfachste Edge" */}
         <g>
-          {gridV.map((x) => (
-            <line key={`v${x}`} x1={x} x2={x} y1={D.CHART.top - 30} y2={D.CHART.bottom + 20} stroke={COLORS.grid} strokeWidth={1} />
-          ))}
-          {gridH.map((y) => (
-            <line key={`h${y}`} x1={D.CHART.left} x2={D.CHART.right} y1={y} y2={y} stroke={COLORS.grid} strokeWidth={1} />
-          ))}
+          {gridV.map((x, i) => {
+            const gp = easeOut(prog(t, 6.0 + i * 0.12, 0.7));
+            if (gp <= 0) return null;
+            return (
+              <line
+                key={`v${x}`}
+                x1={x}
+                x2={x}
+                y1={D.CHART.top - 30}
+                y2={D.CHART.top - 30 + (D.CHART.bottom + 50 - D.CHART.top) * gp}
+                stroke={COLORS.grid}
+                strokeWidth={1}
+                opacity={gp}
+              />
+            );
+          })}
+          {gridH.map((y, i) => {
+            const gp = easeOut(prog(t, 6.3 + i * 0.12, 0.7));
+            if (gp <= 0) return null;
+            return (
+              <line
+                key={`h${y}`}
+                x1={D.CHART.left}
+                x2={D.CHART.left + (D.CHART.right - D.CHART.left) * gp}
+                y1={y}
+                y2={y}
+                stroke={COLORS.grid}
+                strokeWidth={1}
+                opacity={gp}
+              />
+            );
+          })}
         </g>
 
         {/* column headers with dynamic emphasis */}
@@ -556,6 +586,7 @@ export const Chart: React.FC<{tSrc: number}> = ({tSrc}) => {
 
         {/* -------- transitions between the scenarios -------- */}
         <Sweep t={t} />
+        <ScenarioPill t={t} at={6.6} out={8.55} x={540} y={1290} label="DER EINFACHSTE EDGE" />
         <ScenarioPill t={t} at={42.95} out={45.65} x={700} y={1122} num="1" label="FAKEOUT" />
         <ScenarioPill t={t} at={72.4} out={76.35} x={700} y={1150} num="2" label="AKZEPTANZ" />
 

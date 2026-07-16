@@ -16,9 +16,10 @@ const EVENTS: SfxEvent[] = [
   {at: 2.35, file: 'tick', vol: 0.18},
   {at: 2.95, file: 'tick', vol: 0.18},
   {at: 3.4, file: 'tick', vol: 0.18},
-  {at: 4.05, file: 'ui', vol: 0.3},
+  {at: 4.05, file: 'shine', vol: 0.3}, // "Einfachheit schon."
   // chart build-up
   {at: 5.9, file: 'zoom', vol: 0.3}, // chart entrance
+  {at: 6.6, file: 'ui', vol: 0.26}, // "Der einfachste Edge"-Pill
   {at: 9.0, file: 'whoosh', vol: 0.28},
   {at: 12.9, file: 'tick', vol: 0.2},
   {at: 13.6, file: 'tick', vol: 0.2},
