@@ -32,7 +32,7 @@ const TX_E: RGBA = [255, 146, 150, 1];
 const PILLS = [
   {label: 'Wyckoff', at: 1.0, errAt: 2.35, x: 175, y: 300},
   {label: 'FVG', at: 1.5, errAt: 2.85, x: 470, y: 165},
-  {label: 'Orderflow', at: 2.0, errAt: 3.35, x: 745, y: 285},
+  {label: 'Smart Money', at: 2.0, errAt: 3.35, x: 720, y: 285},
 ];
 
 const YEARS = ['2021', '2022', '2023', '2024', '2025', '2026'];
