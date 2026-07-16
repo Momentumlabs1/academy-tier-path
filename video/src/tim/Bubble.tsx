@@ -15,13 +15,21 @@ export const Bubble: React.FC<{segments: BubbleSegment[]}> = ({segments}) => {
 
   const pop = spring({frame: frame - 4, fps, config: {damping: 13, stiffness: 120, mass: 0.8}});
 
-  const seg = segments.find(
+  const idx = segments.findIndex(
     (s) => frame >= s.fromFrame && frame < s.fromFrame + s.durationInFrames,
   );
-  if (!seg) return null;
+  if (idx < 0) return null;
+  const seg = segments[idx];
 
   const startFrom = Math.round(seg.startFromSec * FPS + 1e-6) - seg.fromFrame;
   const srcFrame = startFrom + frame;
+
+  // short crossfade over each cut: the previous take keeps running underneath
+  const XF = 5;
+  const localF = frame - seg.fromFrame;
+  const prev = idx > 0 && localF < XF ? segments[idx - 1] : null;
+  const prevOpacity = prev ? 1 - (localF + 1) / (XF + 1) : 0;
+  const prevStartFrom = prev ? Math.round(prev.startFromSec * FPS + 1e-6) - prev.fromFrame : 0;
 
   // speech level from the actual audio (temporally smoothed over 3 frames)
   let level = 0;
@@ -39,8 +47,8 @@ export const Bubble: React.FC<{segments: BubbleSegment[]}> = ({segments}) => {
   }
 
   // Tiny punch on segment change to make the jump cut feel intentional.
-  const local = frame - seg.fromFrame;
-  const punch = seg.fromFrame === 0 ? 1 : interpolate(local, [0, 7], [1.02, 1], {extrapolateRight: 'clamp'});
+  const punch = seg.fromFrame === 0 ? 1 : interpolate(localF, [0, 7], [1.012, 1], {extrapolateRight: 'clamp'});
+  const speakScale = 1 + level * 0.012; // bubble breathes slightly with the voice
 
   const size = 460;
   return (
@@ -51,7 +59,7 @@ export const Bubble: React.FC<{segments: BubbleSegment[]}> = ({segments}) => {
         top: 108,
         width: size,
         height: size,
-        transform: `scale(${pop * punch})`,
+        transform: `scale(${pop * punch * speakScale})`,
       }}
     >
       {/* Zoom-style speaking ring: light blue shimmer driven by the voice */}
@@ -60,9 +68,9 @@ export const Bubble: React.FC<{segments: BubbleSegment[]}> = ({segments}) => {
           position: 'absolute',
           inset: -8,
           borderRadius: '50%',
-          border: `3px solid rgba(110, 143, 255, ${0.10 + 0.5 * level})`,
-          boxShadow: `0 0 ${14 + 50 * level}px rgba(90, 130, 255, ${0.15 + 0.45 * level})`,
-          transform: `scale(${1 + level * 0.014})`,
+          border: `3.5px solid rgba(110, 143, 255, ${0.12 + 0.6 * level})`,
+          boxShadow: `0 0 ${16 + 66 * level}px rgba(90, 130, 255, ${0.16 + 0.52 * level})`,
+          transform: `scale(${1 + level * 0.022})`,
         }}
       />
       <div
@@ -82,6 +90,21 @@ export const Bubble: React.FC<{segments: BubbleSegment[]}> = ({segments}) => {
           muted
           style={{width: '100%', height: '100%', objectFit: 'cover'}}
         />
+        {prev && prevOpacity > 0 ? (
+          <OffthreadVideo
+            src={staticFile('assets/tim-bubble.mp4')}
+            startFrom={prevStartFrom}
+            muted
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              opacity: prevOpacity,
+            }}
+          />
+        ) : null}
         {/* soft inner vignette so the bright footage sits nicely on black */}
         <div
           style={{

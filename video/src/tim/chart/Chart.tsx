@@ -505,33 +505,46 @@ export const Chart: React.FC<{tSrc: number}> = ({tSrc}) => {
           })}
         </g>
 
-        {/* value area box */}
-        <g opacity={easeOut(prog(t, D.B.vaBox, 0.7))}>
-          <rect
-            x={360}
-            y={py(D.VAH)}
-            width={labelX - 360 - 10}
-            height={py(D.VAL) - py(D.VAH)}
-            fill={COLORS.vaFill}
-            stroke={COLORS.vaStroke}
-            strokeWidth={1.5}
-          />
-          {/* label lives in the lower band of the box, clear of candles and profile bars */}
-          <text x={402} y={py(D.VAL + 7)} fontFamily={FONT} fontWeight={800} fontSize={42} fill={COLORS.vaText}>
-            70&thinsp;%
-          </text>
-          <text
-            x={402}
-            y={py(D.VAL + 7) + 40}
-            fontFamily={FONT}
-            fontWeight={600}
-            fontSize={27}
-            fill={COLORS.vaText}
-            opacity={easeOut(prog(t, D.B.vaText, 0.5)) * 0.9}
-          >
-            Value Area
-          </text>
-        </g>
+        {/* value area box: wipes in left->right, edges draw, label rises in */}
+        {(() => {
+          const vaP = easeOut(prog(t, D.B.vaBox, 0.75));
+          if (vaP <= 0) return null;
+          const boxW = (labelX - 360 - 10) * vaP;
+          const lp = easeOut(prog(t, D.B.vaBox + 0.45, 0.55));
+          const sp = easeOut(prog(t, D.B.vaText, 0.5));
+          return (
+            <g>
+              <defs>
+                <linearGradient id="vaFill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="rgba(58,80,178,0.36)" />
+                  <stop offset="100%" stopColor="rgba(44,62,140,0.20)" />
+                </linearGradient>
+              </defs>
+              <rect x={360} y={py(D.VAH)} width={boxW} height={py(D.VAL) - py(D.VAH)} fill="url(#vaFill)" />
+              {/* edges draw with the wipe */}
+              <line x1={360} x2={360 + boxW} y1={py(D.VAH)} y2={py(D.VAH)} stroke="rgba(110,143,255,0.55)" strokeWidth={2} />
+              <line x1={360} x2={360 + boxW} y1={py(D.VAL)} y2={py(D.VAL)} stroke="rgba(110,143,255,0.55)" strokeWidth={2} />
+              {/* label block, lower-left inside the box */}
+              <g opacity={lp} transform={`translate(0 ${(1 - lp) * 14})`}>
+                <text x={402} y={py(D.VAL + 7)} fontFamily={FONT} fontWeight={800} fontSize={48} fill={COLORS.vaText} letterSpacing="-0.01em">
+                  70&thinsp;%
+                </text>
+                <text
+                  x={403}
+                  y={py(D.VAL + 7) + 42}
+                  fontFamily={FONT}
+                  fontWeight={700}
+                  fontSize={23}
+                  letterSpacing="0.2em"
+                  fill="rgba(170,187,255,0.78)"
+                  opacity={sp}
+                >
+                  VALUE AREA
+                </text>
+              </g>
+            </g>
+          );
+        })()}
 
         {/* VAH / VAL */}
         <LevelLine p={D.VAH} x0={orBracketX} x1={labelX - 66} t={t} at={D.B.vahLabel} label="VAH" pulseAt={D.B.twoPulse} />

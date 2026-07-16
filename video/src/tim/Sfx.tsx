@@ -16,7 +16,7 @@ const EVENTS: SfxEvent[] = [
   {at: 2.35, file: 'tick', vol: 0.18},
   {at: 2.95, file: 'tick', vol: 0.18},
   {at: 3.4, file: 'tick', vol: 0.18},
-  {at: 4.05, file: 'shine', vol: 0.3}, // "Einfachheit schon."
+  {at: 4.05, file: 'shine', vol: 0.44}, // "Einfachheit schon."
   // chart build-up
   {at: 5.9, file: 'zoom', vol: 0.3}, // chart entrance
   {at: 6.6, file: 'ui', vol: 0.26}, // "Der einfachste Edge"-Pill
@@ -24,7 +24,7 @@ const EVENTS: SfxEvent[] = [
   {at: 12.9, file: 'tick', vol: 0.2},
   {at: 13.6, file: 'tick', vol: 0.2},
   {at: 20.1, file: 'tick', vol: 0.18},
-  {at: 24.7, file: 'check', vol: 0.24},
+  {at: 24.7, file: 'shine', vol: 0.36}, // Value-Area-Box erscheint
   {at: 32.8, file: 'tick', vol: 0.2},
   {at: 35.3, file: 'tick', vol: 0.2},
   // scenario 1 — rejection short
