@@ -18,10 +18,13 @@ export const PART_B_START_SRC = 109.95;
 export const PART_B_END_SRC = 122.6;
 export const ORGANIC_END_SRC = 108.7;
 
-export const partAFrames = Math.round((PART_A_END_SRC - TRIM) * FPS); // 2999
-export const partBFrames = Math.round((PART_B_END_SRC - PART_B_START_SRC) * FPS);
+// epsilon guards against IEEE-754 (100.35-0.4)*30 = 2998.4999... landing one frame short
+const roundF = (x: number) => Math.round(x + 1e-6);
 
-export const ORGANIC_DURATION = Math.round((ORGANIC_END_SRC - TRIM) * FPS);
+export const partAFrames = roundF((PART_A_END_SRC - TRIM) * FPS); // 2999
+export const partBFrames = roundF((PART_B_END_SRC - PART_B_START_SRC) * FPS); // 380
+
+export const ORGANIC_DURATION = roundF((ORGANIC_END_SRC - TRIM) * FPS);
 export const AD_DURATION = partAFrames + partBFrames;
 
 const AD_CTA_SHIFT = PART_B_START_SRC - PART_A_END_SRC; // 9.6s cut out
@@ -111,7 +114,7 @@ export const TimVideo: React.FC<{variant: Variant}> = ({variant}) => {
           <Sequence from={partAFrames} durationInFrames={partBFrames}>
             <Audio
               src={audioSrc}
-              startFrom={Math.round(PART_B_START_SRC * FPS)}
+              startFrom={Math.round(PART_B_START_SRC * FPS + 1e-6)}
               volume={(f) =>
                 interpolate(f, [0, 3, partBFrames - 26, partBFrames - 4], [0, 1, 1, 0], {
                   extrapolateLeft: 'clamp',

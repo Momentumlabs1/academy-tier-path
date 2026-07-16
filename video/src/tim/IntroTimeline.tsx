@@ -28,7 +28,7 @@ export const IntroTimeline: React.FC = () => {
   if (fadeOut <= 0) return null;
 
   const simple = t >= 3.6; // "Einfachheit schon." (source 4.0 - trim 0.4)
-  const dim = interpolate(t, [3.6, 4.0], [1, 0.22], {
+  const dim = interpolate(t, [3.6, 4.0], [1, 0.12], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
   });
@@ -83,7 +83,7 @@ export const IntroTimeline: React.FC = () => {
       {/* strategy pills on stems */}
       {PILLS.map((p) => {
         const s = spring({frame: frame - Math.round(p.at * fps), fps, config: {damping: 11, stiffness: 160, mass: 0.7}});
-        if (s <= 0.01) return null;
+        if (s <= 0.15) return null;
         return (
           <div key={p.label} style={{opacity: dim}}>
             <div
@@ -125,7 +125,7 @@ export const IntroTimeline: React.FC = () => {
           style={{
             position: 'absolute',
             left: 0,
-            top: 260,
+            top: 396,
             width: '100%',
             display: 'flex',
             justifyContent: 'center',

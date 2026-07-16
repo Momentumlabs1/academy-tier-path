@@ -24,7 +24,7 @@ const Candle: React.FC<{spec: D.CandleSpec; x: number; t: number; pulse?: boolea
   const fill = spec.kind === 'blue' ? COLORS.blue : COLORS.candleWhite;
   const bodyTop = py(Math.max(o, c));
   const bodyH = Math.max(3, Math.abs(py(o) - py(c)));
-  const showPulse = pulse && t >= spec.t && p < 1 + 1.2 / (spec.dur ?? 0.55);
+  const showPulse = pulse && t >= spec.t && t < spec.t + (spec.dur ?? 0.55) + 1.2;
   const ringP = ((t - spec.t) % 0.9) / 0.9;
   return (
     <g>
@@ -165,10 +165,13 @@ const Entry: React.FC<{x: number; p: number; t: number; at: number; labelAt: num
   const s = easeOut(prog(t, at, 0.4));
   if (s <= 0) return null;
   const ringP = ((t - at) % 1.1) / 1.1;
+  const ringOn = t < at + 4.4; // a few ripples, then rest
   return (
     <g>
       <circle cx={x} cy={py(p)} r={8 * s} fill="#fff" />
-      <circle cx={x} cy={py(p)} r={8 + ringP * 26} fill="none" stroke="#fff" strokeWidth={2} opacity={(1 - ringP) * 0.5 * s} />
+      {ringOn ? (
+        <circle cx={x} cy={py(p)} r={8 + ringP * 26} fill="none" stroke="#fff" strokeWidth={2} opacity={(1 - ringP) * 0.5 * s} />
+      ) : null}
       <Tag x={x + dx} y={py(p) + dy} text="ENTRY" bg="#F5F6F7" color="#0A0A0B" t={t} at={labelAt} />
     </g>
   );
@@ -188,19 +191,25 @@ const TrailBandShort: React.FC<{t: number}> = ({t}) => {
   const o = easeOut(prog(t, steps[0].t, 0.5));
   const x0 = D.m5x(2) - 40;
   const x1 = D.CHART.right - 40;
+  // the translucent band marks the initial stop; once the stop starts trailing,
+  // only the line + tag travel (keeps it from smearing over the green zone)
+  const bandO = 1 - easeOut(prog(t, steps[1].t, 0.5));
   return (
     <g opacity={o}>
-      <rect
-        x={x0}
-        y={py(p + D.SC1_STOP_BAND)}
-        width={x1 - x0}
-        height={py(p) - py(p + D.SC1_STOP_BAND)}
-        fill={COLORS.redZone}
-        stroke={COLORS.redZoneStroke}
-        strokeWidth={1.5}
-      />
+      {bandO > 0 ? (
+        <rect
+          x={x0}
+          y={py(steps[0].p + D.SC1_STOP_BAND)}
+          width={x1 - x0}
+          height={py(steps[0].p) - py(steps[0].p + D.SC1_STOP_BAND)}
+          fill={COLORS.redZone}
+          stroke={COLORS.redZoneStroke}
+          strokeWidth={1.5}
+          opacity={bandO}
+        />
+      ) : null}
       <line x1={x0} x2={x1} y1={py(p)} y2={py(p)} stroke={COLORS.red} strokeWidth={2.5} opacity={0.9} />
-      <Tag x={x1 - 52} y={py(p + D.SC1_STOP_BAND / 2)} text="STOP" bg={COLORS.red} color="#fff" t={t} at={steps[0].t} />
+      <Tag x={x1 - 52} y={py(p) + 28} text="STOP" bg={COLORS.red} color="#fff" t={t} at={steps[0].t} />
     </g>
   );
 };
@@ -232,7 +241,7 @@ const TrailStopLong: React.FC<{t: number}> = ({t}) => {
         strokeWidth={hit ? 4 : 3}
         opacity={0.95}
       />
-      <Tag x={x + 118} y={py(p)} text="STOP" bg={COLORS.red} color="#fff" t={t} at={steps[0].t} />
+      <Tag x={Math.min(x + 118, 932)} y={py(p)} text="STOP" bg={COLORS.red} color="#fff" t={t} at={steps[0].t} />
       {hit ? (
         <circle
           cx={D.m5x(9)}
@@ -391,12 +400,13 @@ export const Chart: React.FC<{tSrc: number}> = ({tSrc}) => {
             stroke={COLORS.vaStroke}
             strokeWidth={1.5}
           />
-          <text x={378} y={py(D.VAH) + 60} fontFamily={FONT} fontWeight={800} fontSize={42} fill={COLORS.vaText}>
+          {/* label lives in the lower band of the box, clear of candles and profile bars */}
+          <text x={402} y={py(D.VAL + 7)} fontFamily={FONT} fontWeight={800} fontSize={42} fill={COLORS.vaText}>
             70&thinsp;%
           </text>
           <text
-            x={378}
-            y={py(D.VAH) + 98}
+            x={402}
+            y={py(D.VAL + 7) + 40}
             fontFamily={FONT}
             fontWeight={600}
             fontSize={27}

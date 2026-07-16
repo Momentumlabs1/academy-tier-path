@@ -14,9 +14,9 @@ export const Captions: React.FC<{captions: Caption[]}> = ({captions}) => {
   if (!active) return null;
 
   const local = (t - active.s) * fps;
-  const inO = interpolate(local, [0, 5], [0, 1], {extrapolateRight: 'clamp'});
-  const y = interpolate(local, [0, 6], [10, 0], {extrapolateRight: 'clamp', easing: (x) => 1 - (1 - x) ** 3});
-  const sc = interpolate(local, [0, 6], [0.965, 1], {extrapolateRight: 'clamp', easing: (x) => 1 - (1 - x) ** 3});
+  const inO = interpolate(local, [0, 3], [0, 1], {extrapolateRight: 'clamp'});
+  const y = interpolate(local, [0, 4], [10, 0], {extrapolateRight: 'clamp', easing: (x) => 1 - (1 - x) ** 3});
+  const sc = interpolate(local, [0, 4], [0.965, 1], {extrapolateRight: 'clamp', easing: (x) => 1 - (1 - x) ** 3});
 
   return (
     <div
@@ -38,6 +38,7 @@ export const Captions: React.FC<{captions: Caption[]}> = ({captions}) => {
           fontSize: 56,
           lineHeight: 1.18,
           textAlign: 'center',
+          whiteSpace: 'pre-line',
           color: COLORS.white,
           letterSpacing: '-0.01em',
           opacity: inO,

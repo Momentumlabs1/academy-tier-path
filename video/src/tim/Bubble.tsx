@@ -48,7 +48,7 @@ export const Bubble: React.FC<{segments: BubbleSegment[]}> = ({segments}) => {
       >
         <OffthreadVideo
           src={staticFile('assets/tim-bubble.mp4')}
-          startFrom={Math.round(seg.startFromSec * FPS) - seg.fromFrame}
+          startFrom={Math.round(seg.startFromSec * FPS + 1e-6) - seg.fromFrame}
           muted
           style={{width: '100%', height: '100%', objectFit: 'cover'}}
         />
