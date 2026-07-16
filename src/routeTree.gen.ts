@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as HqRouteImport } from './routes/hq'
 import { Route as HegemonyRouteImport } from './routes/hegemony'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppRouteImport } from './routes/_app'
@@ -31,6 +32,11 @@ import { Route as AppLessonsRouteImport } from './routes/_app.lessons'
 import { Route as AppLessonsIndexRouteImport } from './routes/_app.lessons.index'
 import { Route as AppLessonsLessonIdRouteImport } from './routes/_app.lessons.$lessonId'
 
+const HqRoute = HqRouteImport.update({
+  id: '/hq',
+  path: '/hq',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HegemonyRoute = HegemonyRouteImport.update({
   id: '/hegemony',
   path: '/hegemony',
@@ -140,6 +146,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/hegemony': typeof HegemonyRoute
+  '/hq': typeof HqRoute
   '/lessons': typeof AppLessonsRouteWithChildren
   '/notifications': typeof AppNotificationsRoute
   '/settings': typeof AppSettingsRoute
@@ -160,6 +167,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/hegemony': typeof HegemonyRoute
+  '/hq': typeof HqRoute
   '/notifications': typeof AppNotificationsRoute
   '/settings': typeof AppSettingsRoute
   '/signals': typeof AppSignalsRoute
@@ -183,6 +191,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/hegemony': typeof HegemonyRoute
+  '/hq': typeof HqRoute
   '/_app/lessons': typeof AppLessonsRouteWithChildren
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/settings': typeof AppSettingsRoute
@@ -208,6 +217,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/hegemony'
+    | '/hq'
     | '/lessons'
     | '/notifications'
     | '/settings'
@@ -228,6 +238,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/hegemony'
+    | '/hq'
     | '/notifications'
     | '/settings'
     | '/signals'
@@ -250,6 +261,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/admin'
     | '/hegemony'
+    | '/hq'
     | '/_app/lessons'
     | '/_app/notifications'
     | '/_app/settings'
@@ -274,11 +286,19 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
   HegemonyRoute: typeof HegemonyRoute
+  HqRoute: typeof HqRoute
   TSlugRoute: typeof TSlugRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/hq': {
+      id: '/hq'
+      path: '/hq'
+      fullPath: '/hq'
+      preLoaderRoute: typeof HqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/hegemony': {
       id: '/hegemony'
       path: '/hegemony'
@@ -493,6 +513,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
   HegemonyRoute: HegemonyRoute,
+  HqRoute: HqRoute,
   TSlugRoute: TSlugRoute,
 }
 export const routeTree = rootRouteImport
