@@ -5,9 +5,8 @@
 
 ## Ergebnis
 
-- `video/out/tim-volume-profile-reel-ORGANIC.mp4` — ~100 s, Ending „kostenloser Kurs → unter dem Video kommentieren" (organisch).
-- `video/out/tim-volume-profile-reel-AD.mp4` — ~104 s, Ending „klick auf den Button unter dieser Ad" (Ad-Version).
-  Tim hatte beide CTA-Takes in einer Aufnahme; die Ad-Variante schneidet nach „…Gewinnen raus" auf den zweiten Take (109,95 s) um.
+- `video/out/tim-volume-profile-reel.mp4` — ~100 s, Komposition `TimReel`, Ending „kostenloser Kurs → unter dem Video kommentieren" (wie im englischen Original).
+- Hinweis: Tims Aufnahme enthält ab 110 s einen zweiten CTA-Take („Button unter dieser Ad"). Der Code (`TimVideo` mit `variant: 'ad'` + `AD_TIMELINE`) kann daraus bei Bedarf eine Ad-Fassung schneiden — es wird aber bewusst nur EIN Video ausgeliefert.
 
 **Pause-Cutting (v2):** `src/tim/timeline.ts` komprimiert ~19 Sprechpausen (spart ~8,3 s) — Audio/Bubble laufen als Segment-Sequenzen, Captions/Chart-Beats werden über `srcToComp`/`compToSrc` gemappt. Neue Schnitte einfach in `GAPS` eintragen; Cut-Punkte immer in Sprechpausen legen und Animationsfenster (Zoom, Fades) außerhalb der Cut-Ranges halten.
 
