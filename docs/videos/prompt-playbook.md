@@ -1,6 +1,8 @@
-# Prompt-Playbook — KI-Clips auf Magenta-Plate (Recherche Juli 2026)
+# Prompt-Playbook — KI-Clips auf Chroma-Plate (Recherche Juli 2026)
 
-> Ziel: Jeder Clip sitzt beim 1.–2. Versuch. Charakter bewegt sich, Hintergrund bleibt eingefroren, 2D-Stil bleibt.
+> Ziel: Jeder Clip sitzt beim 1.–2. Versuch. Charakter bewegt sich, Hintergrund bleibt eingefroren.
+
+**Stil-Update (User-Entscheidung 15.07.):** Cosmo darf **leicht 3D-shaded** wirken (weiches Volumen, Dimension) — er muss aber **1:1 als Cosmo erkennbar** bleiben (Design, Farben, Proportionen, Details wie Brauen-Schlitz & Goldkette). Konsequenz: Der strikte „flat 2D cel"-Lock in den Prompts kann gelockert werden zu „stylized 3D-shaded cartoon character, exact same character design as the input image" — und Klings 3D-Tendenz ist kein Ausschlusskriterium mehr, sondern sogar willkommen. Identitäts-Anker bleiben: Startbild = Plate, ggf. Start+End-Frame, Elements-Referenzen (Kling 3.0).
 
 ## Universalregeln (gelten für jedes Modell)
 
