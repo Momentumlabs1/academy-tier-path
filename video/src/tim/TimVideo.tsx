@@ -5,6 +5,7 @@ import {Captions} from './Captions';
 import {Chart} from './chart/Chart';
 import {IntroTimeline} from './IntroTimeline';
 import {CAPTIONS_CTA_AD, CAPTIONS_CTA_ORGANIC, CAPTIONS_MAIN, Caption} from './captions';
+import {Sfx} from './Sfx';
 import {ensureFont} from './fonts';
 import {COLORS, FPS} from './theme';
 import {AD_TIMELINE, ORGANIC_TIMELINE, Timeline} from './timeline';
@@ -67,6 +68,8 @@ export const TimVideo: React.FC<{variant: Variant}> = ({variant}) => {
         <Bubble segments={bubbleSegments} />
         <Captions captions={captions} />
       </AbsoluteFill>
+
+      <Sfx timeline={timeline} />
 
       {timeline.segs.map((seg, i) => {
         const isLast = i === timeline.segs.length - 1;
