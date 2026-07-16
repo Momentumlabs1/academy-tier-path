@@ -12,9 +12,21 @@
 6. **Loops:** Gleiches Bild als Start- UND End-Frame (Kling Start/End-Frames, Veo First/Last) = perfekter Idle-Loop. Clip-Ketten: letztes Frame von A = Start von B.
 7. **Multishot-Konsistenz:** Immer dieselbe Plate als Startbild + der Suffix-Block byte-identisch; nur der eine Aktions-Satz variiert. Seed fixieren, wo möglich (Wan/Veo/Runway; Kling-API hat keinen Seed).
 
+## ⚠️ Plate-Farbe: GRÜN #00FF00 (Entscheidung revidiert, 15.07.)
+
+Community-Beweis Juli 2026: **Magenta #FF00FF driftet beim Generieren** („a cloud of pinks, magentas, and purples") — Grün ist als „Greenscreen"-Konzept in den Trainingsdaten verankert und bleibt semantisch stabil; Klings eigene Prompt-Guides sind um Greenscreen-Erhalt gebaut. Das Jeans-Problem (grüne Farbspritzer) ist gelöst: **Key-safe-Master** `master-keysafe.png` — die ~1.100 Lime-Pixel (0,014 %) wurden auf Orange umgefärbt. Plates: `plate-P1-frontal-green.png`, `plate-P4-closeup-green.png`. Magenta-Plates bleiben als Backup im Repo.
+
+## Modell-Ranking für unseren Workflow (Recherche Juli 2026)
+
+1. **Kling 2.6 Pro i2v** ⭐ — einziges Modell mit **static_mask über API** (offizielle Kling-API/PiAPI: ganzen Hintergrund als unbeweglich markieren + dynamic_mask auf den Charakter). Negative-Prompt, cfg, Start+End-Frame. ~**0,35–0,70 $ / 5–10-s-Clip** (fal.ai, Audio aus).
+2. **Vidu Q3 / Q3-Turbo** — bester 2D-Cel-Stil pro Dollar („preserves flat shading, clean line art"), `movement_amplitude: small`, Start+End-Frame. ~0,30–0,70 $. Einsetzen, wenn Kling den Charakter „ver-3D-t".
+3. **Performance-Transfer für präzise Aktionen** (Griff zur Linse, Timing-kritisches): **Runway Act-Two** (0,50 $/10 s — selbst vorspielen, wird auf Cosmo übertragen, kann Cartoon-Proportionen) oder **Kling Motion Control 2.6/3.0** (Replicate/offizielle API, inkl. Static Brush); Budget-Option Wan 2.2 Animate (open source). Caveat: Cartoon-Proportionen können beim Skelett-Retargeting leiden → langsam & groß gestikulieren, Framing ans Charakterbild angleichen.
+4. **Seedance 1.5 Pro** — Budget-Wildcard mit echtem `camera_fixed: true`-Flag (~0,26–0,52 $/10 s).
+- **Meiden:** Veo 3.1 (Physik-Realismus-Bias → malt Schatten/Relighting auf flache Plates!), Seedance 2.0 (zu teuer), Gen-4.5/Pika (Fotorealismus-Bias). Hinweis: Der Prompt-Guide unten listet Veo-Settings — nur nutzen, falls Kling+Vidu beide versagen.
+
 ## Standard-Suffix (an JEDEN Prompt anhängen, wörtlich)
 
-> Flat 2D cel animation, clean line art, flat colors. The character stands against a flat, solid, evenly lit magenta background like a studio chroma backdrop. The background stays perfectly still and unchanged for the entire clip. The character casts no shadow. Fixed camera, locked-off tripod shot, the camera holds completely static, no zoom.
+> Flat 2D cel animation, clean line art, flat colors. The character stands against a flat, solid, evenly lit green screen background, chroma key backdrop. The background stays perfectly still and unchanged for the entire clip. The character casts no shadow. Fixed camera, locked-off tripod shot, the camera holds completely static, no zoom.
 
 ## Master-Negative-Prompt (Kling / Wan / Veo — Hailuo & Runway haben kein Negative-Feld)
 
