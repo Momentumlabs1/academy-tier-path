@@ -259,6 +259,47 @@ const TrailStop: React.FC<{
   );
 };
 
+// scenario indicator pill, in the same design language as the chart labels
+const ScenarioPill: React.FC<{t: number; at: number; out: number; x: number; y: number; num: string; label: string}> = ({
+  t,
+  at,
+  out,
+  x,
+  y,
+  num,
+  label,
+}) => {
+  const inP = easeOut(prog(t, at, 0.45));
+  const o = inP * (1 - easeOut(prog(t, out, 0.5)));
+  if (o <= 0) return null;
+  const text = `${num} · ${label}`;
+  const w = text.length * 26 * 0.66 + 56;
+  return (
+    <g opacity={o} transform={`translate(${x} ${y + (1 - inP) * 14})`}>
+      <rect x={-w / 2} y={-30} width={w} height={60} rx={12} fill="rgba(10,10,12,0.92)" stroke="rgba(235,238,245,0.30)" strokeWidth={2} />
+      <text x={0} y={9} textAnchor="middle" fontFamily={FONT} fontWeight={800} fontSize={26} letterSpacing="0.08em">
+        <tspan fill={COLORS.blueBright}>{num}</tspan>
+        <tspan fill={COLORS.grey}> · </tspan>
+        <tspan fill={COLORS.white}>{label}</tspan>
+      </text>
+    </g>
+  );
+};
+
+// thin vertical sweep that "wipes" scenario 1 off the chart
+const Sweep: React.FC<{t: number}> = ({t}) => {
+  const p = prog(t, 70.35, 0.65);
+  if (p <= 0 || p >= 1) return null;
+  const x = 420 + 560 * (p * p * (3 - 2 * p)); // smoothstep
+  const o = Math.sin(Math.PI * p);
+  return (
+    <g opacity={o}>
+      <line x1={x} x2={x} y1={D.CHART.top - 10} y2={D.CHART.bottom + 10} stroke="rgba(110,143,255,0.16)" strokeWidth={12} />
+      <line x1={x} x2={x} y1={D.CHART.top - 10} y2={D.CHART.bottom + 10} stroke="rgba(185,198,255,0.85)" strokeWidth={2.5} />
+    </g>
+  );
+};
+
 // ---------- main ----------
 
 export const Chart: React.FC<{tSrc: number}> = ({tSrc}) => {
@@ -512,6 +553,11 @@ export const Chart: React.FC<{tSrc: number}> = ({tSrc}) => {
             ) : null}
           </g>
         ) : null}
+
+        {/* -------- transitions between the scenarios -------- */}
+        <Sweep t={t} />
+        <ScenarioPill t={t} at={42.95} out={45.65} x={700} y={1122} num="1" label="FAKEOUT" />
+        <ScenarioPill t={t} at={72.4} out={76.35} x={700} y={1150} num="2" label="AKZEPTANZ" />
 
         {/* -------- scenario 2: acceptance long -------- */}
         {t >= D.SC2[0].t ? (

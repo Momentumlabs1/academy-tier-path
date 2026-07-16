@@ -22,10 +22,10 @@ export const Captions: React.FC<{captions: Caption[]}> = ({captions}) => {
     <div
       style={{
         position: 'absolute',
-        top: 664,
+        top: 598,
         left: 60,
         width: 960,
-        height: 120,
+        height: 110,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
