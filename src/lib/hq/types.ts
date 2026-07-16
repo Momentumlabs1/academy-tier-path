@@ -73,29 +73,26 @@ export interface LifeNotification {
   created_at: string;
 }
 
+/** Subset of the SPYSECRET admin-dashboard-v3 payload the HQ cards need. */
 export interface SpyKpis {
   mrr_eur: number;
-  paying_active: number;
   pro_active: number;
   basic_active: number;
   in_trial: number;
   past_due: number;
   new_paying_today: number;
   visitors_today: number;
-  visitors_yesterday: number;
+  visitors_trend_pct: number;
   scans_today: number;
   new_users_today: number;
+  daily: SparkPoint[]; // unique visitors, last 14 days
 }
 
 export interface ContentKpis {
   video_count: number;
   total_views: number;
   total_likes: number;
-  views_7d: number;
   top_video: { caption: string; platform: string; views: number; url: string } | null;
-  agency_followers: number;
-  agency_views: number;
-  agency_personas: number;
 }
 
 export interface SparkPoint {

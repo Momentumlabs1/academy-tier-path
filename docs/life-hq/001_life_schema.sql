@@ -1,10 +1,13 @@
 -- ═══════════════════════════════════════════════════════════════════════════
--- HQ — Life OS schema (applied to the SPYSECRET Supabase project)
--- Personal life-dashboard tables for Diego: tasks, notes (second brain),
--- day planner, ventures, notification settings + KPI RPCs.
+-- HQ — Life OS schema (applied to the dedicated "momentum-hq" Supabase
+-- project, ref qrgvltpakkubtkeukypa). Deliberately a SEPARATE project from
+-- any product database — private data never lives next to product data.
 -- Access model: owner-allowlist (life_owners) enforced via is_life_owner()
--- in RLS on every table and inside every security-definer RPC.
+-- in RLS on every table.
 -- ═══════════════════════════════════════════════════════════════════════════
+
+create extension if not exists pg_cron;
+create extension if not exists pg_net;
 
 -- ── Owners allowlist ─────────────────────────────────────────────────────────
 create table if not exists public.life_owners (
@@ -28,11 +31,8 @@ $$;
 revoke all on function public.is_life_owner() from public, anon;
 grant execute on function public.is_life_owner() to authenticated;
 
--- Seed with Diego's accounts that already exist in auth.users.
-insert into public.life_owners (user_id, email)
-select u.id, u.email from auth.users u
-where lower(u.email) in ('kontakt@momentumlabs.at', 'diego.momentum1@gmail.com', 'strichabi@gmail.com')
-on conflict (user_id) do nothing;
+-- Owner user is created once via the (afterwards disabled) hq-setup edge
+-- function and inserted into life_owners there.
 
 -- ── Ventures (Spy Secret, Trading, Content, …) ──────────────────────────────
 create table if not exists public.life_ventures (

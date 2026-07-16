@@ -3,61 +3,67 @@
 Persönliches Command Center / Second Brain für Diego — als Route `/hq` in dieser App,
 mobil-first und als PWA installierbar ("Zum Home-Bildschirm").
 
-## Architektur
+## Architektur — strikte Trennung privat vs. Produkt
+
+**Alle privaten Daten liegen in einem eigenen Supabase-Projekt `momentum-hq`**
+(ref `qrgvltpakkubtkeukypa`, $10/Monat) — bewusst getrennt vom SPYSECRET-Produktprojekt
+(Investoren-Case). In Produktdatenbanken wird ausschließlich **gelesen**, über
+bereits existierende Infrastruktur.
 
 ```
 Browser (/hq, client-only)
-   │  Login: Supabase Auth (SPYSECRET-Projekt, bestehender Account)
-   ├─► SPYSECRET Supabase (bqqmfajowxzkdcvmrtyd)
-   │     life_* Tabellen  ── RLS: nur life_owners (Diegos Accounts)
-   │     KPI-RPCs         ── life_spysecret_kpis / life_content_kpis / life_visitors_sparkline
-   │     Edge Function    ── life-brief (Telegram + Resend-E-Mail + Feed)
+   │  Login: Supabase Auth im momentum-hq-Projekt (eigener HQ-Account)
+   ├─► momentum-hq Supabase (qrgvltpakkubtkeukypa)  ← PRIVAT
+   │     life_* Tabellen  ── RLS: nur life_owners
+   │     Edge Function    ── life-brief v2 (Telegram + optional Resend + Feed)
    │     pg_cron          ── stündlicher Tick → Morning Brief / Abend-Review
-   └─► Academy Supabase (Lovable Cloud, nur lesend, optional)
+   ├─► SPYSECRET Supabase (nur lesen, nichts HQ-eigenes gespeichert)
+   │     admin-dashboard-v3 (bestehende Admin-Funktion) → KPI-Karte
+   │     affiliate_videos (bestehende Tabelle, RLS entscheidet) → Content-Karte
+   └─► Academy Supabase (Lovable Cloud, nur lesen, optional)
          tenants / members / signal_relays → Trading-Karte
 ```
 
-- **Spy Secret KPIs** (MRR, Zahler, Trials, Besucher, Scans) werden live aus den
-  Produktionstabellen berechnet — gleiche Preis-/Filterlogik wie `admin-dashboard-v3` (v17).
-- **Content & Views**: `affiliate_videos` (StrichAbi-UGC-Programm) + `agency_*`
-  (AI-Creator-Personas).
-- **Notifications**: `life-brief` schickt Telegram (Bot-Token + Chat-ID aus
-  `life_settings`, im Settings-Tab einrichtbar), Fallback E-Mail via Resend
-  (`noreply@notify.spy-secret.com`), und loggt alles in `life_notifications`
-  (In-App-Feed hinter der Glocke).
+- Beim HQ-Login werden dieselben Zugangsdaten zusätzlich (best effort) gegen
+  SPYSECRET probiert — nur damit die Ventures-Karten KPIs lesen können.
+  Schlägt das fehl, zeigen die Karten einen Hinweis statt Zahlen.
+- Der **Brief enthält nur persönliche Inhalte** (Fokus, Aufgaben, Tagesplan) —
+  keine Business-Zahlen verlassen das Dashboard.
 
 ## Dateien in diesem Ordner
 
 | Datei | Zweck |
 |---|---|
-| `001_life_schema.sql` | Tabellen + RLS (im SPYSECRET-Projekt angewendet) |
-| `002_life_kpi_rpcs.sql` | KPI-RPCs (Owner- oder Service-Role-Zugriff) |
-| `003_life_cron.sql` | pg_cron-Job `life-brief-tick` (stündlich) |
-| `life-brief.ts` | Quellcode der deployten Edge Function |
+| `001_life_schema.sql` | Tabellen + RLS (im momentum-hq-Projekt angewendet) |
+| `002_life_cron.sql` | pg_cron-Job `life-brief-tick` (stündlich) |
+| `life-brief.ts` | Quellcode der deployten Edge Function (v2, nur persönliche Daten) |
+| `ZIELE.md` | Zielkatalog für autonome Nachtschicht-Sessions |
 
-Diese SQL-Dateien sind **Referenzkopien** — sie wurden bereits per MCP-Migration
-im SPYSECRET-Projekt angewendet (Migrationsnamen: `life_hq_schema`,
-`life_hq_kpi_rpcs`, `life_hq_rpcs_allow_service_role`, `life_hq_cron_tick`).
+Die SQL-Dateien sind **Referenzkopien** — angewendet per MCP-Migration im
+momentum-hq-Projekt (`life_hq_schema`, `life_hq_cron_tick`).
 
 ## Sicherheit
 
-- Alle `life_*`-Tabellen: RLS `is_life_owner()` — erlaubt sind nur die
-  Accounts in `life_owners` (kontakt@momentumlabs.at, diego.momentum1@gmail.com,
-  strichabi@gmail.com).
-- KPI-RPCs prüfen dieselbe Allowlist (bzw. Service-Role für die Brief-Funktion).
+- Alle `life_*`-Tabellen: RLS `is_life_owner()` — erlaubt sind nur Accounts in
+  `life_owners`.
+- Der Owner-User wurde einmalig über die Edge Function `hq-setup` angelegt;
+  die Funktion ist seitdem ein deaktivierter 410-Stub.
 - `life-brief`: `x-cron-secret` (aus `life_settings.cron_secret`) für Cron,
   sonst Owner-JWT.
-- Der Publishable Key im Client ist öffentlich by design; er gewährt ohne
-  Login + Allowlist keinerlei Zugriff auf life_*-Daten.
+- Publishable Keys im Client sind öffentlich by design; ohne Login + Allowlist
+  gibt es keinen Zugriff auf life_*-Daten.
 
-## Telegram einrichten (2 Minuten)
+## Notifications einrichten
 
-1. In Telegram **@BotFather** öffnen → `/newbot` → Namen vergeben → Token kopieren.
+**Telegram (empfohlen, 2 Minuten):**
+1. In Telegram **@BotFather** öffnen → `/newbot` → Token kopieren.
 2. Dem neuen Bot `/start` schreiben.
-3. Im HQ → Setup → Token einfügen → **Verbinden** (erkennt die Chat-ID automatisch
-   und schickt eine Bestätigung).
-4. „Test senden" / „Brief jetzt" zum Prüfen.
+3. Im HQ → Setup → Token einfügen → **Verbinden** (Chat-ID wird automatisch erkannt).
 
-Zeiten & Kanäle (Morning Brief, Abend-Review, E-Mail-Fallback) sind im
-Setup-Tab konfigurierbar; der Cron-Tick wertet sie stündlich in der
-Zeitzone `Europe/Vienna` aus (DST-sicher).
+**E-Mail-Fallback (optional):** Im Supabase-Dashboard des momentum-hq-Projekts
+das Secret `RESEND_API_KEY` setzen (und optional `HQ_EMAIL_FROM` mit einer
+verifizierten Absenderadresse). Ohne Secret bleibt der Fallback stumm — der
+In-App-Feed bekommt die Briefe immer.
+
+Zeiten & Kanäle sind im Setup-Tab konfigurierbar; der Cron-Tick wertet sie
+stündlich in der Zeitzone `Europe/Vienna` aus (DST-sicher).

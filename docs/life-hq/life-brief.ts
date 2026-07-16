@@ -1,21 +1,19 @@
-// life-brief — HQ Life-OS notification brain (deployed on the SPYSECRET project).
+// life-brief v2 — HQ Life-OS notification brain (project: momentum-hq).
+// PERSONAL DATA ONLY: focus, tasks, day blocks. Business KPIs are shown in
+// the dashboard, not in the brief — nothing here touches product databases.
 //
 // Actions (POST {action}):
 //   tick             cron, hourly: sends morning/evening brief when the local
 //                    hour in life_settings.timezone matches and none was sent
-//                    for that local day yet (DST-safe by construction).
+//                    for that local day yet (DST-safe via Intl.formatToParts).
 //   brief            {variant: 'morning'|'evening'} force-send (owner or cron).
-//   test             sends a test message via the configured channels (owner).
+//   test             sends a test message via configured channels (owner).
 //   telegram-detect  reads getUpdates of the bot token (body.token or saved),
-//                    stores the newest private-chat id, sends a confirmation
-//                    message (owner).
+//                    stores the newest private-chat id, sends a confirmation.
 //
 // Auth: x-cron-secret header must equal life_settings.cron_secret (cron path),
 //       OR Authorization: Bearer <JWT> of a user listed in life_owners.
-//
-// Delivery: Telegram (token + chat id from life_settings) → email fallback via
-// Resend (RESEND_API_KEY, already configured for spy-secret.com) → always logs
-// into life_notifications so the dashboard feed shows everything.
+// Email fallback requires a RESEND_API_KEY secret on THIS project.
 
 import { createClient, type SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
@@ -61,30 +59,20 @@ async function isOwnerRequest(req: Request, db: SupabaseClient): Promise<boolean
   const email = data?.user?.email?.toLowerCase();
   const uid = data?.user?.id;
   if (uid) {
-    const { data: byId } = await db
-      .from("life_owners")
-      .select("user_id")
-      .eq("user_id", uid)
-      .maybeSingle();
+    const { data: byId } = await db.from("life_owners").select("user_id").eq("user_id", uid).maybeSingle();
     if (byId) return true;
   }
   if (email) {
-    const { data: byEmail } = await db
-      .from("life_owners")
-      .select("user_id")
-      .eq("email", email)
-      .maybeSingle();
+    const { data: byEmail } = await db.from("life_owners").select("user_id").eq("email", email).maybeSingle();
     if (byEmail) return true;
   }
   return false;
 }
 
-// ── Local-time helpers (DST-safe via Intl) ───────────────────────────────────
+// ── Local-time helpers (DST-safe via Intl.formatToParts) ─────────────────────
 
 function localParts(tz: string, d = new Date()): { date: string; hour: number; pretty: string } {
   const date = new Intl.DateTimeFormat("sv-SE", { timeZone: tz, year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
-  // formatToParts, not format(): plain format() appends locale text ("18 Uhr")
-  // which turns Number() into NaN and would silently disable the cron tick.
   const hourStr =
     new Intl.DateTimeFormat("en-GB", { timeZone: tz, hour: "2-digit", hourCycle: "h23" })
       .formatToParts(d)
@@ -95,8 +83,6 @@ function localParts(tz: string, d = new Date()): { date: string; hour: number; p
 }
 
 const hhmm = (min: number) => `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
-const fmtInt = (n: number) => new Intl.NumberFormat("de-AT").format(Math.round(n));
-const fmtEur = (n: number) => `€${new Intl.NumberFormat("de-AT", { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(Math.round(n))}`;
 
 // ── Delivery channels ────────────────────────────────────────────────────────
 
@@ -118,7 +104,8 @@ async function sendTelegram(s: Settings, text: string): Promise<{ ok: boolean; e
 
 async function sendEmail(s: Settings, subject: string, text: string): Promise<{ ok: boolean; error?: string }> {
   const key = Deno.env.get("RESEND_API_KEY");
-  if (!key) return { ok: false, error: "RESEND_API_KEY missing" };
+  if (!key) return { ok: false, error: "RESEND_API_KEY nicht gesetzt (Projekt-Secret in momentum-hq)" };
+  const from = Deno.env.get("HQ_EMAIL_FROM") || "HQ <onboarding@resend.dev>";
   try {
     const html = `<pre style="font-family:ui-monospace,Menlo,monospace;font-size:14px;line-height:1.6;color:#111;white-space:pre-wrap;">${
       text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
@@ -126,7 +113,7 @@ async function sendEmail(s: Settings, subject: string, text: string): Promise<{ 
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ from: "HQ <noreply@notify.spy-secret.com>", to: [s.notify_email], subject, text, html }),
+      body: JSON.stringify({ from, to: [s.notify_email], subject, text, html }),
       signal: AbortSignal.timeout(15000),
     });
     if (!res.ok) return { ok: false, error: `resend ${res.status}: ${(await res.text()).slice(0, 200)}` };
@@ -144,7 +131,6 @@ async function deliver(db: SupabaseClient, s: Settings, kind: string, title: str
   if (tg.ok) sentVia.push("telegram");
   else if (tg.error) errors.telegram = tg.error;
 
-  // Email when telegram is unconfigured/failed and fallback is on.
   if (!tg.ok && s.email_fallback) {
     const mail = await sendEmail(s, title, body);
     if (mail.ok) sentVia.push("email");
@@ -155,36 +141,25 @@ async function deliver(db: SupabaseClient, s: Settings, kind: string, title: str
   return { sent_via: sentVia, errors };
 }
 
-// ── Brief composition ────────────────────────────────────────────────────────
+// ── Brief composition (personal only) ────────────────────────────────────────
 
 const P_EMOJI: Record<number, string> = { 1: "🔴", 2: "🟡", 3: "⚪" };
 
 async function composeBrief(db: SupabaseClient, s: Settings, variant: "morning" | "evening") {
   const { date: today, pretty } = localParts(s.timezone);
 
-  const [tasksQ, planQ, blocksQ, spyQ, contentQ] = await Promise.all([
-    db.from("life_tasks").select("title, priority, due_date, done_at, updated_at").order("priority").order("due_date", { ascending: true, nullsFirst: false }).limit(200),
+  const [tasksQ, planQ, blocksQ] = await Promise.all([
+    db.from("life_tasks").select("title, priority, due_date, done_at").order("priority").order("due_date", { ascending: true, nullsFirst: false }).limit(200),
     db.from("life_day_plans").select("focus, reflection").eq("day", today).maybeSingle(),
     db.from("life_day_blocks").select("start_min, duration_min, title, done").eq("day", today).order("start_min"),
-    db.rpc("life_spysecret_kpis"),
-    db.rpc("life_content_kpis"),
   ]);
 
-  const tasks = (tasksQ.data ?? []) as { title: string; priority: number; due_date: string | null; done_at: string | null; updated_at: string }[];
+  const tasks = (tasksQ.data ?? []) as { title: string; priority: number; due_date: string | null; done_at: string | null }[];
   const open = tasks.filter((t) => !t.done_at);
   const overdue = open.filter((t) => t.due_date && t.due_date < today);
   const doneToday = tasks.filter((t) => t.done_at && t.done_at.slice(0, 10) === today).length;
   const blocks = (blocksQ.data ?? []) as { start_min: number; duration_min: number; title: string; done: boolean }[];
   const focus = planQ.data?.focus ?? null;
-  const spy = (spyQ.data ?? {}) as Record<string, number>;
-  const content = (contentQ.data ?? {}) as Record<string, unknown>;
-
-  const spyLine = spyQ.error
-    ? "📊 Spy Secret: Daten gerade nicht verfügbar"
-    : `📊 Spy Secret: MRR ${fmtEur(spy.mrr_eur ?? 0)} · ${spy.paying_active ?? 0} Zahler · ${spy.in_trial ?? 0} Trials`;
-  const contentLine = contentQ.error
-    ? ""
-    : `🎬 Content: ${fmtInt(Number(content.total_views ?? 0))} Views gesamt · +${fmtInt(Number(content.views_7d ?? 0))} in 7 Tagen`;
 
   if (variant === "morning") {
     const top = open.slice(0, 5).map((t, i) => {
@@ -201,9 +176,7 @@ async function composeBrief(db: SupabaseClient, s: Settings, variant: "morning" 
       "",
       plan.length ? `⏰ Tagesplan:\n${plan.join("\n")}` : "⏰ Noch keine Zeitblöcke geplant.",
       "",
-      spyLine,
-      `   Gestern: ${fmtInt(spy.visitors_yesterday ?? 0)} Besucher`,
-      contentLine || null,
+      "📊 Live-Zahlen aller Ventures findest du im HQ → Ventures.",
     ].filter((l): l is string => l !== null);
 
     return { title: `🌅 HQ Morning Brief — ${pretty}`, body: lines.join("\n") };
@@ -215,20 +188,14 @@ async function composeBrief(db: SupabaseClient, s: Settings, variant: "morning" 
     `✅ Heute erledigt: ${doneToday} Aufgabe(n) · ${doneBlocks}/${blocks.length} Blöcke`,
     `📬 Offen: ${open.length} Aufgaben (davon ${openP1} × 🔴 Top-Prio)`,
     "",
-    spyQ.error
-      ? "📊 Spy Secret: Daten gerade nicht verfügbar"
-      : `📊 Heute: ${fmtInt(spy.visitors_today ?? 0)} Besucher · ${fmtInt(spy.scans_today ?? 0)} Scans · ${spy.new_paying_today ?? 0} neue Zahler · MRR ${fmtEur(spy.mrr_eur ?? 0)}`,
-    contentLine || null,
-    "",
     "✍️ Kurze Reflexion im HQ eintragen — was war heute gut?",
-  ].filter((l): l is string => l !== null);
+  ];
 
   return { title: `🌙 HQ Abend-Review — ${pretty}`, body: lines.join("\n") };
 }
 
 async function alreadySentToday(db: SupabaseClient, s: Settings, kind: string): Promise<boolean> {
   const { date: today } = localParts(s.timezone);
-  // Local day start expressed as UTC instant: scan the last 26h and compare local dates.
   const since = new Date(Date.now() - 26 * 3600 * 1000).toISOString();
   const { data } = await db.from("life_notifications").select("created_at").eq("kind", kind).gte("created_at", since).order("created_at", { ascending: false }).limit(5);
   return (data ?? []).some((n) => localParts(s.timezone, new Date(n.created_at)).date === today);

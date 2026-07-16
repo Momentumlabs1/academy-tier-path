@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
 import { Bell, Brain, CalendarCheck2, Rocket, Settings, X } from "lucide-react";
-import { spysecret } from "@/integrations/spysecret/client";
+import { hq } from "@/integrations/hq/client";
 import { fetchNotifications, markNotificationsRead } from "@/lib/hq/api";
 import { cn } from "@/lib/utils";
 import { LoginScreen } from "./LoginScreen";
@@ -101,8 +101,8 @@ export function HqApp() {
   const [showFeed, setShowFeed] = useState(false);
 
   useEffect(() => {
-    spysecret.auth.getSession().then(({ data }) => setSession(data.session));
-    const { data: sub } = spysecret.auth.onAuthStateChange((_evt, s) => setSession(s));
+    hq.auth.getSession().then(({ data }) => setSession(data.session));
+    const { data: sub } = hq.auth.onAuthStateChange((_evt, s) => setSession(s));
     return () => sub.subscription.unsubscribe();
   }, []);
 

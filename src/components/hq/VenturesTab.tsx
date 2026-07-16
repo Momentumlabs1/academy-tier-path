@@ -1,9 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
-import { ExternalLink, Radio, TrendingUp } from "lucide-react";
+import { ExternalLink, Link2, Radio } from "lucide-react";
 import {
   fetchContentKpis,
-  fetchSparkline,
   fetchSpyKpis,
   fetchTasks,
   fetchTradingSnapshot,
@@ -14,9 +13,8 @@ import {
 } from "@/lib/hq/api";
 import { EmptyHint, HqCard, LoadingRow, SectionLabel, StatTile } from "./primitives";
 
-function TrendBadge({ now, before }: { now: number; before: number }) {
-  if (!before) return null;
-  const pct = Math.round(((now - before) / before) * 100);
+function TrendBadge({ pct }: { pct: number }) {
+  if (!pct) return null;
   const up = pct >= 0;
   return (
     <span
@@ -31,13 +29,18 @@ function TrendBadge({ now, before }: { now: number; before: number }) {
   );
 }
 
+function ConnectHint() {
+  return (
+    <EmptyHint>
+      <Link2 className="mx-auto mb-1 h-5 w-5 opacity-60" />
+      Nicht verbunden — beim HQ-Login werden dieselben Zugangsdaten automatisch gegen Spy Secret
+      probiert. Melde dich einmal ab und neu an, falls sich dein Spy-Secret-Passwort unterscheidet.
+    </EmptyHint>
+  );
+}
+
 function SpySecretCard() {
   const kpis = useQuery({ queryKey: ["spy-kpis"], queryFn: fetchSpyKpis, staleTime: 60_000 });
-  const spark = useQuery({
-    queryKey: ["spy-spark"],
-    queryFn: fetchSparkline,
-    staleTime: 5 * 60_000,
-  });
 
   return (
     <HqCard>
@@ -60,7 +63,9 @@ function SpySecretCard() {
         <LoadingRow label="Live-Zahlen laden…" />
       ) : kpis.isError ? (
         <EmptyHint>KPIs nicht verfügbar: {(kpis.error as Error).message}</EmptyHint>
-      ) : kpis.data ? (
+      ) : !kpis.data ? (
+        <ConnectHint />
+      ) : (
         <>
           <div className="mb-3 flex items-end justify-between">
             <div>
@@ -83,9 +88,7 @@ function SpySecretCard() {
             <StatTile
               label="Besucher heute"
               value={fmtInt(kpis.data.visitors_today)}
-              sub={
-                <TrendBadge now={kpis.data.visitors_today} before={kpis.data.visitors_yesterday} />
-              }
+              sub={<TrendBadge pct={kpis.data.visitors_trend_pct} />}
             />
             <StatTile label="Scans heute" value={fmtInt(kpis.data.scans_today)} />
             <StatTile
@@ -96,13 +99,13 @@ function SpySecretCard() {
             <StatTile label="Trials aktiv" value={kpis.data.in_trial} />
           </div>
 
-          {spark.data && spark.data.length > 0 ? (
+          {kpis.data.daily.length > 0 ? (
             <div className="mt-3">
               <div className="mb-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
                 Unique Besucher · 14 Tage
               </div>
               <ResponsiveContainer width="100%" height={72}>
-                <AreaChart data={spark.data} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
+                <AreaChart data={kpis.data.daily} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
                   <defs>
                     <linearGradient id="hqSpark" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#a3e635" stopOpacity={0.3} />
@@ -133,7 +136,7 @@ function SpySecretCard() {
             </div>
           ) : null}
         </>
-      ) : null}
+      )}
     </HqCard>
   );
 }
@@ -147,37 +150,27 @@ function ContentCard() {
 
   return (
     <HqCard>
-      <SectionLabel>🎬 Content & Views (StrichAbi + AI-Creator)</SectionLabel>
+      <SectionLabel>🎬 Content & Views (StrichAbi / UGC)</SectionLabel>
       {kpis.isLoading ? (
         <LoadingRow />
-      ) : kpis.isError ? (
-        <EmptyHint>Content-KPIs nicht verfügbar.</EmptyHint>
-      ) : kpis.data ? (
+      ) : !kpis.data ? (
+        <EmptyHint>
+          Video-Zahlen nicht verfügbar — Spy-Secret-Verbindung nötig (siehe oben).
+        </EmptyHint>
+      ) : (
         <>
-          <div className="mb-3 flex items-end justify-between">
-            <div>
-              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                Views gesamt
-              </div>
-              <div className="font-display text-4xl font-bold leading-none">
-                {fmtCompact(kpis.data.total_views)}
-              </div>
+          <div className="mb-3">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              Views gesamt
             </div>
-            {kpis.data.views_7d > 0 ? (
-              <div className="inline-flex items-center gap-1 rounded-md bg-[oklch(0.8_0.16_150)]/15 px-2 py-1 text-xs font-bold text-[oklch(0.8_0.16_150)]">
-                <TrendingUp className="h-3.5 w-3.5" /> +{fmtCompact(kpis.data.views_7d)} / 7d
-              </div>
-            ) : null}
+            <div className="font-display text-4xl font-bold leading-none">
+              {fmtCompact(kpis.data.total_views)}
+            </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             <StatTile label="Videos" value={kpis.data.video_count} />
             <StatTile label="Likes" value={fmtCompact(kpis.data.total_likes)} />
-            <StatTile
-              label="AI-Personas"
-              value={kpis.data.agency_personas}
-              sub={`${fmtCompact(kpis.data.agency_followers)} Follower`}
-            />
           </div>
 
           {kpis.data.top_video ? (
@@ -195,7 +188,7 @@ function ContentCard() {
             </a>
           ) : null}
         </>
-      ) : null}
+      )}
     </HqCard>
   );
 }

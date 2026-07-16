@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { spysecret } from "@/integrations/spysecret/client";
+import { hq } from "@/integrations/hq/client";
+import { connectSpySecret } from "@/lib/hq/api";
 import { HqCard, HqInput, PrimaryButton } from "./primitives";
 
 export function LoginScreen() {
@@ -12,13 +13,19 @@ export function LoginScreen() {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const { error } = await spysecret.auth.signInWithPassword({ email: email.trim(), password });
-    if (error)
+    const { error } = await hq.auth.signInWithPassword({ email: email.trim(), password });
+    if (error) {
       setError(
         error.message === "Invalid login credentials"
           ? "E-Mail oder Passwort falsch."
           : error.message,
       );
+    } else {
+      // Best effort: same credentials against the SPYSECRET project so the
+      // Ventures tab can read business KPIs. Failure is fine — the card
+      // simply shows a connect hint.
+      await connectSpySecret(email.trim(), password).catch(() => false);
+    }
     setBusy(false);
   }
 
@@ -60,8 +67,8 @@ export function LoginScreen() {
             </PrimaryButton>
           </form>
           <p className="mt-4 text-center text-[11px] leading-relaxed text-muted-foreground">
-            Login mit deinem Spy-Secret-Account (kontakt@momentumlabs.at). Zugriff haben nur
-            freigeschaltete Owner-Accounts.
+            Login mit deinem HQ-Account (eigenes, privates Projekt — getrennt von allen Produkten).
+            Zugriff haben nur freigeschaltete Owner-Accounts.
           </p>
         </HqCard>
       </div>

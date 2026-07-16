@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, Check, LogOut, Send, Smartphone } from "lucide-react";
+import { hq } from "@/integrations/hq/client";
 import { spysecret } from "@/integrations/spysecret/client";
 import { fetchSettings, invokeBrief, updateSettings } from "@/lib/hq/api";
 import {
@@ -249,7 +250,12 @@ export function SettingsTab({ userEmail }: { userEmail: string }) {
             <div className="truncate text-sm font-semibold">{userEmail}</div>
             <div className="text-[11px] text-muted-foreground">HQ-Owner</div>
           </div>
-          <GhostButton onClick={() => spysecret.auth.signOut()}>
+          <GhostButton
+            onClick={() => {
+              void spysecret.auth.signOut();
+              void hq.auth.signOut();
+            }}
+          >
             <LogOut className="h-4 w-4" /> Abmelden
           </GhostButton>
         </div>
