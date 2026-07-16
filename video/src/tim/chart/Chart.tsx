@@ -40,6 +40,42 @@ const Candle: React.FC<{spec: D.CandleSpec; x: number; t: number; pulse?: boolea
   );
 };
 
+// scenario 1's key candle: pushes above the VAH while "live", then retraces
+// and closes back inside the value area (rejection). Turns from blue to white
+// the moment the provisional close drops under the open.
+const RejectionCandle: React.FC<{t: number}> = ({t}) => {
+  const R = D.SC1_REJ;
+  const up = easeOut(prog(t, R.tUp, R.durUp));
+  if (up <= 0) return null;
+  const down = easeOut(prog(t, R.tDown, R.durDown));
+  const close = R.o + (R.peak - R.o) * up + (R.close - R.peak) * down;
+  const hi = R.o + (R.hi - R.o) * up;
+  const lo = R.o + (R.lo - R.o) * Math.min(1, up * 2);
+  const bullish = close >= R.o;
+  const fill = bullish ? COLORS.blue : COLORS.candleWhite;
+  const showPulse = t >= R.tUp && t < R.tDown + R.durDown + 1.2;
+  const ringP = ((t - R.tUp) % 0.9) / 0.9;
+  return (
+    <g>
+      <line x1={R.x} x2={R.x} y1={py(hi)} y2={py(lo)} stroke={fill} strokeWidth={3} opacity={0.9} />
+      <rect
+        x={R.x - D.M5_W / 2}
+        y={py(Math.max(R.o, close))}
+        width={D.M5_W}
+        height={Math.max(3, Math.abs(py(R.o) - py(close)))}
+        fill={fill}
+        rx={2.5}
+      />
+      {showPulse ? (
+        <>
+          <circle cx={R.x} cy={py(close)} r={6} fill="#fff" />
+          <circle cx={R.x} cy={py(close)} r={6 + ringP * 22} fill="none" stroke="#fff" strokeWidth={2} opacity={(1 - ringP) * 0.6} />
+        </>
+      ) : null}
+    </g>
+  );
+};
+
 const Zone: React.FC<{
   t: number;
   at: number;
@@ -120,8 +156,8 @@ const LevelLine: React.FC<{
   const dp = easeOut(prog(t, at, 0.5));
   if (dp <= 0) return null;
   let glow = 0;
-  if (pulseAt !== undefined && t >= pulseAt && t < pulseAt + 1.6) {
-    glow = Math.abs(Math.sin(((t - pulseAt) / 1.6) * Math.PI * 2)) * 0.8;
+  if (pulseAt !== undefined && t >= pulseAt && t < pulseAt + 1.1) {
+    glow = Math.abs(Math.sin(((t - pulseAt) / 1.1) * Math.PI * 2)) * 0.8;
   }
   return (
     <g>
@@ -177,46 +213,12 @@ const Entry: React.FC<{x: number; p: number; t: number; at: number; labelAt: num
   );
 };
 
-// scenario 1 trailing stop: red band that steps DOWN above each new candle high
-const TrailBandShort: React.FC<{t: number}> = ({t}) => {
-  const steps = D.SC1_STOP_STEPS;
-  if (t < steps[0].t) return null;
-  let p = steps[0].p;
-  for (let i = 1; i < steps.length; i++) {
-    if (t >= steps[i].t) {
-      const k = easeOut(prog(t, steps[i].t, 0.45));
-      p = steps[i - 1].p + (steps[i].p - steps[i - 1].p) * k;
-    }
-  }
-  const o = easeOut(prog(t, steps[0].t, 0.5));
-  const x0 = D.m5x(2) - 40;
-  const x1 = D.CHART.right - 40;
-  // the translucent band marks the initial stop; once the stop starts trailing,
-  // only the line + tag travel (keeps it from smearing over the green zone)
-  const bandO = 1 - easeOut(prog(t, steps[1].t, 0.5));
-  return (
-    <g opacity={o}>
-      {bandO > 0 ? (
-        <rect
-          x={x0}
-          y={py(steps[0].p + D.SC1_STOP_BAND)}
-          width={x1 - x0}
-          height={py(steps[0].p) - py(steps[0].p + D.SC1_STOP_BAND)}
-          fill={COLORS.redZone}
-          stroke={COLORS.redZoneStroke}
-          strokeWidth={1.5}
-          opacity={bandO}
-        />
-      ) : null}
-      <line x1={x0} x2={x1} y1={py(p)} y2={py(p)} stroke={COLORS.red} strokeWidth={2.5} opacity={0.9} />
-      <Tag x={x1 - 52} y={py(p) + 28} text="STOP" bg={COLORS.red} color="#fff" t={t} at={steps[0].t} />
-    </g>
-  );
-};
-
-// scenario 2 trailing stop: red tick + STOP tag stepping UP under candle lows
-const TrailStopLong: React.FC<{t: number}> = ({t}) => {
-  const steps = D.SC2_STOP_STEPS;
+// trailing stop: red tick + STOP tag stepping along the candle sequence
+const TrailStop: React.FC<{
+  t: number;
+  steps: {t: number; p: number; x: number}[];
+  hit?: {t: number; x: number; p: number};
+}> = ({t, steps, hit}) => {
   if (t < steps[0].t) return null;
   let p = steps[0].p;
   let x = steps[0].x;
@@ -228,8 +230,8 @@ const TrailStopLong: React.FC<{t: number}> = ({t}) => {
     }
   }
   const o = easeOut(prog(t, steps[0].t, 0.4));
-  const hit = t >= D.SC2_STOP_HIT;
-  const hitP = hit ? Math.min(1, (t - D.SC2_STOP_HIT) / 0.7) : 0;
+  const isHit = hit !== undefined && t >= hit.t;
+  const hitP = isHit ? Math.min(1, (t - (hit?.t ?? 0)) / 0.38) : 0;
   return (
     <g opacity={o}>
       <line
@@ -238,14 +240,14 @@ const TrailStopLong: React.FC<{t: number}> = ({t}) => {
         y1={py(p)}
         y2={py(p)}
         stroke={COLORS.red}
-        strokeWidth={hit ? 4 : 3}
+        strokeWidth={isHit ? 4 : 3}
         opacity={0.95}
       />
       <Tag x={Math.min(x + 118, 932)} y={py(p)} text="STOP" bg={COLORS.red} color="#fff" t={t} at={steps[0].t} />
-      {hit ? (
+      {isHit && hit ? (
         <circle
-          cx={D.m5x(9)}
-          cy={py(80.8)}
+          cx={hit.x}
+          cy={py(hit.p)}
           r={10 + hitP * 42}
           fill="none"
           stroke={COLORS.red}
@@ -265,9 +267,10 @@ export const Chart: React.FC<{tSrc: number}> = ({tSrc}) => {
   if (chartIn <= 0) return null;
 
   // camera: punch in on the M5 action during the scenarios
+  // (windows avoid the pause-cut ranges so the zoom never jumps)
   const zoom = interpolate(
     t,
-    [43.0, 44.2, 70.6, 71.8, 76.2, 77.4, 95.9, 97.4],
+    [43.0, 44.2, 69.9, 70.8, 76.2, 77.4, 96.45, 97.55],
     [1, 1.05, 1.05, 1, 1, 1.05, 1.05, 1],
     {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'},
   );
@@ -280,7 +283,13 @@ export const Chart: React.FC<{tSrc: number}> = ({tSrc}) => {
   const mL = m15.o + (m15.l - m15.o) * mp;
 
   // scenario 1 fade-out
-  const sc1o = 1 - easeOut(prog(t, D.SC1_FADE, 0.8));
+  const sc1o = 1 - easeOut(prog(t, D.SC1_FADE, 0.5));
+
+  // header emphasis: M15 while the opening range is the topic, M5 from the
+  // "wir warten, ob eine M5-Kerze ..." moment on
+  const m15In = easeOut(prog(t, D.B.m15Header, 0.5));
+  const m5In = easeOut(prog(t, D.B.m5Header, 0.5));
+  const m5e = easeOut(prog(t, D.B.m5Emph, 0.7));
 
   const gridV = [200, 360, 520, 680, 840, 1000];
   const gridH = [960, 1120, 1280, 1440, 1600, 1760];
@@ -306,14 +315,50 @@ export const Chart: React.FC<{tSrc: number}> = ({tSrc}) => {
           ))}
         </g>
 
-        {/* column headers */}
-        <g opacity={easeOut(prog(t, D.B.headers, 0.5))}>
-          <text x={D.M15_X} y={D.CHART.top - 44} textAnchor="middle" fontFamily={FONT} fontWeight={600} fontSize={27} fill={COLORS.grey}>
+        {/* column headers with dynamic emphasis */}
+        <g>
+          <text
+            x={D.M15_X}
+            y={D.CHART.top - 44}
+            textAnchor="middle"
+            fontFamily={FONT}
+            fontWeight={800}
+            fontSize={24 + 11 * (1 - m5e)}
+            fill={COLORS.white}
+            opacity={m15In * (0.5 + 0.5 * (1 - m5e))}
+          >
             M15
           </text>
-          <text x={D.m5x(2)} y={D.CHART.top - 44} textAnchor="middle" fontFamily={FONT} fontWeight={600} fontSize={27} fill={COLORS.grey}>
+          <rect
+            x={D.M15_X - 25}
+            y={D.CHART.top - 34}
+            width={50}
+            height={4}
+            rx={2}
+            fill={COLORS.blueBright}
+            opacity={m15In * (1 - m5e)}
+          />
+          <text
+            x={D.m5x(2)}
+            y={D.CHART.top - 44}
+            textAnchor="middle"
+            fontFamily={FONT}
+            fontWeight={800}
+            fontSize={24 + 11 * m5e}
+            fill={COLORS.white}
+            opacity={m5In * (0.5 + 0.5 * m5e)}
+          >
             M5
           </text>
+          <rect
+            x={D.m5x(2) - 22}
+            y={D.CHART.top - 34}
+            width={44}
+            height={4}
+            rx={2}
+            fill={COLORS.blueBright}
+            opacity={m5In * m5e}
+          />
         </g>
 
         {/* opening range: high / low dashed lines */}
@@ -419,10 +464,10 @@ export const Chart: React.FC<{tSrc: number}> = ({tSrc}) => {
 
         {/* VAH / VAL */}
         <LevelLine p={D.VAH} x0={orBracketX} x1={labelX - 66} t={t} at={D.B.vahLabel} label="VAH" pulseAt={D.B.twoPulse} />
-        <LevelLine p={D.VAL} x0={orBracketX} x1={labelX - 66} t={t} at={D.B.valLabel} label="VAL" pulseAt={D.B.twoPulse + 0.3} />
+        <LevelLine p={D.VAL} x0={orBracketX} x1={labelX - 66} t={t} at={D.B.valLabel} label="VAL" pulseAt={D.B.twoPulse + 0.2} />
 
-        {/* -------- scenario 1: fakeout short -------- */}
-        {sc1o > 0 && t >= D.SC1[0].t ? (
+        {/* -------- scenario 1: rejection at the VAH -> short -------- */}
+        {sc1o > 0 && t >= D.SC1_WAIT[0].t ? (
           <g opacity={sc1o}>
             <Zone
               t={t}
@@ -435,14 +480,28 @@ export const Chart: React.FC<{tSrc: number}> = ({tSrc}) => {
               stroke={COLORS.greenZoneStroke}
               flashAt={D.SC1_TARGET_HIT}
             />
-            <TrailBandShort t={t} />
-            {D.SC1.map((c, i) => (
-              <Candle key={i} spec={c} x={D.m5x(i)} t={t} pulse={i === lastActive(D.SC1, t)} />
+            <Zone
+              t={t}
+              at={D.SC1_RED.t}
+              x0={D.SC1_RED.x0}
+              x1={D.SC1_RED.x1}
+              pTop={D.SC1_RED.pTop}
+              pBot={D.SC1_RED.pBot}
+              fill={COLORS.redZone}
+              stroke={COLORS.redZoneStroke}
+            />
+            <TrailStop t={t} steps={D.SC1_STOP_STEPS} />
+            {D.SC1_WAIT.map((c, i) => (
+              <Candle key={i} spec={c} x={D.m5x(i)} t={t} pulse={i === lastActive(D.SC1_WAIT, t) && t < D.SC1_REJ.tUp} />
             ))}
-            <Entry x={D.SC1_ENTRY.x} p={D.SC1_ENTRY.p} t={t} at={D.SC1_ENTRY.t} labelAt={D.SC1_ENTRY.label} />
+            <RejectionCandle t={t} />
+            {D.SC1_TRAIL.map((c, i) => (
+              <Candle key={i} spec={c} x={D.m5x(i + D.SC1_TRAIL_X0)} t={t} pulse={i === lastActive(D.SC1_TRAIL, t)} />
+            ))}
+            <Entry x={D.SC1_ENTRY.x} p={D.SC1_ENTRY.p} t={t} at={D.SC1_ENTRY.t} labelAt={D.SC1_ENTRY.label} dx={-24} dy={64} />
             {t >= D.SC1_TARGET_HIT ? (
               <circle
-                cx={D.m5x(8)}
+                cx={D.m5x(D.SC1_TRAIL_X0 + 3)}
                 cy={py(42.3)}
                 r={10 + Math.min(1, (t - D.SC1_TARGET_HIT) / 0.7) * 40}
                 fill="none"
@@ -481,7 +540,7 @@ export const Chart: React.FC<{tSrc: number}> = ({tSrc}) => {
               <Candle key={i} spec={c} x={D.m5x(i)} t={t} pulse={i === lastActive(D.SC2, t)} />
             ))}
             <Entry x={D.SC2_ENTRY.x} p={D.SC2_ENTRY.p} t={t} at={D.SC2_ENTRY.t} labelAt={D.SC2_ENTRY.label} dx={-16} dy={66} />
-            <TrailStopLong t={t} />
+            <TrailStop t={t} steps={D.SC2_STOP_STEPS} hit={{t: D.SC2_STOP_HIT, x: D.m5x(9), p: 80.8}} />
           </g>
         ) : null}
       </svg>

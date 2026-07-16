@@ -21,7 +21,7 @@ export const Bubble: React.FC<{segments: BubbleSegment[]}> = ({segments}) => {
 
   // Tiny punch on segment change to make the jump cut feel intentional.
   const local = frame - seg.fromFrame;
-  const punch = seg.fromFrame === 0 ? 1 : interpolate(local, [0, 8], [1.045, 1], {extrapolateRight: 'clamp'});
+  const punch = seg.fromFrame === 0 ? 1 : interpolate(local, [0, 7], [1.028, 1], {extrapolateRight: 'clamp'});
 
   const size = 460;
   return (

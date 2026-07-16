@@ -1,42 +1,42 @@
 import React from 'react';
-import {interpolate, spring, useCurrentFrame, useVideoConfig} from 'remotion';
+import {interpolate, spring, useVideoConfig} from 'remotion';
 import {COLORS, FONT} from './theme';
 
-// Intro (0:00–0:05): "complexity" timeline — strategy pills popping up over
+// Intro (first ~5.5s): "complexity" timeline — strategy pills popping up over
 // the years, then everything dims and a clean "EINFACHHEIT" chip takes over.
-// `t` domain: composition seconds (already trimmed).
+// Driven by tSrc = SOURCE seconds (survives pause-cutting).
 
 const PILLS = [
-  {label: 'Wyckoff', at: 0.7, x: 190, y: 330},
-  {label: 'FVG', at: 1.35, x: 470, y: 210},
-  {label: 'Orderflow', at: 1.95, x: 760, y: 300},
-  {label: 'Smart Money', at: 2.55, x: 330, y: 130},
-  {label: 'Indikatoren', at: 3.0, x: 660, y: 90},
+  {label: 'Wyckoff', at: 1.1, x: 190, y: 330},
+  {label: 'FVG', at: 1.75, x: 470, y: 210},
+  {label: 'Orderflow', at: 2.35, x: 760, y: 300},
+  {label: 'Smart Money', at: 2.95, x: 330, y: 130},
+  {label: 'Indikatoren', at: 3.4, x: 660, y: 90},
 ];
 
 const YEARS = ['2021', '2022', '2023', '2024', '2025', '2026'];
 
-export const IntroTimeline: React.FC = () => {
-  const frame = useCurrentFrame();
+export const IntroTimeline: React.FC<{tSrc: number}> = ({tSrc}) => {
   const {fps} = useVideoConfig();
-  const t = frame / fps;
+  const t = tSrc;
 
-  const fadeOut = interpolate(t, [4.9, 5.55], [1, 0], {
+  // fully faded before the pause-cut at 5.03 so the cut never pops
+  const fadeOut = interpolate(t, [4.62, 5.02], [1, 0], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
   });
   if (fadeOut <= 0) return null;
 
-  const simple = t >= 3.6; // "Einfachheit schon." (source 4.0 - trim 0.4)
-  const dim = interpolate(t, [3.6, 4.0], [1, 0.12], {
+  const simple = t >= 4.0; // "Einfachheit schon."
+  const dim = interpolate(t, [4.0, 4.4], [1, 0.12], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
   });
-  const axisIn = interpolate(t, [0.2, 1.0], [0, 1], {
+  const axisIn = interpolate(t, [0.6, 1.4], [0, 1], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
   });
-  const chipSpring = spring({frame: frame - Math.round(3.75 * fps), fps, config: {damping: 12, stiffness: 150}});
+  const chipSpring = spring({frame: (t - 4.15) * fps, fps, config: {damping: 12, stiffness: 150}});
 
   const axisY = 560;
   const x0 = 120;
@@ -82,7 +82,7 @@ export const IntroTimeline: React.FC = () => {
       })}
       {/* strategy pills on stems */}
       {PILLS.map((p) => {
-        const s = spring({frame: frame - Math.round(p.at * fps), fps, config: {damping: 11, stiffness: 160, mass: 0.7}});
+        const s = spring({frame: (t - p.at) * fps, fps, config: {damping: 11, stiffness: 160, mass: 0.7}});
         if (s <= 0.15) return null;
         return (
           <div key={p.label} style={{opacity: dim}}>

@@ -51,29 +51,47 @@ export const PROFILE_ROWS: {p: number; w: number}[] = [
 ];
 export const PROFILE_MAX_W = 148; // px at w=1
 
-// ---- Scenario 1: fakeout above VAH -> short back to VAL ----
-export const SC1: CandleSpec[] = [
-  {o: 54, c: 59, h: 60.5, l: 52.5, t: 43.3, kind: 'blue'},
-  {o: 59, c: 63, h: 65, l: 58, t: 44.5, kind: 'blue'},
-  {o: 63, c: 69, h: 71, l: 62, t: 46.3, kind: 'blue'},
-  {o: 69, c: 72, h: 75, l: 68, t: 47.7, kind: 'blue'},
-  {o: 72, c: 58, h: 73, l: 56.5, t: 49.4, dur: 0.9, kind: 'white'}, // the trap
-  {o: 58, c: 54, h: 59, l: 53, t: 63.2, kind: 'white'},
-  {o: 54, c: 51, h: 55, l: 50, t: 64.9, kind: 'white'},
-  {o: 51, c: 48.5, h: 52, l: 47.5, t: 66.4, kind: 'white'},
+// ---- Scenario 1: rejection at VAH -> short back to VAL ----
+// The M5 candle pushes above the VAH intraday but CLOSES back inside
+// (live retracing candle = the rejection). No candle body closes above the VA.
+export const SC1_WAIT: CandleSpec[] = [
+  {o: 54, c: 58, h: 59.5, l: 52.5, t: 43.3, kind: 'blue'},
+  {o: 58, c: 62, h: 64.8, l: 57, t: 44.5, kind: 'blue'}, // tests the VAH with a wick
+];
+// two-phase live candle: rises above VAH while he says "bricht ... aus",
+// falls back inside while he says "schließt aber wieder innerhalb"
+export const SC1_REJ = {
+  x: m5x(2),
+  o: 62,
+  peak: 71, // provisional close above VAH while the candle is "live"
+  close: 61, // final close back inside the VA
+  hi: 73, // wick above the VAH stays
+  lo: 60.2,
+  tUp: 45.9,
+  durUp: 2.5,
+  tDown: 49.2,
+  durDown: 1.7,
+};
+export const SC1_TRAIL: CandleSpec[] = [
+  {o: 61, c: 56, h: 62, l: 55, t: 63.2, kind: 'white'},
+  {o: 56, c: 52, h: 57, l: 51, t: 64.9, kind: 'white'},
+  {o: 52, c: 48.5, h: 53, l: 47.5, t: 66.4, kind: 'white'},
   {o: 48.5, c: 42.3, h: 49.5, l: 41.8, t: 68.2, dur: 0.9, kind: 'white'}, // explosive leg
 ];
-export const SC1_ENTRY = {x: m5x(4), p: 58, t: 53.6, label: 56.4};
+export const SC1_TRAIL_X0 = 3; // trail candles start at m5x(3)
+export const SC1_ENTRY = {x: m5x(2), p: 61, t: 53.6, label: 56.4};
+// risk zone like scenario 2: red from entry up to the stop above the high
+export const SC1_RED = {t: 57.8, x0: m5x(2) - M5_W, x1: m5x(6) + 50, pTop: 74.5, pBot: 61};
+export const SC1_GREEN = {t: 60.5, x0: m5x(2) - M5_W, x1: m5x(6) + 50, pTop: 61, pBot: VAL};
+// trailing stop steps DOWN above each new candle high (line + tag, like SC2)
 export const SC1_STOP_STEPS = [
-  {t: 57.8, p: 75}, // above the fakeout high
-  {t: 63.9, p: 59},
-  {t: 65.6, p: 55},
-  {t: 67.1, p: 52},
+  {t: 57.8, p: 74.5, x: m5x(2)},
+  {t: 63.9, p: 62.5, x: m5x(3)},
+  {t: 65.6, p: 57.5, x: m5x(4)},
+  {t: 67.1, p: 53.5, x: m5x(5)},
 ];
-export const SC1_STOP_BAND = 3.6; // band thickness in price units
-export const SC1_GREEN = {t: 60.5, x0: m5x(4) - M5_W, x1: m5x(9) + M5_W, pTop: 58, pBot: VAL};
 export const SC1_TARGET_HIT = 69.6;
-export const SC1_FADE = 71.2; // scenario 1 fades out
+export const SC1_FADE = 70.55; // scenario 1 fades out (before the cut at 71.05)
 
 // ---- Scenario 2: acceptance above VAH -> long continuation ----
 export const SC2: CandleSpec[] = [
@@ -103,14 +121,16 @@ export const SC2_STOP_HIT = 95.6;
 export const B = {
   chartIn: 5.9, // chart canvas fades in
   m15Grow: 9.0,
+  m15Header: 9.2, // "M15" appears with the candle, emphasized
   highLine: 12.9,
   lowLine: 13.6,
   orBracket: 15.9,
-  headers: 19.8, // "M15 | M5"
+  m5Header: 19.8, // "M5" appears small next to it
   profile: 20.1,
   vaBox: 24.7,
   vaText: 28.9,
   vahLabel: 32.8,
   valLabel: 35.3,
   twoPulse: 40.2,
+  m5Emph: 42.9, // emphasis flips from M15 to M5 ("warten, ob eine M5-Kerze ...")
 };

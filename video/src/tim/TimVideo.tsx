@@ -6,28 +6,13 @@ import {Chart} from './chart/Chart';
 import {IntroTimeline} from './IntroTimeline';
 import {CAPTIONS_CTA_AD, CAPTIONS_CTA_ORGANIC, CAPTIONS_MAIN, Caption} from './captions';
 import {ensureFont} from './fonts';
-import {COLORS, FPS, TRIM} from './theme';
+import {COLORS, FPS} from './theme';
+import {AD_TIMELINE, ORGANIC_TIMELINE, Timeline} from './timeline';
 
 export type Variant = 'organic' | 'ad';
 
-// -- timing ---------------------------------------------------------------
-// organic: one straight take, src 0.4 .. 108.7
-// ad:      src 0.4 .. 100.35, then jump to the ad-CTA take, src 109.95 .. 122.6
-export const PART_A_END_SRC = 100.35;
-export const PART_B_START_SRC = 109.95;
-export const PART_B_END_SRC = 122.6;
-export const ORGANIC_END_SRC = 108.7;
-
-// epsilon guards against IEEE-754 (100.35-0.4)*30 = 2998.4999... landing one frame short
-const roundF = (x: number) => Math.round(x + 1e-6);
-
-export const partAFrames = roundF((PART_A_END_SRC - TRIM) * FPS); // 2999
-export const partBFrames = roundF((PART_B_END_SRC - PART_B_START_SRC) * FPS); // 380
-
-export const ORGANIC_DURATION = roundF((ORGANIC_END_SRC - TRIM) * FPS);
-export const AD_DURATION = partAFrames + partBFrames;
-
-const AD_CTA_SHIFT = PART_B_START_SRC - PART_A_END_SRC; // 9.6s cut out
+export const ORGANIC_DURATION = ORGANIC_TIMELINE.durationInFrames;
+export const AD_DURATION = AD_TIMELINE.durationInFrames;
 
 export const TimVideo: React.FC<{variant: Variant}> = ({variant}) => {
   ensureFont();
@@ -35,28 +20,25 @@ export const TimVideo: React.FC<{variant: Variant}> = ({variant}) => {
   const {fps, durationInFrames} = useVideoConfig();
   const t = frame / fps; // composition seconds
 
-  // composition time -> source time
-  const tSrc =
-    variant === 'ad' && t >= PART_A_END_SRC - TRIM ? t + TRIM + AD_CTA_SHIFT : t + TRIM;
+  const timeline: Timeline = variant === 'ad' ? AD_TIMELINE : ORGANIC_TIMELINE;
+  const tSrc = timeline.compToSrc(t);
 
   const captions: Caption[] = useMemo(() => {
-    const shift = (list: Caption[], by: number) =>
-      list.map((c) => ({...c, s: c.s - by, e: c.e - by}));
-    if (variant === 'organic') {
-      return shift([...CAPTIONS_MAIN, ...CAPTIONS_CTA_ORGANIC], TRIM);
-    }
-    return [...shift(CAPTIONS_MAIN, TRIM), ...shift(CAPTIONS_CTA_AD, TRIM + AD_CTA_SHIFT)];
-  }, [variant]);
+    const src = variant === 'organic' ? [...CAPTIONS_MAIN, ...CAPTIONS_CTA_ORGANIC] : [...CAPTIONS_MAIN, ...CAPTIONS_CTA_AD];
+    return src
+      .map((c) => ({...c, s: timeline.srcToComp(c.s), e: timeline.srcToComp(c.e)}))
+      .filter((c) => c.e - c.s > 0.05);
+  }, [variant, timeline]);
 
-  const bubbleSegments: BubbleSegment[] = useMemo(() => {
-    if (variant === 'organic') {
-      return [{fromFrame: 0, durationInFrames: ORGANIC_DURATION, startFromSec: TRIM}];
-    }
-    return [
-      {fromFrame: 0, durationInFrames: partAFrames, startFromSec: TRIM},
-      {fromFrame: partAFrames, durationInFrames: partBFrames, startFromSec: PART_B_START_SRC},
-    ];
-  }, [variant]);
+  const bubbleSegments: BubbleSegment[] = useMemo(
+    () =>
+      timeline.segs.map((s) => ({
+        fromFrame: s.fromFrame,
+        durationInFrames: s.durationInFrames,
+        startFromSec: s.srcStartFrame / FPS,
+      })),
+    [timeline],
+  );
 
   // micro reframe at the very start ("camera settles"), then slow drift-in
   const settle = interpolate(t, [0, 0.7], [1, 0], {extrapolateRight: 'clamp'});
@@ -80,51 +62,32 @@ export const TimVideo: React.FC<{variant: Variant}> = ({variant}) => {
           transformOrigin: '50% 42%',
         }}
       >
-        <IntroTimeline />
+        <IntroTimeline tSrc={tSrc} />
         <Chart tSrc={tSrc} />
         <Bubble segments={bubbleSegments} />
         <Captions captions={captions} />
       </AbsoluteFill>
 
-      {variant === 'organic' ? (
-        <Audio
-          src={audioSrc}
-          startFrom={Math.round(TRIM * FPS)}
-          volume={(f) =>
-            interpolate(f, [0, 4, ORGANIC_DURATION - 26, ORGANIC_DURATION - 4], [0, 1, 1, 0], {
-              extrapolateLeft: 'clamp',
-              extrapolateRight: 'clamp',
-            })
-          }
-        />
-      ) : (
-        <>
-          <Sequence from={0} durationInFrames={partAFrames}>
+      {timeline.segs.map((seg, i) => {
+        const isLast = i === timeline.segs.length - 1;
+        const d = seg.durationInFrames;
+        return (
+          <Sequence key={i} from={seg.fromFrame} durationInFrames={d}>
             <Audio
               src={audioSrc}
-              startFrom={Math.round(TRIM * FPS)}
+              startFrom={seg.srcStartFrame}
               volume={(f) =>
-                interpolate(f, [0, 4, partAFrames - 4, partAFrames - 1], [0, 1, 1, 0], {
-                  extrapolateLeft: 'clamp',
-                  extrapolateRight: 'clamp',
-                })
+                interpolate(
+                  f,
+                  isLast ? [0, 2, d - 26, d - 4] : [0, 2, d - 2, d],
+                  isLast ? [0, 1, 1, 0] : [0, 1, 1, 0],
+                  {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'},
+                )
               }
             />
           </Sequence>
-          <Sequence from={partAFrames} durationInFrames={partBFrames}>
-            <Audio
-              src={audioSrc}
-              startFrom={Math.round(PART_B_START_SRC * FPS + 1e-6)}
-              volume={(f) =>
-                interpolate(f, [0, 3, partBFrames - 26, partBFrames - 4], [0, 1, 1, 0], {
-                  extrapolateLeft: 'clamp',
-                  extrapolateRight: 'clamp',
-                })
-              }
-            />
-          </Sequence>
-        </>
-      )}
+        );
+      })}
 
       <AbsoluteFill style={{background: '#000', opacity: endFade, pointerEvents: 'none'}} />
     </AbsoluteFill>

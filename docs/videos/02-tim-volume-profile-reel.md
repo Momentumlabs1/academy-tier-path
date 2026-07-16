@@ -5,9 +5,13 @@
 
 ## Ergebnis
 
-- `video/out/tim-volume-profile-reel-ORGANIC.mp4` — 108 s, Ending „kostenloser Kurs → unter dem Video kommentieren" (organisch).
-- `video/out/tim-volume-profile-reel-AD.mp4` — 113 s, Ending „klick auf den Button unter dieser Ad" (Ad-Version).
-  Tim hatte beide CTA-Takes in einer Aufnahme; die Ad-Variante schneidet bei 100,35 s auf den zweiten Take (109,95 s) um.
+- `video/out/tim-volume-profile-reel-ORGANIC.mp4` — ~100 s, Ending „kostenloser Kurs → unter dem Video kommentieren" (organisch).
+- `video/out/tim-volume-profile-reel-AD.mp4` — ~104 s, Ending „klick auf den Button unter dieser Ad" (Ad-Version).
+  Tim hatte beide CTA-Takes in einer Aufnahme; die Ad-Variante schneidet nach „…Gewinnen raus" auf den zweiten Take (109,95 s) um.
+
+**Pause-Cutting (v2):** `src/tim/timeline.ts` komprimiert ~19 Sprechpausen (spart ~8,3 s) — Audio/Bubble laufen als Segment-Sequenzen, Captions/Chart-Beats werden über `srcToComp`/`compToSrc` gemappt. Neue Schnitte einfach in `GAPS` eintragen; Cut-Punkte immer in Sprechpausen legen und Animationsfenster (Zoom, Fades) außerhalb der Cut-Ranges halten.
+
+**Szenario-1-Logik (v2, fachlich korrekt):** Keine M5-Kerze schließt über der Value Area. Die Schlüssel-Kerze steigt live über das VAH (Puls = noch offen) und fällt zum Close zurück in die VA (Rejection, langer Docht) → Short. Statische rote Risk-Zone Entry→Stop (über dem High) + grüne Target-Zone Entry→VAL, Trailing-Stop-Linie wandert wie in Szenario 2. Header „M15/M5" wechseln die Betonung dynamisch (M15 bei Opening Range, M5 ab Szenario-Phase).
 
 ## Look (wie Referenz)
 
