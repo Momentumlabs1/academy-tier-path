@@ -4,8 +4,23 @@ import {useAudioData, visualizeAudio} from '@remotion/media-utils';
 import {FPS} from './theme';
 
 // Circular speaker bubble, top-center — like the reference reel.
-// Position is rock-solid (no drift); a Zoom-style blue ring glows with speech.
+// Fixed position; a Zoom-style blue ring + subtle breathing react to the voice.
+// NOTE on masking: every video layer gets its own borderRadius AND the mask
+// container uses clip-path — border-radius+overflow alone does not reliably
+// clip composited <video> layers in headless Chromium (caused square spills).
 export type BubbleSegment = {fromFrame: number; durationInFrames: number; startFromSec: number};
+
+const SIZE = 460;
+const XFADE_FRAMES = 5;
+
+const videoStyle: React.CSSProperties = {
+  position: 'absolute',
+  inset: 0,
+  width: '100%',
+  height: '100%',
+  objectFit: 'cover',
+  borderRadius: '50%',
+};
 
 export const Bubble: React.FC<{segments: BubbleSegment[]}> = ({segments}) => {
   const frame = useCurrentFrame();
@@ -13,27 +28,24 @@ export const Bubble: React.FC<{segments: BubbleSegment[]}> = ({segments}) => {
   // small mono WAV twin of the voice track — headless Chromium can't decode AAC
   const audioData = useAudioData(staticFile('assets/tim-audio-viz.wav'));
 
-  const pop = spring({frame: frame - 4, fps, config: {damping: 13, stiffness: 120, mass: 0.8}});
-
   const idx = segments.findIndex(
     (s) => frame >= s.fromFrame && frame < s.fromFrame + s.durationInFrames,
   );
   if (idx < 0) return null;
   const seg = segments[idx];
-
-  const startFrom = Math.round(seg.startFromSec * FPS + 1e-6) - seg.fromFrame;
-  const srcFrame = startFrom + frame;
-
-  // short crossfade over each cut: the previous take keeps running underneath
-  const XF = 5;
   const localF = frame - seg.fromFrame;
-  const prev = idx > 0 && localF < XF ? segments[idx - 1] : null;
-  const prevOpacity = prev ? 1 - (localF + 1) / (XF + 1) : 0;
-  const prevStartFrom = prev ? Math.round(prev.startFromSec * FPS + 1e-6) - prev.fromFrame : 0;
+
+  const segStartFrom = (s: BubbleSegment) =>
+    Math.round(s.startFromSec * FPS + 1e-6) - s.fromFrame;
+
+  // short crossfade over each cut: the previous take keeps running on top
+  const prev = idx > 0 && localF < XFADE_FRAMES ? segments[idx - 1] : null;
+  const prevOpacity = prev ? 1 - (localF + 1) / (XFADE_FRAMES + 1) : 0;
 
   // speech level from the actual audio (temporally smoothed over 3 frames)
   let level = 0;
   if (audioData) {
+    const srcFrame = segStartFrom(seg) + frame;
     const bins = [0, 1, 2].flatMap((back) =>
       visualizeAudio({
         audioData,
@@ -46,20 +58,21 @@ export const Bubble: React.FC<{segments: BubbleSegment[]}> = ({segments}) => {
     level = Math.min(1, energy * 5);
   }
 
-  // Tiny punch on segment change to make the jump cut feel intentional.
+  // entrance pop, tiny cut-punch, voice breathing, slow idle breathing
+  const pop = spring({frame: frame - 4, fps, config: {damping: 13, stiffness: 120, mass: 0.8}});
   const punch = seg.fromFrame === 0 ? 1 : interpolate(localF, [0, 7], [1.012, 1], {extrapolateRight: 'clamp'});
-  const speakScale = 1 + level * 0.012; // bubble breathes slightly with the voice
+  const breathe = 1 + Math.sin(frame / (FPS * 2.4)) * 0.0035;
+  const speakScale = 1 + level * 0.012;
 
-  const size = 460;
   return (
     <div
       style={{
         position: 'absolute',
-        left: (1080 - size) / 2,
+        left: (1080 - SIZE) / 2,
         top: 108,
-        width: size,
-        height: size,
-        transform: `scale(${pop * punch * speakScale})`,
+        width: SIZE,
+        height: SIZE,
+        transform: `scale(${pop * punch * speakScale * breathe})`,
       }}
     >
       {/* Zoom-style speaking ring: light blue shimmer driven by the voice */}
@@ -73,36 +86,29 @@ export const Bubble: React.FC<{segments: BubbleSegment[]}> = ({segments}) => {
           transform: `scale(${1 + level * 0.022})`,
         }}
       />
+      {/* circular mask: clip-path + per-layer border-radius (robust clipping) */}
       <div
         style={{
-          width: '100%',
-          height: '100%',
+          position: 'absolute',
+          inset: 0,
           borderRadius: '50%',
           overflow: 'hidden',
+          clipPath: 'circle(50% at 50% 50%)',
           boxShadow: '0 30px 90px rgba(0,0,0,0.85)',
-          outline: '1.5px solid rgba(255,255,255,0.10)',
-          outlineOffset: -1,
         }}
       >
         <OffthreadVideo
           src={staticFile('assets/tim-bubble.mp4')}
-          startFrom={startFrom}
+          startFrom={segStartFrom(seg)}
           muted
-          style={{width: '100%', height: '100%', objectFit: 'cover'}}
+          style={videoStyle}
         />
         {prev && prevOpacity > 0 ? (
           <OffthreadVideo
             src={staticFile('assets/tim-bubble.mp4')}
-            startFrom={prevStartFrom}
+            startFrom={segStartFrom(prev)}
             muted
-            style={{
-              position: 'absolute',
-              inset: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              opacity: prevOpacity,
-            }}
+            style={{...videoStyle, opacity: prevOpacity}}
           />
         ) : null}
         {/* soft inner vignette so the bright footage sits nicely on black */}
@@ -116,6 +122,16 @@ export const Bubble: React.FC<{segments: BubbleSegment[]}> = ({segments}) => {
           }}
         />
       </div>
+      {/* thin hairline on top of everything for a crisp edge */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          borderRadius: '50%',
+          border: '1.5px solid rgba(255,255,255,0.10)',
+          pointerEvents: 'none',
+        }}
+      />
     </div>
   );
 };
