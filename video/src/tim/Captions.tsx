@@ -14,20 +14,20 @@ export const Captions: React.FC<{captions: Caption[]}> = ({captions}) => {
   if (!active) return null;
 
   const local = (t - active.s) * fps;
-  const inO = interpolate(local, [0, 3], [0, 1], {extrapolateRight: 'clamp'});
-  const y = interpolate(local, [0, 4], [10, 0], {extrapolateRight: 'clamp', easing: (x) => 1 - (1 - x) ** 3});
-  const sc = interpolate(local, [0, 4], [0.965, 1], {extrapolateRight: 'clamp', easing: (x) => 1 - (1 - x) ** 3});
+  const inO = interpolate(local, [0, 2], [0, 1], {extrapolateRight: 'clamp'});
+  const y = interpolate(local, [0, 3], [8, 0], {extrapolateRight: 'clamp', easing: (x) => 1 - (1 - x) ** 3});
+  const sc = interpolate(local, [0, 3], [0.97, 1], {extrapolateRight: 'clamp', easing: (x) => 1 - (1 - x) ** 3});
 
   return (
     <div
       style={{
         position: 'absolute',
-        top: 640,
+        top: 664,
         left: 60,
         width: 960,
-        height: 210,
+        height: 120,
         display: 'flex',
-        alignItems: 'flex-start',
+        alignItems: 'center',
         justifyContent: 'center',
       }}
     >
@@ -35,12 +35,12 @@ export const Captions: React.FC<{captions: Caption[]}> = ({captions}) => {
         style={{
           fontFamily: FONT,
           fontWeight: 800,
-          fontSize: 56,
-          lineHeight: 1.18,
+          fontSize: 46,
+          lineHeight: 1.15,
           textAlign: 'center',
-          whiteSpace: 'pre-line',
+          whiteSpace: 'nowrap',
           color: COLORS.white,
-          letterSpacing: '-0.01em',
+          letterSpacing: '-0.005em',
           opacity: inO,
           transform: `translateY(${y}px) scale(${sc})`,
         }}

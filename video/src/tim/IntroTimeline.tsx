@@ -2,6 +2,8 @@ import React from 'react';
 import {interpolate, spring, useVideoConfig} from 'remotion';
 import {COLORS, FONT} from './theme';
 
+const easeOutCubic = (x: number) => 1 - (1 - x) ** 3;
+
 // Intro (first ~5.5s): "complexity" timeline — strategy pills popping up over
 // the years, then everything dims and a clean "EINFACHHEIT" chip takes over.
 // Driven by tSrc = SOURCE seconds (survives pause-cutting).
@@ -20,15 +22,19 @@ export const IntroTimeline: React.FC<{tSrc: number}> = ({tSrc}) => {
   const {fps} = useVideoConfig();
   const t = tSrc;
 
-  // fully faded before the pause-cut at 5.03 so the cut never pops
-  const fadeOut = interpolate(t, [4.62, 5.02], [1, 0], {
+  // the "Einfachheit" pill holds its beat, then hands over to the chart (~5.9)
+  const fadeOut = interpolate(t, [5.25, 5.85], [1, 0], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
   });
   if (fadeOut <= 0) return null;
 
-  const simple = t >= 4.0; // "Einfachheit schon."
-  const dim = interpolate(t, [4.0, 4.4], [1, 0.12], {
+  // "Einfachheit schon." — calm, design-consistent entrance: the noisy pills
+  // recede while one inverted pill (same design language) eases in on a stem.
+  const ein = easeOutCubic(
+    interpolate(t, [4.0, 4.75], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'}),
+  );
+  const dim = interpolate(t, [4.0, 4.65], [1, 0.1], {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
   });
@@ -36,7 +42,6 @@ export const IntroTimeline: React.FC<{tSrc: number}> = ({tSrc}) => {
     extrapolateLeft: 'clamp',
     extrapolateRight: 'clamp',
   });
-  const chipSpring = spring({frame: (t - 4.15) * fps, fps, config: {damping: 12, stiffness: 150}});
 
   const axisY = 560;
   const x0 = 120;
@@ -119,34 +124,47 @@ export const IntroTimeline: React.FC<{tSrc: number}> = ({tSrc}) => {
           </div>
         );
       })}
-      {/* the clean answer */}
-      {simple ? (
-        <div
-          style={{
-            position: 'absolute',
-            left: 0,
-            top: 396,
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'center',
-            transform: `scale(${chipSpring})`,
-          }}
-        >
+      {/* the clean answer: same pill language as above, inverted, on its own stem */}
+      {ein > 0 ? (
+        <>
           <div
             style={{
-              background: COLORS.white,
-              color: '#0A0A0B',
-              fontFamily: FONT,
-              fontWeight: 800,
-              fontSize: 44,
-              letterSpacing: '0.14em',
-              padding: '20px 44px',
-              borderRadius: 12,
+              position: 'absolute',
+              left: 539,
+              top: 462,
+              width: 2,
+              height: Math.max(0, (axisY - 462) * ein),
+              background: 'rgba(235,238,245,0.30)',
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              left: 0,
+              top: 396,
+              width: '100%',
+              display: 'flex',
+              justifyContent: 'center',
+              opacity: ein,
+              transform: `translateY(${(1 - ein) * 18}px) scale(${0.96 + 0.04 * ein})`,
             }}
           >
-            EINFACHHEIT
+            <div
+              style={{
+                background: COLORS.white,
+                border: '2px solid rgba(235,238,245,0.75)',
+                color: '#0A0A0B',
+                fontFamily: FONT,
+                fontWeight: 800,
+                fontSize: 34,
+                padding: '14px 32px',
+                borderRadius: 10,
+              }}
+            >
+              Einfachheit
+            </div>
           </div>
-        </div>
+        </>
       ) : null}
     </div>
   );

@@ -7,7 +7,7 @@ import {FPS, TRIM} from './theme';
 // [prevWordEnd, nextWordStart, tailKeep, preKeep] — all in SOURCE seconds.
 // ---------------------------------------------------------------------------
 const GAPS: Array<[number, number, number, number]> = [
-  [4.83, 5.83, 0.2, 0.25],
+  // (die Pause nach "Einfachheit schon." bleibt drin — Punchline-Beat fürs Intro)
   [11.61, 12.13, 0.12, 0.18],
   [15.09, 15.55, 0.12, 0.18],
   [17.07, 17.53, 0.12, 0.18],
