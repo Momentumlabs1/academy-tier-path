@@ -1,5 +1,5 @@
 import React from 'react';
-import {AbsoluteFill, Easing, interpolate, spring, useCurrentFrame, useVideoConfig} from 'remotion';
+import {AbsoluteFill, Easing, Img, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig} from 'remotion';
 import {afPump, CameraRig, microReframe} from '../lib/camera';
 import type {CameraKeyframe} from '../lib/camera';
 import {CameraPOV} from '../lib/CameraPOV';
@@ -331,6 +331,8 @@ type MonitorProps = {
   volumeProfile?: boolean;
   /** Standfuß-Höhe — der Ultrawide sitzt tiefer, damit hinter ihm keine Lücke klafft. */
   standH?: number;
+  /** Screenshot der ECHTEN Webseite (staticFile-Pfad) statt Candle-Chart. */
+  screenshot?: string;
 };
 
 const Monitor: React.FC<MonitorProps> = ({
@@ -343,6 +345,7 @@ const Monitor: React.FC<MonitorProps> = ({
   candleCount = 16,
   volumeProfile = false,
   standH = 44,
+  screenshot,
 }) => {
   const frame = useCurrentFrame();
   const bezel = 8;
@@ -407,16 +410,38 @@ const Monitor: React.FC<MonitorProps> = ({
             backgroundColor: '#060A11',
           }}
         >
-          <CandleChart
-            width={screenW}
-            height={screenH}
-            candleCount={candleCount}
-            startFrame={screenOn}
-            framesPerCandle={6}
-            seed={seed}
-            volumeProfile={volumeProfile}
-            style={{position: 'absolute', top: 0, left: 0}}
-          />
+          {screenshot ? (
+            /* ECHTE Webseite auf dem Screen — mit Embedding-Stack, damit sie
+               in der Nachtszene „sitzt" (Grade, Ambient-Tint, Vignette). */
+            <>
+              <Img
+                src={staticFile(screenshot)}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  width: screenW,
+                  height: screenH,
+                  objectFit: 'cover',
+                  objectPosition: 'top center',
+                  opacity: glowP,
+                  filter: 'saturate(0.85) contrast(0.95) brightness(0.9)',
+                }}
+              />
+              <div style={{position: 'absolute', inset: 0, backgroundColor: 'rgba(20,30,60,0.15)', opacity: glowP}} />
+              <div style={{position: 'absolute', inset: 0, boxShadow: 'inset 0 0 26px rgba(0,0,0,0.55)', opacity: glowP}} />
+            </>
+          ) : (
+            <CandleChart
+              width={screenW}
+              height={screenH}
+              candleCount={candleCount}
+              startFrame={screenOn}
+              framesPerCandle={6}
+              seed={seed}
+              volumeProfile={volumeProfile}
+              style={{position: 'absolute', top: 0, left: 0}}
+            />
+          )}
           {/* Boot-Blitz beim Einschalten */}
           <div style={{position: 'absolute', inset: 0, backgroundColor: `rgba(117,185,245,${boot})`}} />
           {/* Glas-Sheen */}
@@ -429,6 +454,19 @@ const Monitor: React.FC<MonitorProps> = ({
           />
         </div>
       </div>
+      {/* Light-Spill: das Screen-Leuchten fällt auf Desk & Umgebung */}
+      <div
+        style={{
+          position: 'absolute',
+          left: cx - bodyW * 0.8,
+          top: bodyTop + bodyH * 0.4,
+          width: bodyW * 1.6,
+          height: bodyH * 1.1,
+          background: `radial-gradient(ellipse 50% 50% at 50% 45%, rgba(117,185,245,${(screenshot ? 0.16 : 0.1) * glowP * (0.97 + Math.sin(frame * 0.9 + seed) * 0.03)}), transparent 70%)`,
+          mixBlendMode: 'screen',
+          pointerEvents: 'none',
+        }}
+      />
     </>
   );
 };
@@ -471,8 +509,8 @@ const RoomMidPlane: React.FC<{parallax: Parallax}> = ({parallax}) => {
       />
 
       {/* Monitore (Seiten angewinkelt, Mitte Ultrawide) */}
-      <Monitor cx={500} screenW={300} screenH={180} tilt={14} screenOn={SCREEN_ON_LEFT} seed={13} candleCount={16} />
-      <Monitor cx={1420} screenW={300} screenH={180} tilt={-14} screenOn={SCREEN_ON_RIGHT} seed={15} candleCount={16} />
+      <Monitor cx={500} screenW={300} screenH={180} tilt={14} screenOn={SCREEN_ON_LEFT} seed={13} screenshot="screens/signals.png" />
+      <Monitor cx={1420} screenW={300} screenH={180} tilt={-14} screenOn={SCREEN_ON_RIGHT} seed={15} screenshot="screens/lessons.png" />
       <Monitor cx={960} screenW={460} screenH={150} standH={28} screenOn={SCREEN_ON_CENTER} seed={7} candleCount={26} volumeProfile />
 
       {/* Desk-Platte */}
