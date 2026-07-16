@@ -259,7 +259,8 @@ const TrailStop: React.FC<{
   );
 };
 
-// scenario indicator pill, in the same design language as the chart labels
+// staged reveal pill: opens from a blue accent line, text wipes in with a
+// tracking-settle, exits by collapsing again — one motion language for all
 const ScenarioPill: React.FC<{t: number; at: number; out: number; x: number; y: number; num?: string; label: string}> = ({
   t,
   at,
@@ -269,23 +270,48 @@ const ScenarioPill: React.FC<{t: number; at: number; out: number; x: number; y: 
   num,
   label,
 }) => {
-  const inP = easeOut(prog(t, at, 0.45));
-  const o = inP * (1 - easeOut(prog(t, out, 0.5)));
-  if (o <= 0) return null;
+  const openP = easeOut(prog(t, at, 0.45)); // pill opens horizontally
+  const txtP = easeOut(prog(t, at + 0.16, 0.5)); // text wipe + tracking settle
+  const outP = easeOut(prog(t, out, 0.4));
+  if (openP <= 0 || outP >= 1) return null;
   const text = num ? `${num} · ${label}` : label;
-  const w = text.length * 26 * 0.66 + 56;
+  const w = text.length * 26 * 0.66 + 64;
+  const clipId = `pillclip-${num ?? 'x'}-${Math.round(at * 10)}`;
+  const scaleX = Math.max(0.06, openP) * (1 - 0.3 * outP);
+  const scaleY = Math.min(1, openP * 1.6) * (1 - 0.12 * outP);
+  const o = Math.min(1, openP * 2.2) * (1 - outP);
+  const track = 6 - 4.2 * txtP + 3 * outP; // px letter-spacing settles in
+  const accentX = -w / 2 + 14;
   return (
-    <g opacity={o} transform={`translate(${x} ${y + (1 - inP) * 14})`}>
-      <rect x={-w / 2} y={-30} width={w} height={60} rx={12} fill="rgba(10,10,12,0.92)" stroke="rgba(235,238,245,0.30)" strokeWidth={2} />
-      <text x={0} y={9} textAnchor="middle" fontFamily={FONT} fontWeight={800} fontSize={26} letterSpacing="0.08em">
-        {num ? (
-          <>
-            <tspan fill={COLORS.blueBright}>{num}</tspan>
-            <tspan fill={COLORS.grey}> · </tspan>
-          </>
-        ) : null}
-        <tspan fill={COLORS.white}>{label}</tspan>
-      </text>
+    <g opacity={o} transform={`translate(${x} ${y + (1 - openP) * 12 - outP * 10})`}>
+      <g transform={`scale(${scaleX} ${scaleY})`}>
+        <rect x={-w / 2} y={-30} width={w} height={60} rx={12} fill="rgba(10,10,12,0.94)" stroke="rgba(235,238,245,0.30)" strokeWidth={2} />
+        {/* blue accent bar, slides down as the pill opens */}
+        <rect x={accentX} y={-30 + 44 * (1 - txtP)} width={4} height={Math.max(4, 60 * txtP - 16)} rx={2} fill={COLORS.blueBright} opacity={0.9} />
+      </g>
+      <clipPath id={clipId}>
+        <rect x={-w / 2 + 24} y={-30} width={Math.max(0, (w - 30) * txtP)} height={60} />
+      </clipPath>
+      <g clipPath={`url(#${clipId})`}>
+        <text
+          x={12}
+          y={9}
+          textAnchor="middle"
+          fontFamily={FONT}
+          fontWeight={800}
+          fontSize={26}
+          letterSpacing={`${track}px`}
+          opacity={Math.min(1, txtP * 1.6) * (1 - outP)}
+        >
+          {num ? (
+            <>
+              <tspan fill={COLORS.blueBright}>{num}</tspan>
+              <tspan fill={COLORS.grey}> · </tspan>
+            </>
+          ) : null}
+          <tspan fill={COLORS.white}>{label}</tspan>
+        </text>
+      </g>
     </g>
   );
 };

@@ -10,13 +10,14 @@ import {Timeline} from './timeline';
 type SfxEvent = {at: number; file: string; vol: number; rate?: number};
 
 const EVENTS: SfxEvent[] = [
-  // intro: strategy pills pop, then the "Einfachheit" answer
-  {at: 1.1, file: 'tick', vol: 0.18},
-  {at: 1.75, file: 'tick', vol: 0.18},
-  {at: 2.35, file: 'tick', vol: 0.18},
-  {at: 2.95, file: 'tick', vol: 0.18},
-  {at: 3.4, file: 'tick', vol: 0.18},
-  {at: 4.05, file: 'shine', vol: 0.44}, // "Einfachheit schon."
+  // intro: three paths pop, flash white, error out red — then the green answer
+  {at: 1.0, file: 'tick', vol: 0.18},
+  {at: 1.5, file: 'tick', vol: 0.18},
+  {at: 2.0, file: 'tick', vol: 0.18},
+  {at: 2.35, file: 'neg', vol: 0.13, rate: 1.35}, // ✕ Wyckoff
+  {at: 2.85, file: 'neg', vol: 0.13, rate: 1.35}, // ✕ FVG
+  {at: 3.35, file: 'neg', vol: 0.13, rate: 1.35}, // ✕ Orderflow
+  {at: 4.05, file: 'shine', vol: 0.44}, // ✓ "Einfachheit schon."
   // chart build-up
   {at: 5.9, file: 'zoom', vol: 0.3}, // chart entrance
   {at: 6.6, file: 'ui', vol: 0.26}, // "Der einfachste Edge"-Pill
