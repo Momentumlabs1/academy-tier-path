@@ -48,6 +48,21 @@ Alle Clips: statische Kamera, Plate-Hintergrund unverändert, 720p+, Prompt-Zusa
 
 → Kostenrahmen gesamt: ~10 Clips ≈ **5–8 $**. C1–C7 werden in allen 8 Videos wiederverwendet.
 
+### Paste-ready Prompts für die 3 Intro-Clips (Multishot, Szene 1)
+
+Input-Bild jeweils die Magenta-Plate (P1 Ganzkörper bzw. P4 Close-up). Standard-Suffix immer anhängen:
+> *"Static locked camera, flat solid magenta background (#FF00FF) remains completely unchanged, 2D cartoon style preserved, clean outlines, no camera movement."*
+
+- **C11 — Kamera justieren** (Input P4, ~5 s):
+  > "Extreme close-up: the cartoon character's chest and arm fill the frame as he reaches with one hand toward the camera lens, adjusting and tilting it with small bumps, then lowers his hand, looking into the lens."
+- **C12 — Rückwärts in den Raum** (Input P1, ~10 s):
+  > "The character walks backwards away from the camera with a relaxed cartoon walk cycle, starting close (chest filling the frame) and ending with his full body visible in the center, facing the camera the whole time, gesturing casually as if talking."
+- **C13 — Hinsetzen am Desk** (Input P1, ~8 s):
+  > "The character takes a few steps to the side and sits down onto a simple dark office chair, settles, then looks into the camera with a friendly smile, talking casually."
+  (Der dunkle Stuhl darf im Clip bleiben — er verschwindet im Composite größtenteils hinter der Desk-Kante.)
+
+**Einbau-Workflow (Multishot):** Clips generieren → in Drive „04 KI-Clips (Magenta)" legen → Claude lädt sie, stanzt per FFmpeg (Magenta-Key + Despill), matcht Timing/Position aufs V2-Storyboard und rendert die finale Szene. Lippen: vorerst generisches Sprechen; präziser Sync später via Hedra (Close-ups) oder Sync.so.
+
 **Sprech-Strategie:** Cosmo spricht nur an 3 Stellen sichtbar (Anfang, Transparenz-Block, Ende) — Rest ist Voiceover über Code-Szenen, während Cosmo gestikuliert oder gar nicht im Bild ist. Wirkt professionell und spart Hedra-Credits.
 
 ## D. Skript & Sequenzen
