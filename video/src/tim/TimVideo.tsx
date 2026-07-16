@@ -41,11 +41,13 @@ export const TimVideo: React.FC<{variant: Variant}> = ({variant}) => {
     [timeline],
   );
 
-  // micro reframe at the very start ("camera settles"), then slow drift-in
-  const settle = interpolate(t, [0, 0.7], [1, 0], {extrapolateRight: 'clamp'});
+  // micro reframe at the very start ("camera settles"), then slow drift-in.
+  // Global 0.94 keeps everything inside Instagram's crop-zoom safe area.
+  const SAFE = 0.94;
+  const settle = interpolate(t, [0, 0.6], [1, 0], {extrapolateRight: 'clamp'});
   const drift = interpolate(frame, [0, durationInFrames], [1, 1.022]);
-  const rot = settle * 0.5;
-  const dy = settle * 8;
+  const rot = settle * 0.8;
+  const dy = settle * 10;
 
   // end fade
   const endFade = interpolate(frame, [durationInFrames - 22, durationInFrames - 4], [0, 1], {
@@ -59,11 +61,11 @@ export const TimVideo: React.FC<{variant: Variant}> = ({variant}) => {
     <AbsoluteFill style={{background: COLORS.bg}}>
       <AbsoluteFill
         style={{
-          transform: `scale(${drift * (1 + settle * 0.012)}) rotate(${rot}deg) translateY(${dy}px)`,
+          transform: `scale(${SAFE * drift * (1 + settle * 0.02)}) rotate(${rot}deg) translateY(${dy}px)`,
           transformOrigin: '50% 42%',
         }}
       >
-        <IntroTimeline tSrc={tSrc} />
+        <IntroTimeline tSrc={tSrc} tComp={t} />
         <Chart tSrc={tSrc} />
         <Bubble segments={bubbleSegments} />
         <Captions captions={captions} />

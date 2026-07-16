@@ -10,8 +10,9 @@ video = sys.argv[1] if len(sys.argv) > 1 else 'out/tim-volume-profile-reel.mp4'
 scan_fps = float(sys.argv[2]) if len(sys.argv) > 2 else 2.0
 
 W, H = 1080, 1920
-CX, CY, R = 540.0, 338.0, 230.0
-BOX = (240, 30, 840, 585)  # x0,y0,x1,y1 um die Bubble (endet VOR den Captions bei y=598)
+# Bubble: SIZE 430 @ top 132, global SAFE-Scale 0.94 (Origin 540/806.4), Drift bis 1.022
+CX, CY, R = 540.0, 370.0, 217.0
+BOX = (250, 30, 830, 595)  # x0,y0,x1,y1 um die Bubble (endet VOR den skalierten Captions)
 
 proc = subprocess.Popen(
     ['ffmpeg', '-v', 'error', '-i', video, '-vf', f'fps={scan_fps}', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-'],

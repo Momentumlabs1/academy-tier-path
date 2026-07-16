@@ -10,7 +10,8 @@ import {FPS} from './theme';
 // clip composited <video> layers in headless Chromium (caused square spills).
 export type BubbleSegment = {fromFrame: number; durationInFrames: number; startFromSec: number};
 
-const SIZE = 460;
+const SIZE = 430; // etwas kleiner + tiefer: Insta-Crop-sicher
+const TOP = 132;
 const XFADE_FRAMES = 5;
 
 const videoStyle: React.CSSProperties = {
@@ -63,13 +64,15 @@ export const Bubble: React.FC<{segments: BubbleSegment[]}> = ({segments}) => {
   const punch = seg.fromFrame === 0 ? 1 : interpolate(localF, [0, 7], [1.012, 1], {extrapolateRight: 'clamp'});
   const breathe = 1 + Math.sin(frame / (FPS * 2.4)) * 0.0035;
   const speakScale = 1 + level * 0.012;
+  // short bright ring flash on the entrance (hook energy in the first second)
+  const introFlash = Math.max(0, 1 - frame / 22);
 
   return (
     <div
       style={{
         position: 'absolute',
         left: (1080 - SIZE) / 2,
-        top: 108,
+        top: TOP,
         width: SIZE,
         height: SIZE,
         transform: `scale(${pop * punch * speakScale * breathe})`,
@@ -81,8 +84,8 @@ export const Bubble: React.FC<{segments: BubbleSegment[]}> = ({segments}) => {
           position: 'absolute',
           inset: -8,
           borderRadius: '50%',
-          border: `3.5px solid rgba(110, 143, 255, ${0.12 + 0.6 * level})`,
-          boxShadow: `0 0 ${16 + 66 * level}px rgba(90, 130, 255, ${0.16 + 0.52 * level})`,
+          border: `3.5px solid rgba(110, 143, 255, ${Math.min(0.85, 0.12 + 0.6 * level + 0.55 * introFlash)})`,
+          boxShadow: `0 0 ${16 + 66 * level + 40 * introFlash}px rgba(90, 130, 255, ${Math.min(0.8, 0.16 + 0.52 * level + 0.4 * introFlash)})`,
           transform: `scale(${1 + level * 0.022})`,
         }}
       />

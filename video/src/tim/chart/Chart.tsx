@@ -341,7 +341,7 @@ export const Chart: React.FC<{tSrc: number}> = ({tSrc}) => {
   // (windows avoid the pause-cut ranges so the zoom never jumps)
   const zoom = interpolate(
     t,
-    [43.0, 44.2, 69.9, 70.8, 76.2, 77.4, 96.45, 97.55],
+    [43.0, 44.2, 69.9, 70.8, 76.5, 77.6, 96.45, 97.55],
     [1, 1.05, 1.05, 1, 1, 1.05, 1.05, 1],
     {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'},
   );
@@ -625,9 +625,9 @@ export const Chart: React.FC<{tSrc: number}> = ({tSrc}) => {
 
         {/* -------- transitions between the scenarios -------- */}
         <Sweep t={t} />
-        <ScenarioPill t={t} at={6.6} out={8.55} x={540} y={1290} label="DER EINFACHSTE EDGE" />
-        <ScenarioPill t={t} at={42.95} out={45.65} x={700} y={1122} num="1" label="FAKEOUT" />
-        <ScenarioPill t={t} at={72.4} out={76.35} x={700} y={1150} num="2" label="AKZEPTANZ" />
+        <ScenarioPill t={t} at={6.6} out={8.35} x={540} y={1290} label="DER EINFACHSTE EDGE" />
+        <ScenarioPill t={t} at={42.95} out={45.35} x={700} y={1122} num="1" label="FAKEOUT" />
+        <ScenarioPill t={t} at={72.4} out={75.85} x={700} y={1150} num="2" label="AKZEPTANZ" />
 
         {/* -------- scenario 2: acceptance long -------- */}
         {t >= D.SC2[0].t ? (

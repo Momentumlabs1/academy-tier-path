@@ -55,7 +55,7 @@ export const PROFILE_MAX_W = 148; // px at w=1
 // The M5 candle pushes above the VAH intraday but CLOSES back inside
 // (live retracing candle = the rejection). No candle body closes above the VA.
 export const SC1_WAIT: CandleSpec[] = [
-  {o: 54, c: 58, h: 59.5, l: 52.5, t: 43.3, kind: 'blue'},
+  {o: 54, c: 58, h: 59.5, l: 52.5, t: 42.95, kind: 'blue'},
   {o: 58, c: 62, h: 64.8, l: 57, t: 44.5, kind: 'blue'}, // tests the VAH with a wick
 ];
 // two-phase live candle: rises above VAH while he says "bricht ... aus",

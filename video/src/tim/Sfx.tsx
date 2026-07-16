@@ -11,9 +11,9 @@ type SfxEvent = {at: number; file: string; vol: number; rate?: number};
 
 const EVENTS: SfxEvent[] = [
   // intro: three paths pop, flash white, error out red — then the green answer
-  {at: 1.0, file: 'tick', vol: 0.18},
-  {at: 1.5, file: 'tick', vol: 0.18},
-  {at: 2.0, file: 'tick', vol: 0.18},
+  {at: 0.75, file: 'tick', vol: 0.18},
+  {at: 1.2, file: 'tick', vol: 0.18},
+  {at: 1.65, file: 'tick', vol: 0.18},
   {at: 2.35, file: 'neg', vol: 0.13, rate: 1.35}, // ✕ Wyckoff
   {at: 2.85, file: 'neg', vol: 0.13, rate: 1.35}, // ✕ FVG
   {at: 3.35, file: 'neg', vol: 0.13, rate: 1.35}, // ✕ Orderflow
@@ -44,7 +44,7 @@ const EVENTS: SfxEvent[] = [
   {at: 70.35, file: 'sweep', vol: 0.36}, // scenario wipe
   // scenario 2 — acceptance long
   {at: 72.4, file: 'ui', vol: 0.3},
-  {at: 76.2, file: 'zoom', vol: 0.28, rate: 1.12}, // punch-in scenario 2
+  {at: 76.5, file: 'zoom', vol: 0.28, rate: 1.12}, // punch-in scenario 2
   {at: 77.5, file: 'whoosh', vol: 0.27}, // breakout above the VAH
   {at: 84.3, file: 'tick', vol: 0.18},
   {at: 87.5, file: 'click', vol: 0.42}, // entry = mouse click

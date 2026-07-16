@@ -30,26 +30,27 @@ const TX_W: RGBA = [10, 10, 11, 1];
 const TX_E: RGBA = [255, 146, 150, 1];
 
 const PILLS = [
-  {label: 'Wyckoff', at: 1.0, errAt: 2.35, x: 175, y: 300},
-  {label: 'FVG', at: 1.5, errAt: 2.85, x: 470, y: 165},
-  {label: 'Smart Money', at: 2.0, errAt: 3.35, x: 720, y: 285},
+  {label: 'Wyckoff', at: 0.75, errAt: 2.35, x: 175, y: 300},
+  {label: 'FVG', at: 1.2, errAt: 2.85, x: 470, y: 165},
+  {label: 'Smart Money', at: 1.65, errAt: 3.35, x: 720, y: 285},
 ];
 
 const YEARS = ['2021', '2022', '2023', '2024', '2025', '2026'];
 
-export const IntroTimeline: React.FC<{tSrc: number}> = ({tSrc}) => {
+export const IntroTimeline: React.FC<{tSrc: number; tComp: number}> = ({tSrc, tComp}) => {
   const {fps} = useVideoConfig();
   const t = tSrc;
 
-  // recede while the chart grid builds, fully gone before the M15 candle
+  // recede while the chart grid builds, fully gone before the M15 candle.
+  // Fades run on COMPOSITION time so the pause-cut at src 4.98 never pops.
   const fadeOut =
-    interpolate(t, [5.15, 5.75], [1, 0.22], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'}) *
-    interpolate(t, [7.6, 8.6], [1, 0], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+    interpolate(tComp, [4.5, 5.1], [1, 0.22], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'}) *
+    interpolate(tComp, [6.5, 7.45], [1, 0], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
   if (fadeOut <= 0) return null;
 
   // green answer pill
-  const ein = easeOut(prog(t, 4.0, 0.75));
-  const axisIn = interpolate(t, [0.6, 1.4], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
+  const ein = easeOut(prog(t, 4.0, 0.7));
+  const axisIn = interpolate(t, [0.2, 0.9], [0, 1], {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'});
 
   const axisY = 560;
   const x0 = 120;
@@ -95,7 +96,7 @@ export const IntroTimeline: React.FC<{tSrc: number}> = ({tSrc}) => {
 
       {/* three failed paths: pop -> white highlight -> red error */}
       {PILLS.map((p) => {
-        const s = spring({frame: (t - p.at) * fps, fps, config: {damping: 11, stiffness: 160, mass: 0.7}});
+        const s = spring({frame: (t - p.at) * fps, fps, config: {damping: 11, stiffness: 190, mass: 0.65}});
         if (s <= 0.15) return null;
         const hl = easeOut(prog(t, p.errAt - 0.4, 0.22)); // flash white + grow
         const err = easeOut(prog(t, p.errAt, 0.3)); // settle into error red
