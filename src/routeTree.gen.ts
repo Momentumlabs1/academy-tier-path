@@ -14,6 +14,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as HegemonyRouteImport } from './routes/hegemony'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppRouteImport } from './routes/_app'
+import { Route as SlugRouteImport } from './routes/$slug'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as TSlugRouteImport } from './routes/t.$slug'
@@ -56,6 +57,11 @@ const AdminRoute = AdminRouteImport.update({
 } as any)
 const AppRoute = AppRouteImport.update({
   id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SlugRoute = SlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -155,6 +161,7 @@ const AppLessonsLessonIdRoute = AppLessonsLessonIdRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/$slug': typeof SlugRoute
   '/': typeof AppIndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/hegemony': typeof HegemonyRoute
@@ -180,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/lessons/': typeof AppLessonsIndexRoute
 }
 export interface FileRoutesByTo {
+  '/$slug': typeof SlugRoute
   '/hegemony': typeof HegemonyRoute
   '/login': typeof LoginRoute
   '/partner': typeof PartnerRoute
@@ -204,6 +212,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/$slug': typeof SlugRoute
   '/_app': typeof AppRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/hegemony': typeof HegemonyRoute
@@ -232,6 +241,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/$slug'
     | '/'
     | '/admin'
     | '/hegemony'
@@ -257,6 +267,7 @@ export interface FileRouteTypes {
     | '/lessons/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/$slug'
     | '/hegemony'
     | '/login'
     | '/partner'
@@ -280,6 +291,7 @@ export interface FileRouteTypes {
     | '/lessons'
   id:
     | '__root__'
+    | '/$slug'
     | '/_app'
     | '/admin'
     | '/hegemony'
@@ -307,6 +319,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  SlugRoute: typeof SlugRoute
   AppRoute: typeof AppRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
   HegemonyRoute: typeof HegemonyRoute
@@ -350,6 +363,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$slug': {
+      id: '/$slug'
+      path: '/$slug'
+      fullPath: '/$slug'
+      preLoaderRoute: typeof SlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -551,6 +571,7 @@ const AdminRouteChildren: AdminRouteChildren = {
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  SlugRoute: SlugRoute,
   AppRoute: AppRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
   HegemonyRoute: HegemonyRoute,

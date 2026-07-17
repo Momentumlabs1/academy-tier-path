@@ -56,7 +56,10 @@ export function RegistrationGate({ children }: { children: React.ReactNode }) {
     const { error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: { data: { name: name.trim(), referred_by_tenant: ref } },
+      // app:"academy" tags this as a customer signup so the DB trigger
+      // (handle_new_academy_user) provisions a members row + partner attribution,
+      // WITHOUT touching the other apps that share this Supabase project.
+      options: { data: { app: "academy", name: name.trim(), referred_by_tenant: ref } },
     });
     setBusy(false);
     if (error) { setError(error.message); return; }

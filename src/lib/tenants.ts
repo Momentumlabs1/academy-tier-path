@@ -153,3 +153,57 @@ export const TENANTS: TenantConfig[] = [
 export function getTenant(slug: string): TenantConfig | undefined {
   return TENANTS.find((t) => t.slug === slug);
 }
+
+// Slugs that collide with real app routes — a partner can never own one, else
+// their landing would shadow /admin, /partner, /login, etc.
+export const RESERVED_SLUGS = new Set([
+  "admin", "partner", "login", "signals", "lessons", "tools", "tier", "unlocks",
+  "notifications", "settings", "t", "api", "assets", "hegemony", "auth", "dashboard",
+]);
+
+// A complete, on-brand default landing built from just a slug + name, so any
+// partner created in the admin (DB-only, no static config) still renders a full
+// page. Any keys present in the tenant's `config` jsonb override the defaults —
+// so branding can be tuned later without a code change.
+export function buildTenantConfig(
+  slug: string,
+  name: string,
+  config: Record<string, unknown> = {},
+): TenantConfig {
+  const initials = name.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "CC";
+  const base: TenantConfig = {
+    slug,
+    name,
+    tagline: "Trade smarter. Start today.",
+    description:
+      "Kostenlose Trade-Signale, eine Schritt-für-Schritt-Academy und eine private Community. Keine Kursgebühren — du finanzierst nur ein Live-Konto bei unserem Partner-Broker.",
+    logoInitials: initials,
+    primaryColor: "oklch(0.82 0.17 150)",
+    accentColor: "oklch(0.7 0.18 270)",
+    bgFrom: "oklch(0.16 0.05 260)",
+    bgTo: "oklch(0.10 0.03 260)",
+    brokerName: "unser Partner-Broker",
+    brokerUrl: "#",
+    telegramChannel: "#",
+    affiliateEmail: "kontakt@momentumlabs.at",
+    stats: [
+      { label: "Mitglieder", value: "Wachsend" },
+      { label: "Signal-Trefferquote", value: "74%" },
+      { label: "Einstieg", value: "ab €100" },
+      { label: "Kosten", value: "€0" },
+    ],
+    features: [
+      { icon: "📡", title: "Live Telegram-Signale", body: "Echtzeit-Trades vom Desk — direkt auf dein Handy, mit Entry, Stop-Loss und Zielen." },
+      { icon: "📚", title: "Strukturierte Academy", body: "12 Lektionen von den Grundlagen bis zum echten Orderflow-Edge." },
+      { icon: "💸", title: "Kostenlos dabei", body: "Finanziere ein Konto bei unserem Partner-Broker und schalte alle Signale & Lektionen frei." },
+    ],
+    faq: [
+      { q: "Ist das wirklich kostenlos?", a: "Ja. Signale und Ausbildung sind gratis — du finanzierst nur ein Live-Konto bei unserem Partner-Broker (ab €100). Keine Kursgebühren, kein Upsell." },
+      { q: "Brauche ich Erfahrung?", a: "Nein. Die Academy startet bei null und die Signale sagen dir genau, was zu tun ist — Entry, Stop-Loss und Ziele. Du lernst, während du tradest." },
+      { q: "Wie bekomme ich die Signale?", a: "Über einen privaten Telegram-Kanal. Sobald deine Einzahlung verifiziert ist, sendet dir unser Bot automatisch eine persönliche Einladung." },
+      { q: "Kann ich jederzeit aufhören?", a: "Natürlich. Es ist dein Broker-Konto und dein Geld — du kannst jederzeit auszahlen oder den Kanal verlassen." },
+    ],
+  };
+  // Shallow-merge config overrides (primaryColor, brokerName, telegramChannel, …).
+  return { ...base, ...(config as Partial<TenantConfig>) };
+}

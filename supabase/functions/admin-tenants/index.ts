@@ -39,6 +39,12 @@ const FIELDS = ["slug", "name", "active", "telegram_channel_id", "broker_affilia
 const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
 
+// Slugs that would collide with real app routes — a partner may not own one.
+const RESERVED_SLUGS = new Set([
+  "admin", "partner", "login", "signals", "lessons", "tools", "tier", "unlocks",
+  "notifications", "settings", "t", "api", "assets", "hegemony", "auth", "dashboard",
+]);
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -95,6 +101,7 @@ Deno.serve(async (req) => {
     const name = String(body.name ?? "").trim();
     const slug = body.slug ? slugify(String(body.slug)) : slugify(name);
     if (!email || !password || !name || !slug) return json({ error: "email, password, name required" }, 400);
+    if (RESERVED_SLUGS.has(slug)) return json({ error: `Slug „${slug}" ist reserviert — bitte einen anderen wählen.` }, 400);
     const rate = Number(body.partner_rate ?? 5);
     const unit = body.partner_rate_unit === "percent" ? "percent" : "usd_per_lot";
 
