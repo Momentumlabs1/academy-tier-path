@@ -4,13 +4,14 @@ import { AdminPageHeader, AdminKpiCard } from "@/components/academy/admin/AdminS
 import { TENANTS } from "@/lib/tenants";
 import { Check, Copy, ExternalLink, Loader2, Radio, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { functionUrl } from "@/integrations/supabase/functions-url";
 
 export const Route = createFileRoute("/admin/tenants")({
   head: () => ({ meta: [{ title: "White-Label — Admin" }] }),
   component: AdminTenants,
 });
 
-const FN = "https://fymbblasfpfuyhpsesxk.supabase.co/functions/v1/admin-tenants";
+const FN = functionUrl("admin-tenants");
 
 interface TenantRow {
   slug: string;

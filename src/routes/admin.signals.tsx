@@ -6,6 +6,7 @@ import { TENANTS } from "@/lib/tenants";
 import { useTelegramConfig } from "@/hooks/useTelegramConfig";
 import { ArrowRight, Check, CheckCircle2, Copy, MessageCircle, Radio, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { functionUrl } from "@/integrations/supabase/functions-url";
 
 export const Route = createFileRoute("/admin/signals")({
   head: () => ({ meta: [{ title: "Signal Relay — Admin" }] }),
@@ -21,8 +22,8 @@ const SETUP_STEPS = [
   { title: "Channel-IDs eintragen", body: "telegram_channel_id pro Tenant in der Datenbank setzen — ab dann läuft der Fan-out automatisch." },
 ];
 
-// Academy Supabase project — the function URL is fixed; only the token/secret stay placeholders.
-const FUNCTION_URL = "https://fymbblasfpfuyhpsesxk.supabase.co/functions/v1/telegram-webhook";
+// Function URL derived from the app's configured Supabase project; only the token/secret stay placeholders.
+const FUNCTION_URL = functionUrl("telegram-webhook");
 const WEBHOOK_CMD = `curl "https://api.telegram.org/bot<BOT_TOKEN>/setWebhook" \\
   -d "url=${FUNCTION_URL}" \\
   -d "secret_token=<TELEGRAM_WEBHOOK_SECRET>" \\

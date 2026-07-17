@@ -4,12 +4,13 @@ import { Card } from "@/components/academy/primitives/Card";
 import { useMemberState } from "@/hooks/useMemberState";
 import { CURRENT_MEMBER } from "@/lib/academy-data";
 import { cn } from "@/lib/utils";
+import { functionUrl } from "@/integrations/supabase/functions-url";
 
 // Fallback bot handle for pure-demo mode (no backend). Live URL comes from the
 // create-telegram-link edge function.
 const BOT_USERNAME = "AgentTradingRelayBot";
 const STORAGE_KEY = "academy_telegram_linked";
-const FN_URL = "https://fymbblasfpfuyhpsesxk.supabase.co/functions/v1/create-telegram-link";
+const FN_URL = functionUrl("create-telegram-link");
 
 /**
  * 3-step onboarding into the signal channel:
