@@ -20,6 +20,10 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Vinted Sniper (lokale Secrets & Dedup-Store)
+tools/vinted-sniper/.env
+tools/vinted-sniper/.seen.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

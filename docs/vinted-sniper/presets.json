@@ -1,0 +1,250 @@
+{
+  "$schema_version": "1.0",
+  "meta": {
+    "title": "Vinted Sniper Presets – Junge Frauen / Reselling (AT/DE)",
+    "region": "AT",
+    "domain": "vinted.at",
+    "currency": "EUR",
+    "language_hints": ["de", "en"],
+    "target_audience": "Frauen ca. 20–30, Aesthetic-Reselling (Fairycore / Whitecore / Coquette / Y2K / Pailletten / Sommer)",
+    "updated": "2026-07-17",
+    "notes": [
+      "Katalog-IDs koennen sich je Domain/Zeit aendern. 10 = Kleider ist bestaetigt. Alle uebrigen catalog_ids bitte 1x auf vinted.at verifizieren (Filter setzen -> catalog[] aus der URL kopieren) oder leer lassen: die Presets funktionieren auch nur ueber search_text + Preis + Zustand.",
+      "status_ids = Zustand (Condition). Standard fuers Flippen: 6,1,2 (Neu mit Etikett, Neu ohne Etikett, Sehr gut).",
+      "order=newest_first ist Pflicht fuers Sniping (neueste zuerst).",
+      "price_to gilt fuer den ARTIKELpreis. Versand-Obergrenze wird zusaetzlich im Bot geprueft (max_shipping)."
+    ]
+  },
+
+  "condition_map": {
+    "6": "Neu mit Etikett",
+    "1": "Neu ohne Etikett",
+    "2": "Sehr gut",
+    "3": "Gut",
+    "4": "Zufriedenstellend"
+  },
+
+  "order_values": ["newest_first", "relevance", "price_low_to_high", "price_high_to_low"],
+
+  "resale_rules": {
+    "tops":      { "max_item_price": 6,  "max_shipping": 6,  "max_total_landed": 12, "typical_resale": 30, "target_margin_min": 15 },
+    "dresses":   { "max_item_price": 12, "max_shipping": 6,  "max_total_landed": 18, "typical_resale": 35, "target_margin_min": 15, "stretch_item_price": 15 },
+    "skirts":    { "max_item_price": 6,  "max_shipping": 6,  "max_total_landed": 12, "typical_resale": 25, "target_margin_min": 12 },
+    "sets":      { "max_item_price": 10, "max_shipping": 6,  "max_total_landed": 16, "typical_resale": 35, "target_margin_min": 15 },
+    "knit":      { "max_item_price": 8,  "max_shipping": 6,  "max_total_landed": 14, "typical_resale": 28, "target_margin_min": 12 },
+    "fee_note": "Vinted AT/DE: Privatverkaeufer zahlen aktuell KEINE Verkaufsgebuehr (Kaeufer traegt Kaeuferschutz + Versand). Payout ~ Verkaufspreis. Bitte gelegentlich verifizieren, Regeln aendern sich."
+  },
+
+  "global_negative_terms": [
+    "herren", "men", "kinder", "kids", "baby", "jungen", "boys",
+    "defekt", "kaputt", "fleck", "loch", "beschaedigt", "damaged", "stain",
+    "reserviert", "reserved", "konvolut", "paket set alt"
+  ],
+
+  "brand_watchlist": [
+    "Brandy Melville", "Jaded London", "Motel Rocks", "Sabo Skirt", "Realisation Par",
+    "Selkie", "For Love & Lemons", "Reformation", "House of Sunny", "Free People",
+    "Urban Outfitters", "Kimchi Blue", "Sister Jane", "Damson Madder", "Nobody's Child",
+    "Ganni", "Rat & Boa", "Never Fully Dressed", "White Fox", "Oh Polly", "Peppermayo",
+    "Princess Polly", "Rixo", "Sezane", "Sandro", "Maje", "Sister Jane",
+    "Zara", "Mango", "Stradivarius", "Bershka", "Pull & Bear", "Hollister"
+  ],
+
+  "presets": [
+    {
+      "id": "fairycore-tops",
+      "label": "Fairycore · Tops",
+      "aesthetic": "fairycore",
+      "garment": "tops",
+      "keywords": ["fairycore", "fairy grunge", "mesh top", "schmetterling top", "butterfly top", "corsage top", "korsett top", "elfen top", "feen"],
+      "catalog_ids": [],
+      "price_to": 6,
+      "max_shipping": 6,
+      "status_ids": [6, 1, 2],
+      "order": "newest_first",
+      "currency": "EUR",
+      "resale_est": 30,
+      "notes": "Mesh, Schmetterling, Korsage, zarte Prints. Marken: Jaded London, Urban Outfitters, Brandy Melville."
+    },
+    {
+      "id": "fairycore-dresses",
+      "label": "Fairycore · Kleider",
+      "aesthetic": "fairycore",
+      "garment": "dresses",
+      "keywords": ["fairycore kleid", "feenkleid", "mesh kleid", "schmetterling kleid", "elfenkleid", "fairy dress", "corset dress"],
+      "catalog_ids": [10],
+      "price_to": 12,
+      "max_shipping": 6,
+      "status_ids": [6, 1, 2],
+      "order": "newest_first",
+      "currency": "EUR",
+      "resale_est": 35,
+      "notes": "Selkie/House-of-Sunny-Vibe zieht am besten. Puffaermel + Mesh + florale Prints."
+    },
+    {
+      "id": "whitecore-coquette-tops",
+      "label": "Whitecore / Coquette · Tops",
+      "aesthetic": "coquette",
+      "garment": "tops",
+      "keywords": ["coquette top", "balletcore", "schleife top", "bow top", "spitze top", "lace top", "weisses top", "milkmaid top", "korsett weiss"],
+      "catalog_ids": [],
+      "price_to": 6,
+      "max_shipping": 6,
+      "status_ids": [6, 1, 2],
+      "order": "newest_first",
+      "currency": "EUR",
+      "resale_est": 30,
+      "notes": "Weiss/creme, Spitze, Schleifen, Ballett-Aesthetik. Marken: Sandro, Maje, Zara Statement, Brandy."
+    },
+    {
+      "id": "whitecore-coquette-dresses",
+      "label": "Whitecore / Coquette · Kleider",
+      "aesthetic": "coquette",
+      "garment": "dresses",
+      "keywords": ["weisses kleid", "coquette kleid", "spitzenkleid", "milkmaid kleid", "lace dress", "white dress", "corset dress weiss", "romantisch kleid"],
+      "catalog_ids": [10],
+      "price_to": 12,
+      "max_shipping": 6,
+      "status_ids": [6, 1, 2],
+      "order": "newest_first",
+      "currency": "EUR",
+      "resale_est": 38,
+      "notes": "Weisse Sommer-/Verlobungskleider gehen top. Achtung: Groesse & Flecken pruefen (weiss = kritisch)."
+    },
+    {
+      "id": "y2k-tops",
+      "label": "Y2K / 2000er · Tops",
+      "aesthetic": "y2k",
+      "garment": "tops",
+      "keywords": ["y2k top", "2000er", "baby tee", "cami top", "neckholder", "halterneck", "mesh y2k", "cyber top", "schmetterling y2k"],
+      "catalog_ids": [],
+      "price_to": 6,
+      "max_shipping": 6,
+      "status_ids": [6, 1, 2],
+      "order": "newest_first",
+      "currency": "EUR",
+      "resale_est": 28,
+      "notes": "Baby-Tees, Cami/Neckholder, Rhinestone. Marken: Hollister, Bershka, Brandy Melville."
+    },
+    {
+      "id": "y2k-dresses",
+      "label": "Y2K / 2000er · Kleider",
+      "aesthetic": "y2k",
+      "garment": "dresses",
+      "keywords": ["y2k kleid", "mini kleid 2000er", "cyber kleid", "mesh kleid y2k", "slip dress", "satin kleid mini"],
+      "catalog_ids": [10],
+      "price_to": 12,
+      "max_shipping": 6,
+      "status_ids": [6, 1, 2],
+      "order": "newest_first",
+      "currency": "EUR",
+      "resale_est": 32,
+      "notes": "Satin-Slip, Mesh, Rhinestone-Details."
+    },
+    {
+      "id": "sequin-pailletten-tops",
+      "label": "Pailletten / Sequin · Tops",
+      "aesthetic": "sequin",
+      "garment": "tops",
+      "keywords": ["pailletten top", "sequin top", "glitzer top", "sparkle top", "party top glitzer", "paillettenoberteil"],
+      "catalog_ids": [],
+      "price_to": 6,
+      "max_shipping": 6,
+      "status_ids": [6, 1, 2],
+      "order": "newest_first",
+      "currency": "EUR",
+      "resale_est": 30,
+      "notes": "Party-/Silvester-Saison zieht am staerksten (Okt–Dez)."
+    },
+    {
+      "id": "sequin-pailletten-dresses",
+      "label": "Pailletten / Sequin · Kleider",
+      "aesthetic": "sequin",
+      "garment": "dresses",
+      "keywords": ["paillettenkleid", "sequin dress", "glitzerkleid", "party kleid pailletten", "silvesterkleid", "sparkle dress"],
+      "catalog_ids": [10],
+      "price_to": 15,
+      "max_shipping": 6,
+      "status_ids": [6, 1, 2],
+      "order": "newest_first",
+      "currency": "EUR",
+      "resale_est": 40,
+      "notes": "Hoehere price_to (15) erlaubt, weil Resale hoch. Marken: Rat & Boa, Never Fully Dressed, ASOS Design, Zara."
+    },
+    {
+      "id": "cottagecore-floral-dresses",
+      "label": "Cottagecore / Blumenmuster · Kleider",
+      "aesthetic": "cottagecore",
+      "garment": "dresses",
+      "keywords": ["cottagecore kleid", "blumenkleid", "floral dress", "milkmaid kleid", "puffaermel kleid", "gaensebluemchen", "boho kleid vintage"],
+      "catalog_ids": [10],
+      "price_to": 12,
+      "max_shipping": 6,
+      "status_ids": [6, 1, 2],
+      "order": "newest_first",
+      "currency": "EUR",
+      "resale_est": 33,
+      "notes": "Puffaermel + kleine Blumenprints. Marken: Damson Madder, Nobody's Child, Sister Jane, Rixo."
+    },
+    {
+      "id": "pattern-print-tops",
+      "label": "Schoene Muster / Print · Tops",
+      "aesthetic": "pattern",
+      "garment": "tops",
+      "keywords": ["blumenmuster top", "print top", "gemustert top", "paisley top", "boho top", "muster oberteil"],
+      "catalog_ids": [],
+      "price_to": 6,
+      "max_shipping": 6,
+      "status_ids": [6, 1, 2],
+      "order": "newest_first",
+      "currency": "EUR",
+      "resale_est": 25,
+      "notes": "Breiter Print-/Muster-Fang. Gut zum Kombinieren mit Bild-Inspiration."
+    },
+    {
+      "id": "crochet-knit-tops",
+      "label": "Haekel / Crochet · Tops",
+      "aesthetic": "crochet",
+      "garment": "knit",
+      "keywords": ["haekel top", "crochet top", "gehaekelt", "strick top", "knit top", "haekeltop boho"],
+      "catalog_ids": [],
+      "price_to": 6,
+      "max_shipping": 6,
+      "status_ids": [6, 1, 2],
+      "order": "newest_first",
+      "currency": "EUR",
+      "resale_est": 28,
+      "notes": "Sommer-Boho, handgemacht wirkt teuer. Marken: Free People, Urban Outfitters."
+    },
+    {
+      "id": "summer-mini-skirts",
+      "label": "Sommer · Roecke / Mini",
+      "aesthetic": "summer",
+      "garment": "skirts",
+      "keywords": ["minirock", "mini skirt", "sommerrock", "faltenrock", "y2k rock", "tennis skirt", "mesh rock"],
+      "catalog_ids": [],
+      "price_to": 6,
+      "max_shipping": 6,
+      "status_ids": [6, 1, 2],
+      "order": "newest_first",
+      "currency": "EUR",
+      "resale_est": 24,
+      "notes": "Katalog Damen > Roecke bitte 1x verifizieren."
+    },
+    {
+      "id": "two-piece-sets",
+      "label": "Sommer · Two-Piece / Sets",
+      "aesthetic": "summer",
+      "garment": "sets",
+      "keywords": ["two piece set", "zweiteiler", "co-ord", "set top rock", "matching set", "sommer set"],
+      "catalog_ids": [],
+      "price_to": 10,
+      "max_shipping": 6,
+      "status_ids": [6, 1, 2],
+      "order": "newest_first",
+      "currency": "EUR",
+      "resale_est": 35,
+      "notes": "Sets haben hohen Resale-Hebel. Marken: Motel Rocks, Oh Polly, Peppermayo."
+    }
+  ]
+}
