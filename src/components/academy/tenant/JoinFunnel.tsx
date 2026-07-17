@@ -33,6 +33,10 @@ export function JoinFunnel({ tenant, open, onClose }: {
     }
     setError(null);
     const clickId = Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+    // Reinforce partner attribution before we send them off to the broker.
+    if (typeof document !== "undefined") {
+      document.cookie = `cosmo_ref=${encodeURIComponent(tenant.slug)}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+    }
     try {
       const leads = JSON.parse(localStorage.getItem(LEADS_KEY) ?? "[]");
       leads.push({ email, tenant: tenant.slug, clickId, status: "redirected", createdAt: new Date().toISOString() });

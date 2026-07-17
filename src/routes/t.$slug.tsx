@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowRight, CheckCircle2, Lock, Shield, TrendingUp, TrendingDown, Star } from "lucide-react";
 import { getTenant } from "@/lib/tenants";
 import { TIERS } from "@/lib/academy-data";
@@ -40,6 +40,16 @@ export const Route = createFileRoute("/t/$slug")({
 function TenantLanding() {
   const { tenant } = Route.useLoaderData();
   const [funnelOpen, setFunnelOpen] = useState(false);
+
+  // Partner attribution: stamp the referring brand into a 30-day cookie the
+  // moment a visitor lands. When they later register in the dashboard, the
+  // RegistrationGate reads `cosmo_ref` and writes members.referred_by_tenant,
+  // so this partner gets credited for the customer (and their deposits).
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const maxAge = 60 * 60 * 24 * 30; // 30 days
+    document.cookie = `cosmo_ref=${encodeURIComponent(tenant.slug)}; path=/; max-age=${maxAge}; SameSite=Lax`;
+  }, [tenant.slug]);
 
   return (
     <div
@@ -323,7 +333,7 @@ function TenantLanding() {
       {/* Footer */}
       <footer className="border-t border-white/5 px-4 py-6 text-center text-[11px] text-muted-foreground">
         {tenant.name} · Powered by <Link to="/" className="hover:text-foreground underline">Agent Trading Academy</Link>
-        {" "}· <Lock className="inline h-2.5 w-2.5" /> Demo data only
+        {" "}· <Lock className="inline h-2.5 w-2.5" /> Trading involves risk — 74–89% of retail CFD accounts lose money.
       </footer>
     </div>
   );
