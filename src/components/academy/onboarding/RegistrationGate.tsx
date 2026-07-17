@@ -25,7 +25,7 @@ function readCookie(name: string): string | null {
   return m ? decodeURIComponent(m[1]) : null;
 }
 
-type Phase = "checking" | "register" | "intro" | "authed";
+type Phase = "checking" | "register" | "confirm" | "intro" | "authed";
 
 export function RegistrationGate({ children }: { children: React.ReactNode }) {
   const [phase, setPhase] = useState<Phase>("checking");
@@ -53,7 +53,7 @@ export function RegistrationGate({ children }: { children: React.ReactNode }) {
     setBusy(true);
     setError(null);
     const ref = readCookie("cosmo_ref"); // partner slug attribution
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       // app:"academy" tags this as a customer signup so the DB trigger
@@ -63,6 +63,10 @@ export function RegistrationGate({ children }: { children: React.ReactNode }) {
     });
     setBusy(false);
     if (error) { setError(error.message); return; }
+    // Works with either Supabase Auth setting:
+    //  - "Confirm email" OFF → a session is returned immediately → straight to intro.
+    //  - "Confirm email" ON  → no session yet → ask them to confirm via email first.
+    if (!data.session) { setPhase("confirm"); return; }
     setPhase("intro"); // registration done → show the intro video
   }
 
@@ -102,6 +106,23 @@ export function RegistrationGate({ children }: { children: React.ReactNode }) {
             </button>
             <p className="mt-3 text-center text-[11px] text-muted-foreground">Kein Abo, keine Gebühr. Mit der Registrierung stimmst du unseren Bedingungen zu.</p>
           </form>
+        )}
+
+        {phase === "confirm" && (
+          <div className="w-full max-w-md rounded-3xl border border-white/10 bg-[oklch(0.14_0.04_255)] p-7 text-center shadow-2xl">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/15 text-primary">
+              <CheckCircle2 className="h-6 w-6" />
+            </div>
+            <div className="mb-1 font-display text-2xl font-bold">Fast geschafft — bestätige deine E-Mail</div>
+            <p className="mb-5 text-sm text-foreground/60">
+              Wir haben dir einen Bestätigungslink an <span className="font-semibold text-foreground/80">{email}</span> geschickt.
+              Klick ihn an, dann kannst du dich anmelden und dein Einleitungs-Video freischalten.
+            </p>
+            <button onClick={() => setPhase("register")}
+              className="text-xs text-muted-foreground underline hover:text-foreground">
+              Andere E-Mail verwenden
+            </button>
+          </div>
         )}
 
         {phase === "intro" && (

@@ -375,11 +375,17 @@ async function handleStart(db: SupabaseClient, msg: TgMessage) {
 
 async function handleJoinRequest(db: SupabaseClient, reqObj: { chat: TgChat; from: TgUser }) {
   const { data: link } = await db
-    .from("telegram_links").select("id, members(deposit)")
+    .from("telegram_links").select("id, members(deposit, activity_status)")
     .eq("telegram_user_id", reqObj.from.id).in("status", ["linked", "joined"]).maybeSingle();
 
-  const member = link?.members as unknown as { deposit: number } | null;
-  const eligible = !!link && !!member && Number(member.deposit) >= MIN_DEPOSIT_FOR_SIGNALS;
+  const member = link?.members as unknown as { deposit: number; activity_status: string } | null;
+  // Gate on BOTH: funded (deposit ≥ threshold) AND not inactivity-revoked. An
+  // inactivity-kicked member must trade again (status leaves 'inactive') before
+  // they can rejoin — otherwise the activity kick would be instantly undone.
+  const eligible =
+    !!link && !!member &&
+    Number(member.deposit) >= MIN_DEPOSIT_FOR_SIGNALS &&
+    member.activity_status !== "inactive";
 
   await tg(eligible ? "approveChatJoinRequest" : "declineChatJoinRequest", { chat_id: reqObj.chat.id, user_id: reqObj.from.id });
   if (eligible && link) {
