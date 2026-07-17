@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { AdminPageHeader, AdminKpiCard } from "@/components/academy/admin/AdminShell";
-import { TENANTS } from "@/lib/tenants";
+import { useAdminStats } from "@/hooks/useAdminStats";
 import { formatMoney } from "@/lib/format";
 import {
-  Building2, ChevronDown, ChevronRight, Crown, ExternalLink, Radio,
+  Building2, ChevronDown, ChevronRight, Crown, ExternalLink, Loader2, Radio,
   Send, Users, Wallet, Database, Mail, Bot, CheckCircle2, XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -13,18 +13,6 @@ export const Route = createFileRoute("/admin/structure")({
   head: () => ({ meta: [{ title: "Struktur — Admin" }] }),
   component: AdminStructure,
 });
-
-// Demo rollup per brand until the affiliate_dashboard view is live (deterministic,
-// so the tree looks real). Swap for a Supabase query on the affiliate_dashboard view.
-function rollup(slug: string) {
-  let h = 0;
-  for (const c of slug) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-  const members = 6 + (h % 40);
-  const deposits = members * (180 + (h % 900));
-  const rate = [5, 6, 8, 10][h % 4];
-  const lots = Math.round(members * (1.1 + (h % 5) * 0.4));
-  return { members, deposits, rate, lots, commission: lots * rate };
-}
 
 // Connected external accounts / integrations the whole system depends on.
 const INTEGRATIONS = [
@@ -36,11 +24,7 @@ const INTEGRATIONS = [
 
 function AdminStructure() {
   const [open, setOpen] = useState<Record<string, boolean>>({});
-  const rows = TENANTS.map((t) => ({ t, r: rollup(t.slug) }));
-  const totals = rows.reduce(
-    (a, { r }) => ({ members: a.members + r.members, deposits: a.deposits + r.deposits, commission: a.commission + r.commission }),
-    { members: 0, deposits: 0, commission: 0 },
-  );
+  const { loading, error, partners, totals } = useAdminStats();
 
   return (
     <div className="space-y-8">
@@ -50,11 +34,17 @@ function AdminStructure() {
       />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <AdminKpiCard label="Partner-Marken" value={TENANTS.length} icon={Building2} />
+        <AdminKpiCard label="Partner-Marken" value={totals.partners} icon={Building2} />
         <AdminKpiCard label="Kunden gesamt" value={totals.members} icon={Users} tone="ok" />
         <AdminKpiCard label="Einzahlungen" value={formatMoney(totals.deposits, "€")} icon={Wallet} tone="primary" />
-        <AdminKpiCard label="Provision / Mo (Modell)" value={formatMoney(totals.commission, "$")} icon={Crown} />
+        <AdminKpiCard label="Leads gesamt" value={totals.leads} icon={Send} />
       </div>
+
+      {error && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+          Daten konnten nicht geladen werden: {error}
+        </div>
+      )}
 
       {/* ── The tree ── */}
       <div className="rounded-2xl border border-white/5 bg-[oklch(0.15_0.045_255)] p-5 lg:p-7">
@@ -72,52 +62,51 @@ function AdminStructure() {
 
         {/* Partner branches */}
         <div className="mt-2 space-y-2 border-l border-white/10 pl-5 lg:ml-6">
-          {rows.map(({ t, r }) => {
-            const isOpen = open[t.slug];
+          {loading && (
+            <div className="flex items-center gap-2 py-6 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Lade Struktur…</div>
+          )}
+          {!loading && partners.length === 0 && (
+            <div className="rounded-xl border border-dashed border-white/10 px-4 py-8 text-center text-sm text-muted-foreground">
+              Noch keine Partner-Marken angelegt. Lege im Bereich <span className="font-semibold text-foreground/80">White-Label</span> die erste Marke an.
+            </div>
+          )}
+          {partners.map((p) => {
+            const isOpen = open[p.slug];
+            const brandColor = p.brand?.primaryColor ?? "oklch(0.7 0.02 250)";
             return (
-              <div key={t.slug} className="relative">
+              <div key={p.slug} className="relative">
                 <span className="absolute -left-5 top-6 h-px w-5 bg-white/10" />
                 <div className="rounded-xl border border-white/5 bg-white/[0.03]">
                   <button
-                    onClick={() => setOpen((o) => ({ ...o, [t.slug]: !o[t.slug] }))}
+                    onClick={() => setOpen((o) => ({ ...o, [p.slug]: !o[p.slug] }))}
                     className="flex w-full items-center gap-3 p-3 text-left"
                   >
                     <span className="text-muted-foreground">{isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}</span>
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-xs font-black" style={{ background: t.primaryColor, color: "oklch(0.15 0.03 250)" }}>
-                      {t.logoInitials}
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-xs font-black" style={{ background: brandColor, color: "oklch(0.15 0.03 250)" }}>
+                      {p.brand?.logoInitials ?? p.name.slice(0, 1)}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-semibold">{t.name}</div>
-                      <div className="truncate text-[11px] text-muted-foreground">{t.slug}.cosmos-candles.com</div>
+                      <div className="truncate text-sm font-semibold">{p.name}</div>
+                      <div className="truncate text-[11px] text-muted-foreground">cosmos-candles.com/{p.slug}</div>
                     </div>
                     <div className="hidden items-center gap-4 pr-2 text-right sm:flex">
-                      <div><div className="text-sm font-bold tabular-nums">{r.members}</div><div className="text-[10px] text-muted-foreground">Kunden</div></div>
-                      <div><div className="text-sm font-bold tabular-nums">{formatMoney(r.deposits, "€")}</div><div className="text-[10px] text-muted-foreground">Einzahlung</div></div>
-                      <div><div className="text-sm font-bold tabular-nums text-primary">{r.rate} $/Lot</div><div className="text-[10px] text-muted-foreground">Level</div></div>
+                      <div><div className="text-sm font-bold tabular-nums">{p.members}</div><div className="text-[10px] text-muted-foreground">Kunden</div></div>
+                      <div><div className="text-sm font-bold tabular-nums">{formatMoney(p.totalDeposits, "€")}</div><div className="text-[10px] text-muted-foreground">Einzahlung</div></div>
+                      <div><div className="text-sm font-bold tabular-nums text-primary">{p.partnerRate} {p.partnerRateUnit === "percent" ? "%" : "$/Lot"}</div><div className="text-[10px] text-muted-foreground">Level</div></div>
                     </div>
                   </button>
 
                   {isOpen && (
                     <div className="border-t border-white/5 px-4 py-3">
-                      <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px]">
-                        <span className="inline-flex items-center gap-1 rounded-md bg-white/5 px-2 py-1"><Radio className="h-3 w-3" /> {t.telegramChannel?.replace("https://t.me/", "@") ?? "kein Kanal"}</span>
-                        <span className="inline-flex items-center gap-1 rounded-md bg-white/5 px-2 py-1"><Wallet className="h-3 w-3" /> {t.brokerName}</span>
-                        <span className="inline-flex items-center gap-1 rounded-md bg-white/5 px-2 py-1"><Send className="h-3 w-3" /> {r.lots} Lots/Mo → {formatMoney(r.commission, "$")}</span>
-                        <Link to="/t/$slug" params={{ slug: t.slug }} target="_blank" className="ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 text-primary hover:bg-white/5">
+                      <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                        {p.brand?.telegramChannel && <span className="inline-flex items-center gap-1 rounded-md bg-white/5 px-2 py-1"><Radio className="h-3 w-3" /> {p.brand.telegramChannel.replace("https://t.me/", "@")}</span>}
+                        {p.brand?.brokerName && <span className="inline-flex items-center gap-1 rounded-md bg-white/5 px-2 py-1"><Wallet className="h-3 w-3" /> {p.brand.brokerName}</span>}
+                        <span className="inline-flex items-center gap-1 rounded-md bg-white/5 px-2 py-1"><Send className="h-3 w-3" /> {p.clicks} Klicks · {p.leads} Leads</span>
+                        <Link to="/t/$slug" params={{ slug: p.slug }} target="_blank" className="ml-auto inline-flex items-center gap-1 rounded-md px-2 py-1 text-primary hover:bg-white/5">
                           Landing <ExternalLink className="h-3 w-3" />
                         </Link>
                       </div>
-                      {/* Customer leaves (sample) */}
-                      <div className="grid gap-1.5 border-l border-white/10 pl-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {Array.from({ length: Math.min(6, r.members) }).map((_, i) => (
-                          <div key={i} className="flex items-center gap-2 rounded-lg bg-white/[0.02] px-2.5 py-1.5">
-                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-white/5 text-[10px] font-bold">{String.fromCharCode(65 + i)}</span>
-                            <span className="truncate text-xs text-foreground/70">Kunde #{i + 1}</span>
-                            <span className="ml-auto text-[10px] text-muted-foreground">{i % 3 === 0 ? "Elite" : i % 2 === 0 ? "Operator" : "Foundation"}</span>
-                          </div>
-                        ))}
-                        {r.members > 6 && <div className="flex items-center px-2.5 py-1.5 text-xs text-muted-foreground">+{r.members - 6} weitere Kunden…</div>}
-                      </div>
+                      {p.members === 0 && <div className="mt-2 text-xs text-muted-foreground">Noch keine Kunden unter dieser Marke.</div>}
                     </div>
                   )}
                 </div>
