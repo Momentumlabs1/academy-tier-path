@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PartnerRouteImport } from './routes/partner'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HegemonyRouteImport } from './routes/hegemony'
 import { Route as AdminRouteImport } from './routes/admin'
@@ -33,6 +34,11 @@ import { Route as AppLessonsRouteImport } from './routes/_app.lessons'
 import { Route as AppLessonsIndexRouteImport } from './routes/_app.lessons.index'
 import { Route as AppLessonsLessonIdRouteImport } from './routes/_app.lessons.$lessonId'
 
+const PartnerRoute = PartnerRouteImport.update({
+  id: '/partner',
+  path: '/partner',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -153,6 +159,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/hegemony': typeof HegemonyRoute
   '/login': typeof LoginRoute
+  '/partner': typeof PartnerRoute
   '/lessons': typeof AppLessonsRouteWithChildren
   '/notifications': typeof AppNotificationsRoute
   '/settings': typeof AppSettingsRoute
@@ -175,6 +182,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/hegemony': typeof HegemonyRoute
   '/login': typeof LoginRoute
+  '/partner': typeof PartnerRoute
   '/notifications': typeof AppNotificationsRoute
   '/settings': typeof AppSettingsRoute
   '/signals': typeof AppSignalsRoute
@@ -200,6 +208,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/hegemony': typeof HegemonyRoute
   '/login': typeof LoginRoute
+  '/partner': typeof PartnerRoute
   '/_app/lessons': typeof AppLessonsRouteWithChildren
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/settings': typeof AppSettingsRoute
@@ -227,6 +236,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/hegemony'
     | '/login'
+    | '/partner'
     | '/lessons'
     | '/notifications'
     | '/settings'
@@ -249,6 +259,7 @@ export interface FileRouteTypes {
   to:
     | '/hegemony'
     | '/login'
+    | '/partner'
     | '/notifications'
     | '/settings'
     | '/signals'
@@ -273,6 +284,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/hegemony'
     | '/login'
+    | '/partner'
     | '/_app/lessons'
     | '/_app/notifications'
     | '/_app/settings'
@@ -299,11 +311,19 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   HegemonyRoute: typeof HegemonyRoute
   LoginRoute: typeof LoginRoute
+  PartnerRoute: typeof PartnerRoute
   TSlugRoute: typeof TSlugRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/partner': {
+      id: '/partner'
+      path: '/partner'
+      fullPath: '/partner'
+      preLoaderRoute: typeof PartnerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -535,6 +555,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   HegemonyRoute: HegemonyRoute,
   LoginRoute: LoginRoute,
+  PartnerRoute: PartnerRoute,
   TSlugRoute: TSlugRoute,
 }
 export const routeTree = rootRouteImport
