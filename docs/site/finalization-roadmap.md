@@ -73,9 +73,10 @@ Datenmodell dafür: Migration `008_affiliate_portal.sql` (tenants.owner_user_id,
 ## 5. Offene Entscheidungen (User)
 
 1. **Hosting:** Frontend zu **Vercel** migrieren (nötig für Partner-Subdomains, ~20 $/Mo)? Oder erstmal bei Lovable + pfad-basiert `/t/:slug` bleiben und Subdomains später?
-2. **Registrar:** Domain via **Cloudflare** (empfohlen, Auto-Subdomains) statt GoDaddy?
+2. **DNS:** `cosmos-candles.com` liegt bei GoDaddy → für Wildcard-Subdomains + Auto-SSL Nameserver zu Vercel delegieren (oder DNS zu Cloudflare umziehen für Auto-Subdomain-API). Empfehlung: Cloudflare-DNS.
 3. **Anwalt:** die zwei FMA/ESMA-Flags prüfen lassen (vor Launch).
-4. **Stripe:** wofür? (Kundengeld läuft über Broker — Stripe eher für Partner-Gebühren oder Systemverkauf.)
+4. **Provisions-Einheit:** USD/Lot (5/6/8/10) vs. „5–10%" festzurren, bevor die Provisions-Berechnung im Affiliate-Portal gebaut wird.
+5. ~~Stripe~~ — gestrichen, nicht nötig (Einnahmen nur über Broker-Provision).
 
 ## 6. Reihenfolge (Vorschlag, sobald Entscheidungen da)
 
