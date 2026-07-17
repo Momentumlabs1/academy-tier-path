@@ -2,6 +2,21 @@
 
 > Zentrale Vision: eine Academy, viele Partner-Marken, ALLE Leads & Daten zentral bei uns.
 > Ziel: launch-ready + später als Gesamtsystem verkaufbar. Dies ist Orientierung, keine Rechtsberatung.
+>
+> **Domain: `cosmos-candles.com`** (gekauft). Betrieb über LLC. **Stripe: nicht nötig** — alle Einnahmen laufen über Broker-Provision (Upsells evtl. später).
+
+## 0. Subdomain-Layout (zwei getrennte Welten)
+
+```
+cosmos-candles.com              → Haupt-Marketingseite (zentral)
+<partner>.cosmos-candles.com    → KUNDEN-Landing, partner-gebrandet (Leads)
+app.cosmos-candles.com          → zentrales KUNDEN-Dashboard (gesperrt bis 100 € Einzahlung)
+partners.cosmos-candles.com     → AFFILIATE-Backoffice (Partner loggen sich ein, sehen NUR ihre Zahlen)
+```
+
+**Affiliate-Dashboard** = EIN zentrales Portal, kein Pro-Subdomain-Ding. Scoping über **Supabase RLS**: ein Affiliate liest per DB-Regel nur Zeilen seiner eigenen Marke. Er sieht Klicks, Registrierungen, Einzahlungen, Provision, aktuelles Level (Staffel 5→10, siehe `verguetung-modell.md`) + Erklärung „so verdienst du / so steigst du auf". Attributionskette: Klick auf seine Subdomain → `click_id` → Lead → Member → Einzahlung → Provision.
+Datenmodell dafür: Migration `008_affiliate_portal.sql` (tenants.owner_user_id, affiliate_clicks, RLS-Policies, `affiliate_dashboard`-View).
+⚠️ Offen: Provisions-Einheit — Vergütungsmodell sagt USD/Lot (5/6/8/10), User erwähnte „5–10%". Vor der Provisions-Berechnung Einheit festzurren.
 
 ## 1. E-Mail-System (Recherche bestätigt)
 
@@ -14,11 +29,11 @@
 
 ## 2. Subdomain-Architektur (Recherche bestätigt)
 
-- **Wichtige Klarstellung:** `partnername.cosmotrades.com` (unsere eigene Zone) ≠ „Partner bringt eigene Domain". Ersteres = ein Wildcard-Record + Wildcard-SSL. **Kein Cloudflare-for-SaaS nötig.**
+- **Wichtige Klarstellung:** `partnername.cosmos-candles.com` (unsere eigene Zone) ≠ „Partner bringt eigene Domain". Ersteres = ein Wildcard-Record + Wildcard-SSL. **Kein Cloudflare-for-SaaS nötig.**
 - **⚠️ Hosting-Entscheidung:** Lovable Cloud unterstützt **kein Wildcard `*.domain`** → für „jeder Partner-Slug funktioniert sofort" müssten wir das **Frontend zu Vercel migrieren** (Supabase bleibt unangetastet). Vercel: Wildcard + Auto-SSL auf allen Plänen, ~20 $/Mo, native TanStack-Start-Unterstützung. **Das ist DIE offene Entscheidung — siehe §5.**
 - **Tenant-Auflösung:** `Host`-Header serverseitig lesen (`getWebRequest()`), Slug aus Subdomain → Tenant, einmal im `__root__`-Loader. Landing wird host-getrieben statt param-getrieben (gleiche `TenantLanding`-JSX).
-- **Branding vs. zentral:** Subdomain-Landing voll partner-gebrandet (Farben als CSS-Variablen); Dashboard auf `app.cosmotrades.com` neutral/zentral. Tenant überlebt danach nur als *Attribution* (Daten), nicht als Optik.
-- **Session über Subdomains:** Supabase-Cookie mit `domain: '.cosmotrades.com'` → Login auf jeder Subdomain gilt auch auf `app.`.
+- **Branding vs. zentral:** Subdomain-Landing voll partner-gebrandet (Farben als CSS-Variablen); Dashboard auf `app.cosmos-candles.com` neutral/zentral. Tenant überlebt danach nur als *Attribution* (Daten), nicht als Optik.
+- **Session über Subdomains:** Supabase-Cookie mit `domain: '.cosmos-candles.com'` → Login auf jeder Subdomain gilt auch auf `app.`.
 - **Attribution:** Referrer-Slug aus der Subdomain → bei signUp in `raw_user_meta_data` + Cookie `cosmo_ref` → Trigger schreibt `referred_by_tenant` in members. Robust, egal wo die Registrierung endet.
 - **Migration `/t/:slug` → Subdomain:** beide parallel laufen lassen, dann 301 vom Pfad auf die Subdomain (Query/UTM erhalten). Reservierte Subdomains sperren: `app, www, api, admin, mail`.
 
