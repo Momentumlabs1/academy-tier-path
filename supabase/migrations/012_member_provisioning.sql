@@ -52,6 +52,9 @@ CREATE TRIGGER on_auth_user_created_academy
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_academy_user();
 
+-- Trigger-only: not meant to be callable over the REST API.
+REVOKE EXECUTE ON FUNCTION public.handle_new_academy_user() FROM anon, authenticated, public;
+
 -- Let a signed-in customer read/create their OWN member row from the client
 -- (needed so useMemberState works even before the trigger, and is spoof-safe:
 -- they can only ever touch the row whose auth_user_id is their own uid).
