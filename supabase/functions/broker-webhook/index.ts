@@ -6,13 +6,19 @@
  *
  * Expected request body (JSON):
  * {
- *   event:       "deposit" | "withdrawal"
+ *   event:       "deposit" | "withdrawal" | "trade"
  *   member_email: string
- *   amount:      number          // positive for deposit, negative for withdrawal
- *   broker_id:   string          // broker's internal transaction ID
+ *   amount:      number          // deposit/withdrawal: EUR (sign handled below)
+ *   lots:        number          // trade: lot size of the executed trade
+ *   symbol:      string          // trade: instrument (optional)
+ *   broker_id:   string          // broker's internal transaction/trade ID (idempotency)
  *   timestamp:   number          // Unix epoch (seconds)
  *   signature:   string          // HMAC-SHA256 hex of `${timestamp}.${JSON.stringify(payload_without_sig)}`
  * }
+ *
+ * "trade" events feed the activity systematics: each reported trade is stored and
+ * the member's rolling-window lots + activity status are recomputed. Deposits and
+ * trades share this one signed endpoint.
  *
  * Set WEBHOOK_SECRET in Supabase Edge Function secrets.
  *
@@ -70,6 +76,8 @@ Deno.serve(async (req: Request) => {
     event: string;
     member_email: string;
     amount: number;
+    lots?: number;
+    symbol?: string;
     broker_id: string;
     timestamp: number;
     signature: string;
@@ -99,7 +107,7 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ error: "Invalid signature" }), { status: 401 });
   }
 
-  if (!["deposit", "withdrawal"].includes(payload.event)) {
+  if (!["deposit", "withdrawal", "trade"].includes(payload.event)) {
     return new Response(JSON.stringify({ error: "Unknown event type" }), { status: 400 });
   }
 
@@ -120,6 +128,35 @@ Deno.serve(async (req: Request) => {
   if (memberErr || !member) {
     console.warn("[broker-webhook] Member not found:", payload.member_email);
     return new Response(JSON.stringify({ error: "Member not found" }), { status: 404 });
+  }
+
+  // --- Trade event: feed the activity systematics ---
+  if (payload.event === "trade") {
+    const lots = Math.abs(Number(payload.lots ?? 0));
+    if (!(lots > 0)) {
+      return new Response(JSON.stringify({ error: "lots required for trade event" }), { status: 400 });
+    }
+    // Idempotent on broker_id (a redelivered trade must not double-count).
+    const { error: tErr } = await supabase.from("trade_events").upsert(
+      {
+        member_id: member.id,
+        lots,
+        symbol: payload.symbol ?? null,
+        broker_trade_id: payload.broker_id,
+        traded_at: new Date(payload.timestamp * 1000).toISOString(),
+      },
+      { onConflict: "broker_trade_id", ignoreDuplicates: true },
+    );
+    if (tErr) {
+      console.error("[broker-webhook] trade insert error:", tErr);
+      return new Response(JSON.stringify({ error: "DB error" }), { status: 500 });
+    }
+    // Refresh this member's rolling lots + activity status immediately.
+    await supabase.rpc("academy_recompute_activity", { p_member: member.id });
+    return new Response(
+      JSON.stringify({ ok: true, member_id: member.id, event: "trade", lots }),
+      { headers: { "Content-Type": "application/json" } },
+    );
   }
 
   // Deposit amount: positive = deposit, negative = withdrawal

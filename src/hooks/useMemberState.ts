@@ -29,6 +29,8 @@ export interface MemberState {
   nextTierRemaining: number;
   progressPctToNext: number;
   isActive: boolean;
+  /** DB-authoritative activity state: "active" | "grace" | "inactive". */
+  activityStatus: "active" | "grace" | "inactive";
   monthlyLots: number;
   monthlyLotsRequired: number;
   unlockedProducts: Product[];
@@ -44,6 +46,7 @@ interface MemberInput {
   profile: { name: string; email: string; telegramHandle: string; joinedAt: string };
   deposit: number;
   monthlyLots: number;
+  activityStatus: "active" | "grace" | "inactive";
   notifications: Notification[];
   loaded: boolean;
 }
@@ -52,6 +55,7 @@ const EMPTY_INPUT: MemberInput = {
   profile: { name: "", email: "", telegramHandle: "", joinedAt: "" },
   deposit: 0,
   monthlyLots: 0,
+  activityStatus: "active",
   notifications: [],
   loaded: false,
 };
@@ -78,7 +82,11 @@ function deriveState(input: MemberInput): MemberState {
     nextTier,
     nextTierRemaining: nextTier ? Math.max(0, nextTier.minDeposit - deposit) : 0,
     progressPctToNext: progressBetween(deposit, currentTier, nextTier),
-    isActive: input.monthlyLots >= ACTIVITY_MIN_LOTS_PER_MONTH && deposit > 0,
+    // DB-authoritative once activity enforcement is live; before a member has any
+    // trades the server defaults them to "active", so a funded member isn't shown
+    // inactive just for having 0 lots yet.
+    isActive: input.activityStatus === "active" && deposit > 0,
+    activityStatus: input.activityStatus,
     monthlyLots: input.monthlyLots,
     monthlyLotsRequired: ACTIVITY_MIN_LOTS_PER_MONTH,
     unlockedProducts,
@@ -110,7 +118,7 @@ async function fetchMemberInput(): Promise<MemberInput> {
   };
 
   const [{ data: member }, { data: notifRows }] = await Promise.all([
-    client.from("members").select("name, email, telegram_handle, deposit, monthly_lots, joined_at").eq("auth_user_id", user.id).maybeSingle(),
+    client.from("members").select("name, email, telegram_handle, deposit, monthly_lots, activity_status, joined_at").eq("auth_user_id", user.id).maybeSingle(),
     client.from("notifications").select("id, type, title, body, link, read_at, created_at").order("created_at", { ascending: false }),
   ]);
 
@@ -136,6 +144,7 @@ async function fetchMemberInput(): Promise<MemberInput> {
     },
     deposit: Number(member?.deposit ?? 0),
     monthlyLots: Number(member?.monthly_lots ?? 0),
+    activityStatus: ((member?.activity_status as string) ?? "active") as MemberInput["activityStatus"],
     notifications,
     loaded: true,
   };
