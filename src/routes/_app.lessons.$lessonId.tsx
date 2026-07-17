@@ -1,7 +1,8 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useState } from "react";
 import { ArrowLeft, CheckCircle2, Clock, PlayCircle, RotateCcw } from "lucide-react";
-import { LESSONS, CURRENT_MEMBER, TIERS, tierForDeposit } from "@/lib/academy-data";
+import { LESSONS, TIERS } from "@/lib/academy-data";
+import { useMemberState } from "@/hooks/useMemberState";
 import { useCompletedLessons } from "@/hooks/useCompletedLessons";
 import { TierTag } from "@/components/academy/primitives/TierTag";
 import { Card } from "@/components/academy/primitives/Card";
@@ -35,7 +36,7 @@ export const Route = createFileRoute("/_app/lessons/$lessonId")({
 
 function LessonDetail() {
   const { lesson } = Route.useLoaderData();
-  const memberTier = tierForDeposit(CURRENT_MEMBER.deposit);
+  const memberTier = useMemberState().currentTier;
   const memberRank = memberTier ? TIERS.findIndex((t) => t.key === memberTier.key) : -1;
   const locked = TIERS.findIndex((t) => t.key === lesson.tier) > memberRank;
   const { isCompleted, toggle, stats } = useCompletedLessons();

@@ -6,7 +6,7 @@ import { SectionTitle } from "@/components/academy/primitives/SectionTitle";
 import { DepositLadder } from "@/components/academy/tier/DepositLadder";
 import { ProgressStats } from "@/components/academy/progress/ProgressStats";
 import { Card } from "@/components/academy/primitives/Card";
-import { LESSONS, CURRENT_MEMBER } from "@/lib/academy-data";
+import { LESSONS } from "@/lib/academy-data";
 import { useMemberState } from "@/hooks/useMemberState";
 
 export const Route = createFileRoute("/_app/")({
@@ -56,7 +56,7 @@ function Dashboard() {
         <div className="relative">
           <p className="text-sm font-medium text-muted-foreground">{greeting()},</p>
           <h1 className="mt-0.5 font-display text-2xl font-bold tracking-tight sm:text-3xl">
-            {CURRENT_MEMBER.name.split(" ")[0]} 👋
+            {(state.profile.name || state.profile.email).split(/[ @]/)[0] || "Trader"} 👋
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">Pick up where you left off.</p>
 

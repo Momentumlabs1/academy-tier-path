@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { PillValue } from "../primitives/PillValue";
 import { TierTag } from "../primitives/TierTag";
-import { CURRENT_MEMBER, TIERS, tierForDeposit, type Lesson } from "@/lib/academy-data";
+import { TIERS, type Lesson } from "@/lib/academy-data";
+import { useMemberState } from "@/hooks/useMemberState";
 import { useCompletedLessons } from "@/hooks/useCompletedLessons";
 import { CheckCircle2, Lock, PlayCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -11,7 +12,7 @@ function difficulty(tier: Lesson["tier"]): number {
 }
 
 export function LessonRow({ lesson }: { lesson: Lesson }) {
-  const memberTier = tierForDeposit(CURRENT_MEMBER.deposit);
+  const memberTier = useMemberState().currentTier;
   const memberRank = memberTier ? TIERS.findIndex((t) => t.key === memberTier.key) : -1;
   const locked = TIERS.findIndex((t) => t.key === lesson.tier) > memberRank;
   const { isCompleted, toggle } = useCompletedLessons();

@@ -2,7 +2,6 @@ import { useState } from "react";
 import { CheckCircle2, Link2, Loader2, Send } from "lucide-react";
 import { Card } from "@/components/academy/primitives/Card";
 import { useMemberState } from "@/hooks/useMemberState";
-import { CURRENT_MEMBER } from "@/lib/academy-data";
 import { cn } from "@/lib/utils";
 import { functionUrl } from "@/integrations/supabase/functions-url";
 
@@ -35,7 +34,7 @@ export function TelegramConnectCard() {
       const res = await fetch(FN_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: CURRENT_MEMBER.email }),
+        body: JSON.stringify({ email: state.profile.email }),
       });
       const data = await res.json();
       if (res.ok && data?.url) url = data.url;
