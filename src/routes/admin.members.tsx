@@ -1,9 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { Search } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Search, Loader2, Users } from "lucide-react";
 import { AdminPageHeader } from "@/components/academy/admin/AdminShell";
-import { ADMIN_MEMBERS, type AdminMember } from "@/lib/admin-data";
-import { TIERS } from "@/lib/academy-data";
+import { supabase } from "@/integrations/supabase/client";
+import { TIERS, type TierKey } from "@/lib/academy-data";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +13,75 @@ export const Route = createFileRoute("/admin/members")({
 });
 
 type SortKey = "name" | "deposit" | "monthlyLots" | "joinedAt";
+
+// Shape the table UI needs — mapped from the `members` DB row (snake_case).
+interface Member {
+  id: string;
+  name: string;
+  email: string;
+  deposit: number;
+  monthlyLots: number;
+  joinedAt: string;
+  tier: TierKey | null;
+  active: boolean;
+  telegramHandle: string | null;
+  affiliate: string | null;
+}
+
+// Live members from Supabase. Until the DB has rows — or if the query fails —
+// we fall back to an empty list, never to fake demo numbers.
+function useMembers() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [rows, setRows] = useState<Member[]>([]);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const client = supabase as unknown as {
+        from: (t: string) => {
+          select: (c: string) => {
+            order: (
+              col: string,
+              opts: { ascending: boolean },
+            ) => Promise<{ data: Record<string, unknown>[] | null; error: { message: string } | null }>;
+          };
+        };
+      };
+      const { data, error } = await client
+        .from("members")
+        .select("*")
+        .order("created_at", { ascending: false });
+      if (!alive) return;
+      if (error) {
+        setRows([]);
+        setError(error.message);
+        setLoading(false);
+        return;
+      }
+      const mapped: Member[] = (data ?? []).map((r) => ({
+        id: String(r.id),
+        name: String(r.name ?? r.email ?? "—"),
+        email: String(r.email ?? ""),
+        deposit: Number(r.deposit ?? 0),
+        monthlyLots: Number(r.monthly_lots ?? 0),
+        joinedAt: String(r.joined_at ?? r.created_at ?? "").slice(0, 10),
+        tier: (r.tier as TierKey | null) ?? null,
+        active: Boolean(r.active),
+        telegramHandle: (r.telegram_handle as string | null) ?? null,
+        affiliate: (r.affiliate_slug as string | null) ?? null,
+      }));
+      setRows(mapped);
+      setError(null);
+      setLoading(false);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  return { loading, error, rows };
+}
 
 const TIER_COLORS: Record<string, string> = {
   foundation: "oklch(0.78 0.16 150)",
@@ -35,6 +104,7 @@ function TierPill({ tier }: { tier: string | null }) {
 }
 
 function AdminMembers() {
+  const { loading, error, rows } = useMembers();
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("joinedAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
@@ -44,7 +114,7 @@ function AdminMembers() {
     else { setSortKey(k); setSortDir("desc"); }
   }
 
-  const filtered = ADMIN_MEMBERS
+  const filtered = rows
     .filter((m) =>
       m.name.toLowerCase().includes(search.toLowerCase()) ||
       m.email.toLowerCase().includes(search.toLowerCase()),
@@ -80,6 +150,12 @@ function AdminMembers() {
         sub={`${filtered.length} members · ${active} active · ${formatMoney(totalDeposit, "€")} total`}
       />
 
+      {error && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+          Daten konnten nicht geladen werden: {error}
+        </div>
+      )}
+
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
@@ -105,7 +181,7 @@ function AdminMembers() {
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
-            {filtered.map((m: AdminMember) => (
+            {filtered.map((m: Member) => (
               <tr key={m.id} className="group hover:bg-white/[0.03] transition-colors">
                 <td className="py-3 pl-4 pr-2">
                   <div className="flex items-center gap-2.5">
@@ -130,12 +206,27 @@ function AdminMembers() {
                   </span>
                 </td>
                 <td className="py-3 pl-4 text-xs text-muted-foreground">{m.affiliate ?? "—"}</td>
-                <td className="py-3 pl-4 text-xs text-muted-foreground">{m.joinedAt}</td>
+                <td className="py-3 pl-4 text-xs text-muted-foreground">{m.joinedAt || "—"}</td>
               </tr>
             ))}
           </tbody>
         </table>
-        {filtered.length === 0 && (
+
+        {loading && (
+          <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Lade Members…
+          </div>
+        )}
+
+        {!loading && rows.length === 0 && (
+          <div className="flex flex-col items-center gap-2 py-14 text-center">
+            <Users className="h-6 w-6 text-muted-foreground/60" />
+            <div className="text-sm text-muted-foreground">Noch keine Members.</div>
+            <div className="text-[11px] text-muted-foreground/70">Noch keine Daten — sobald sich Kunden registrieren, erscheinen sie hier.</div>
+          </div>
+        )}
+
+        {!loading && rows.length > 0 && filtered.length === 0 && (
           <div className="py-12 text-center text-sm text-muted-foreground">No members match your search.</div>
         )}
       </div>

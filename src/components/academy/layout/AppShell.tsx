@@ -3,22 +3,25 @@ import { Sidebar } from "./Sidebar";
 import { TopNav } from "./TopNav";
 import { RightRail } from "./RightRail";
 import { MobileNav } from "./MobileNav";
+import { RegistrationGate } from "@/components/academy/onboarding/RegistrationGate";
 
 export function AppShell() {
   // No key on the Outlet wrapper: keying by pathname remounted the whole
   // page tree on every navigation (images refetch, animations replay),
   // which read as a "full reload" flash on each click.
   return (
-    <div className="min-h-screen p-3 pb-24 lg:p-4 lg:pb-4">
-      <div className="flex gap-6">
-        <Sidebar />
-        <main className="min-w-0 flex-1 overflow-x-hidden">
-          <TopNav />
-          <Outlet />
-        </main>
-        <RightRail />
+    <RegistrationGate>
+      <div className="min-h-screen p-3 pb-24 lg:p-4 lg:pb-4">
+        <div className="flex gap-6">
+          <Sidebar />
+          <main className="min-w-0 flex-1 overflow-x-hidden">
+            <TopNav />
+            <Outlet />
+          </main>
+          <RightRail />
+        </div>
+        <MobileNav />
       </div>
-      <MobileNav />
-    </div>
+    </RegistrationGate>
   );
 }
