@@ -44,6 +44,13 @@ async function resendSend(payload: Record<string, unknown>) {
 
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
+
+  // Guard against an open relay: if SEND_SECRET is set, require it.
+  const guard = Deno.env.get("SEND_SECRET");
+  if (guard && req.headers.get("x-send-secret") !== guard) {
+    return json({ error: "unauthorized" }, 401);
+  }
+
   let b: Record<string, unknown>;
   try { b = await req.json(); } catch { return json({ error: "invalid json" }, 400); }
 
