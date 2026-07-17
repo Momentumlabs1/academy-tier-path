@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { AdminPageHeader, AdminKpiCard } from "@/components/academy/admin/AdminShell";
+import { CreatePartnerForm } from "@/components/academy/admin/CreatePartnerForm";
 import { useAdminStats } from "@/hooks/useAdminStats";
 import { formatMoney } from "@/lib/format";
 import {
@@ -32,6 +33,8 @@ function AdminStructure() {
         title="Gesamtstruktur"
         sub="Stammbaum: Master → Partner-Marken → Kunden. Alles läuft zentral über euren Baum."
       />
+
+      <CreatePartnerForm />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <AdminKpiCard label="Partner-Marken" value={totals.partners} icon={Building2} />
