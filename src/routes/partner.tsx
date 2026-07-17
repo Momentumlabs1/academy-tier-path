@@ -11,7 +11,7 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
-import { BarChart3, Loader2, LogOut, MousePointerClick, TrendingUp, Users, Wallet } from "lucide-react";
+import { BarChart3, Check, Copy, ExternalLink, Eye, Loader2, LogOut, MousePointerClick, TrendingUp, Users, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ADMIN_EMAIL } from "@/lib/admin-auth";
 import { COMMISSION_LADDER, levelForVolume, volumeToNextLevel } from "@/lib/commission";
@@ -131,6 +131,11 @@ function PartnerCard({ row }: { row: PartnerRow }) {
   const toNext = volumeToNextLevel(row.partner_volume);
   const rateLabel = isPercent ? `${row.partner_rate}%` : `${row.partner_rate} $/Lot`;
 
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://cosmos-candles.com";
+  const shareUrl = `${origin}/${row.slug}`;
+  const [copied, setCopied] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+
   const stats = [
     { label: "Klicks", value: row.clicks.toLocaleString("de-AT"), icon: MousePointerClick },
     { label: "Leads", value: row.leads.toLocaleString("de-AT"), icon: BarChart3 },
@@ -148,6 +153,33 @@ function PartnerCard({ row }: { row: PartnerRow }) {
         <div className="text-right">
           <div className="text-2xl font-bold text-primary">{rateLabel}</div>
           <div className="text-[11px] text-muted-foreground">deine Vergütung</div>
+        </div>
+      </div>
+
+      {/* Dein teilbarer Link — genau den schickst du raus. */}
+      <div className="mb-5 flex flex-col gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 sm:flex-row sm:items-center">
+        <div className="min-w-0 flex-1">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary/80">Dein Link</div>
+          <div className="truncate font-mono text-sm">{shareUrl}</div>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => {
+              if (typeof navigator !== "undefined" && navigator.clipboard) {
+                navigator.clipboard.writeText(shareUrl).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); });
+              }
+            }}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90"
+          >
+            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+            {copied ? "Kopiert" : "Kopieren"}
+          </button>
+          <a
+            href={shareUrl} target="_blank" rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold hover:bg-white/[0.08]"
+          >
+            Öffnen <ExternalLink className="h-3.5 w-3.5" />
+          </a>
         </div>
       </div>
 
@@ -187,6 +219,47 @@ function PartnerCard({ row }: { row: PartnerRow }) {
           </div>
         </div>
       )}
+
+      {/* Vorschau deiner Seite — genau das, was deine Kunden über den Link sehen (nur Ansicht). */}
+      <div className="mt-5 rounded-xl border border-white/5 bg-white/[0.02] p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <Eye className="h-4 w-4 text-primary" /> Deine Seite
+          </div>
+          <button
+            onClick={() => setShowPreview((v) => !v)}
+            className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold hover:bg-white/[0.08]"
+          >
+            {showPreview ? "Ausblenden" : "Vorschau anzeigen"}
+          </button>
+        </div>
+        {showPreview && (
+          <div className="mt-3">
+            <div className="overflow-hidden rounded-xl border border-white/10 bg-black">
+              {/* Browser-Mock-Leiste */}
+              <div className="flex items-center gap-1.5 border-b border-white/10 bg-white/[0.04] px-3 py-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-red-400/60" />
+                <span className="h-2.5 w-2.5 rounded-full bg-amber-400/60" />
+                <span className="h-2.5 w-2.5 rounded-full bg-green-400/60" />
+                <span className="ml-2 truncate font-mono text-[11px] text-muted-foreground">{shareUrl}</span>
+              </div>
+              {/* Live-Vorschau (nur Ansicht) */}
+              <div className="relative h-[420px] w-full overflow-hidden">
+                <iframe
+                  src={`/${row.slug}`}
+                  title={`Vorschau ${row.name}`}
+                  className="absolute left-0 top-0 origin-top-left"
+                  style={{ width: "133.33%", height: "133.33%", transform: "scale(0.75)", border: "0" }}
+                  loading="lazy"
+                />
+              </div>
+            </div>
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              Nur Ansicht — Bearbeiten deiner Seite kommt später. Über deinen Link registrieren sich Kunden automatisch unter dir.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
