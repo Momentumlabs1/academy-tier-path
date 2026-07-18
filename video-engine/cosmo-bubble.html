@@ -1,0 +1,33 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0}canvas{position:absolute;left:0;top:0}</style></head>
+<body><canvas id="c" width="400" height="400"></canvas><script>
+const X=document.getElementById('c').getContext('2d');const S=400,cx=200,cy=196,r=150;
+let IMG=null;
+window.setFrame=async(i)=>{
+  if(!IMG){IMG=await new Promise(res=>{const im=new Image();im.onload=()=>res(im);im.src='cosmo_key.png';});}
+  const N=90,ph=i/N*2*Math.PI;
+  const breathe=1+0.018*Math.sin(ph);        // subtle zoom/breathing
+  const glow=0.5+0.5*Math.sin(ph);
+  X.clearRect(0,0,S,S);
+  // outer soft glow ring (breathes)
+  X.save();const R2=r+10+14*glow;const hg=X.createRadialGradient(cx,cy,r,cx,cy,R2);
+  hg.addColorStop(0,'rgba(182,240,74,'+(0.28+0.28*glow)+')');hg.addColorStop(1,'rgba(182,240,74,0)');
+  X.beginPath();X.arc(cx,cy,R2,0,7);X.arc(cx,cy,r,0,7,true);X.fillStyle=hg;X.fill('evenodd');X.restore();
+  // dark backing disc
+  X.beginPath();X.arc(cx,cy,r+3,0,7);X.fillStyle='#0b0f16';X.fill();
+  // clip circle, draw COSMO (scaled to fill + breathing)
+  X.save();X.beginPath();X.arc(cx,cy,r,0,7);X.clip();
+  const base=r*2*1.28*breathe;               // fill circle, head+shoulders
+  X.drawImage(IMG,cx-base/2,cy-base/2*0.92-8,base,base);
+  X.restore();
+  // rim ring
+  X.strokeStyle='rgba(182,240,74,0.95)';X.lineWidth=4;X.beginPath();X.arc(cx,cy,r+2,0,7);X.stroke();
+  X.strokeStyle='rgba(255,255,255,0.10)';X.lineWidth=2;X.beginPath();X.arc(cx,cy,r-1,0,7);X.stroke();
+  // name tag
+  const pw=150,ph2=38,px=cx-pw/2,py=cy+r+16;
+  X.fillStyle='#0e141d';X.strokeStyle='rgba(182,240,74,0.55)';X.lineWidth=1.5;
+  X.beginPath();X.moveTo(px+11,py);X.arcTo(px+pw,py,px+pw,py+ph2,11);X.arcTo(px+pw,py+ph2,px,py+ph2,11);X.arcTo(px,py+ph2,px,py,11);X.arcTo(px,py,px+pw,py,11);X.closePath();X.fill();X.stroke();
+  X.fillStyle='#eef2f6';X.font='800 20px system-ui,Arial';X.textAlign='center';X.textBaseline='middle';X.fillText('COSMO',cx,py+ph2/2+1);
+  return true;
+};
+window.__ready=true;setFrame(0);
+</script></body></html>
