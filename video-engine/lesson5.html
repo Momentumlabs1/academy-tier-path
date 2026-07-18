@@ -1,0 +1,271 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#070a10}canvas{position:absolute;left:0;top:0}</style>
+</head><body><canvas id="cv" width="1920" height="1080"></canvas><script>
+const X=document.getElementById('cv').getContext('2d');const W=1920,H=1080;
+const BG='#070a10',INK='#eaf2f8',MUT='#8b98a8',DIM='#5a6a80',LIME='#b6f04a',CYAN='#39d0d0',MAG='#e06bd8',RED='#ff5470',GRN='#33e08a',GOLD='#ffcf5c';
+const SANS='system-ui,-apple-system,"Segoe UI",Roboto,sans-serif',MONO='ui-monospace,"SF Mono",Menlo,monospace';
+const P=Math.round;let T=0;
+const clamp=(u,a,b)=>u<a?a:u>b?b:u;
+const es=u=>{u=clamp(u,0,1);return u<.5?4*u*u*u:1-Math.pow(-2*u+2,3)/2;};
+const eo=u=>{u=clamp(u,0,1);return 1-Math.pow(1-u,3);};
+const bo=u=>{u=clamp(u,0,1);const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(u-1,3)+c1*Math.pow(u-1,2);};
+const hexA=(h,a)=>{const n=parseInt(h.slice(1),16);return`rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;};
+const rr=(x,y,w,h,r)=>{x=P(x);y=P(y);w=P(w);h=P(h);X.beginPath();X.moveTo(x+r,y);X.arcTo(x+w,y,x+w,y+h,r);X.arcTo(x+w,y+h,x,y+h,r);X.arcTo(x,y+h,x,y,r);X.arcTo(x,y,x+w,y,r);X.closePath();};
+const rnd=s=>{s=Math.sin(s*127.1)*43758.5453;return s-Math.floor(s);};
+const sA=(t0,t1)=>{const i=clamp((T-t0)/0.4,0,1),o=clamp((t1-T)/0.4,0,1);return Math.max(0,Math.min(i,o));};
+const rv=(t0,d)=>es(clamp((T-t0)/(d||0.5),0,1));
+const ry=(t0,d)=>{const u=clamp((T-t0)/(d||0.55),0,1);return (1-bo(u))*22;};
+function pbox(x,y,w,h,col,a){X.fillStyle='rgba(12,18,26,0.5)';rr(x,y,w,h,18);X.fill();X.strokeStyle=hexA(col,a==null?0.5:a);X.lineWidth=2;rr(x,y,w,h,18);X.stroke();}
+function kick(txt,x,y,col){X.save();X.fillStyle=col;X.font='800 26px '+MONO;X.textAlign='left';X.textBaseline='alphabetic';X.fillText('● '+txt,P(x),P(y));X.restore();}
+function chkIcon(cx,cy,good,col,r){r=r||16;X.save();X.translate(P(cx),P(cy));X.fillStyle=col;X.beginPath();X.arc(0,0,r,0,7);X.fill();X.strokeStyle='#0a0e10';X.lineWidth=3.5;X.lineCap='round';X.lineJoin='round';
+  if(good){X.beginPath();X.moveTo(-r*0.42,0);X.lineTo(-r*0.1,r*0.38);X.lineTo(r*0.5,-r*0.44);X.stroke();}else{X.beginPath();X.moveTo(-r*0.4,-r*0.4);X.lineTo(r*0.4,r*0.4);X.moveTo(r*0.4,-r*0.4);X.lineTo(-r*0.4,r*0.4);X.stroke();}X.restore();}
+function bg(){X.fillStyle=BG;X.fillRect(0,0,W,H);
+  X.save();X.globalAlpha=0.045;X.strokeStyle='#5a6a80';X.lineWidth=1;const ox=P((T*8)%80);
+  for(let x=-80+ox;x<W;x+=80){X.beginPath();X.moveTo(P(x)+0.5,0);X.lineTo(P(x)+0.5,H);X.stroke();}
+  for(let y=0;y<H;y+=80){X.beginPath();X.moveTo(0,y+0.5);X.lineTo(W,y+0.5);X.stroke();}X.restore();
+  [[360,300,CYAN],[1560,760,MAG],[1180,220,LIME]].forEach((o,i)=>{const ph=T*0.2+i*2.1;const gx=o[0]+Math.sin(ph)*50,gy=o[1]+Math.cos(ph*0.8)*38;
+    const g=X.createRadialGradient(gx,gy,0,gx,gy,540);g.addColorStop(0,hexA(o[2],0.07));g.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=g;X.fillRect(gx-540,gy-540,1080,1080);});}
+function vignette(){const g=X.createRadialGradient(W/2,H/2,H*0.4,W/2,H/2,H*0.9);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,0.5)');X.fillStyle=g;X.fillRect(0,0,W,H);}
+function cap(txt,col,t0,t1){const a=sA(t0,t1);if(a<=0)return;X.save();X.globalAlpha=a;X.textAlign='center';X.textBaseline='middle';
+  const y=H-112;X.font='800 38px '+SANS;const w=X.measureText(txt).width+76;X.fillStyle='#0c1420';rr(W/2-w/2,y-38,w,76,16);X.fill();
+  X.strokeStyle=hexA(col,0.7);X.lineWidth=2;rr(W/2-w/2,y-38,w,76,16);X.stroke();X.fillStyle=INK;X.fillText(txt,P(W/2),P(y));X.restore();}
+function wrapText(txt,x,y,maxw,lh){const ws=txt.split(' ');let line='',yy=y;const lines=[];
+  for(const w of ws){const t=line?line+' '+w:w;if(X.measureText(t).width>maxw&&line){lines.push(line);line=w;}else line=t;}lines.push(line);
+  const sy=y-(lines.length-1)*lh/2;lines.forEach((l,i)=>X.fillText(l,P(x),P(sy+i*lh)));}
+function wrapC(txt,cx,y,maxw,lh){X.textAlign='center';const ws=txt.split(' ');let line='';const lines=[];
+  for(const w of ws){const t=line?line+' '+w:w;if(X.measureText(t).width>maxw&&line){lines.push(line);line=w;}else line=t;}lines.push(line);
+  const sy=y-(lines.length-1)*lh/2;lines.forEach((l,i)=>X.fillText(l,P(cx),P(sy+i*lh)));}
+function wrapL(txt,x,y,maxw,lh){X.textAlign='left';const ws=txt.split(' ');let line='';const lines=[];
+  for(const w of ws){const t=line?line+' '+w:w;if(X.measureText(t).width>maxw&&line){lines.push(line);line=w;}else line=t;}lines.push(line);
+  lines.forEach((l,i)=>X.fillText(l,P(x),P(y+i*lh)));}
+
+// helper: draw a candle
+function candle(cx,yTop,yBot,bodyTop,bodyBot,wbody,col){X.strokeStyle=col;X.lineWidth=3;X.beginPath();X.moveTo(P(cx)+0.5,P(yTop));X.lineTo(P(cx)+0.5,P(yBot));X.stroke();
+  X.fillStyle=col;rr(cx-wbody/2,bodyTop,wbody,bodyBot-bodyTop,4);X.fill();}
+
+// ---------- SCENE 1: TITLE 0-27 ----------
+function scTitle(){const a=sA(0,26.9);if(a<=0)return;X.save();X.globalAlpha=a;X.textAlign='center';X.textBaseline='middle';
+  const kk=rv(0.2,0.5);if(kk>0){X.fillStyle=CYAN;X.font='800 30px '+MONO;X.fillText('● LESSON 5',P(W/2),P(H/2-232+(1-kk)*20));}
+  // cold-open hook: "Understand the cause, not just the result."
+  const h1=rv(4.84,0.6);if(h1>0){X.save();X.globalAlpha*=Math.min(1,h1);X.fillStyle=MUT;X.font='600 34px '+SANS;
+    X.fillText('Last lesson: understand the cause — not just the result.',P(W/2),P(H/2-150));X.restore();}
+  // main title
+  X.font='900 130px '+SANS;const lines=['WHAT IS','LEVEL 2 DATA?'];
+  lines.forEach((l,i)=>{const lu=rv(17.4+i*0.35,0.7);if(lu<=0)return;X.save();X.globalAlpha*=Math.min(1,lu*1.2);
+    X.fillStyle=i===1?CYAN:INK;if(i===1){X.shadowColor=hexA(CYAN,0.5);X.shadowBlur=30;}
+    X.fillText(l,P(W/2),P(H/2-30+i*128+(1-bo(lu))*40));X.restore();});
+  const su=rv(22.42,0.6);if(su>0){X.save();X.globalAlpha*=Math.min(1,su);X.fillStyle=LIME;X.font='700 40px '+SANS;
+    X.fillText('Once you see markets this way — you can\'t unsee it.',P(W/2),P(H/2+180));X.restore();}
+  X.restore();}
+
+// ---------- SCENE 2: INVENTORY 27-47 ----------
+function scInventory(){const a=sA(26.9,47.2);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('AN HONEST INVENTORY',150,140,MUT);X.textAlign='center';X.textBaseline='middle';
+  const u0=rv(31.4,0.5);if(u0>0){X.save();X.globalAlpha*=Math.min(1,u0);X.fillStyle=INK;X.font='800 42px '+SANS;
+    X.fillText('Open any beginner chart — you find the same four things',P(W/2),P(230));X.restore();}
+  const items=[[35.7,'Candles',CYAN],[36.42,'Support zones',GRN],[37.6,'Resistance zones',RED],[39.46,'A couple of indicators',GOLD]];
+  items.forEach((it,i)=>{const u=rv(it[0],0.5);if(u<=0)return;const x=170+i*440;const y=340;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(it[0]));
+    pbox(x,y,400,340,it[1],0.6);
+    // mini illustration inside
+    X.save();X.beginPath();rr(x+30,y+30,340,180,12);X.clip();X.fillStyle=hexA(it[1],0.06);X.fillRect(x+30,y+30,340,180);
+    if(i===0){for(let k=0;k<5;k++){const bx=x+70+k*60;const up=k%2===0;const col=up?GRN:RED;candle(bx,y+50,y+190,y+80+(up?0:40),y+150-(up?40:0),24,col);}}
+    if(i===1){X.strokeStyle=GRN;X.lineWidth=3;X.setLineDash([8,6]);X.beginPath();X.moveTo(x+40,y+170);X.lineTo(x+360,y+170);X.stroke();X.setLineDash([]);X.fillStyle=hexA(GRN,0.14);X.fillRect(x+40,y+160,320,30);}
+    if(i===2){X.strokeStyle=RED;X.lineWidth=3;X.setLineDash([8,6]);X.beginPath();X.moveTo(x+40,y+55);X.lineTo(x+360,y+55);X.stroke();X.setLineDash([]);X.fillStyle=hexA(RED,0.14);X.fillRect(x+40,y+45,320,30);}
+    if(i===3){X.strokeStyle=GOLD;X.lineWidth=3;X.beginPath();for(let k=0;k<40;k++){const px=x+40+k*8;const py=y+120+Math.sin(k*0.6+T*2)*36;k===0?X.moveTo(px,py):X.lineTo(px,py);}X.stroke();}
+    X.restore();
+    X.fillStyle=it[1];X.font='800 34px '+SANS;X.textBaseline='middle';X.textAlign='center';X.fillText(it[2],P(x+200),P(y+270));
+    X.fillStyle=MUT;X.font='800 28px '+MONO;X.fillText('#'+(i+1),P(x+200),P(y+318));X.restore();});
+  X.restore();}
+
+// ---------- SCENE 3: HISTORY BOOK 47-62.5 ----------
+function scHistory(){const a=sA(47.2,62.5);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('THE REALITY CHECK',150,140,RED);X.textAlign='center';X.textBaseline='middle';
+  const u0=rv(47.76,0.6);if(u0>0){X.save();X.globalAlpha*=Math.min(1,u0*1.2);X.fillStyle=INK;X.font='900 66px '+SANS;
+    X.fillText('The chart is a HISTORY BOOK',P(W/2),P(260));X.restore();}
+  const u1=rv(49.88,0.6);if(u1>0){X.save();X.globalAlpha*=Math.min(1,u1);X.fillStyle=MUT;X.font='600 34px '+SANS;
+    X.fillText('It only shows the end result of a fight between buyers and sellers — that\'s already over',P(W/2),P(340));X.restore();}
+  // football analogy: scoreboard
+  const u2=rv(56.62,0.6);if(u2>0){X.save();X.globalAlpha*=Math.min(1,u2*1.2);X.translate(0,ry(56.62));
+    pbox(W/2-380,430,760,300,GOLD,0.7);
+    X.fillStyle=GOLD;X.font='700 26px '+MONO;X.textBaseline='alphabetic';X.textAlign='center';X.fillText('FINAL SCORE',P(W/2),P(490));
+    X.fillStyle=INK;X.font='900 130px '+MONO;X.textBaseline='middle';X.fillText('2 — 1',P(W/2),P(590));
+    X.fillStyle=MUT;X.font='600 30px '+SANS;X.fillText('You saw the score — but not a single minute of the match',P(W/2),P(690));X.restore();}
+  X.restore();}
+
+// ---------- SCENE 4: SINGLE CANDLE 62.5-99 ----------
+function scCandle(){const a=sA(62.5,99.5);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('ONE CANDLE, TWO READINGS',150,140,CYAN);
+  // the candle center
+  const cu=rv(65.98,0.6);if(cu>0){X.save();X.globalAlpha*=Math.min(1,cu*1.2);const cx=W/2,top=250,bot=760;
+    const grow=eo(clamp((T-65.98)/1.4,0,1));const bodyBot=bot-40;const bodyTop=bodyBot-grow*(bodyBot-top-40);
+    X.strokeStyle=GRN;X.lineWidth=4;X.beginPath();X.moveTo(cx+0.5,bot);X.lineTo(cx+0.5,top);X.stroke();
+    X.fillStyle=GRN;X.shadowColor=hexA(GRN,0.5);X.shadowBlur=24;rr(cx-46,bodyTop,92,bodyBot-bodyTop,8);X.fill();X.shadowBlur=0;
+    X.fillStyle='#0a0e10';X.font='800 22px '+MONO;X.textAlign='center';X.textBaseline='middle';X.fillText('CLOSE',P(cx),P(bodyTop+30));X.restore();}
+  // left panel: naive reading
+  const nu=rv(72.4,0.5);if(nu>0){X.save();X.globalAlpha*=Math.min(1,nu*1.2);X.translate(0,ry(72.4));
+    pbox(150,300,520,420,MUT,0.5);X.fillStyle=DIM;X.font='800 24px '+MONO;X.textAlign='left';X.textBaseline='alphabetic';X.fillText('NAIVE READING',P(190),P(360));
+    X.fillStyle=MUT;X.font='900 54px '+SANS;X.fillText('"Price went up."',P(190),P(440));
+    chkIcon(210,510,false,RED,15);X.fillStyle=INK;X.font='600 28px '+SANS;X.textBaseline='middle';X.fillText('Technically true',P(245),P(510));
+    chkIcon(210,570,false,RED,15);X.fillText('Completely useless',P(245),P(570));X.restore();}
+  // right panel: real reading
+  const ru=rv(79.5,0.5);if(ru>0){X.save();X.globalAlpha*=Math.min(1,ru*1.2);X.translate(0,ry(79.5));
+    pbox(1250,300,520,420,CYAN,0.7);X.fillStyle=CYAN;X.font='800 24px '+MONO;X.textAlign='left';X.textBaseline='alphabetic';X.fillText('REAL READING',P(1290),P(360));
+    X.fillStyle=INK;X.font='800 34px '+SANS;X.textBaseline='middle';wrapL('Buyers were more aggressive than sellers',1290,415,450,42);
+    const b1=rv(85.98,0.5);if(b1>0){X.save();X.globalAlpha*=Math.min(1,b1);chkIcon(1310,540,true,CYAN,15);X.fillStyle=INK;X.font='600 27px '+SANS;wrapL('They lifted every offer in their way',1345,540,400,32);X.restore();}
+    const b2=rv(92.94,0.5);if(b2>0){X.save();X.globalAlpha*=Math.min(1,b2);chkIcon(1310,630,true,CYAN,15);X.fillStyle=INK;X.font='600 27px '+SANS;wrapL('Tells you about the people behind the move',1345,630,400,32);X.restore();}
+    X.restore();}
+  X.restore();}
+
+// ---------- SCENE 5: WHAT vs WHY 99.5-116.8 ----------
+function scWhy(){const a=sA(99.5,116.8);if(a<=0)return;X.save();X.globalAlpha=a;X.textAlign='center';X.textBaseline='middle';
+  kick('CHART READERS vs MARKET READERS',W/2-330,140,MAG);
+  const u1=rv(107.44,0.6);if(u1>0){X.save();X.globalAlpha*=Math.min(1,u1*1.2);X.translate(0,ry(107.44));
+    pbox(W/2-640,320,600,260,MUT,0.5);X.fillStyle=MUT;X.font='800 30px '+SANS;X.fillText('The chart shows you',P(W/2-340),P(410));
+    X.fillStyle=INK;X.font='900 78px '+SANS;X.fillText('WHAT',P(W/2-340),P(490));X.restore();}
+  const u2=rv(110.34,0.6);if(u2>0){X.save();X.globalAlpha*=Math.min(1,u2*1.2);X.translate(0,ry(110.34));
+    pbox(W/2+40,320,600,260,RED,0.7);X.fillStyle=MUT;X.font='800 30px '+SANS;X.fillText('It never, ever shows you',P(W/2+340),P(410));
+    X.fillStyle=RED;X.font='900 78px '+SANS;X.shadowColor=hexA(RED,0.4);X.shadowBlur=22;X.fillText('WHY',P(W/2+340),P(490));X.restore();}
+  const u3=rv(113.02,0.5);if(u3>0){X.save();X.globalAlpha*=Math.min(1,u3);X.fillStyle=MUT;X.font='600 32px '+SANS;
+    X.fillText('happened … it happened',P(W/2),P(670));X.restore();}
+  X.restore();}
+
+// ---------- SCENE 6: SUPPLY & DEMAND 116.8-140.3 ----------
+function scMechanism(){const a=sA(116.8,140.3);if(a<=0)return;X.save();X.globalAlpha=a;X.textAlign='center';X.textBaseline='middle';
+  kick('DOWN TO THE FOUNDATION',W/2-210,140,LIME);
+  const u0=rv(122.42,0.5);if(u0>0){X.save();X.globalAlpha*=Math.min(1,u0);X.fillStyle=MUT;X.font='700 30px '+SANS;
+    X.fillText('Stocks · Forex · Crypto · oranges at a street market',P(W/2),P(250));X.restore();}
+  const u1=rv(129.66,0.6);if(u1>0){X.save();X.globalAlpha*=Math.min(1,u1);X.fillStyle=INK;X.font='800 40px '+SANS;
+    X.fillText('Every market runs on exactly ONE mechanism',P(W/2),P(340));X.restore();}
+  // supply vs demand scale
+  const u2=rv(131.78,0.6);if(u2>0){X.save();X.globalAlpha*=Math.min(1,u2*1.2);X.translate(0,ry(131.78));
+    pbox(W/2-560,430,540,240,GRN,0.7);X.fillStyle=GRN;X.font='900 66px '+SANS;X.fillText('DEMAND',P(W/2-290),P(535));
+    X.fillStyle=MUT;X.font='700 28px '+SANS;X.fillText('buyers',P(W/2-290),P(610));
+    X.fillStyle=INK;X.font='900 60px '+SANS;X.fillText('vs',P(W/2),P(550));
+    pbox(W/2+20,430,540,240,RED,0.7);X.fillStyle=RED;X.font='900 66px '+SANS;X.fillText('SUPPLY',P(W/2+290),P(535));
+    X.fillStyle=MUT;X.font='700 28px '+SANS;X.fillText('sellers',P(W/2+290),P(610));X.restore();}
+  const u3=rv(134.92,0.5);if(u3>0){X.save();X.globalAlpha*=Math.min(1,u3);X.fillStyle=LIME;X.font='800 36px '+SANS;
+    X.fillText('That\'s it. Everything else is decoration.',P(W/2),P(760));X.restore();}
+  X.restore();}
+
+// ---------- SCENE 7: THREE STATES 140.3-176.7 ----------
+function scStates(){const a=sA(140.3,176.7);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('THE MECHANISM KNOWS 3 STATES',150,140,INK);X.textBaseline='middle';
+  const st=[[140.34,'BUYERS DOMINATE',GRN,'Demand eats through supply — price RISES',1],
+            [148.82,'BALANCE',GOLD,'Evenly matched — market chops SIDEWAYS',0],
+            [157.2,'SELLERS DOMINATE',RED,'Supply overwhelms demand — price FALLS',-1]];
+  st.forEach((s,i)=>{const u=rv(s[0],0.5);if(u<=0)return;const x=150+i*570;const y=250;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(s[0]));
+    pbox(x,y,520,470,s[2],0.7);
+    X.fillStyle=s[2];X.font='800 28px '+MONO;X.textAlign='left';X.textBaseline='alphabetic';X.fillText('STATE '+(i+1),P(x+40),P(y+60));
+    X.fillStyle=INK;X.font='900 40px '+SANS;X.fillText(s[1],P(x+40),P(y+115));
+    // arrow illustration
+    const ax=x+260,ay=y+280;X.save();X.strokeStyle=s[2];X.lineWidth=10;X.lineCap='round';X.lineJoin='round';
+    if(s[4]===1){X.beginPath();X.moveTo(ax-80,ay+70);X.lineTo(ax,ay-70);X.lineTo(ax+80,ay+70);X.stroke();}
+    else if(s[4]===-1){X.beginPath();X.moveTo(ax-80,ay-70);X.lineTo(ax,ay+70);X.lineTo(ax+80,ay-70);X.stroke();}
+    else{X.beginPath();X.moveTo(ax-90,ay-30);X.lineTo(ax+90,ay-30);X.moveTo(ax-90,ay+30);X.lineTo(ax+90,ay+30);X.stroke();}X.restore();
+    X.fillStyle=MUT;X.font='600 26px '+SANS;X.textBaseline='top';wrapL(s[3],x+40,y+370,440,32);X.restore();});
+  cap('Every chart is just these three states taking turns — nothing more',INK,170.2,176.6);
+  X.restore();}
+
+// ---------- SCENE 8: FOUR REAL THINGS 176.7-209.5 ----------
+function scFour(){const a=sA(176.7,209.5);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('WHAT ACTUALLY MOVES MARKETS',150,140,CYAN);X.textBaseline='middle';
+  // crossed-out fakes
+  const fakes=[[183.06,'Indicators'],[185.74,'Chart patterns'],[188.04,'Trendlines']];
+  fakes.forEach((f,i)=>{const u=rv(f[0],0.4);if(u<=0)return;const x=170;const y=250+i*80;X.save();X.globalAlpha*=Math.min(1,u);
+    X.fillStyle=DIM;X.font='700 38px '+SANS;X.textAlign='left';X.fillText(f[1],P(x),P(y));const tw=X.measureText(f[1]).width;
+    X.strokeStyle=RED;X.lineWidth=4;X.lineCap='round';X.beginPath();X.moveTo(x-6,y+4);X.lineTo(x+tw+10,y-6);X.stroke();
+    X.fillStyle=RED;X.font='700 26px '+SANS;X.fillText('never moved a tick',P(x+tw+40),P(y));X.restore();});
+  const u0=rv(191.18,0.5);if(u0>0){X.save();X.globalAlpha*=Math.min(1,u0);X.fillStyle=INK;X.font='800 34px '+SANS;X.textAlign='left';
+    X.fillText('Markets move on 4 REAL things:',P(170),P(560));X.restore();}
+  const reals=[[194.06,'Buy orders','hitting the book',CYAN],
+               [196.0,'Sell orders','hitting the book',MAG],
+               [198.46,'Liquidity','sitting at levels',GOLD],
+               [200.94,'Large players','pushing serious size',LIME]];
+  reals.forEach((r,i)=>{const u=rv(r[0],0.5);if(u<=0)return;const x=980;const y=250+i*130;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(r[0]));
+    pbox(x,y,820,110,r[3],0.7);
+    X.fillStyle=r[3];X.beginPath();X.arc(x+58,y+55,26,0,7);X.fill();X.fillStyle='#0a0e10';X.font='900 30px '+SANS;X.textAlign='center';X.textBaseline='middle';X.fillText(String(i+1),P(x+58),P(y+56));
+    X.fillStyle=INK;X.font='800 34px '+SANS;X.textAlign='left';X.fillText(r[1],P(x+110),P(y+42));
+    X.fillStyle=MUT;X.font='600 26px '+SANS;X.fillText(r[2],P(x+110),P(y+78));X.restore();});
+  X.restore();}
+
+// ---------- SCENE 9: THE QUESTIONS 209.5-249 ----------
+function scQuestions(){const a=sA(209.5,249.0);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('IT CHANGES THE QUESTIONS YOU ASK',150,140,MAG);X.textBaseline='middle';
+  // amateurs
+  const u0=rv(214.96,0.5);if(u0>0){X.save();X.globalAlpha*=Math.min(1,u0*1.2);X.translate(0,ry(214.96));
+    pbox(150,240,720,220,MUT,0.5);X.fillStyle=DIM;X.font='800 24px '+MONO;X.textAlign='left';X.textBaseline='alphabetic';X.fillText('MOST TRADERS ASK 1 QUESTION',P(190),P(300));
+    X.fillStyle=INK;X.font='900 56px '+SANS;X.fillText('Where is the price?',P(190),P(370));
+    X.fillStyle=MUT;X.font='600 26px '+SANS;X.fillText('like a detective asking only where the body is',P(190),P(425));X.restore();}
+  // pros
+  const qs=[[227.02,'Why is the price there?'],[228.86,'Who is moving it right now?'],[231.54,'Where is the liquidity — stop or fuel?']];
+  const uh=rv(224.04,0.5);if(uh>0){X.save();X.globalAlpha*=Math.min(1,uh);X.fillStyle=LIME;X.font='800 24px '+MONO;X.textAlign='left';X.textBaseline='alphabetic';X.fillText('PROFESSIONALS ASK 3 MORE',P(190),P(560));X.restore();}
+  qs.forEach((q,i)=>{const u=rv(q[0],0.5);if(u<=0)return;const y=600+i*120;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(q[0]));
+    pbox(150,y,1130,100,LIME,0.7);
+    X.fillStyle=LIME;X.font='900 40px '+SANS;X.textAlign='center';X.textBaseline='middle';X.fillText(String(i+1),P(210),P(y+50));
+    X.fillStyle=INK;X.font='800 40px '+SANS;X.textAlign='left';X.fillText(q[1],P(280),P(y+50));X.restore();});
+  // core line
+  const uc=rv(241.76,0.6);if(uc>0){X.save();X.globalAlpha*=Math.min(1,uc*1.2);X.translate(0,ry(241.76));
+    pbox(1340,320,460,540,CYAN,0.7);X.fillStyle=CYAN;X.font='700 22px '+MONO;X.textAlign='left';X.textBaseline='alphabetic';X.fillText('CORE OF THIS LESSON',P(1375),P(375));
+    X.textAlign='center';X.textBaseline='middle';X.fillStyle=INK;X.font='800 44px '+SANS;wrapC('Markets move on',1570,470,400,52);
+    X.fillStyle=LIME;X.font='900 52px '+SANS;wrapC('orders & liquidity',1570,570,420,60);
+    X.fillStyle=MUT;X.font='700 32px '+SANS;wrapC('not on indicators',1570,700,400,40);X.restore();}
+  X.restore();}
+
+// ---------- SCENE 10: LEVEL 2 TOOL 249-266.5 ----------
+function scTool(){const a=sA(249.0,266.5);if(a<=0)return;X.save();X.globalAlpha=a;X.textAlign='center';X.textBaseline='middle';
+  kick('THE GOOD NEWS',W/2-120,150,GRN);
+  const u0=rv(251.64,0.6);if(u0>0){X.save();X.globalAlpha*=Math.min(1,u0);X.fillStyle=INK;X.font='800 40px '+SANS;
+    X.fillText('The tool that makes those orders visible EXISTS',P(W/2),P(300));X.restore();}
+  const u1=rv(257.48,0.6);if(u1>0){X.save();X.globalAlpha*=Math.min(1,u1*1.2);X.translate(0,ry(257.48));
+    pbox(W/2-560,400,1120,260,CYAN,0.8);X.fillStyle=CYAN;X.font='900 100px '+SANS;X.shadowColor=hexA(CYAN,0.5);X.shadowBlur=30;X.fillText('LEVEL 2 DATA',P(W/2),P(510));X.shadowBlur=0;
+    const u2=rv(259.72,0.5);if(u2>0){X.save();X.globalAlpha*=Math.min(1,u2);X.fillStyle=MUT;X.font='700 36px '+SANS;X.fillText('the order flow behind the chart',P(W/2),P(600));X.restore();}X.restore();}
+  X.restore();}
+
+// ---------- SCENE 11: LIVE ORDER FLOW 266.5-312.5 ----------
+function bub(cx,cy,r,col,alpha){X.save();X.globalAlpha*=alpha;const g=X.createRadialGradient(cx-r*0.3,cy-r*0.3,r*0.1,cx,cy,r);g.addColorStop(0,hexA(col,0.9));g.addColorStop(1,hexA(col,0.25));X.fillStyle=g;X.beginPath();X.arc(cx,cy,r,0,7);X.fill();X.strokeStyle=hexA(col,0.8);X.lineWidth=2;X.beginPath();X.arc(cx,cy,r,0,7);X.stroke();X.restore();}
+function scLive(){const a=sA(266.5,312.5);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('LIVE ORDER FLOW',150,140,CYAN);
+  const px=170,py=210,pw=1120,ph=740;
+  // panel frame
+  const fu=rv(267.3,0.5);if(fu>0){X.save();X.globalAlpha*=Math.min(1,fu);pbox(px,py,pw,ph,CYAN,0.5);X.restore();}
+  // price line path (drawn progressively)
+  X.save();X.beginPath();rr(px,py,pw,ph,18);X.clip();
+  const nBub=48;const appear=clamp((T-274.86)/26,0,1);
+  // price polyline
+  X.strokeStyle=hexA(INK,0.55);X.lineWidth=3;X.beginPath();
+  for(let k=0;k<=nBub;k++){const fx=px+40+(k/nBub)*(pw-80);const base=py+ph/2;const fy=base+Math.sin(k*0.4)*140-((k/nBub)*80);if(k===0)X.moveTo(fx,fy);else X.lineTo(fx,P(fy));}
+  X.stroke();
+  // bubbles
+  for(let k=0;k<nBub;k++){const kf=k/nBub;if(kf>appear)break;const fx=px+40+kf*(pw-80);const base=py+ph/2;const fy=base+Math.sin(k*0.4)*140-(kf*80);
+    const buy=rnd(k*2.3)>0.5;const col=buy?CYAN:MAG;const big=rnd(k*5.1);const r=big>0.82?38:(big>0.6?22:9);
+    const bt=274.86+kf*26;const ba=clamp((T-bt)/0.5,0,1);if(ba<=0)continue;bub(fx,fy+(rnd(k*3.7)-0.5)*60,r,col,ba);}
+  X.restore();
+  // legend on right
+  const leg=[[278.3,'Cyan bubbles','aggressive BUYERS',CYAN],
+             [281.84,'Magenta bubbles','aggressive SELLERS',MAG],
+             [284.98,'Bubble size','= size of the money',GOLD],
+             [288.86,'Small dots','retail noise',DIM],
+             [291.48,'Big bubbles','serious players',LIME]];
+  leg.forEach((l,i)=>{const u=rv(l[0],0.5);if(u<=0)return;const x=1330,y=250+i*130;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(l[0]));
+    bub(x+40,y+40,i===3?10:26,l[3],1);
+    X.fillStyle=l[3];X.font='800 30px '+SANS;X.textAlign='left';X.textBaseline='middle';X.fillText(l[1],P(x+90),P(y+26));
+    X.fillStyle=MUT;X.font='600 25px '+SANS;X.fillText(l[2],P(x+90),P(y+62));X.restore();});
+  // punch
+  cap('Price reacts where they cluster — that\'s liquidity in action',CYAN,300.9,312.4);
+  X.restore();}
+
+// ---------- SCENE 12: OUTRO / NEXT 312.5-320 ----------
+function scOutro(){const a=sA(312.5,320.0);if(a<=0)return;X.save();X.globalAlpha=a;X.textAlign='center';X.textBaseline='middle';
+  const u0=rv(313.0,0.5);if(u0>0){X.save();X.globalAlpha*=Math.min(1,u0);X.fillStyle=INK;X.font='900 60px '+SANS;
+    X.fillText('The difference: final score vs the actual match',P(W/2),P(360));X.restore();}
+  const u1=rv(314.52,0.5);if(u1>0){X.save();X.globalAlpha*=Math.min(1,u1*1.2);X.translate(0,ry(314.52));
+    pbox(W/2-560,500,1120,180,CYAN,0.8);X.fillStyle=CYAN;X.font='700 26px '+MONO;X.textAlign='left';X.textBaseline='alphabetic';X.fillText('▸ NEXT LESSON',P(W/2-510),P(560));
+    X.fillStyle=INK;X.font='800 42px '+SANS;X.textBaseline='middle';X.textAlign='left';X.fillText('Read the order flow — step by step, signal by signal',P(W/2-510),P(615));X.restore();}
+  const u2=rv(319.38,0.4);if(u2>0){X.save();X.globalAlpha*=Math.min(1,u2);X.fillStyle=LIME;X.font='700 34px '+SANS;X.fillText('See you there.',P(W/2),P(760));X.restore();}
+  X.restore();}
+
+function renderAt(ms){T=ms/1000;X.clearRect(0,0,W,H);bg();
+  scTitle();scInventory();scHistory();scCandle();scWhy();scMechanism();scStates();scFour();scQuestions();scTool();scLive();scOutro();
+  vignette();}
+window.renderAt=renderAt;window.__ready=true;renderAt(0);
+</script></body></html>
