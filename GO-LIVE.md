@@ -75,6 +75,14 @@ Kick. Vorher unbedingt Punkt „telegram-webhook neu deployen" erledigen.
 
 ---
 
+### Mentor-Bot (Cosmo Mentor)
+- Secret: `ANTHROPIC_API_KEY` (dein Anthropic-Key mit Guthaben). Optional:
+  `MENTOR_MODEL` (Default `claude-haiku-4-5`), `MENTOR_DAILY_LIMIT` (Default 30).
+- Läuft günstig: ~0,25–0,6 Cent pro Frage (Haiku 4.5, Wissensbasis gecached).
+- Kunden sehen im Dashboard unten rechts den Chat-Button. Nur eingeloggte
+  Mitglieder, Tageslimit pro Person, Leitplanken drin (keine Anlageberatung,
+  Konto-/Geldfragen → Support). Wissensbasis: `supabase/functions/mentor-chat`.
+
 ## Was schon fertig & getestet ist
 - Kunden-Dashboard = echte Daten (keine Fake-Zahlen).
 - Partner anlegen → DB-gebrandete Landing unter `/<slug>` UND `/t/<slug>`.

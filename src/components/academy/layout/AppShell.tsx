@@ -5,6 +5,7 @@ import { RightRail } from "./RightRail";
 import { MobileNav } from "./MobileNav";
 import { RegistrationGate } from "@/components/academy/onboarding/RegistrationGate";
 import { MemberProvider } from "@/hooks/useMemberState";
+import { MentorChat } from "@/components/academy/mentor/MentorChat";
 
 export function AppShell() {
   // No key on the Outlet wrapper: keying by pathname remounted the whole
@@ -23,6 +24,7 @@ export function AppShell() {
           <RightRail />
         </div>
         <MobileNav />
+        <MentorChat />
       </div>
       </MemberProvider>
     </RegistrationGate>
