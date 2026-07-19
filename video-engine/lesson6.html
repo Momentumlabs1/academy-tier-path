@@ -1,0 +1,231 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#070a10}canvas{position:absolute;left:0;top:0}</style>
+</head><body><canvas id="cv" width="1920" height="1080"></canvas><script>
+const X=document.getElementById('cv').getContext('2d');const W=1920,H=1080;
+const BG='#070a10',INK='#eaf2f8',MUT='#8b98a8',DIM='#5a6a80',LIME='#b6f04a',CYAN='#39d0d0',MAG='#e06bd8',RED='#ff5470',GRN='#33e08a',GOLD='#ffcf5c';
+const SANS='system-ui,-apple-system,"Segoe UI",Roboto,sans-serif',MONO='ui-monospace,"SF Mono",Menlo,monospace';
+const P=Math.round;let T=0;
+const clamp=(u,a,b)=>u<a?a:u>b?b:u;
+const es=u=>{u=clamp(u,0,1);return u<.5?4*u*u*u:1-Math.pow(-2*u+2,3)/2;};
+const eo=u=>{u=clamp(u,0,1);return 1-Math.pow(1-u,3);};
+const bo=u=>{u=clamp(u,0,1);const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(u-1,3)+c1*Math.pow(u-1,2);};
+const hexA=(h,a)=>{const n=parseInt(h.slice(1),16);return`rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;};
+const rr=(x,y,w,h,r)=>{x=P(x);y=P(y);w=P(w);h=P(h);X.beginPath();X.moveTo(x+r,y);X.arcTo(x+w,y,x+w,y+h,r);X.arcTo(x+w,y+h,x,y+h,r);X.arcTo(x,y+h,x,y,r);X.arcTo(x,y,x+w,y,r);X.closePath();};
+const rnd=s=>{s=Math.sin(s*127.1)*43758.5453;return s-Math.floor(s);};
+const sA=(t0,t1)=>{const i=clamp((T-t0)/0.4,0,1),o=clamp((t1-T)/0.4,0,1);return Math.max(0,Math.min(i,o));};
+const rv=(t0,d)=>es(clamp((T-t0)/(d||0.5),0,1));
+const ry=(t0,d)=>{const u=clamp((T-t0)/(d||0.55),0,1);return (1-bo(u))*22;};
+function pbox(x,y,w,h,col,a){X.fillStyle='rgba(12,18,26,0.5)';rr(x,y,w,h,18);X.fill();X.strokeStyle=hexA(col,a==null?0.5:a);X.lineWidth=2;rr(x,y,w,h,18);X.stroke();}
+function kick(txt,x,y,col){X.save();X.fillStyle=col;X.font='800 26px '+MONO;X.textAlign='left';X.textBaseline='alphabetic';X.fillText('● '+txt,P(x),P(y));X.restore();}
+function chkIcon(cx,cy,good,col,r){r=r||16;X.save();X.translate(P(cx),P(cy));X.fillStyle=col;X.beginPath();X.arc(0,0,r,0,7);X.fill();X.strokeStyle='#0a0e10';X.lineWidth=3.5;X.lineCap='round';X.lineJoin='round';
+  if(good){X.beginPath();X.moveTo(-r*0.42,0);X.lineTo(-r*0.1,r*0.38);X.lineTo(r*0.5,-r*0.44);X.stroke();}else{X.beginPath();X.moveTo(-r*0.4,-r*0.4);X.lineTo(r*0.4,r*0.4);X.moveTo(r*0.4,-r*0.4);X.lineTo(-r*0.4,r*0.4);X.stroke();}X.restore();}
+// bg WITHOUT ambient orbs (user rule: no background decoration) — drifting grid only
+function bg(){X.fillStyle=BG;X.fillRect(0,0,W,H);
+  X.save();X.globalAlpha=0.045;X.strokeStyle='#5a6a80';X.lineWidth=1;const ox=P((T*8)%80);
+  for(let x=-80+ox;x<W;x+=80){X.beginPath();X.moveTo(P(x)+0.5,0);X.lineTo(P(x)+0.5,H);X.stroke();}
+  for(let y=0;y<H;y+=80){X.beginPath();X.moveTo(0,y+0.5);X.lineTo(W,y+0.5);X.stroke();}X.restore();}
+function vignette(){const g=X.createRadialGradient(W/2,H/2,H*0.4,W/2,H/2,H*0.9);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,0.5)');X.fillStyle=g;X.fillRect(0,0,W,H);}
+function wrapC(txt,cx,y,maxw,lh){X.textAlign='center';const ws=txt.split(' ');let line='';const lines=[];
+  for(const w of ws){const t=line?line+' '+w:w;if(X.measureText(t).width>maxw&&line){lines.push(line);line=w;}else line=t;}lines.push(line);
+  const sy=y-(lines.length-1)*lh/2;lines.forEach((l,i)=>X.fillText(l,P(cx),P(sy+i*lh)));}
+
+// ---- reusable component: Level 2 depth ladder (bid/ask sizes around mid) ----
+function domLadder(cx,cy,rvl){ // rvl 0..1 reveal
+  const rows=7, rh=42, colw=250, pxMid=25067;
+  X.save();X.textBaseline='middle';X.font='700 22px '+MONO;
+  for(let i=0;i<rows;i++){
+    const rr2=clamp(rvl*rows-i,0,1); if(rr2<=0)continue;
+    const isAsk=i<Math.floor(rows/2), mid=Math.floor(rows/2);
+    const price=pxMid+(mid-i)*3;
+    const y=cy+(i-mid)*rh;
+    const size=6+Math.floor(rnd(i*3.7)*90); const col=isAsk?RED:(i===mid?GOLD:GRN);
+    // size bar
+    const bw=(colw*0.8)*(size/96)*eo(rr2);
+    X.globalAlpha=0.16*rr2;X.fillStyle=col;
+    if(isAsk){rr(cx+90,y-15,bw,30,6);}else if(i>mid){rr(cx-90-bw,y-15,bw,30,6);}
+    X.fill();
+    X.globalAlpha=rr2;X.fillStyle=i===mid?GOLD:INK;X.textAlign='center';
+    X.font=(i===mid?'800 24px ':'700 22px ')+MONO;
+    X.fillText(price.toLocaleString('en'),P(cx),P(y));
+    if(i!==mid){X.fillStyle=col;X.textAlign=isAsk?'left':'right';X.globalAlpha=0.9*rr2;
+      X.fillText(String(size),P(isAsk?cx+96:cx-96),P(y));}
+  }
+  X.restore();
+}
+// ---- reusable component: horizontal volume profile ----
+function volProfile(x,y,w,h,rvl){
+  const bins=16, bh=h/bins;
+  // synthetic but stable profile with a POC bulge (recap of the real concept)
+  X.save();
+  let pocI=9, pocMax=0;
+  const vals=[];for(let i=0;i<bins;i++){const d=Math.abs(i-pocI);const v=(1-d/bins)*(0.55+0.45*rnd(i*2.3));vals.push(v);if(v>pocMax)pocMax=v;}
+  for(let i=0;i<bins;i++){
+    const rr2=clamp(rvl*bins-i*0.6,0,1);if(rr2<=0)continue;
+    const bw=(w*0.9)*(vals[i]/pocMax)*eo(rr2);
+    const yy=y+i*bh;
+    const isPoc=i===pocI;
+    X.globalAlpha=(isPoc?0.9:0.5)*rr2;X.fillStyle=isPoc?CYAN:hexA(CYAN,0.55);
+    rr(x,yy+3,bw,bh-6,4);X.fill();
+  }
+  X.globalAlpha=1;X.restore();
+}
+// kinetic title word-stagger
+function kinTitle(words,cx,cy,size,t0,colFn){
+  X.save();X.textAlign='center';X.textBaseline='middle';X.font='900 '+size+'px '+SANS;
+  let total=0;const widths=words.map(w=>{const ww=X.measureText(w+' ').width;total+=ww;return ww;});
+  let x=cx-total/2;
+  words.forEach((w,i)=>{
+    const tt=t0+i*0.12;const a=clamp((T-tt)/0.5,0,1);const dy=(1-bo(clamp((T-tt)/0.55,0,1)))*26;
+    X.globalAlpha=a;X.fillStyle=colFn(i);
+    X.save();X.shadowColor=colFn(i);X.shadowBlur=24*a;
+    X.fillText(w,P(x+widths[i]/2),P(cy+dy));X.restore();
+    x+=widths[i];
+  });
+  X.restore();
+}
+
+// ================= SCENE 1: OPEN + RECAP  (0 - 8.6) =================
+function scOpen(){const a=sA(0,8.7);if(a<=0)return;X.save();X.globalAlpha=a;
+  // kicker
+  if(T>0.1){X.globalAlpha=a*rv(0.1,0.5);kick('LESSON 6 · LEVEL 2 + VOLUME PROFILE',W/2-330,150,MAG);X.globalAlpha=a;}
+  // kinetic title lands on "Let's put it all together" (0.0)
+  kinTitle(['PUTTING','IT','ALL','TOGETHER'],W/2,300,86,0.15,i=>i===0?LIME:INK);
+  // underline sweep
+  const us=eo(clamp((T-0.7)/0.7,0,1));if(us>0){X.globalAlpha=a;X.strokeStyle=LIME;X.lineWidth=5;X.beginPath();X.moveTo(W/2-360,360);X.lineTo(W/2-360+720*us,360);X.stroke();}
+  // recap: two pillars build in — Level 2 (3.95) + Volume Profile (5.63)
+  // Left pillar: LEVEL 2 DATA
+  const l2=clamp((T-2.3)/0.5,0,1);
+  if(l2>0){X.globalAlpha=a*l2;const bx=250,by=470,bw=580,bh=470;
+    pbox(bx,by,bw,bh,GRN,0.4);
+    X.fillStyle=GRN;X.font='800 30px '+MONO;X.textAlign='left';X.textBaseline='alphabetic';X.fillText('LEVEL 2 DATA',bx+34,by+56);
+    X.fillStyle=MUT;X.font='600 21px '+SANS;X.fillText('the live order book — who wants in, and where',bx+34,by+86);
+    domLadder(bx+bw/2,by+280,clamp((T-3.95)/1.6,0,1));
+    X.globalAlpha=a;}
+  // Right pillar: VOLUME PROFILE
+  const vp=clamp((T-5.0)/0.5,0,1);
+  if(vp>0){X.globalAlpha=a*vp;const bx=1090,by=470,bw=580,bh=470;
+    pbox(bx,by,bw,bh,CYAN,0.4);
+    X.fillStyle=CYAN;X.font='800 30px '+MONO;X.textAlign='left';X.textBaseline='alphabetic';X.fillText('VOLUME PROFILE',bx+34,by+56);
+    X.fillStyle=MUT;X.font='600 21px '+SANS;X.fillText('where price actually traded — the real battle zones',bx+34,by+86);
+    volProfile(bx+70,by+150,bw-140,270,clamp((T-5.63)/1.4,0,1));
+    // POC label
+    if(T>6.8){X.globalAlpha=a*vp*rv(6.8,0.4);X.fillStyle=GOLD;X.font='700 20px '+MONO;X.textAlign='right';X.fillText('◄ POC',bx+bw-30,by+150+8.5*((270)/16)+4);}
+    X.globalAlpha=a;}
+  X.restore();
+}
+
+// combined mini view: candles + volume-profile edge + depth-ladder edge (the "combination")
+function miniCombo(bx,by,bw,bh,rvl){
+  X.save();
+  // candles across the middle (recap of the real chart he shows)
+  const n=14, cw=(bw-260)/n, base=by+bh*0.5;
+  let px=bx+150; let prev=base;
+  const seed=[3,-2,4,5,-3,6,2,-4,5,7,-2,3,6,4];
+  for(let i=0;i<n;i++){
+    const rr2=clamp(rvl*n-i,0,1);if(rr2<=0)break;
+    const o=prev, c=base-(seed[i]*10)- i*4 + Math.sin(i)*8; const up=c<=o;
+    const hi=Math.min(o,c)-8-rnd(i)*10, lo=Math.max(o,c)+8+rnd(i*2)*10;
+    const cx=px+cw/2; const col=up?GRN:RED;
+    X.globalAlpha=rr2*0.95;X.strokeStyle=col;X.lineWidth=2;X.beginPath();X.moveTo(P(cx)+0.5,hi);X.lineTo(P(cx)+0.5,lo);X.stroke();
+    X.fillStyle=col;rr(cx-cw*0.3,Math.min(o,c),cw*0.6,Math.max(4,Math.abs(c-o)),3);X.fill();
+    prev=c;px+=cw;
+  }
+  // LEFT edge: volume profile bars (cyan) — where price traded
+  const bins=11,vph=bh-70;const vy=by+35;
+  for(let i=0;i<bins;i++){const rr2=clamp(rvl*bins-i*0.5,0,1);if(rr2<=0)continue;
+    const d=Math.abs(i-6);const v=(1-d/bins)*(0.6+0.4*rnd(i*3.1));
+    const bw2=120*v*eo(rr2);const yy=vy+i*(vph/bins);
+    X.globalAlpha=(i===6?0.85:0.4)*rr2;X.fillStyle=i===6?CYAN:hexA(CYAN,0.5);
+    rr(bx+18,yy+3,bw2,vph/bins-6,3);X.fill();}
+  // RIGHT edge: depth ladder ticks (green bid / red ask)
+  const dl=clamp((rvl-0.4)/0.6,0,1);
+  if(dl>0){const rows=8,dy=by+40,drh=(bh-80)/rows;
+    for(let i=0;i<rows;i++){const isAsk=i<4;const sz=(6+rnd(i*4.2)*80)/86;
+      X.globalAlpha=0.5*dl;X.fillStyle=isAsk?RED:GRN;
+      rr(bx+bw-30-90*sz,dy+i*drh+4,90*sz,drh-8,3);X.fill();}}
+  X.globalAlpha=1;X.restore();
+}
+// ================= SCENE 2: COMBINE / LIVE  (8.6 - 15.9) =================
+function scCombineReal(a){if(a<=0)return;X.save();X.globalAlpha=a;X.textBaseline='middle';
+  // headline "How they work in combination" — measured, 2-color, centered
+  const hy=180;X.font='800 60px '+SANS;const t1='How they work  ',t2='in combination';
+  const w1=X.measureText(t1).width,w2=X.measureText(t2).width,sx=W/2-(w1+w2)/2;
+  X.textAlign='left';X.globalAlpha=a*rv(8.9,0.5);
+  X.fillStyle=INK;X.fillText(t1,P(sx),hy);X.fillStyle=LIME;X.fillText(t2,P(sx+w1),hy);
+  X.textAlign='center';
+  const merge=es(clamp((T-9.1)/1.4,0,1));
+  // two source panels slide in from the sides toward center
+  const panW=360,panH=300,cy=560;
+  // GREEN Level 2 source (left, slides right & fades into combo)
+  const srcA=a*(1-merge);
+  if(srcA>0.02){const lx=200+(560-200)*merge;
+    X.globalAlpha=srcA;pbox(lx,cy-panH/2,panW,panH,GRN,0.45);
+    X.fillStyle=GRN;X.font='800 24px '+MONO;X.textAlign='left';X.fillText('LEVEL 2',lx+26,cy-panH/2+40);
+    domLadder(lx+panW/2,cy+20,1);}
+  // CYAN VP source (right, slides left & fades into combo)
+  if(srcA>0.02){const rx=1360-(1360-1000)*merge;
+    X.globalAlpha=srcA;pbox(rx,cy-panH/2,panW,panH,CYAN,0.45);
+    X.fillStyle=CYAN;X.font='800 24px '+MONO;X.textAlign='left';X.fillText('VOLUME PROFILE',rx+26,cy-panH/2+40);
+    volProfile(rx+50,cy-panH/2+80,panW-90,panH-120,1);}
+  // CENTER combined panel grows as they merge
+  if(merge>0.15){const cw=760,ch=380,cbx=W/2-cw/2,cby=cy-ch/2;const fg=clamp((merge-0.15)/0.85,0,1);
+    X.globalAlpha=a*fg;
+    X.save();X.shadowColor=LIME;X.shadowBlur=34*fg;pbox(cbx,cby,cw,ch,LIME,0.55);X.restore();
+    X.fillStyle=LIME;X.font='800 24px '+MONO;X.textAlign='left';X.globalAlpha=a*fg;X.fillText('LEVEL 2  +  VOLUME PROFILE — one live view',cbx+28,cby+38);
+    miniCombo(cbx+20,cby+58,cw-40,ch-80,fg);}
+  // LIVE badge pulses at 11.55
+  if(T>11.4){const lp=rv(11.4,0.4);const pulse=0.5+0.5*Math.sin((T-11.4)*6);
+    X.globalAlpha=a*lp;X.fillStyle=RED;X.beginPath();X.arc(W/2-150,860,11+pulse*3,0,7);X.fill();
+    X.globalAlpha=a*lp;X.fillStyle=INK;X.font='800 46px '+SANS;X.textAlign='left';X.fillText('LIVE  in the market',W/2-122,862);X.textAlign='center';}
+  // sub at 13.11
+  if(T>13.0){X.globalAlpha=a*rv(13.0,0.5);X.fillStyle=MUT;X.font='600 30px '+SANS;X.fillText('— how it actually looks when you trade it',W/2,930);}
+  X.restore();
+}
+
+// ================= SCENE 3: TWO WAYS / TRADINGVIEW  (15.9 - 28) =================
+function scTwoWays(){const a=sA(15.9,28.0);if(a<=0)return;X.save();X.globalAlpha=a;X.textAlign='center';X.textBaseline='middle';
+  // headline "There are two ways to do this" (15.85)
+  X.globalAlpha=a*rv(15.9,0.5);X.font='800 58px '+SANS;X.fillStyle=INK;X.fillText('Two ways to do this',W/2,190);X.globalAlpha=a;
+  // Lane 1: TradingView (reveals ~17.5)
+  const w1=clamp((T-17.4)/0.6,0,1);
+  if(w1>0){X.globalAlpha=a*w1;const bx=200,by=300,bw=680,bh=560;
+    pbox(bx,by,bw,bh,CYAN,0.5);
+    // TradingView-ish chrome header
+    X.fillStyle='#0c1420';rr(bx,by,bw,64,18);X.fill();
+    X.fillStyle=CYAN;X.beginPath();X.moveTo(bx+30,by+44);X.lineTo(bx+46,by+20);X.lineTo(bx+62,by+44);X.fill();
+    X.fillStyle=INK;X.font='800 26px '+SANS;X.textAlign='left';X.fillText('TradingView',bx+80,by+34);
+    X.fillStyle=MUT;X.font='700 20px '+MONO;X.textAlign='right';X.fillText('WAY 1',bx+bw-28,by+34);
+    // big 99% counter (20.06)
+    const cc=clamp((T-20.0)/1.0,0,1);const val=Math.round(99*eo(cc));
+    X.textAlign='center';X.fillStyle=CYAN;X.font='900 130px '+SANS;X.globalAlpha=a*w1*cc;
+    X.save();X.shadowColor=CYAN;X.shadowBlur=30*cc;X.fillText(val+'%',bx+bw/2,by+230);X.restore();
+    X.globalAlpha=a*w1;X.fillStyle=MUT;X.font='600 24px '+SANS;X.fillText('of traders use it to analyze',bx+bw/2,by+330);
+    // limitation callout (25.44 "real Level 2 data is limited")
+    if(T>24.8){const lc=clamp((T-24.8)/0.6,0,1);X.globalAlpha=a*lc;
+      X.fillStyle=hexA(RED,0.12);rr(bx+50,by+390,bw-100,120,16);X.fill();X.strokeStyle=RED;X.lineWidth=2;rr(bx+50,by+390,bw-100,120,16);X.stroke();
+      chkIcon(bx+90,by+450,false,RED,17);
+      X.fillStyle=RED;X.font='800 27px '+SANS;X.textAlign='left';X.fillText('Level 2 data: limited',bx+120,by+440);
+      X.fillStyle=MUT;X.font='600 20px '+SANS;X.fillText('you see price — not the full order book',bx+120,by+474);
+      X.globalAlpha=a;}
+  }
+  // Lane 2: teased/locked (the orderflow terminal — revealed after intro)
+  const w2=clamp((T-18.6)/0.6,0,1);
+  if(w2>0){X.globalAlpha=a*w2;const bx=1040,by=300,bw=680,bh=560;
+    X.fillStyle='rgba(12,18,26,0.35)';rr(bx,by,bw,bh,18);X.fill();
+    X.setLineDash([10,8]);X.strokeStyle=hexA(MAG,0.6);X.lineWidth=2;rr(bx,by,bw,bh,18);X.stroke();X.setLineDash([]);
+    X.fillStyle=MAG;X.font='700 20px '+MONO;X.textAlign='right';X.fillText('WAY 2',bx+bw-28,by+40);
+    // lock glyph
+    X.strokeStyle=MAG;X.lineWidth=4;X.lineCap='round';const lx=bx+bw/2,ly=by+230;
+    X.beginPath();X.arc(lx,ly-6,26,Math.PI,0);X.stroke();
+    X.fillStyle=hexA(MAG,0.9);rr(lx-34,ly+14,68,54,10);X.fill();
+    X.fillStyle=MUT;X.font='700 26px '+SANS;X.textAlign='center';X.fillText('The order-flow terminal',bx+bw/2,by+360);
+    X.fillStyle=DIM;X.font='600 22px '+SANS;X.fillText('full Level 2 + volume — coming up next',bx+bw/2,by+398);
+    X.globalAlpha=a;}
+  X.restore();
+}
+
+function renderAt(ms){T=ms/1000;X.clearRect(0,0,W,H);bg();
+  scOpen();scCombineReal(sA(8.6,15.95));scTwoWays();
+  vignette();}
+window.renderAt=renderAt;window.__ready=true;renderAt(0);
+</script></body></html>

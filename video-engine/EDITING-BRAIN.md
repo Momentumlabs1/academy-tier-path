@@ -111,7 +111,28 @@ scLive, scMechanism, scPunch, scQuestions, scStates, scTool(s), scTrans, scWhy`.
 | L5 Level 2 Data | ✅ delivered v3 5:21 + LIVE deepchart + COSMO | `lesson5.html` + `deepchart.html` + `audio/l5_audio.m4a` |
 | Signals | ✅ ORIGINAL kept 2:57 — **do NOT rebuild** | original mp4 only |
 | Video 1 (course intro) | ⏳ awaiting user's script | — |
-| Video 6 | ⏳ IN PROGRESS — sources found & analyzed (see below) | build in-style |
+| Video 6 | ⏳ IN PROGRESS — **INTRO built & rendered** (0–28s), rest of 44min pending | `lesson6.html` |
+
+### Video 6 — INTRO segment (delivered v1, 2026-07-19)
+- `lesson6.html` — engine header copied verbatim from `lesson5.html`, **`bg()` orbs stripped**
+  (no ambient decoration). 3 scenes timed to the EN Harry VO onsets:
+  1. **scOpen (0–8.7s)** kinetic title "PUTTING IT ALL TOGETHER" + recap pillars: Level 2 DOM
+     ladder (`domLadder`) + Volume Profile (`volProfile`, POC highlighted).
+  2. **scCombineReal (8.6–15.95s)** two source panels slide in → fuse into a combined
+     "LEVEL 2 + VOLUME PROFILE — one live view" (`miniCombo`: candles + VP edge + depth ladder)
+     + pulsing LIVE badge.
+  3. **scTwoWays (15.9–28s)** "Two ways": WAY 1 TradingView card (99% count-up + red "Level 2
+     limited" callout), WAY 2 locked order-flow terminal teaser.
+- **EN VO script** (Harry, `render/tts_ts.py` → `.render/v6/vo/intro.mp3`, 27.96s, onsets in
+  `intro.words.json`): *"Let's put it all together. So far, we've broken down Level 2 data, and
+  the volume profile, piece by piece. Now let's see how they work in combination. Live, in the
+  market. How it actually looks when you trade it. There are two ways to do this. The first is
+  TradingView, the platform ninety-nine percent of traders use to analyze. But on TradingView,
+  our access to real Level 2 data is limited."*
+- Rendered: `render/rendv6.mjs` (4 parallel chunks, 840 frames) → encoded
+  `.render/v6/Video6_INTRO_v1.mp4` (also `~/Downloads/`).
+- **Remaining finishing on intro:** (a) composite COSMO corner bubble; (b) swap system-ui →
+  Clash Display `@font-face` for the anti-generic look. Then continue segments 2..N.
 
 ### Video 6 — source analysis (2026-07-19)
 > **⚠️ CORRECTION (user, 2026-07-19):** the `0718*.mp4` clips are NOT Video 6 — just stray
@@ -190,8 +211,15 @@ Goal: unique visual identity, away from system-font/generic look. Document insta
   real depth. *(installed; integration pending)*
 - **D3 v7** — ✅ `lib/d3.min.js` (332K). For chart/graph geometry where useful.
 - **GSAP** — `lib/gsap.min.js` (already in repo; L1 opening timeline).
-- **faster-whisper** (`render/transcribe.py`, `base.en`, int8 CPU) — word-level transcription
-  for onset sync. Produces `{segs, words}` JSON.
+- **faster-whisper** — word-level transcription for onset sync. `render/transcribe_hq.py`
+  (large-v3 single) and **parallel chunked** (`render/transcribe_chunk.py` + split → merge) for
+  long files: 44-min Video 6 transcribed in minutes across 8 cores vs. hours single-threaded.
+- **VO = ElevenLabs "Harry"** (`voice_id SOYHLrjzK2X1ezoPC6cr`, model `eleven_multilingual_v2`).
+  User confirmed 2026-07-19 it's the SAME voice as the L1–L5 course "Harry" (Hedra just wraps
+  the same ElevenLabs voice, tagged "Fierce Warrior"). → **Produce all VO via the ElevenLabs abo
+  to save Hedra coins.** Helper: `render/tts.py`. Keys in gitignored `.render/.voice.env`
+  (`ELEVEN_API_KEY`, `HEDRA_API_KEY`). Hedra API works too (X-API-Key, base
+  `api.hedra.com/web-app/public`; Harry id `4d97785c-3852-452a-b542-d2c7bd921f75`) — reserve only.
 - **Onset detection:** `ffmpeg -af silencedetect=n=-30dB:d=0.16` → each `silence_end` = phrase
   onset; concat boundaries = longest silences (d=0.9).
 
@@ -246,7 +274,12 @@ ffmpeg/ffprobe come from `@ffmpeg-installer` (no system ffmpeg on this Mac).
 ---
 
 ## 8. Open Points
-- [ ] Confirm exact Video 6 source filenames in `~/Downloads` (Drive names).
+- [ ] **Harry English VO source for Video 6:** deliverable = English Harry, but source is German.
+  Need to know HOW English Harry audio is produced (Hedra? ElevenLabs "Harry"? user supplies the
+  VO file?). This gates timing: build to German-original onsets now (scaffold, `v6_words.json`)
+  vs. wait for the English VO to time reveals to its onsets. **Ask user.**
+- [x] Video 6 source files confirmed (`Video 6 Bildschirm.mp4` + `Video 6 Gesicht & Stimme.mov`).
+- [x] Video 6 full DE transcript done → `v6_words.json` (committed). Intro onsets mapped (0–130s).
 - [ ] Integrate Clash Display + PixiJS into the lesson HTML pipeline.
 - [ ] Densify L5 ~1:42 and any other user-flagged flat spots.
 - [ ] Build Video 1 once script arrives.
