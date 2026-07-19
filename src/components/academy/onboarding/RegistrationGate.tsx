@@ -1,32 +1,40 @@
 /**
  * RegistrationGate — the dashboard auth guard.
  *
- * Previously a forced, non-dismissable popup overlay ("register here to
- * continue"). That's gone: the funnel is now real routed pages —
- *   partner landing (/<partner>) → /registrieren → /willkommen → dashboard.
+ * Public root ("/"): logged-out visitors see the branded master landing
+ * (Cosmos Candles Academy) — the site can be browsed freely, register/login
+ * happens only when they click "Kostenlos registrieren" or open a member area.
  *
- * So this component's only job is to protect the dashboard: if there's no
- * session, send the visitor into the funnel at /registrieren; otherwise render
- * the dashboard. Admins pass through. No overlay, no blur — the co-branded
- * academy is shown clean.
+ * Protected routes (everything else under _app: /lessons, /signals, /tools, …):
+ * no session → send the visitor into the funnel at /registrieren.
+ *
+ * Admins pass straight through. No overlay, no blur.
  */
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useLocation } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { ADMIN_EMAIL } from "@/lib/admin-auth";
+import { TenantLandingView } from "@/components/academy/tenant/TenantLandingView";
+import { COSMOS_MASTER } from "@/lib/tenants";
 
-type Phase = "checking" | "redirecting" | "authed";
+type Phase = "checking" | "landing" | "redirecting" | "authed";
 
 export function RegistrationGate({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const [phase, setPhase] = useState<Phase>("checking");
+
+  // Root path is public; anything deeper is a protected member area.
+  const isRoot = location.pathname === "/";
 
   useEffect(() => {
     let alive = true;
     const decide = (session: unknown) => {
       if (!alive) return;
       if (session) { setPhase("authed"); return; }
+      // No session: on the root, show the public landing; elsewhere, funnel in.
+      if (isRoot) { setPhase("landing"); return; }
       setPhase("redirecting");
       navigate({ to: "/registrieren" });
     };
@@ -39,9 +47,10 @@ export function RegistrationGate({ children }: { children: React.ReactNode }) {
     // React to sign-out mid-session, and to a sign-in completing elsewhere.
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => decide(session));
     return () => { alive = false; sub.subscription.unsubscribe(); };
-  }, [navigate]);
+  }, [navigate, isRoot]);
 
   if (phase === "authed") return <>{children}</>;
+  if (phase === "landing") return <TenantLandingView tenant={COSMOS_MASTER} />;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-[oklch(0.09_0.02_255)]">

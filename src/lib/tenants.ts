@@ -154,6 +154,41 @@ export function getTenant(slug: string): TenantConfig | undefined {
   return TENANTS.find((t) => t.slug === slug);
 }
 
+// The MASTER brand — Cosmos Candles Academy itself (no referring partner).
+// Rendered as the public landing on the root domain "/" for logged-out visitors,
+// so cosmos-candles.com can be browsed freely; registration happens only when a
+// visitor clicks "Kostenlos registrieren" / goes to unlock a feature.
+export const COSMOS_MASTER: TenantConfig = {
+  slug: "cosmos-candles",
+  name: "Cosmos Candles Academy",
+  tagline: "Trade mit echten Daten. Jeden Tag.",
+  description:
+    "Die Trading-Academy für ambitionierte Retail-Trader. Echte Live-Signale, ein strukturierter Kurs von Grund auf, und Orderflow-Tools, die 90 % des Marktes nie sehen.",
+  logoInitials: "CC",
+  primaryColor: "oklch(0.88 0.19 140)",
+  accentColor: "oklch(0.7 0.18 270)",
+  bgFrom: "oklch(0.16 0.05 260)",
+  bgTo: "oklch(0.10 0.03 260)",
+  brokerName: "unserem Partner-Broker",
+  brokerUrl: "#",
+  telegramChannel: "https://t.me/agent_trading_signals",
+  affiliateEmail: "kontakt@momentumlabs.at",
+  headline: "Dein kostenloser Zugang zur Academy",
+  subhead:
+    "Lerne Trading mit echten Level-2-Daten, kopiere Live-Signale und nutze Orderflow-Tools — ohne Kursgebühr, ohne Abo.",
+  stats: [
+    { label: "Lektionen", value: "12" },
+    { label: "Signal-Genauigkeit", value: "74%" },
+    { label: "Aktive Mitglieder", value: "200+" },
+    { label: "Live seit", value: "3+ Jahren" },
+  ],
+  features: [
+    { icon: "📡", title: "Live Telegram-Signale", body: "Echte Trade-Calls von unserem Desk, direkt aufs Handy." },
+    { icon: "📚", title: "Strukturierter Kurs", body: "12 Lektionen von den Basics bis zum Elite-Level-Edge." },
+    { icon: "🤖", title: "Orderflow-Tools", body: "Level-2, Volume Profile & Footprint — Rechner und Live-Charts." },
+  ],
+};
+
 // Slugs that collide with real app routes — a partner can never own one, else
 // their landing would shadow /admin, /partner, /login, etc.
 export const RESERVED_SLUGS = new Set([
