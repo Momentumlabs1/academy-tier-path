@@ -2,6 +2,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { ArrowRight, Bell } from "lucide-react";
 import { DemoModePill } from "../primitives/DemoModePill";
 import { useMemberState } from "@/hooks/useMemberState";
+import { usePartnerBrand } from "@/lib/partner-brand";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
@@ -24,6 +25,7 @@ const PAGE_TITLES: Record<string, string> = {
 export function TopNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const state = useMemberState();
+  const brand = usePartnerBrand();
 
   const pageTitle = Object.entries(PAGE_TITLES)
     .sort((a, b) => b[0].length - a[0].length)
@@ -69,6 +71,25 @@ export function TopNav() {
       </div>
 
       <div className="flex items-center gap-2">
+        {/* Partner co-branding — subtle recurring accent from the referring partner. */}
+        {brand && (
+          <div
+            className="hidden items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-[11px] font-semibold lg:flex"
+            style={{
+              borderColor: `color-mix(in oklch, ${brand.accentColor} 40%, transparent)`,
+              background: `color-mix(in oklch, ${brand.accentColor} 12%, transparent)`,
+            }}
+            title={`Empfohlen von ${brand.name}`}
+          >
+            <span
+              className="flex h-4 w-4 items-center justify-center rounded text-[8px] font-black text-white"
+              style={{ background: brand.accentColor }}
+            >
+              {brand.logoInitials}
+            </span>
+            <span className="text-foreground/70">via {brand.name}</span>
+          </div>
+        )}
         <div className="hidden md:block">
           <DemoModePill />
         </div>

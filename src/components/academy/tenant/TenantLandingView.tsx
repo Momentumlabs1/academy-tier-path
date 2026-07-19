@@ -5,13 +5,13 @@
  * the info (hero, live-signal demo, features, tiers, testimonials, how-it-works,
  * FAQ, CTA).
  */
-import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, CheckCircle2, Lock, Shield, TrendingUp, TrendingDown, Star } from "lucide-react";
 import { TIERS } from "@/lib/academy-data";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { JoinFunnel } from "@/components/academy/tenant/JoinFunnel";
+import { writePartnerBrand } from "@/lib/partner-brand";
 import type { TenantConfig } from "@/lib/tenants";
 
 const DEMO_SIGNALS = [
@@ -21,17 +21,19 @@ const DEMO_SIGNALS = [
 ];
 
 export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
-  const [funnelOpen, setFunnelOpen] = useState(false);
+  const navigate = useNavigate();
+  const goRegister = () => navigate({ to: "/registrieren" });
 
-  // Partner attribution: stamp the referring brand into a 30-day cookie the
-  // moment a visitor lands. When they later register in the dashboard, the
-  // RegistrationGate reads `cosmo_ref` and writes members.referred_by_tenant,
-  // so this partner gets credited for the customer (and their deposits).
+  // Partner attribution + co-branding skin. Two cookies, both 30 days:
+  //  · cosmo_ref   — slug only; the register step stamps it into user metadata so
+  //                  the DB trigger writes members.referred_by_tenant (credit).
+  //  · cosmo_brand — the slim visual skin (logo, accent, name, telegram) so the
+  //                  central Cosmo academy co-brands downstream WITHOUT a DB fetch.
   useEffect(() => {
     if (typeof document === "undefined") return;
-    const maxAge = 60 * 60 * 24 * 30; // 30 days
-    document.cookie = `cosmo_ref=${encodeURIComponent(tenant.slug)}; path=/; max-age=${maxAge}; SameSite=Lax`;
-  }, [tenant.slug]);
+    document.cookie = `cosmo_ref=${encodeURIComponent(tenant.slug)}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+    writePartnerBrand(tenant);
+  }, [tenant]);
 
   return (
     <div
@@ -53,7 +55,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           href={`mailto:${tenant.affiliateEmail}`}
           className="text-sm font-medium text-foreground/60 hover:text-foreground transition-colors"
         >
-          Contact
+          Kontakt
         </a>
       </header>
 
@@ -65,7 +67,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               className="mb-6 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold"
               style={{ background: `color-mix(in oklch, ${tenant.primaryColor} 15%, transparent)`, color: tenant.primaryColor }}
             >
-              <Shield className="h-3.5 w-3.5" /> Powered by Agent Trading Academy
+              <Shield className="h-3.5 w-3.5" /> Powered by Cosmos Candles Academy
             </div>
 
             <h1 className="font-display text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
@@ -77,11 +79,11 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
 
             <div className={cn("mt-8 flex flex-wrap items-center gap-3", tenant.mascot ? "justify-center lg:justify-start" : "justify-center")}>
               <button
-                onClick={() => setFunnelOpen(true)}
+                onClick={goRegister}
                 className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
                 style={{ background: tenant.primaryColor }}
               >
-                Get free access <ArrowRight className="h-4 w-4" />
+                Kostenlos registrieren <ArrowRight className="h-4 w-4" />
               </button>
               <a
                 href={tenant.telegramChannel}
@@ -89,7 +91,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold hover:bg-white/10 transition-colors"
               >
-                Join Telegram
+                Telegram beitreten
               </a>
             </div>
           </div>
@@ -125,9 +127,9 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-70" style={{ background: tenant.primaryColor }} />
             <span className="relative inline-flex h-2.5 w-2.5 rounded-full" style={{ background: tenant.primaryColor }} />
           </span>
-          <h2 className="text-center font-display text-2xl font-bold sm:text-3xl">See the signals</h2>
+          <h2 className="text-center font-display text-2xl font-bold sm:text-3xl">Sieh die Signale</h2>
         </div>
-        <p className="mb-8 text-center text-sm text-muted-foreground">Real calls, exactly how members get them — entry, stop-loss, targets. No screenshots, no hindsight.</p>
+        <p className="mb-8 text-center text-sm text-muted-foreground">Echte Calls, genau wie Mitglieder sie bekommen — Entry, Stop-Loss, Ziele. Keine Screenshots, kein Nachhinein.</p>
         <div className="grid gap-4 sm:grid-cols-3">
           {DEMO_SIGNALS.map((s) => {
             const long = s.dir === "LONG";
@@ -154,12 +156,12 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
             );
           })}
         </div>
-        <p className="mt-4 text-center text-[11px] text-muted-foreground">Illustrative examples. Trading involves risk — never risk more than you can afford to lose.</p>
+        <p className="mt-4 text-center text-[11px] text-muted-foreground">Beispielhafte Darstellung. Trading beinhaltet Risiko — riskiere nie mehr, als du verlieren kannst.</p>
       </section>
 
       {/* Features */}
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-8">
-        <h2 className="mb-8 text-center font-display text-2xl font-bold sm:text-3xl">What you get</h2>
+        <h2 className="mb-8 text-center font-display text-2xl font-bold sm:text-3xl">Was du bekommst</h2>
         <div className="grid gap-4 sm:grid-cols-3">
           {tenant.features.map((f) => (
             <div key={f.title} className="rounded-3xl border border-white/5 bg-white/[0.04] p-6">
@@ -173,8 +175,8 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
 
       {/* Tiers */}
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-8">
-        <h2 className="mb-2 text-center font-display text-2xl font-bold sm:text-3xl">Membership tiers</h2>
-        <p className="mb-8 text-center text-sm text-muted-foreground">Deposit more, unlock more.</p>
+        <h2 className="mb-2 text-center font-display text-2xl font-bold sm:text-3xl">Mitglieder-Stufen</h2>
+        <p className="mb-8 text-center text-sm text-muted-foreground">Mehr einzahlen, mehr freischalten.</p>
         <div className="grid gap-4 sm:grid-cols-3">
           {TIERS.map((t, idx) => (
             <div
@@ -187,7 +189,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                   className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-[10px] font-bold uppercase text-white"
                   style={{ background: tenant.primaryColor }}
                 >
-                  Most popular
+                  Am beliebtesten
                 </span>
               )}
               <div className="flex items-center gap-2">
@@ -195,7 +197,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                 <span className="font-display text-lg font-bold">{t.name}</span>
               </div>
               <div className="mt-3 font-display text-3xl font-bold">{formatMoney(t.minDeposit, "€")}<span className="text-base font-normal text-muted-foreground">+</span></div>
-              <div className="mb-4 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">verified deposit</div>
+              <div className="mb-4 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">verifizierte Einzahlung</div>
               <ul className="flex flex-1 flex-col gap-2">
                 {t.perks.map((perk) => (
                   <li key={perk} className="flex items-start gap-2 text-sm">
@@ -205,13 +207,13 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                 ))}
               </ul>
               <button
-                onClick={() => setFunnelOpen(true)}
+                onClick={goRegister}
                 className="mt-6 inline-flex items-center justify-center gap-2 rounded-full py-2.5 text-sm font-bold transition-opacity hover:opacity-90"
                 style={idx === 1
                   ? { background: tenant.primaryColor, color: "white" }
                   : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.9)" }}
               >
-                Get started <ArrowRight className="h-4 w-4" />
+                Jetzt starten <ArrowRight className="h-4 w-4" />
               </button>
             </div>
           ))}
@@ -221,7 +223,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
       {/* Testimonials */}
       {tenant.testimonials && tenant.testimonials.length > 0 && (
         <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-8">
-          <h2 className="mb-8 text-center font-display text-2xl font-bold sm:text-3xl">Real members, real results</h2>
+          <h2 className="mb-8 text-center font-display text-2xl font-bold sm:text-3xl">Echte Mitglieder, echte Ergebnisse</h2>
           <div className="grid gap-4 sm:grid-cols-3">
             {tenant.testimonials.map((t) => (
               <div key={t.handle} className="flex flex-col rounded-3xl border border-white/5 bg-white/[0.04] p-6">
@@ -248,12 +250,12 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
 
       {/* How it works */}
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-8">
-        <h2 className="mb-8 text-center font-display text-2xl font-bold sm:text-3xl">How it works</h2>
+        <h2 className="mb-8 text-center font-display text-2xl font-bold sm:text-3xl">So funktioniert's</h2>
         <div className="grid gap-4 sm:grid-cols-3">
           {[
-            { step: "01", title: "Open & fund your broker", body: `Deposit at least €100 at ${tenant.brokerName} using the link above.` },
-            { step: "02", title: "Join Telegram", body: "Connect your Telegram — our bot verifies your deposit automatically and sends your personal invite." },
-            { step: "03", title: "Trade with confidence", body: "Follow signals, complete lessons, and grow your account tier-by-tier." },
+            { step: "01", title: "Registrieren & Konto finanzieren", body: `Erstelle deinen kostenlosen Account und zahle ab €100 bei ${tenant.brokerName} ein.` },
+            { step: "02", title: "Telegram verbinden", body: "Verbinde dein Telegram — unser Bot verifiziert deine Einzahlung automatisch und schickt dir deine persönliche Einladung." },
+            { step: "03", title: "Mit Sicherheit traden", body: "Folge den Signalen, absolviere die Lektionen und wachse Stufe für Stufe." },
           ].map((s) => (
             <div key={s.step} className="rounded-3xl border border-white/5 bg-white/[0.04] p-6">
               <div className="mb-3 font-display text-4xl font-black opacity-20">{s.step}</div>
@@ -267,7 +269,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
       {/* FAQ */}
       {tenant.faq && tenant.faq.length > 0 && (
         <section className="mx-auto max-w-3xl px-4 pb-20 sm:px-8">
-          <h2 className="mb-8 text-center font-display text-2xl font-bold sm:text-3xl">Questions</h2>
+          <h2 className="mb-8 text-center font-display text-2xl font-bold sm:text-3xl">Häufige Fragen</h2>
           <div className="space-y-3">
             {tenant.faq.map((f) => (
               <details key={f.q} className="group rounded-2xl border border-white/5 bg-white/[0.04] px-5 py-4">
@@ -291,31 +293,29 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           {tenant.mascot === "zeko" && (
             <img src="/zeko-point.png" alt="" className="mx-auto mb-2 h-28 w-28 rounded-full object-cover object-top" />
           )}
-          <h2 className="font-display text-2xl font-bold sm:text-3xl">Ready to start?</h2>
+          <h2 className="font-display text-2xl font-bold sm:text-3xl">Bereit loszulegen?</h2>
           <p className="mx-auto mt-3 max-w-md text-foreground/70">
-            Join {tenant.name} today. Deposit at {tenant.brokerName}, verify via Telegram, and unlock your first signals within minutes.
+            Werde heute Teil von {tenant.name}. Zahle bei {tenant.brokerName} ein, verifiziere per Telegram und schalte deine ersten Signale in Minuten frei.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <button
-              onClick={() => setFunnelOpen(true)}
+              onClick={goRegister}
               className="inline-flex items-center gap-2 rounded-full px-8 py-3.5 text-sm font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
               style={{ background: tenant.primaryColor }}
             >
-              Get free access <ArrowRight className="h-4 w-4" />
+              Kostenlos registrieren <ArrowRight className="h-4 w-4" />
             </button>
           </div>
           <p className="mt-4 text-[11px] text-muted-foreground">
-            Questions? <a href={`mailto:${tenant.affiliateEmail}`} className="underline hover:text-foreground">{tenant.affiliateEmail}</a>
+            Fragen? <a href={`mailto:${tenant.affiliateEmail}`} className="underline hover:text-foreground">{tenant.affiliateEmail}</a>
           </p>
         </div>
       </section>
 
-      <JoinFunnel tenant={tenant} open={funnelOpen} onClose={() => setFunnelOpen(false)} />
-
       {/* Footer */}
       <footer className="border-t border-white/5 px-4 py-6 text-center text-[11px] text-muted-foreground">
-        {tenant.name} · Powered by <Link to="/" className="hover:text-foreground underline">Agent Trading Academy</Link>
-        {" "}· <Lock className="inline h-2.5 w-2.5" /> Trading involves risk — 74–89% of retail CFD accounts lose money.
+        {tenant.name} · Powered by <Link to="/" className="hover:text-foreground underline">Cosmos Candles Academy</Link>
+        {" "}· <Lock className="inline h-2.5 w-2.5" /> Trading beinhaltet Risiko — 74–89 % der Retail-CFD-Konten verlieren Geld.
       </footer>
     </div>
   );

@@ -9,6 +9,8 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WillkommenRouteImport } from './routes/willkommen'
+import { Route as RegistrierenRouteImport } from './routes/registrieren'
 import { Route as PartnerProgrammRouteImport } from './routes/partner-programm'
 import { Route as PartnerRouteImport } from './routes/partner'
 import { Route as LoginRouteImport } from './routes/login'
@@ -36,6 +38,16 @@ import { Route as AppLessonsRouteImport } from './routes/_app.lessons'
 import { Route as AppLessonsIndexRouteImport } from './routes/_app.lessons.index'
 import { Route as AppLessonsLessonIdRouteImport } from './routes/_app.lessons.$lessonId'
 
+const WillkommenRoute = WillkommenRouteImport.update({
+  id: '/willkommen',
+  path: '/willkommen',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegistrierenRoute = RegistrierenRouteImport.update({
+  id: '/registrieren',
+  path: '/registrieren',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PartnerProgrammRoute = PartnerProgrammRouteImport.update({
   id: '/partner-programm',
   path: '/partner-programm',
@@ -174,6 +186,8 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/partner': typeof PartnerRoute
   '/partner-programm': typeof PartnerProgrammRoute
+  '/registrieren': typeof RegistrierenRoute
+  '/willkommen': typeof WillkommenRoute
   '/lessons': typeof AppLessonsRouteWithChildren
   '/notifications': typeof AppNotificationsRoute
   '/settings': typeof AppSettingsRoute
@@ -199,6 +213,8 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/partner': typeof PartnerRoute
   '/partner-programm': typeof PartnerProgrammRoute
+  '/registrieren': typeof RegistrierenRoute
+  '/willkommen': typeof WillkommenRoute
   '/notifications': typeof AppNotificationsRoute
   '/settings': typeof AppSettingsRoute
   '/signals': typeof AppSignalsRoute
@@ -227,6 +243,8 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/partner': typeof PartnerRoute
   '/partner-programm': typeof PartnerProgrammRoute
+  '/registrieren': typeof RegistrierenRoute
+  '/willkommen': typeof WillkommenRoute
   '/_app/lessons': typeof AppLessonsRouteWithChildren
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/settings': typeof AppSettingsRoute
@@ -257,6 +275,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/partner'
     | '/partner-programm'
+    | '/registrieren'
+    | '/willkommen'
     | '/lessons'
     | '/notifications'
     | '/settings'
@@ -282,6 +302,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/partner'
     | '/partner-programm'
+    | '/registrieren'
+    | '/willkommen'
     | '/notifications'
     | '/settings'
     | '/signals'
@@ -309,6 +331,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/partner'
     | '/partner-programm'
+    | '/registrieren'
+    | '/willkommen'
     | '/_app/lessons'
     | '/_app/notifications'
     | '/_app/settings'
@@ -338,11 +362,27 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PartnerRoute: typeof PartnerRoute
   PartnerProgrammRoute: typeof PartnerProgrammRoute
+  RegistrierenRoute: typeof RegistrierenRoute
+  WillkommenRoute: typeof WillkommenRoute
   TSlugRoute: typeof TSlugRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/willkommen': {
+      id: '/willkommen'
+      path: '/willkommen'
+      fullPath: '/willkommen'
+      preLoaderRoute: typeof WillkommenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/registrieren': {
+      id: '/registrieren'
+      path: '/registrieren'
+      fullPath: '/registrieren'
+      preLoaderRoute: typeof RegistrierenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/partner-programm': {
       id: '/partner-programm'
       path: '/partner-programm'
@@ -598,6 +638,8 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PartnerRoute: PartnerRoute,
   PartnerProgrammRoute: PartnerProgrammRoute,
+  RegistrierenRoute: RegistrierenRoute,
+  WillkommenRoute: WillkommenRoute,
   TSlugRoute: TSlugRoute,
 }
 export const routeTree = rootRouteImport
