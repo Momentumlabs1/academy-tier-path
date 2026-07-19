@@ -1,0 +1,21 @@
+{
+  "name": "video-engine",
+  "version": "1.0.0",
+  "description": "Reusable pipeline for the fully-animated course videos. Lesson 1 is the reference implementation (`lesson1.html`). Roll this style out to every lesson.",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@ffmpeg-installer/darwin-arm64": "^4.1.5",
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "playwright-core": "^1.61.1"
+  }
+}

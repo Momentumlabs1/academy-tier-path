@@ -1,7 +1,7 @@
 import { chromium } from 'playwright-core';
-const DIR='/tmp/claude-0/-home-user-academy-tier-path/9ba009f1-2f6b-5c0f-906e-e32ae1e36e90/scratchpad/tim_src';
+const DIR=''+(process.env.WORK||'/Users/floramavrofrydis/academy-tier-path/video-engine/.render')+'/tim_src';
 const [start,end]=[+process.argv[2],+process.argv[3]];
-const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1194/chrome-linux/chrome',args:['--no-sandbox','--force-color-profile=srgb','--hide-scrollbars']});
+const b=await chromium.launch({executablePath:process.env.CHROME||chromium.executablePath(),args:['--no-sandbox','--force-color-profile=srgb','--hide-scrollbars']});
 const pg=await b.newPage({viewport:{width:1920,height:1080},deviceScaleFactor:1});
 await pg.goto('file://'+DIR+'/sig.html');
 await pg.waitForFunction(()=>window.__ready===true);
