@@ -7,6 +7,7 @@ import { DepositLadder } from "@/components/academy/tier/DepositLadder";
 import { ProgressStats } from "@/components/academy/progress/ProgressStats";
 import { Card } from "@/components/academy/primitives/Card";
 import { LockedGate } from "@/components/academy/onboarding/LockedGate";
+import { PostDepositWelcome } from "@/components/academy/onboarding/PostDepositWelcome";
 import { LESSONS } from "@/lib/academy-data";
 import { useMemberState } from "@/hooks/useMemberState";
 import { cn } from "@/lib/utils";
@@ -51,6 +52,9 @@ function Dashboard() {
 
   return (
     <div className="space-y-6">
+
+      {/* After the first deposit: the two Cosmo welcome videos light up here. */}
+      <PostDepositWelcome />
 
       {/* Greeting + action launcher — orientation only; tier/deposit/progress live in the Deposit Path card below */}
       <Card variant="hero" className="relative overflow-hidden px-5 py-6 sm:px-7 sm:py-7">
