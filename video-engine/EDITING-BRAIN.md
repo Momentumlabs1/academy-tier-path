@@ -114,12 +114,39 @@ scLive, scMechanism, scPunch, scQuestions, scStates, scTool(s), scTrans, scWhy`.
 | Video 6 | ⏳ IN PROGRESS — sources found & analyzed (see below) | build in-style |
 
 ### Video 6 — source analysis (2026-07-19)
-- **Source files** (`~/Downloads`, Drive names): `0718.mp4`, `0718(1).mp4`, `0718(2).mp4`,
-  `0718(3).mp4`. Audio-md5 proves `0718 / (1) / (2)` are the **same clip** (browser
-  re-download duplicates). **2 unique clips:**
-  - **Clip A** = `0718.mp4` — 50.5s, 1282×720, 30fps.
-  - **Clip B** = `0718(3).mp4` — 60.9s, 1282×720, 30fps.
-  - Total unique footage ≈ **1:51**.
+> **⚠️ CORRECTION (user, 2026-07-19):** the `0718*.mp4` clips are NOT Video 6 — just stray
+> fragments. **The REAL Video 6 = two ~44-min files in `~/Downloads`:**
+> - **`Video 6 Bildschirm.mp4`** — 44:15, 1916×1076, 30fps, 270MB → **the screen/chart (visuals)**.
+> - **`Video 6 Gesicht & Stimme.mov`** — 45:23, 1280×720 HEVC10, 30fps, 1.4GB → **face + voice (audio/narration)**.
+> Screen file → visuals; face file → audio. Analyze the FULL 44-min video. The two tracks are
+> ~68s different in length → find sync offset before mapping onsets to screen content.
+> **Rules confirmed by user:** rebuild language = **English (Harry)** (translate Tim's German
+> script); Deepchart-for-live-part = **decide later**.
+
+- **(superseded) 0718 fragments:** `0718.mp4`+dupes(1)(2) & `0718(3).mp4` — two German takes of
+  a short intro ("Level 2 + Volumenprofil live"). NOT the deliverable. Ignore.
+
+#### Video 6 — full content map (44:15, from screen storyboard @60s + cuts + transcript)
+Topic: **"Level 2 + Volume Profile — how it looks LIVE"** — direct continuation of L5. German VO
+→ rebuild EN (Harry). Hard cuts @ ~4:37–4:45, ~20:14–21:09, ~25:15–25:41, ~42:44; the rest is
+continuous chart interaction (pan/scroll, below cut threshold).
+- **00:00–~02:00** TradingView **Marktübersicht** (DAX 25.067,09, indices, AAPL 315,32) — the
+  long intro hang. VO: recap Level 2 + Volume Profile, "two options: TradingView (99% use it, but
+  limited Level 2 data) vs [orderflow platform]".
+- **~03:00–04:40** TradingView **symbol pages** (Gold Spot/USD 4.120,670) + first candlestick charts.
+- **~05:00–~19:00** TradingView **charts**: candlesticks, **Volume Profile** (colored histograms),
+  **footprint/delta** grids ("Delta Gesamt 1.184/645/297"), drawn **supply/demand zones** (green/red
+  boxes), highlighted ranges. Line + candle views.
+- **~20:00–~42:40** the **orderflow terminal** (Deepchart-style): candlesticks with **green/magenta
+  orderflow bubbles sized by delta**, **footprint number grids** (purple/green columns, orange
+  headers), **delta heatmap** strip, volume profile, supply/demand zones. This is the bulk.
+- **~42:44–44:15** back to **TradingView line charts** with zones (wrap-up).
+→ **Live-part decision (deferred):** the footage itself IS an orderflow terminal for ~22 min →
+  reusing/extending `deepchart.html` is the faithful, no-fake-chart choice. Recommend when asked.
+- **Scope reality:** 44 min ≈ 5× the longest existing lesson (L3 8:39). Build **incrementally**
+  in segments with a review loop (intro first → approve → continue), per user's working style.
+- Assets: `.render/v6/screen_sheet{1,2,3}.jpg` (storyboard), `.render/v6/sb/f*.jpg` (60s frames),
+  `.render/v6/screen_cuts.txt` (cuts), `.render/v6/v6_face_words.json` (large-v3 DE transcript).
 - **Visual:** BOTH clips sit on the **static TradingView "Marktübersicht"** page
   (DAX 25.067,09, big indices, watchlist, AAPL 315,32). Scene-change detection @0.06 finds
   **zero** cuts — the screen basically never moves (occasional left dropdown menu). Confirms
@@ -128,11 +155,18 @@ scLive, scMechanism, scPunch, scQuestions, scStates, scTool(s), scTrans, scWhy`.
   **narration-driven motion graphics**, NOT an invented candlestick chart. The TradingView
   market-overview can be *referenced/recreated as context* (it's what he actually showed),
   but the scene design follows what he SAYS.
-- **Audio:** narration starts ~27s into Clip A (long silent TradingView hang first). `base.en`
-  mis-transcribed domain terms ("SpySecret"→"spied-art"). Re-transcribing with **large-v3 +
-  auto-lang** for a clean script → `.render/v6/v6_c0_hq.json`, `v6_c3_hq.json`.
-- **OPEN:** is this the *complete* Video 6 (only ~1:51, 2 clips) or are more chunks still
-  coming? HANDOFF listed Video 6 as "user uploading". Confirm with user once script is read.
+- **Audio = GERMAN** (`lang=de`, p=1.00). `base.en` produced garbage; **large-v3** gives the
+  clean script → `.render/v6/v6_c0_hq.json`, `v6_c3_hq.json`. **Note:** L1–L5 board narration
+  is English "Harry" — Video 6 source is Tim speaking German. Language of the rebuild = open Q.
+- **Content = INTRO only, recorded twice.** Both clips are two takes of the same opening:
+  "Wir gucken uns jetzt an, wie das Ganze in Kombination aussieht. Wir haben Level-2-Daten und
+  das Volumenprofil kennengelernt … jetzt gucken wir uns an, wie das Ganze **live** aussieht."
+  Clip B is the longer/better take (ends on "wie das Ganze **live** aussieht" @58.2s).
+  → This is the **opener of a lesson combining Level 2 + Volume Profile shown LIVE** — i.e. it
+  continues L5 and points straight at the **Deepchart live terminal** (`deepchart.html`).
+- **OPEN QUESTIONS (asked user 2026-07-19):** (1) rebuild language EN vs DE? (2) is this the
+  whole Video 6 (only the intro, ~1:51) or is the live-demo footage still to be uploaded?
+  (3) reuse/extend the L5 Deepchart terminal for the "live" portion?
 
 **L5 live-chart splice reference:** deepchart runs 263.7s→321.34s; onset "let me show you
 what it looks like live" @263.70 (`l5_words.json`). Board frames 0→263.7 + deepchart frames
@@ -173,6 +207,15 @@ Goal: unique visual identity, away from system-font/generic look. Document insta
 - **2026-07-19** — User: rebuilds feel like "the same presentation" (card + text).
   → **Rule:** density is the #1 quality bar. Default to real animated elements; treat any
   card-and-title scene as a failure state to be upgraded to L1 depth.
+- **2026-07-19** — User: rebuild Video 6 in **English (Harry)** even though the source is German
+  (course consistency). → **Rule:** source language ≠ deliverable language; default deliverable
+  = English Harry, translate the German narration and re-time onsets to the English VO.
+- **2026-07-19** — User caught me analyzing the wrong files (0718 fragments) instead of the real
+  44-min `Video 6 Bildschirm.mp4` / `Video 6 Gesicht & Stimme.mov`.
+  → **Rule:** when the user says files are "in ~/Downloads with the Drive name", verify by the
+  **stated title** (search `mdfind`/Spotlight for the exact name) before assuming date-stamped
+  fragments are the deliverable. Confirm duration/scope matches expectation (a full lesson is
+  tens of minutes, not ~50s) before building.
 - **2026-07-19** — User wants an anti-generic tool upgrade to "pull out the maximum".
   → **Rule:** actively research + install best-in-class local tooling (Clash Display font,
   PixiJS GPU filters, D3, large-v3 transcription) and document the stack in §5. Prefer higher-
