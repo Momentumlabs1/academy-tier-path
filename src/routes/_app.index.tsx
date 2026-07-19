@@ -6,8 +6,10 @@ import { SectionTitle } from "@/components/academy/primitives/SectionTitle";
 import { DepositLadder } from "@/components/academy/tier/DepositLadder";
 import { ProgressStats } from "@/components/academy/progress/ProgressStats";
 import { Card } from "@/components/academy/primitives/Card";
+import { LockedGate } from "@/components/academy/onboarding/LockedGate";
 import { LESSONS } from "@/lib/academy-data";
 import { useMemberState } from "@/hooks/useMemberState";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/")({
   head: () => ({
@@ -34,6 +36,9 @@ const QUICK_ACTIONS = [
 
 function Dashboard() {
   const state = useMemberState();
+  // Before the first deposit, everything gated should "breathe" — a gentle pull
+  // toward the deposit that unlocks it. Once funded, the glow/veil fall away.
+  const notFunded = state.loaded && state.lifetimeDeposits <= 0;
   const tierRank = state.currentTier
     ? ["foundation", "operator", "elite"].indexOf(state.currentTier.key)
     : -1;
@@ -88,13 +93,19 @@ function Dashboard() {
         </div>
       </Card>
 
-      {/* Money — single source of truth for tier, deposits & progress */}
-      <DepositLadder />
+      {/* Money — single source of truth for tier, deposits & progress.
+          Unfunded → the whole card breathes so the deposit path is the focal point. */}
+      <div className={cn("rounded-[var(--radius)]", notFunded && "animate-glow")}>
+        <DepositLadder />
+      </div>
 
       {/* Learning — lessons & XP */}
       <ProgressStats />
 
-      <HeroBento />
+      {/* Premium tiles — visible but gated (blurred + glowing) until first deposit. */}
+      <LockedGate locked={notFunded} label="Live-Signale & Mentoren mit deiner ersten Einzahlung freischalten">
+        <HeroBento />
+      </LockedGate>
 
       <section>
         <SectionTitle

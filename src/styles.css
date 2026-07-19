@@ -222,3 +222,32 @@
 .group:hover .group-icon-wiggle {
   animation: icon-wiggle 0.45s ease;
 }
+
+/* Slow "breathing" glow — draws the eye to still-locked elements that a first
+   deposit would unlock, without being loud (the funnel's gentle pull). */
+@keyframes glow-breathe {
+  0%, 100% { box-shadow: 0 0 0 0 oklch(0.92 0.21 130 / 0.0), 0 0 22px 0 oklch(0.92 0.21 130 / 0.10); }
+  50%      { box-shadow: 0 0 0 3px oklch(0.92 0.21 130 / 0.22), 0 0 40px 6px oklch(0.92 0.21 130 / 0.28); }
+}
+.animate-glow {
+  animation: glow-breathe 3.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Locked content veil — blurred + dimmed so the value is visible but clearly
+   gated ("I can see it, I almost have it"). */
+.locked-veil {
+  filter: blur(3px) saturate(0.7) brightness(0.75);
+  transition: filter 0.6s ease;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Post-video unlock reveal — locked tiles light up one after another. */
+@keyframes unlock-pop {
+  0%   { opacity: 0; transform: translateY(10px) scale(0.96); }
+  60%  { opacity: 1; transform: translateY(0) scale(1.02); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-unlock-pop {
+  animation: unlock-pop 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}

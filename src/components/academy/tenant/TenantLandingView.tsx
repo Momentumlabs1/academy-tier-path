@@ -120,6 +120,68 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         </div>
       </section>
 
+      {/* Cosmo explainer video — the soft Cosmo integration on the partner page.
+          Drop the rendered pitch clip into public/pitch.mp4. Framed in the
+          partner accent so the co-branding reads at a glance. */}
+      <section className="mx-auto max-w-3xl px-4 pb-16 sm:px-8">
+        <div
+          className="overflow-hidden rounded-3xl border p-1.5 shadow-2xl"
+          style={{ borderColor: `color-mix(in oklch, ${tenant.accentColor} 35%, transparent)`, background: `color-mix(in oklch, ${tenant.accentColor} 8%, transparent)` }}
+        >
+          <div className="relative aspect-video overflow-hidden rounded-[1.35rem] bg-black">
+            <video controls playsInline className="h-full w-full object-cover">
+              <source src="/pitch.mp4" type="video/mp4" />
+            </video>
+            <div
+              className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2"
+              style={{ background: `linear-gradient(160deg, ${tenant.bgFrom}, ${tenant.bgTo})` }}
+            >
+              <span className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: `color-mix(in oklch, ${tenant.primaryColor} 20%, transparent)` }}>
+                <ArrowRight className="h-6 w-6" style={{ color: tenant.primaryColor }} />
+              </span>
+              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">{tenant.name} × Cosmo · 60 Sek</span>
+            </div>
+          </div>
+        </div>
+        <p className="mt-3 text-center text-xs text-muted-foreground">Kurz erklärt: was du bekommst — und warum es dich nichts kostet.</p>
+      </section>
+
+      {/* "You don't pay us" — the model, upfront. Kills the "what's the catch?"
+          objection before the visitor ever reaches the deposit. */}
+      <section className="mx-auto max-w-5xl px-4 pb-20 sm:px-8">
+        <div
+          className="rounded-3xl border p-7 sm:p-9"
+          style={{ borderColor: "rgba(255,255,255,0.08)", background: `linear-gradient(160deg, color-mix(in oklch, ${tenant.primaryColor} 8%, transparent), transparent)` }}
+        >
+          <h2 className="text-center font-display text-2xl font-bold sm:text-3xl">Du kaufst hier nichts.</h2>
+          <p className="mx-auto mt-3 max-w-xl text-center text-sm text-foreground/70">
+            Keine Kursgebühr, kein Abo. Du finanzierst dein <span className="font-semibold text-foreground/90">eigenes</span> Trading-Konto bei {tenant.brokerName} — das Geld bleibt deins. Wir haben einen Deal mit dem Broker und verdienen dort, nicht an dir. Deshalb bekommst du Signale & Academy gratis.
+          </p>
+          <div className="mt-7 grid gap-4 sm:grid-cols-3">
+            {[
+              { icon: "🔓", title: "Kostenlos freischalten", body: "Registrieren, einzahlen — und alle Signale, Lektionen & Tools öffnen sich." },
+              { icon: "💼", title: "Dein Geld bleibt deins", body: "Die Einzahlung liegt auf deinem eigenen Broker-Konto. Du kannst jederzeit auszahlen." },
+              { icon: "🤝", title: "Wir verdienen am Broker", body: "Der Broker vergütet uns — nicht du. Faire, transparente Partnerschaft." },
+            ].map((c) => (
+              <div key={c.title} className="rounded-2xl border border-white/8 bg-white/[0.03] p-5 text-center">
+                <div className="mb-2 text-2xl">{c.icon}</div>
+                <div className="font-display text-base font-bold">{c.title}</div>
+                <p className="mt-1.5 text-xs text-foreground/65">{c.body}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-7 text-center">
+            <button
+              onClick={goRegister}
+              className="inline-flex items-center gap-2 rounded-full px-7 py-3 text-sm font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
+              style={{ background: tenant.primaryColor }}
+            >
+              Kostenlos registrieren <ArrowRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* Live signals demo */}
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-8">
         <div className="mb-2 flex items-center justify-center gap-2">

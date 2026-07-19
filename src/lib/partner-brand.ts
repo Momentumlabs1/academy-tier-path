@@ -22,6 +22,9 @@ export interface PartnerBrand {
   accentColor: string;
   primaryColor: string;
   telegramChannel: string;
+  brokerName: string;
+  /** "#" until the partner's broker link is configured. */
+  brokerUrl: string;
 }
 
 /** The central academy. Never re-branded per partner — this is the constant star. */
@@ -48,6 +51,8 @@ export function writePartnerBrand(tenant: TenantConfig): void {
     accentColor: tenant.accentColor,
     primaryColor: tenant.primaryColor,
     telegramChannel: tenant.telegramChannel,
+    brokerName: tenant.brokerName,
+    brokerUrl: tenant.brokerUrl,
   };
   const value = encodeURIComponent(JSON.stringify(brand));
   document.cookie = `${COOKIE}=${value}; path=/; max-age=${MAX_AGE}; SameSite=Lax`;
@@ -67,6 +72,8 @@ export function readPartnerBrand(): PartnerBrand | null {
       accentColor: b.accentColor ?? COSMO.accentColor,
       primaryColor: b.primaryColor ?? COSMO.primaryColor,
       telegramChannel: b.telegramChannel ?? "#",
+      brokerName: b.brokerName ?? "unserem Partner-Broker",
+      brokerUrl: b.brokerUrl ?? "#",
     };
   } catch {
     return null;
