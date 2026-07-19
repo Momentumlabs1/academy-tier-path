@@ -22,11 +22,15 @@ window.setFrame=async(i)=>{
   // rim ring
   X.strokeStyle='rgba(182,240,74,0.95)';X.lineWidth=4;X.beginPath();X.arc(cx,cy,r+2,0,7);X.stroke();
   X.strokeStyle='rgba(255,255,255,0.10)';X.lineWidth=2;X.beginPath();X.arc(cx,cy,r-1,0,7);X.stroke();
-  // name tag
-  const pw=150,ph2=38,px=cx-pw/2,py=cy+r+16;
+  // name tag with animated speaking dots  ( ··· COSMO )
+  const pw=176,ph2=38,px=cx-pw/2,py=cy+r+16;
   X.fillStyle='#0e141d';X.strokeStyle='rgba(182,240,74,0.55)';X.lineWidth=1.5;
   X.beginPath();X.moveTo(px+11,py);X.arcTo(px+pw,py,px+pw,py+ph2,11);X.arcTo(px+pw,py+ph2,px,py+ph2,11);X.arcTo(px,py+ph2,px,py,11);X.arcTo(px,py,px+pw,py,11);X.closePath();X.fill();X.stroke();
-  X.fillStyle='#eef2f6';X.font='800 20px system-ui,Arial';X.textAlign='center';X.textBaseline='middle';X.fillText('COSMO',cx,py+ph2/2+1);
+  // speaking dots (each pulses in sequence = "talking")
+  const dcx=px+24,dcy=py+ph2/2;
+  for(let k=0;k<3;k++){const dp=0.35+0.65*Math.max(0,Math.sin(ph*2-k*0.9));
+    X.fillStyle='rgba(182,240,74,'+dp+')';X.beginPath();X.arc(dcx+k*11,dcy,3.4,0,7);X.fill();}
+  X.fillStyle='#eef2f6';X.font='800 20px system-ui,Arial';X.textAlign='left';X.textBaseline='middle';X.fillText('COSMO',dcx+34,dcy+1);
   return true;
 };
 window.__ready=true;setFrame(0);
