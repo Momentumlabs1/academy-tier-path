@@ -1,0 +1,6 @@
+node_modules/
+.venv/
+.render/
+fonts/clash.zip
+fonts/ClashDisplay_Complete/Fonts/OTF/
+fonts/ClashDisplay_Complete/Fonts/TTF/

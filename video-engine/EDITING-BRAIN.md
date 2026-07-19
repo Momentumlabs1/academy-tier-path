@@ -111,7 +111,28 @@ scLive, scMechanism, scPunch, scQuestions, scStates, scTool(s), scTrans, scWhy`.
 | L5 Level 2 Data | ✅ delivered v3 5:21 + LIVE deepchart + COSMO | `lesson5.html` + `deepchart.html` + `audio/l5_audio.m4a` |
 | Signals | ✅ ORIGINAL kept 2:57 — **do NOT rebuild** | original mp4 only |
 | Video 1 (course intro) | ⏳ awaiting user's script | — |
-| Video 6 | ⏳ IN PROGRESS — sources in `~/Downloads` (Drive-compressed <25MB clips) | build in-style |
+| Video 6 | ⏳ IN PROGRESS — sources found & analyzed (see below) | build in-style |
+
+### Video 6 — source analysis (2026-07-19)
+- **Source files** (`~/Downloads`, Drive names): `0718.mp4`, `0718(1).mp4`, `0718(2).mp4`,
+  `0718(3).mp4`. Audio-md5 proves `0718 / (1) / (2)` are the **same clip** (browser
+  re-download duplicates). **2 unique clips:**
+  - **Clip A** = `0718.mp4` — 50.5s, 1282×720, 30fps.
+  - **Clip B** = `0718(3).mp4` — 60.9s, 1282×720, 30fps.
+  - Total unique footage ≈ **1:51**.
+- **Visual:** BOTH clips sit on the **static TradingView "Marktübersicht"** page
+  (DAX 25.067,09, big indices, watchlist, AAPL 315,32). Scene-change detection @0.06 finds
+  **zero** cuts — the screen basically never moves (occasional left dropdown menu). Confirms
+  HANDOFF's "hangs on TradingView at the start" — here it hangs the *whole* time.
+  → **Consequence:** NO active live chart to recreate. Per the no-fake-chart rule, Video 6 is
+  **narration-driven motion graphics**, NOT an invented candlestick chart. The TradingView
+  market-overview can be *referenced/recreated as context* (it's what he actually showed),
+  but the scene design follows what he SAYS.
+- **Audio:** narration starts ~27s into Clip A (long silent TradingView hang first). `base.en`
+  mis-transcribed domain terms ("SpySecret"→"spied-art"). Re-transcribing with **large-v3 +
+  auto-lang** for a clean script → `.render/v6/v6_c0_hq.json`, `v6_c3_hq.json`.
+- **OPEN:** is this the *complete* Video 6 (only ~1:51, 2 clips) or are more chunks still
+  coming? HANDOFF listed Video 6 as "user uploading". Confirm with user once script is read.
 
 **L5 live-chart splice reference:** deepchart runs 263.7s→321.34s; onset "let me show you
 what it looks like live" @263.70 (`l5_words.json`). Board frames 0→263.7 + deepchart frames
@@ -128,10 +149,13 @@ Goal: unique visual identity, away from system-font/generic look. Document insta
 - **Render env (local, macOS):** `playwright-core` + `@ffmpeg-installer/ffmpeg`, Chromium via
   `npx playwright install chromium`. Render scripts read `DIR` / `CHROME` / `PAGE` env vars
   (rewritten from the old hardcoded Linux paths). See §7.
-- **Clash Display** (Fontshare, free commercial) — embed via data-URI `@font-face` in each
-  lesson HTML to replace system-ui. *(planned)*
-- **PixiJS** — GPU glow/particles/filters for real depth. *(planned)*
-- **D3** — for chart geometry where useful. *(evaluating)*
+- **Clash Display** (Fontshare, free commercial) — ✅ downloaded to `fonts/` (woff2/otf/ttf +
+  variable). Embed via data-URI `@font-face` in each lesson HTML to replace system-ui.
+  *(installed; integration into HTML pending)*
+- **PixiJS 7.4.2** — ✅ `lib/pixi.min.js` (508K, UMD global). GPU glow/particles/filters for
+  real depth. *(installed; integration pending)*
+- **D3 v7** — ✅ `lib/d3.min.js` (332K). For chart/graph geometry where useful.
+- **GSAP** — `lib/gsap.min.js` (already in repo; L1 opening timeline).
 - **faster-whisper** (`render/transcribe.py`, `base.en`, int8 CPU) — word-level transcription
   for onset sync. Produces `{segs, words}` JSON.
 - **Onset detection:** `ffmpeg -af silencedetect=n=-30dB:d=0.16` → each `silence_end` = phrase
@@ -149,6 +173,14 @@ Goal: unique visual identity, away from system-font/generic look. Document insta
 - **2026-07-19** — User: rebuilds feel like "the same presentation" (card + text).
   → **Rule:** density is the #1 quality bar. Default to real animated elements; treat any
   card-and-title scene as a failure state to be upgraded to L1 depth.
+- **2026-07-19** — User wants an anti-generic tool upgrade to "pull out the maximum".
+  → **Rule:** actively research + install best-in-class local tooling (Clash Display font,
+  PixiJS GPU filters, D3, large-v3 transcription) and document the stack in §5. Prefer higher-
+  quality tools over defaults; e.g. transcribe with `large-v3`, not `base.en`.
+- **2026-07-19** — User got nervous during a silent long-running install ("bewegt sich nix").
+  → **Rule:** run long ops (installs, model downloads, renders) in the **background with a
+  visible log**, keep the session responsive, and post concrete progress. Never leave the
+  user staring at a silent, blocking command.
 - **2026-07-19** — User: analyze Video 6 both **image AND audio, frame-accurately**, and
   rebuild 1:1 in our style (real animated charts where Tim shows charts).
   → **Rule:** for every rebuild, transcribe audio word-level AND scrub the original frames to
