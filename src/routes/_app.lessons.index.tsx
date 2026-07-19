@@ -31,11 +31,7 @@ function ContinueHero() {
       params={{ lessonId: next.id }}
       className="group relative block overflow-hidden rounded-[var(--radius)] shadow-[var(--shadow-card)]"
     >
-      <img
-        src={`https://i.ytimg.com/vi/${next.youtubeId}/maxresdefault.jpg`}
-        alt=""
-        className="absolute inset-0 h-full w-full object-cover opacity-50 transition-transform duration-500 group-hover:scale-105"
-      />
+      <div className="absolute inset-0 h-full w-full bg-gradient-to-br from-[#101826] to-black opacity-80 transition-transform duration-500 group-hover:scale-105" />
       <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/50 to-transparent" />
       <div className="relative flex items-center gap-5 p-5 sm:p-7">
         <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[var(--shadow-lime)] transition-transform duration-300 group-hover:scale-110">

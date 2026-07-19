@@ -24,12 +24,7 @@ export function LessonRow({ lesson }: { lesson: Lesson }) {
     <>
       {/* Video thumbnail */}
       <div className="relative hidden h-16 w-28 shrink-0 overflow-hidden rounded-xl bg-black sm:block">
-        <img
-          src={`https://i.ytimg.com/vi/${lesson.youtubeId}/mqdefault.jpg`}
-          alt=""
-          loading="lazy"
-          className={cn("h-full w-full object-cover transition-transform duration-300 group-hover:scale-105", locked && "opacity-40 blur-[1px]")}
-        />
+        <div className={cn("h-full w-full bg-gradient-to-br from-[#101826] to-black transition-transform duration-300 group-hover:scale-105", locked && "opacity-40 blur-[1px]")} />
         <div className="absolute inset-0 flex items-center justify-center">
           {locked ? (
             <Lock className="h-4 w-4 text-white/70" />

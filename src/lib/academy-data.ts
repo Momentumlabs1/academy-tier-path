@@ -29,40 +29,42 @@ export interface Lesson {
   tier: TierKey;
   category: "Foundations" | "Mindset" | "Risk" | "Orderflow" | "Practice";
   completed?: boolean;
-  /** YouTube video id for the lesson recording. Placeholder until the real course recordings are uploaded — swap per lesson. */
-  youtubeId: string;
+  /** Self-hosted lesson video URL (Supabase Storage). Undefined = not yet published. */
+  videoUrl?: string;
   /** Concrete, per-lesson learning outcomes shown on the detail page. */
   objectives: string[];
 }
 
-// Placeholder until the real course videos are uploaded — replace youtubeId per lesson.
-const DEMO_VIDEO = "PHe0bXAIuk0";
+// Self-hosted lesson videos — Supabase Storage public bucket "lesson-videos".
+// Override base via VITE_VIDEO_BASE in .env; defaults to /videos (served from public/).
+export const VIDEO_BASE = (((import.meta.env as any).VITE_VIDEO_BASE as string) || "/videos").replace(/\/+$/, "");
+const V = (file: string) => VIDEO_BASE + "/" + file;
 
 // Curriculum based on the head trader's course script (Level-2 / orderflow strategy).
 export const LESSONS: Lesson[] = [
-  { id: "l1", title: "What Is Trading?", description: "Long & short, the markets, and why trading is not investing.", durationMin: 14, tier: "foundation", category: "Foundations", completed: true, youtubeId: DEMO_VIDEO,
+  { id: "l1", title: "What Is Trading?", description: "Long & short, the markets, and why trading is not investing.", durationMin: 14, tier: "foundation", category: "Foundations", completed: true, videoUrl: V("lesson1.mp4"),
     objectives: ["Trading = actively buying & selling — profit in both directions (long & short)", "The markets: stocks, indices (DAX, S&P 500, NASDAQ), commodities, currencies", "Why trading ≠ investing: investors only profit from rising prices", "Profiting from short-term and long-term price moves"] },
-  { id: "l2", title: "Trading vs. a Traditional Business", description: "Freedom, scalability, performance — the most capital-efficient business model.", durationMin: 12, tier: "foundation", category: "Foundations", completed: true, youtubeId: DEMO_VIDEO,
+  { id: "l2", title: "Trading vs. a Traditional Business", description: "Freedom, scalability, performance — the most capital-efficient business model.", durationMin: 12, tier: "foundation", category: "Foundations", completed: true,
     objectives: ["The 3 reasons: freedom (location & time independent), scalability, only performance counts", "No employees, no inventory, no customers, tiny startup costs — a few hundred euros is enough", "Why more trading does NOT mean more profit — 1–3 focused hours a day is all it takes", "Full self-responsibility: you alone own your results"] },
-  { id: "l3", title: "Why 90% of Traders Lose", description: "The avoidable mistakes: no plan, overtrading, revenge trading.", durationMin: 16, tier: "foundation", category: "Risk", completed: false, youtubeId: DEMO_VIDEO,
+  { id: "l3", title: "Why 90% of Traders Lose", description: "The avoidable mistakes: no plan, overtrading, revenge trading.", durationMin: 16, tier: "foundation", category: "Risk", completed: false, videoUrl: V("lesson3.mp4"),
     objectives: ["The majority doesn't lose because of the market — but because of their decisions", "Mistake #1: no clear rulebook — gut feeling is not a system", "Overtrading & revenge trading: how accounts get destroyed fast", "Strategy hopping: a strategy needs 3–12 months before it truly sticks"] },
-  { id: "l4", title: "The Formula for Profitability", description: "Knowledge + experience + discipline + execution.", durationMin: 10, tier: "foundation", category: "Foundations", youtubeId: DEMO_VIDEO,
+  { id: "l4", title: "The Formula for Profitability", description: "Knowledge + experience + discipline + execution.", durationMin: 10, tier: "foundation", category: "Foundations",
     objectives: ["The 4 building blocks: knowledge → experience → discipline → execution", "Knowing is not doing: practice works like learning to drive", "Unrealistic expectations: social media shows the end result, never the road", "Trading is no get-rich-quick scheme — but what's possible in 2–3 years exists almost nowhere else"] },
-  { id: "l5", title: "The 4 Emotions That Destroy Accounts", description: "Fear, greed, hope, frustration — and how to control them.", durationMin: 15, tier: "operator", category: "Mindset", youtubeId: DEMO_VIDEO,
+  { id: "l5", title: "The 4 Emotions That Destroy Accounts", description: "Fear, greed, hope, frustration — and how to control them.", durationMin: 15, tier: "operator", category: "Mindset",
     objectives: ["Fear: closing winners too early, skipping setups, not entering at all", "The 2 kinds of greed: feeling 'untouchable' after win streaks & 'I want it back' after losses", "Hope: removing the stop-loss and letting losers run — the account killer", "Whoever doesn't control their emotions gets controlled by the market"] },
-  { id: "l6", title: "What Profitable Traders Do Differently", description: "System, risk management, statistics, long-term thinking.", durationMin: 14, tier: "operator", category: "Mindset", youtubeId: DEMO_VIDEO,
+  { id: "l6", title: "What Profitable Traders Do Differently", description: "System, risk management, statistics, long-term thinking.", durationMin: 14, tier: "operator", category: "Mindset",
     objectives: ["A system: fixed rules and a repeatable, explainable process", "Risk management: protecting capital comes BEFORE making profits", "Trading is calculated betting — everything is probability, no trade is certain", "Never judge a day or a week — monthly and yearly performance is what counts"] },
-  { id: "l7", title: "The Trading Journal", description: "Log trades, analyse mistakes, collect data.", durationMin: 11, tier: "operator", category: "Practice", youtubeId: DEMO_VIDEO,
+  { id: "l7", title: "The Trading Journal", description: "Log trades, analyse mistakes, collect data.", durationMin: 11, tier: "operator", category: "Practice",
     objectives: ["Why nearly all profitable traders document their trading", "Data is gold: the more data on your system, the better you can improve it", "Log setup, reasoning, execution quality and emotions — not just P&L", "Mistake analysis as a weekly routine"] },
-  { id: "l8", title: "What Is Retail Money?", description: "How the crowd trades — and why that's the wrong approach.", durationMin: 13, tier: "operator", category: "Orderflow", youtubeId: DEMO_VIDEO,
+  { id: "l8", title: "What Is Retail Money?", description: "How the crowd trades — and why that's the wrong approach.", durationMin: 13, tier: "operator", category: "Orderflow", videoUrl: V("lesson4.mp4"),
     objectives: ["Retail = private traders like you and me: small capital, limited information", "The problem: everyone learns the same concepts (S/R, trendlines, RSI, MACD) and places the same stops", "Why identical stop-losses become liquidity for the big players", "If the majority loses — why would you trade like the majority?"] },
-  { id: "l9", title: "Level 1 vs. Level 2 Data", description: "The information gap between retail and institutions.", durationMin: 15, tier: "operator", category: "Orderflow", youtubeId: DEMO_VIDEO,
+  { id: "l9", title: "Level 1 vs. Level 2 Data", description: "The information gap between retail and institutions.", durationMin: 15, tier: "operator", category: "Orderflow", videoUrl: V("lesson5.mp4"),
     objectives: ["Level 1: price, candles, indicators — shows only the RESULT (speculation)", "Level 2: order book, liquidity, market participants — shows the CAUSE of the move", "Retail sees the price; institutions see every order, liquidity and your stops", "The market moves through orders — nothing else"] },
-  { id: "l10", title: "The Order Book: Active vs. Passive Orders", description: "How to see where the big money steps in.", durationMin: 18, tier: "elite", category: "Orderflow", youtubeId: DEMO_VIDEO,
+  { id: "l10", title: "The Order Book: Active vs. Passive Orders", description: "How to see where the big money steps in.", durationMin: 18, tier: "elite", category: "Orderflow",
     objectives: ["Every order routed through an official exchange is recorded in the order book", "Passive orders (limit/stop) vs. active market executions", "Bubbles: market executions of 30+ contracts = institutional money made visible", "Why this insight fundamentally changes your entry timing"] },
-  { id: "l11", title: "Volume Profile: Value Area, HVN & LVN", description: "Where the market feels comfortable — and where the fast moves happen.", durationMin: 20, tier: "elite", category: "Orderflow", youtubeId: DEMO_VIDEO,
+  { id: "l11", title: "Volume Profile: Value Area, HVN & LVN", description: "Where the market feels comfortable — and where the fast moves happen.", durationMin: 20, tier: "elite", category: "Orderflow", videoUrl: V("video6.mp4"),
     objectives: ["Value Area: the zone holding 70% of the day's volume (VAH above, VAL below)", "The market returns to the Value Area — breaks out and comes straight back in", "Avoid High Volume Nodes (market feels at home), trade Low Volume Nodes (market fills them fast)", "The volume profile defines WHERE you enter — your point of interest"] },
-  { id: "l12", title: "The Footprint Chart: Timing Precise Entries", description: "Delta, buy vs. sell pressure — reading candles from the inside.", durationMin: 22, tier: "elite", category: "Orderflow", youtubeId: DEMO_VIDEO,
+  { id: "l12", title: "The Footprint Chart: Timing Precise Entries", description: "Delta, buy vs. sell pressure — reading candles from the inside.", durationMin: 22, tier: "elite", category: "Orderflow",
     objectives: ["The footprint shows per candle how many contracts were bought vs. sold", "Reading delta: a bullish candle with negative delta = passive buyers absorbing — a strong signal", "Volume profile (WHERE) + footprint & bubbles (WHEN) = precisely timed entries", "This alone means trading with data 90% of market participants never use"] },
 ];
 export const CURRENT_MEMBER = {
