@@ -73,7 +73,9 @@ export const CURRENT_MEMBER = {
   joinedAt: "2026-04-18",
   telegramHandle: "@demo_trader",
 };
-export const DEMO_MODE = true;
+// Deployable build: real data comes from Supabase via useMemberState. Flip this
+// to true only for local UI demos with the static CURRENT_MEMBER/NOTIFICATIONS.
+export const DEMO_MODE = false;
 export interface Signal {
   id: string; asset: string; pair: string; side: "LONG" | "SHORT";
   confidence: number; payoutMultiple: number; draw?: number; loss?: number; timeLabel: string;

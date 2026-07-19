@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { PlayCircle, Search } from "lucide-react";
-import { CURRENT_MEMBER, LESSONS, TIERS, tierForDeposit } from "@/lib/academy-data";
+import { LESSONS, TIERS } from "@/lib/academy-data";
 import { LessonGroup } from "@/components/academy/lessons/LessonGroup";
+import { useMemberState } from "@/hooks/useMemberState";
 import { useCompletedLessons } from "@/hooks/useCompletedLessons";
 import { cn } from "@/lib/utils";
 
@@ -18,7 +19,7 @@ export const Route = createFileRoute("/_app/lessons/")({
 
 function ContinueHero() {
   const { isCompleted, stats } = useCompletedLessons();
-  const memberTier = tierForDeposit(CURRENT_MEMBER.deposit);
+  const memberTier = useMemberState().currentTier;
   const memberRank = memberTier ? TIERS.findIndex((t) => t.key === memberTier.key) : -1;
   const next = LESSONS.find(
     (l) => TIERS.findIndex((t) => t.key === l.tier) <= memberRank && !isCompleted(l.id),

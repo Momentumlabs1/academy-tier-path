@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { CURRENT_MEMBER } from "@/lib/academy-data";
 import { useMemberState } from "@/hooks/useMemberState";
 import { Card } from "@/components/academy/primitives/Card";
 import { formatMoney, formatDate } from "@/lib/format";
@@ -18,12 +17,14 @@ export const Route = createFileRoute("/_app/settings")({
 function SettingsPage() {
   const state = useMemberState();
   const tier = state.currentTier;
+  const { profile } = state;
+  const displayName = profile.name || profile.email || "—";
   const rows = [
-    { label: "Name", value: CURRENT_MEMBER.name },
-    { label: "Email", value: CURRENT_MEMBER.email },
-    { label: "Telegram", value: CURRENT_MEMBER.telegramHandle },
-    { label: "Deposit", value: formatMoney(CURRENT_MEMBER.deposit, "€") },
-    { label: "Joined", value: formatDate(CURRENT_MEMBER.joinedAt) },
+    { label: "Name", value: profile.name || "—" },
+    { label: "Email", value: profile.email || "—" },
+    { label: "Telegram", value: profile.telegramHandle || "Not connected" },
+    { label: "Deposit", value: formatMoney(state.lifetimeDeposits, "€") },
+    { label: "Joined", value: profile.joinedAt ? formatDate(profile.joinedAt) : "—" },
   ];
 
   return (
@@ -36,10 +37,10 @@ function SettingsPage() {
       <Card variant="surface" className="micro-lift">
         <div className="flex items-center gap-4 border-b border-white/5 p-6">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-[oklch(0.7_0.2_290)] text-lg font-bold text-primary-foreground">
-            {CURRENT_MEMBER.name.charAt(0)}
+            {displayName.charAt(0).toUpperCase()}
           </div>
           <div>
-            <div className="font-display text-lg font-bold">{CURRENT_MEMBER.name}</div>
+            <div className="font-display text-lg font-bold">{displayName}</div>
             {tier ? (
               <TierTag tier={tier.key} />
             ) : (

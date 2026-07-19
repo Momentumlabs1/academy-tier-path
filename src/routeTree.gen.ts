@@ -9,13 +9,20 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WillkommenRouteImport } from './routes/willkommen'
+import { Route as RegistrierenRouteImport } from './routes/registrieren'
+import { Route as PartnerProgrammRouteImport } from './routes/partner-programm'
+import { Route as PartnerRouteImport } from './routes/partner'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as HegemonyRouteImport } from './routes/hegemony'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AppRouteImport } from './routes/_app'
+import { Route as SlugRouteImport } from './routes/$slug'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as TSlugRouteImport } from './routes/t.$slug'
 import { Route as AdminTenantsRouteImport } from './routes/admin.tenants'
+import { Route as AdminStructureRouteImport } from './routes/admin.structure'
 import { Route as AdminSignalsRouteImport } from './routes/admin.signals'
 import { Route as AdminMembersRouteImport } from './routes/admin.members'
 import { Route as AdminLessonsRouteImport } from './routes/admin.lessons'
@@ -31,6 +38,31 @@ import { Route as AppLessonsRouteImport } from './routes/_app.lessons'
 import { Route as AppLessonsIndexRouteImport } from './routes/_app.lessons.index'
 import { Route as AppLessonsLessonIdRouteImport } from './routes/_app.lessons.$lessonId'
 
+const WillkommenRoute = WillkommenRouteImport.update({
+  id: '/willkommen',
+  path: '/willkommen',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegistrierenRoute = RegistrierenRouteImport.update({
+  id: '/registrieren',
+  path: '/registrieren',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartnerProgrammRoute = PartnerProgrammRouteImport.update({
+  id: '/partner-programm',
+  path: '/partner-programm',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartnerRoute = PartnerRouteImport.update({
+  id: '/partner',
+  path: '/partner',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HegemonyRoute = HegemonyRouteImport.update({
   id: '/hegemony',
   path: '/hegemony',
@@ -43,6 +75,11 @@ const AdminRoute = AdminRouteImport.update({
 } as any)
 const AppRoute = AppRouteImport.update({
   id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SlugRoute = SlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
@@ -63,6 +100,11 @@ const TSlugRoute = TSlugRouteImport.update({
 const AdminTenantsRoute = AdminTenantsRouteImport.update({
   id: '/tenants',
   path: '/tenants',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminStructureRoute = AdminStructureRouteImport.update({
+  id: '/structure',
+  path: '/structure',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminSignalsRoute = AdminSignalsRouteImport.update({
@@ -137,9 +179,15 @@ const AppLessonsLessonIdRoute = AppLessonsLessonIdRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/$slug': typeof SlugRoute
   '/': typeof AppIndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/hegemony': typeof HegemonyRoute
+  '/login': typeof LoginRoute
+  '/partner': typeof PartnerRoute
+  '/partner-programm': typeof PartnerProgrammRoute
+  '/registrieren': typeof RegistrierenRoute
+  '/willkommen': typeof WillkommenRoute
   '/lessons': typeof AppLessonsRouteWithChildren
   '/notifications': typeof AppNotificationsRoute
   '/settings': typeof AppSettingsRoute
@@ -152,6 +200,7 @@ export interface FileRoutesByFullPath {
   '/admin/lessons': typeof AdminLessonsRoute
   '/admin/members': typeof AdminMembersRoute
   '/admin/signals': typeof AdminSignalsRoute
+  '/admin/structure': typeof AdminStructureRoute
   '/admin/tenants': typeof AdminTenantsRoute
   '/t/$slug': typeof TSlugRoute
   '/admin/': typeof AdminIndexRoute
@@ -159,7 +208,13 @@ export interface FileRoutesByFullPath {
   '/lessons/': typeof AppLessonsIndexRoute
 }
 export interface FileRoutesByTo {
+  '/$slug': typeof SlugRoute
   '/hegemony': typeof HegemonyRoute
+  '/login': typeof LoginRoute
+  '/partner': typeof PartnerRoute
+  '/partner-programm': typeof PartnerProgrammRoute
+  '/registrieren': typeof RegistrierenRoute
+  '/willkommen': typeof WillkommenRoute
   '/notifications': typeof AppNotificationsRoute
   '/settings': typeof AppSettingsRoute
   '/signals': typeof AppSignalsRoute
@@ -171,6 +226,7 @@ export interface FileRoutesByTo {
   '/admin/lessons': typeof AdminLessonsRoute
   '/admin/members': typeof AdminMembersRoute
   '/admin/signals': typeof AdminSignalsRoute
+  '/admin/structure': typeof AdminStructureRoute
   '/admin/tenants': typeof AdminTenantsRoute
   '/t/$slug': typeof TSlugRoute
   '/': typeof AppIndexRoute
@@ -180,9 +236,15 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/$slug': typeof SlugRoute
   '/_app': typeof AppRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/hegemony': typeof HegemonyRoute
+  '/login': typeof LoginRoute
+  '/partner': typeof PartnerRoute
+  '/partner-programm': typeof PartnerProgrammRoute
+  '/registrieren': typeof RegistrierenRoute
+  '/willkommen': typeof WillkommenRoute
   '/_app/lessons': typeof AppLessonsRouteWithChildren
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/settings': typeof AppSettingsRoute
@@ -195,6 +257,7 @@ export interface FileRoutesById {
   '/admin/lessons': typeof AdminLessonsRoute
   '/admin/members': typeof AdminMembersRoute
   '/admin/signals': typeof AdminSignalsRoute
+  '/admin/structure': typeof AdminStructureRoute
   '/admin/tenants': typeof AdminTenantsRoute
   '/t/$slug': typeof TSlugRoute
   '/_app/': typeof AppIndexRoute
@@ -205,9 +268,15 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/$slug'
     | '/'
     | '/admin'
     | '/hegemony'
+    | '/login'
+    | '/partner'
+    | '/partner-programm'
+    | '/registrieren'
+    | '/willkommen'
     | '/lessons'
     | '/notifications'
     | '/settings'
@@ -220,6 +289,7 @@ export interface FileRouteTypes {
     | '/admin/lessons'
     | '/admin/members'
     | '/admin/signals'
+    | '/admin/structure'
     | '/admin/tenants'
     | '/t/$slug'
     | '/admin/'
@@ -227,7 +297,13 @@ export interface FileRouteTypes {
     | '/lessons/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/$slug'
     | '/hegemony'
+    | '/login'
+    | '/partner'
+    | '/partner-programm'
+    | '/registrieren'
+    | '/willkommen'
     | '/notifications'
     | '/settings'
     | '/signals'
@@ -239,6 +315,7 @@ export interface FileRouteTypes {
     | '/admin/lessons'
     | '/admin/members'
     | '/admin/signals'
+    | '/admin/structure'
     | '/admin/tenants'
     | '/t/$slug'
     | '/'
@@ -247,9 +324,15 @@ export interface FileRouteTypes {
     | '/lessons'
   id:
     | '__root__'
+    | '/$slug'
     | '/_app'
     | '/admin'
     | '/hegemony'
+    | '/login'
+    | '/partner'
+    | '/partner-programm'
+    | '/registrieren'
+    | '/willkommen'
     | '/_app/lessons'
     | '/_app/notifications'
     | '/_app/settings'
@@ -262,6 +345,7 @@ export interface FileRouteTypes {
     | '/admin/lessons'
     | '/admin/members'
     | '/admin/signals'
+    | '/admin/structure'
     | '/admin/tenants'
     | '/t/$slug'
     | '/_app/'
@@ -271,14 +355,55 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  SlugRoute: typeof SlugRoute
   AppRoute: typeof AppRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
   HegemonyRoute: typeof HegemonyRoute
+  LoginRoute: typeof LoginRoute
+  PartnerRoute: typeof PartnerRoute
+  PartnerProgrammRoute: typeof PartnerProgrammRoute
+  RegistrierenRoute: typeof RegistrierenRoute
+  WillkommenRoute: typeof WillkommenRoute
   TSlugRoute: typeof TSlugRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/willkommen': {
+      id: '/willkommen'
+      path: '/willkommen'
+      fullPath: '/willkommen'
+      preLoaderRoute: typeof WillkommenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/registrieren': {
+      id: '/registrieren'
+      path: '/registrieren'
+      fullPath: '/registrieren'
+      preLoaderRoute: typeof RegistrierenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/partner-programm': {
+      id: '/partner-programm'
+      path: '/partner-programm'
+      fullPath: '/partner-programm'
+      preLoaderRoute: typeof PartnerProgrammRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/partner': {
+      id: '/partner'
+      path: '/partner'
+      fullPath: '/partner'
+      preLoaderRoute: typeof PartnerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/hegemony': {
       id: '/hegemony'
       path: '/hegemony'
@@ -298,6 +423,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: '/'
       preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$slug': {
+      id: '/$slug'
+      path: '/$slug'
+      fullPath: '/$slug'
+      preLoaderRoute: typeof SlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -326,6 +458,13 @@ declare module '@tanstack/react-router' {
       path: '/tenants'
       fullPath: '/admin/tenants'
       preLoaderRoute: typeof AdminTenantsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/structure': {
+      id: '/admin/structure'
+      path: '/structure'
+      fullPath: '/admin/structure'
+      preLoaderRoute: typeof AdminStructureRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/signals': {
@@ -473,6 +612,7 @@ interface AdminRouteChildren {
   AdminLessonsRoute: typeof AdminLessonsRoute
   AdminMembersRoute: typeof AdminMembersRoute
   AdminSignalsRoute: typeof AdminSignalsRoute
+  AdminStructureRoute: typeof AdminStructureRoute
   AdminTenantsRoute: typeof AdminTenantsRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -483,6 +623,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminLessonsRoute: AdminLessonsRoute,
   AdminMembersRoute: AdminMembersRoute,
   AdminSignalsRoute: AdminSignalsRoute,
+  AdminStructureRoute: AdminStructureRoute,
   AdminTenantsRoute: AdminTenantsRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
@@ -490,9 +631,15 @@ const AdminRouteChildren: AdminRouteChildren = {
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  SlugRoute: SlugRoute,
   AppRoute: AppRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
   HegemonyRoute: HegemonyRoute,
+  LoginRoute: LoginRoute,
+  PartnerRoute: PartnerRoute,
+  PartnerProgrammRoute: PartnerProgrammRoute,
+  RegistrierenRoute: RegistrierenRoute,
+  WillkommenRoute: WillkommenRoute,
   TSlugRoute: TSlugRoute,
 }
 export const routeTree = rootRouteImport

@@ -1,7 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { Bell, BookOpen, Calculator, LayoutDashboard, Radio, Settings, ShieldCheck, Trophy, Unlock } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { CURRENT_MEMBER } from "@/lib/academy-data";
 import { useMemberState } from "@/hooks/useMemberState";
 
 const MENU = [
@@ -79,7 +78,7 @@ export function Sidebar() {
           )}
         </Link>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold">{CURRENT_MEMBER.name}</div>
+          <div className="truncate text-sm font-semibold">{state.profile.name || state.profile.email || "Dein Account"}</div>
           <div className="truncate text-[11px] text-muted-foreground">{state.currentTier?.name ?? "Below Foundation"} Member</div>
         </div>
       </div>

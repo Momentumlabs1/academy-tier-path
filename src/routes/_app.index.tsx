@@ -6,8 +6,11 @@ import { SectionTitle } from "@/components/academy/primitives/SectionTitle";
 import { DepositLadder } from "@/components/academy/tier/DepositLadder";
 import { ProgressStats } from "@/components/academy/progress/ProgressStats";
 import { Card } from "@/components/academy/primitives/Card";
-import { LESSONS, CURRENT_MEMBER } from "@/lib/academy-data";
+import { LockedGate } from "@/components/academy/onboarding/LockedGate";
+import { PostDepositWelcome } from "@/components/academy/onboarding/PostDepositWelcome";
+import { LESSONS } from "@/lib/academy-data";
 import { useMemberState } from "@/hooks/useMemberState";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_app/")({
   head: () => ({
@@ -34,6 +37,9 @@ const QUICK_ACTIONS = [
 
 function Dashboard() {
   const state = useMemberState();
+  // Before the first deposit, everything gated should "breathe" — a gentle pull
+  // toward the deposit that unlocks it. Once funded, the glow/veil fall away.
+  const notFunded = state.loaded && state.lifetimeDeposits <= 0;
   const tierRank = state.currentTier
     ? ["foundation", "operator", "elite"].indexOf(state.currentTier.key)
     : -1;
@@ -47,6 +53,9 @@ function Dashboard() {
   return (
     <div className="space-y-6">
 
+      {/* After the first deposit: the two Cosmo welcome videos light up here. */}
+      <PostDepositWelcome />
+
       {/* Greeting + action launcher — orientation only; tier/deposit/progress live in the Deposit Path card below */}
       <Card variant="hero" className="relative overflow-hidden px-5 py-6 sm:px-7 sm:py-7">
         {/* Ambient glow blob */}
@@ -56,7 +65,7 @@ function Dashboard() {
         <div className="relative">
           <p className="text-sm font-medium text-muted-foreground">{greeting()},</p>
           <h1 className="mt-0.5 font-display text-2xl font-bold tracking-tight sm:text-3xl">
-            {CURRENT_MEMBER.name.split(" ")[0]} 👋
+            {(state.profile.name || state.profile.email).split(/[ @]/)[0] || "Trader"} 👋
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">Pick up where you left off.</p>
 
@@ -88,13 +97,19 @@ function Dashboard() {
         </div>
       </Card>
 
-      {/* Money — single source of truth for tier, deposits & progress */}
-      <DepositLadder />
+      {/* Money — single source of truth for tier, deposits & progress.
+          Unfunded → the whole card breathes so the deposit path is the focal point. */}
+      <div className={cn("rounded-[var(--radius)]", notFunded && "animate-glow")}>
+        <DepositLadder />
+      </div>
 
       {/* Learning — lessons & XP */}
       <ProgressStats />
 
-      <HeroBento />
+      {/* Premium tiles — visible but gated (blurred + glowing) until first deposit. */}
+      <LockedGate locked={notFunded} label="Live-Signale & Mentoren mit deiner ersten Einzahlung freischalten">
+        <HeroBento />
+      </LockedGate>
 
       <section>
         <SectionTitle

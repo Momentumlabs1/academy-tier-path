@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AdminPageHeader, AdminKpiCard } from "@/components/academy/admin/AdminShell";
-import { SIGNAL_RELAY_LOG } from "@/lib/admin-data";
 import { TENANTS } from "@/lib/tenants";
 import { useTelegramConfig } from "@/hooks/useTelegramConfig";
-import { ArrowRight, Check, CheckCircle2, Copy, MessageCircle, Radio, XCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { ArrowRight, Check, CheckCircle2, Copy, Loader2, MessageCircle, Radio, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { functionUrl } from "@/integrations/supabase/functions-url";
 
 export const Route = createFileRoute("/admin/signals")({
   head: () => ({ meta: [{ title: "Signal Relay — Admin" }] }),
@@ -21,8 +22,8 @@ const SETUP_STEPS = [
   { title: "Channel-IDs eintragen", body: "telegram_channel_id pro Tenant in der Datenbank setzen — ab dann läuft der Fan-out automatisch." },
 ];
 
-// Academy Supabase project — the function URL is fixed; only the token/secret stay placeholders.
-const FUNCTION_URL = "https://fymbblasfpfuyhpsesxk.supabase.co/functions/v1/telegram-webhook";
+// Function URL derived from the app's configured Supabase project; only the token/secret stay placeholders.
+const FUNCTION_URL = functionUrl("telegram-webhook");
 const WEBHOOK_CMD = `curl "https://api.telegram.org/bot<BOT_TOKEN>/setWebhook" \\
   -d "url=${FUNCTION_URL}" \\
   -d "secret_token=<TELEGRAM_WEBHOOK_SECRET>" \\
@@ -37,12 +38,65 @@ function timeAgo(iso: string): string {
   return `${Math.round(h / 24)}d ago`;
 }
 
+// One delivery outcome per brand, keyed by tenant slug, as stored in the
+// `signal_relays.delivered` jsonb map.
+type DeliveryOutcome = { ok?: boolean; message_id?: number; error?: string };
+
+interface RelayRow {
+  id: string;
+  preview: string | null;
+  delivered: Record<string, DeliveryOutcome>;
+  createdAt: string;
+}
+
+interface RelayLogState {
+  loading: boolean;
+  error: string | null;
+  rows: RelayRow[];
+}
+
+// Live signal relay history from Supabase. Falls back to an honest empty list
+// (never demo data) while loading or on error.
+function useSignalRelays(): RelayLogState {
+  const [state, setState] = useState<RelayLogState>({ loading: true, error: null, rows: [] });
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      // `signal_relays` is not yet in the generated Database types, so query untyped.
+      const { data, error } = await (supabase as any)
+        .from("signal_relays")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50);
+      if (!alive) return;
+      if (error) {
+        setState({ loading: false, error: error.message, rows: [] });
+        return;
+      }
+      const rows: RelayRow[] = (data ?? []).map((r: Record<string, unknown>) => ({
+        id: String(r.id),
+        preview: (r.preview as string | null) ?? null,
+        delivered: (r.delivered as Record<string, DeliveryOutcome> | null) ?? {},
+        createdAt: String(r.created_at),
+      }));
+      setState({ loading: false, error: null, rows });
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  return state;
+}
+
 function AdminSignals() {
   const [copied, setCopied] = useState(false);
   const { cfg, update } = useTelegramConfig();
-  const totalDeliveries = SIGNAL_RELAY_LOG.reduce((s, r) => s + Object.keys(r.delivered).length, 0);
-  const failed = SIGNAL_RELAY_LOG.reduce((s, r) => s + Object.values(r.delivered).filter((d) => !d.ok).length, 0);
-  const rate = Math.round(((totalDeliveries - failed) / totalDeliveries) * 100);
+  const { loading, error, rows } = useSignalRelays();
+  const totalDeliveries = rows.reduce((s, r) => s + Object.keys(r.delivered).length, 0);
+  const failed = rows.reduce((s, r) => s + Object.values(r.delivered).filter((d) => d.ok === false).length, 0);
+  const rate = totalDeliveries ? Math.round(((totalDeliveries - failed) / totalDeliveries) * 100) : 0;
 
   function copyCmd() {
     navigator.clipboard?.writeText(WEBHOOK_CMD);
@@ -97,8 +151,13 @@ function AdminSignals() {
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <AdminKpiCard label="Main channel" value="Demo" sub="wire up via setup below" />
         <AdminKpiCard label="Brand channels" value={TENANTS.length} tone="primary" />
-        <AdminKpiCard label="Signals relayed" value={SIGNAL_RELAY_LOG.length} sub="last 3 days" />
-        <AdminKpiCard label="Delivery rate" value={`${rate}%`} tone={rate === 100 ? "ok" : "warn"} sub={failed ? `${failed} failed` : "all delivered"} />
+        <AdminKpiCard label="Signals relayed" value={loading ? "…" : rows.length} sub="letzte 50" />
+        <AdminKpiCard
+          label="Delivery rate"
+          value={loading ? "…" : totalDeliveries ? `${rate}%` : "—"}
+          tone={!totalDeliveries ? undefined : rate === 100 ? "ok" : "warn"}
+          sub={!totalDeliveries ? "noch keine Zustellungen" : failed ? `${failed} fehlgeschlagen` : "alle zugestellt"}
+        />
       </div>
 
       {/* Pipeline visual */}
@@ -156,40 +215,66 @@ function AdminSignals() {
         </div>
       </div>
 
-      {/* Relay log */}
+      {/* Relay log — live aus signal_relays */}
       <div className="overflow-hidden rounded-2xl border border-white/5 bg-[oklch(0.16_0.06_250)]">
         <div className="flex items-center justify-between px-5 pt-4 pb-3">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Relay log (Demo)</div>
-          <div className="text-[11px] text-muted-foreground">wird live aus signal_relays gelesen</div>
+          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Relay log</div>
+          <div className="text-[11px] text-muted-foreground">live aus signal_relays</div>
         </div>
-        <div className="divide-y divide-white/5">
-          {SIGNAL_RELAY_LOG.map((r) => (
-            <div key={r.id} className="flex items-center gap-3 px-5 py-3">
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-sm">{r.preview}</div>
-                <div className="mt-0.5 text-[11px] text-muted-foreground">{timeAgo(r.createdAt)}</div>
-              </div>
-              <div className="flex shrink-0 items-center gap-1.5">
-                {Object.entries(r.delivered).map(([slug, d]) => {
-                  const t = TENANTS.find((x) => x.slug === slug);
-                  return (
-                    <span
-                      key={slug}
-                      title={d.ok ? `${t?.name ?? slug}: delivered` : `${t?.name ?? slug}: ${d.error}`}
-                      className={cn(
-                        "flex h-6 w-6 items-center justify-center rounded-md text-[9px] font-black",
-                        d.ok ? "opacity-90" : "opacity-40 grayscale",
-                      )}
-                      style={{ backgroundColor: t?.primaryColor ?? "#888", color: "oklch(0.15 0.03 250)" }}
-                    >
-                      {d.ok ? (t?.logoInitials ?? "?") : <XCircle className="h-3.5 w-3.5" />}
-                    </span>
-                  );
-                })}
-              </div>
+
+        {error && (
+          <div className="mx-5 mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+            Relay-Log konnte nicht geladen werden: {error}
+          </div>
+        )}
+
+        {loading ? (
+          <div className="flex items-center gap-2 px-5 py-10 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Lade Relay-Log…
+          </div>
+        ) : !error && rows.length === 0 ? (
+          <div className="px-5 pb-6">
+            <div className="rounded-xl border border-dashed border-white/10 px-4 py-10 text-center text-sm text-muted-foreground">
+              Noch keine relayten Signale.
             </div>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <div className="divide-y divide-white/5">
+            {rows.map((r) => {
+              const entries = Object.entries(r.delivered);
+              const okCount = entries.filter(([, d]) => d.ok !== false).length;
+              return (
+                <div key={r.id} className="flex items-center gap-3 px-5 py-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm">{r.preview || "(kein Vorschautext)"}</div>
+                    <div className="mt-0.5 text-[11px] text-muted-foreground">
+                      {timeAgo(r.createdAt)} · {okCount}/{entries.length} zugestellt
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    {entries.map(([slug, d]) => {
+                      const t = TENANTS.find((x) => x.slug === slug);
+                      const ok = d.ok !== false;
+                      return (
+                        <span
+                          key={slug}
+                          title={ok ? `${t?.name ?? slug}: zugestellt` : `${t?.name ?? slug}: ${d.error ?? "fehlgeschlagen"}`}
+                          className={cn(
+                            "flex h-6 w-6 items-center justify-center rounded-md text-[9px] font-black",
+                            ok ? "opacity-90" : "opacity-40 grayscale",
+                          )}
+                          style={{ backgroundColor: t?.primaryColor ?? "#888", color: "oklch(0.15 0.03 250)" }}
+                        >
+                          {ok ? (t?.logoInitials ?? "?") : <XCircle className="h-3.5 w-3.5" />}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Setup checklist */}
