@@ -1,0 +1,251 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#070a10}canvas{position:absolute;left:0;top:0}</style>
+</head><body><canvas id="cv" width="1920" height="1080"></canvas><script>
+const X=document.getElementById('cv').getContext('2d');const W=1920,H=1080;
+const BG='#070a10',INK='#eaf2f8',MUT='#8b98a8',DIM='#5a6a80',LIME='#b6f04a',CYAN='#39d0d0',MAG='#e06bd8',RED='#ff5470',GRN='#33e08a',GOLD='#ffcf5c';
+const SANS='system-ui,-apple-system,"Segoe UI",Roboto,sans-serif',MONO='ui-monospace,"SF Mono",Menlo,monospace';
+const P=Math.round;let T=0;
+const clamp=(u,a,b)=>u<a?a:u>b?b:u;
+const es=u=>{u=clamp(u,0,1);return u<.5?4*u*u*u:1-Math.pow(-2*u+2,3)/2;};
+const eo=u=>{u=clamp(u,0,1);return 1-Math.pow(1-u,3);};
+const bo=u=>{u=clamp(u,0,1);const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(u-1,3)+c1*Math.pow(u-1,2);};
+const hexA=(h,a)=>{const n=parseInt(h.slice(1),16);return`rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;};
+const rr=(x,y,w,h,r)=>{x=P(x);y=P(y);w=P(w);h=P(h);X.beginPath();X.moveTo(x+r,y);X.arcTo(x+w,y,x+w,y+h,r);X.arcTo(x+w,y+h,x,y+h,r);X.arcTo(x,y+h,x,y,r);X.arcTo(x,y,x+w,y,r);X.closePath();};
+const rnd=s=>{s=Math.sin(s*127.1)*43758.5453;return s-Math.floor(s);};
+const sA=(t0,t1)=>{const i=clamp((T-t0)/0.4,0,1),o=clamp((t1-T)/0.4,0,1);return Math.max(0,Math.min(i,o));};
+const rv=(t0,d)=>es(clamp((T-t0)/(d||0.5),0,1));
+const ry=(t0,d)=>{const u=clamp((T-t0)/(d||0.55),0,1);return (1-bo(u))*22;};
+function pbox(x,y,w,h,col,a){X.fillStyle='rgba(12,18,26,0.5)';rr(x,y,w,h,18);X.fill();X.strokeStyle=hexA(col,a==null?0.5:a);X.lineWidth=2;rr(x,y,w,h,18);X.stroke();}
+function kick(txt,x,y,col){X.save();X.fillStyle=col;X.font='800 26px '+MONO;X.textAlign='left';X.textBaseline='alphabetic';X.fillText('● '+txt,P(x),P(y));X.restore();}
+function chkIcon(cx,cy,good,col,r){r=r||16;X.save();X.translate(P(cx),P(cy));X.fillStyle=col;X.beginPath();X.arc(0,0,r,0,7);X.fill();X.strokeStyle='#0a0e10';X.lineWidth=3.5;X.lineCap='round';X.lineJoin='round';
+  if(good){X.beginPath();X.moveTo(-r*0.42,0);X.lineTo(-r*0.1,r*0.38);X.lineTo(r*0.5,-r*0.44);X.stroke();}else{X.beginPath();X.moveTo(-r*0.4,-r*0.4);X.lineTo(r*0.4,r*0.4);X.moveTo(r*0.4,-r*0.4);X.lineTo(-r*0.4,r*0.4);X.stroke();}X.restore();}
+function bg(){X.fillStyle=BG;X.fillRect(0,0,W,H);
+  X.save();X.globalAlpha=0.045;X.strokeStyle='#5a6a80';X.lineWidth=1;const ox=P((T*8)%80);
+  for(let x=-80+ox;x<W;x+=80){X.beginPath();X.moveTo(P(x)+0.5,0);X.lineTo(P(x)+0.5,H);X.stroke();}
+  for(let y=0;y<H;y+=80){X.beginPath();X.moveTo(0,y+0.5);X.lineTo(W,y+0.5);X.stroke();}X.restore();
+  [[360,300,RED],[1560,760,MAG],[1180,220,GOLD]].forEach((o,i)=>{const ph=T*0.2+i*2.1;const gx=o[0]+Math.sin(ph)*50,gy=o[1]+Math.cos(ph*0.8)*38;
+    const g=X.createRadialGradient(gx,gy,0,gx,gy,540);g.addColorStop(0,hexA(o[2],0.07));g.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=g;X.fillRect(gx-540,gy-540,1080,1080);});}
+function vignette(){const g=X.createRadialGradient(W/2,H/2,H*0.4,W/2,H/2,H*0.9);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,0.5)');X.fillStyle=g;X.fillRect(0,0,W,H);}
+function cap(txt,col,t0,t1){const a=sA(t0,t1);if(a<=0)return;X.save();X.globalAlpha=a;X.textAlign='center';X.textBaseline='middle';
+  const y=H-112;X.font='800 38px '+SANS;const w=X.measureText(txt).width+76;X.fillStyle='#0c1420';rr(W/2-w/2,y-38,w,76,16);X.fill();
+  X.strokeStyle=hexA(col,0.7);X.lineWidth=2;rr(W/2-w/2,y-38,w,76,16);X.stroke();X.fillStyle=INK;X.fillText(txt,P(W/2),P(y));X.restore();}
+function wrapText(txt,x,y,maxw,lh){const ws=txt.split(' ');let line='',yy=y;const lines=[];
+  for(const w of ws){const t=line?line+' '+w:w;if(X.measureText(t).width>maxw&&line){lines.push(line);line=w;}else line=t;}lines.push(line);
+  const sy=y-(lines.length-1)*lh/2;lines.forEach((l,i)=>X.fillText(l,P(x),P(sy+i*lh)));}
+function wrapC(txt,cx,y,maxw,lh){X.textAlign='center';const ws=txt.split(' ');let line='';const lines=[];
+  for(const w of ws){const t=line?line+' '+w:w;if(X.measureText(t).width>maxw&&line){lines.push(line);line=w;}else line=t;}lines.push(line);
+  const sy=y-(lines.length-1)*lh/2;lines.forEach((l,i)=>X.fillText(l,P(cx),P(sy+i*lh)));}
+function wrapL(txt,x,y,maxw,lh){X.textAlign='left';const ws=txt.split(' ');let line='';const lines=[];
+  for(const w of ws){const t=line?line+' '+w:w;if(X.measureText(t).width>maxw&&line){lines.push(line);line=w;}else line=t;}lines.push(line);
+  lines.forEach((l,i)=>X.fillText(l,P(x),P(y+i*lh)));}
+
+// ---------- candle chart helper (code-drawn) ----------
+function drawCandles(bx,by,bw,bh,n,seed,trend){
+  const cw=bw/n;let cy=by+bh*(trend>0?0.28:0.60);
+  for(let i=0;i<n;i++){
+    const cx=P(bx+cw*(i+0.5));
+    const step=(rnd(seed+i)-0.5)*bh*0.11 + trend*bh*0.020;
+    const oY=cy;cy=clamp(cy+step,by+22,by+bh-22);const cY=cy;
+    const up=cY<oY;const bt=Math.min(oY,cY),bb=Math.max(oY,cY);
+    const wHi=clamp(bt-(5+rnd(seed+i+7)*20),by+3,by+bh-3),wLo=clamp(bb+(5+rnd(seed+i+2)*20),by+3,by+bh-3);
+    const col=up?GRN:RED;
+    X.strokeStyle=hexA(col,0.75);X.lineWidth=2;X.beginPath();X.moveTo(cx+0.5,P(wHi));X.lineTo(cx+0.5,P(wLo));X.stroke();
+    X.fillStyle=hexA(col,0.85);const w2=cw*0.5;rr(cx-w2/2,bt,w2,Math.max(3,bb-bt),2);X.fill();
+  }
+}
+function hLine(bx,bw,y,col,label,val,al){X.save();X.globalAlpha*=(al==null?1:al);
+  X.setLineDash([12,10]);X.strokeStyle=hexA(col,0.85);X.lineWidth=2.5;X.beginPath();X.moveTo(P(bx),P(y)+0.5);X.lineTo(P(bx+bw),P(y)+0.5);X.stroke();X.setLineDash([]);
+  X.font='800 24px '+MONO;X.textAlign='left';X.textBaseline='middle';const tw=X.measureText(label+'  '+val).width+28;
+  X.fillStyle='#0c1420';rr(bx+16,y-20,tw,40,9);X.fill();X.strokeStyle=hexA(col,0.7);X.lineWidth=1.5;rr(bx+16,y-20,tw,40,9);X.stroke();
+  X.fillStyle=col;X.fillText(label,P(bx+30),P(y));X.fillStyle=INK;X.fillText('  '+val,P(bx+30+X.measureText(label).width),P(y));X.restore();}
+
+// ---------- SCENE 1: TITLE 0 - 16.8 ----------
+function scTitle(){const a=sA(0,16.8);if(a<=0)return;X.save();X.globalAlpha=a;X.textAlign='center';X.textBaseline='middle';
+  const kk=rv(0.5,0.5);if(kk>0){X.save();X.globalAlpha*=Math.min(1,kk*1.2);X.fillStyle=CYAN;X.font='800 30px '+MONO;X.fillText('● THE SIGNALS CHANNEL',P(W/2),P(H/2-200+(1-kk)*20));X.restore();}
+  X.font='900 132px '+SANS;const lines=[['COPY SIGNALS',INK,1.0],['LIKE A PRO',GOLD,1.35]];
+  lines.forEach((l,i)=>{const lu=rv(l[2],0.7);if(lu<=0)return;X.save();X.globalAlpha*=Math.min(1,lu*1.2);X.fillStyle=l[1];if(i===1){X.shadowColor=hexA(GOLD,0.45);X.shadowBlur=26;}X.fillText(l[0],P(W/2),P(H/2-52+i*130+(1-bo(lu))*40));X.restore();});
+  const su=rv(4.1,0.6);if(su>0){X.save();X.globalAlpha*=Math.min(1,su);X.fillStyle=MUT;X.font='600 34px '+SANS;X.fillText('In 3 minutes: read it  ·  place it  ·  manage it — the exact workflow',P(W/2),P(H/2+160));X.restore();}
+  const gp=rv(13.7,0.5);if(gp>0){X.save();X.globalAlpha*=Math.min(1,gp*1.2);X.fillStyle=LIME;X.font='800 30px '+SANS;X.fillText('Grab your phone — let’s do this together',P(W/2),P(H/2+232));X.restore();}
+  X.restore();}
+
+// ---------- SCENE 2: READ THE SIGNAL / ANATOMY 16.6 - 50.5 ----------
+function scAnatomy(){const a=sA(16.6,50.5);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('READ THE SIGNAL',150,140,CYAN);
+  const bx=180,by=250,bw=650,bh=548;pbox(bx,by,bw,bh,CYAN,0.55);
+  const lx=bx+36,vx=bx+bw-36;
+  // header: SELL XAUUSD
+  (function(){const u=rv(22.22,0.5);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(22.22));
+    const badgeW=118;X.fillStyle=hexA(RED,0.9);rr(lx,286,badgeW,52,12);X.fill();X.fillStyle='#0a0e10';X.font='900 30px '+SANS;X.textAlign='center';X.textBaseline='middle';X.fillText('SELL',P(lx+badgeW/2),P(313));
+    X.fillStyle=INK;X.font='900 40px '+SANS;X.textAlign='left';X.fillText('XAUUSD',P(lx+badgeW+22),P(313));
+    X.fillStyle=MUT;X.font='700 26px '+SANS;X.textAlign='right';X.fillText('GOLD',P(vx),P(313));X.restore();})();
+  // divider
+  X.strokeStyle=hexA(MUT,0.18);X.lineWidth=1.5;X.beginPath();X.moveTo(P(lx),P(360.5));X.lineTo(P(vx),P(360.5));X.stroke();
+  function row(label,val,y,col,t0){const u=rv(t0,0.5);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(t0));
+    X.fillStyle=MUT;X.font='700 27px '+SANS;X.textAlign='left';X.textBaseline='middle';X.fillText(label,P(lx),P(y));
+    X.fillStyle=col;X.font='800 34px '+MONO;X.textAlign='right';X.fillText(val,P(vx),P(y));X.restore();}
+  row('ENTRY','2354.0',408,INK,27.08);
+  row('STOP LOSS','2361.0',476,RED,30.44);
+  // TP header
+  (function(){const u=rv(36.1,0.5);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(36.1));
+    X.fillStyle=GRN;X.font='700 24px '+MONO;X.textAlign='left';X.textBaseline='middle';X.fillText('TAKE PROFIT ×4',P(lx),P(540));X.restore();})();
+  [['TP1','2349',580],['TP2','2344',630],['TP3','2338',680],['TP4','2330',730]].forEach((tp,i)=>{const t0=36.1+i*0.18;const u=rv(t0,0.5);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(t0));
+    X.fillStyle=hexA(GRN,0.5);X.font='700 26px '+MONO;X.textAlign='left';X.textBaseline='middle';X.fillText(tp[0],P(lx),P(tp[2]));
+    X.fillStyle=GRN;X.font='800 30px '+MONO;X.textAlign='right';X.fillText(tp[1],P(vx),P(tp[2]));X.restore();});
+  // right annotations
+  function ann(y,head,body,col,t0){const u=rv(t0,0.5);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(t0));
+    chkIcon(920,y,true,col,12);X.fillStyle=col;X.font='800 30px '+SANS;X.textAlign='left';X.textBaseline='middle';X.fillText(head,P(956),P(y));
+    X.fillStyle=MUT;X.font='600 25px '+SANS;X.textBaseline='top';wrapL(body,956,y+22,880,32);X.restore();}
+  ann(330,'Direction + instrument','A SELL on GOLD — what and which way.',CYAN,22.22);
+  ann(430,'Entry price','Where the trade is meant to start.',INK,27.08);
+  ann(505,'Stop loss = your protection','The level where the trade is simply wrong.',RED,30.44);
+  ann(628,'Four take-profit levels','Lock in profits, step by step.',GRN,36.1);
+  // golden rule banner
+  (function(){const u=rv(41.68,0.6);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(41.68));
+    pbox(180,842,1560,110,GOLD,0.75);X.fillStyle=GOLD;X.font='800 24px '+MONO;X.textAlign='left';X.textBaseline='middle';X.fillText('★ GOLDEN RULE',P(220),P(897));
+    X.fillStyle=INK;X.font='900 44px '+SANS;X.textAlign='center';X.fillText('1–3% risk per trade  ·  MAXIMUM  ·  no exceptions',P(W/2+70),P(897));X.restore();})();
+  X.restore();}
+
+// ---------- SCENE 3: STEP 2 OPEN BROKER APP 50.3 - 68.5 ----------
+function scStep2(){const a=sA(50.3,68.5);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('STEP 2 · OPEN YOUR BROKER APP',150,140,CYAN);
+  // search bar left
+  (function(){const u=rv(51.64,0.5);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(51.64));
+    pbox(180,250,540,96,CYAN,0.6);X.strokeStyle=hexA(CYAN,0.8);X.lineWidth=3;X.beginPath();X.arc(P(228),P(298),15,0,7);X.stroke();X.beginPath();X.moveTo(P(240),P(310));X.lineTo(P(256),P(326));X.stroke();
+    X.fillStyle=INK;X.font='800 40px '+MONO;X.textAlign='left';X.textBaseline='middle';X.fillText('XAUUSD',P(275),P(298));
+    X.fillStyle=MUT;X.font='600 27px '+SANS;X.textBaseline='top';X.fillText('Find the instrument from the signal',P(184),P(370));X.restore();})();
+  // tap symbol -> open chart note
+  (function(){const u=rv(55.94,0.5);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(55.94));
+    X.fillStyle=INK;X.font='700 30px '+SANS;X.textAlign='left';X.textBaseline='top';X.fillText('Tap the symbol → open the chart',P(184),P(440));X.restore();})();
+  // 3 second check
+  (function(){const u=rv(59.44,0.5);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(59.44));
+    X.fillStyle=CYAN;X.font='800 34px '+SANS;X.textAlign='left';X.textBaseline='top';X.fillText('3-second check:',P(184),P(500));
+    X.fillStyle=MUT;X.font='600 28px '+SANS;wrapL('Where is the price now, compared to the entry?',184,548,540,34);X.restore();})();
+  // mini chart
+  (function(){const u=rv(55.94,0.6);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u);const bx=780,by=250,bw=1000,bh=430;
+    pbox(bx,by,bw,bh,CYAN,0.5);drawCandles(bx+20,by+20,bw-40,bh-40,18,7.3,-1);
+    hLine(bx,bw,by+bh*0.52,CYAN,'ENTRY','2354.0',rv(55.94,0.5));
+    // current price dot at right
+    const pu=rv(59.44,0.6);if(pu>0){const px=bx+bw-60,py=by+bh*0.30;X.globalAlpha*=Math.min(1,pu);X.fillStyle=GOLD;X.beginPath();X.arc(P(px),P(py),9,0,7);X.fill();
+      X.fillStyle='#0c1420';X.font='800 22px '+MONO;const tw=X.measureText('PRICE NOW').width+24;rr(px-tw-16,py-18,tw,36,8);X.fill();X.strokeStyle=hexA(GOLD,0.7);X.lineWidth=1.5;rr(px-tw-16,py-18,tw,36,8);X.stroke();X.fillStyle=GOLD;X.textAlign='center';X.textBaseline='middle';X.fillText('PRICE NOW',P(px-tw/2-16),P(py));}
+    X.restore();})();
+  // decision banner
+  (function(){const u=rv(62.54,0.6);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(62.54));
+    pbox(180,760,1600,150,GOLD,0.7);chkIcon(250,835,false,RED,20);
+    X.fillStyle=INK;X.font='800 38px '+SANS;X.textAlign='left';X.textBaseline='middle';X.fillText('Already way past the entry? Let this one go.',P(300),P(812));
+    X.fillStyle=LIME;X.font='700 30px '+SANS;X.fillText('There’s always a next signal.',P(300),P(862));X.restore();})();
+  X.restore();}
+
+// ---------- SCENE 4: STEP 3 THE ORDER / LOT SIZE 68.3 - 95.9 ----------
+function scStep3(){const a=sA(68.3,95.9);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('STEP 3 · THE ORDER',150,140,CYAN);
+  // order ticket
+  const bx=180,by=250,bw=700,bh=560;pbox(bx,by,bw,bh,CYAN,0.55);
+  (function(){const u=rv(71.76,0.5);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(71.76));
+    X.fillStyle=hexA(RED,0.92);rr(bx+40,by+40,bw-80,96,14);X.fill();X.fillStyle='#0a0e10';X.font='900 42px '+SANS;X.textAlign='center';X.textBaseline='middle';X.fillText('SELL  ·  XAUUSD',P(bx+bw/2),P(by+88));X.restore();})();
+  (function(){const u=rv(75.68,0.5);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(75.68));
+    X.fillStyle=MUT;X.font='700 26px '+SANS;X.textAlign='left';X.textBaseline='top';X.fillText('MOST IMPORTANT FIELD',P(bx+42),P(by+180));
+    X.fillStyle='rgba(12,18,26,0.6)';rr(bx+40,by+220,bw-80,130,14);X.fill();X.strokeStyle=hexA(GOLD,0.85);X.lineWidth=3;rr(bx+40,by+220,bw-80,130,14);X.stroke();
+    X.fillStyle=DIM;X.font='700 26px '+SANS;X.textBaseline='middle';X.fillText('LOT SIZE',P(bx+66),P(by+285));
+    X.fillStyle=GOLD;X.font='900 66px '+MONO;X.textAlign='right';X.fillText('0.01',P(bx+bw-66),P(by+285));X.restore();})();
+  (function(){const u=rv(81.6,0.5);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(81.6));
+    X.fillStyle=GOLD;X.font='700 27px '+SANS;X.textAlign='left';X.textBaseline='top';X.fillText('Small account? Start at 0.01 — a micro lot.',P(bx+42),by+380);X.restore();})();
+  // right: risk explanation
+  (function(){const u=rv(78.16,0.5);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(78.16));
+    X.fillStyle=INK;X.font='800 40px '+SANS;X.textAlign='left';X.textBaseline='top';X.fillText('Your 1–3% rule becomes a number.',P(960),P(270));X.restore();})();
+  (function(){const u=rv(89.34,0.6);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(89.34));
+    // account bar
+    X.fillStyle=hexA(CYAN,0.22);rr(960,400,780,60,10);X.fill();X.strokeStyle=hexA(CYAN,0.6);X.lineWidth=2;rr(960,400,780,60,10);X.stroke();
+    X.fillStyle=CYAN;X.font='800 26px '+SANS;X.textAlign='left';X.textBaseline='middle';X.fillText('YOUR ACCOUNT · 100%',P(980),P(430));
+    // risk slice
+    X.fillStyle=hexA(RED,0.9);rr(960,500,90,60,10);X.fill();
+    X.fillStyle='#0a0e10';X.font='900 24px '+SANS;X.textAlign='center';X.fillText('1–3%',P(1005),P(530));
+    X.fillStyle=RED;X.font='800 30px '+SANS;X.textAlign='left';X.fillText('MAX LOSS if the stop loss is hit',P(1070),P(530));
+    X.fillStyle=MUT;X.font='600 28px '+SANS;X.textBaseline='top';wrapL('Lot size is calculated so a stop-out costs you 1–3% of the account — not more.',960,600,780,36);X.restore();})();
+  X.restore();}
+
+// ---------- SCENE 5: STEP 4 STOP + TARGETS 95.7 - 117.6 ----------
+function scStep4(){const a=sA(95.7,117.6);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('STEP 4 · SET STOP + TARGETS',150,140,CYAN);
+  (function(){const u=rv(97.32,0.5);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(97.32));
+    pbox(280,250,560,150,RED,0.75);X.fillStyle=RED;X.font='700 26px '+MONO;X.textAlign='left';X.textBaseline='top';X.fillText('STOP LOSS',P(320),P(280));
+    X.fillStyle=INK;X.font='900 60px '+MONO;X.textBaseline='middle';X.fillText('2361.0',P(320),P(355));
+    pbox(1080,250,560,150,GRN,0.75);X.fillStyle=GRN;X.font='700 26px '+MONO;X.textBaseline='top';X.fillText('TAKE PROFIT',P(1120),P(280));
+    X.fillStyle=INK;X.font='900 60px '+MONO;X.textBaseline='middle';X.fillText('2349.0',P(1120),P(355));X.restore();})();
+  (function(){const u=rv(99.98,0.5);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.textAlign='center';X.textBaseline='middle';
+    X.fillStyle=INK;X.font='900 48px '+SANS;X.fillText('EXACTLY the numbers from the signal',P(W/2),P(470));X.restore();})();
+  (function(){const u=rv(102.44,0.5);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.textAlign='center';X.textBaseline='middle';
+    X.fillStyle=MUT;X.font='700 32px '+SANS;X.fillText('Not your feeling  ·  not roughly  ·  exactly',P(W/2),P(534));X.restore();})();
+  (function(){const u=rv(106.4,0.5);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.textAlign='center';X.textBaseline='middle';
+    X.fillStyle=RED;X.font='800 34px '+SANS;X.fillText('The stop loss is NOT optional — it goes in BEFORE you confirm.',P(W/2),P(602));X.restore();})();
+  (function(){const u=rv(112.0,0.6);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.textAlign='center';X.textBaseline='middle';
+    pbox(W/2-620,660,1240,270,RED,0.8);X.fillStyle=RED;X.font='900 60px '+SANS;X.fillText('No stop loss = not a trade',P(W/2),P(748));
+    X.fillStyle=INK;X.font='700 40px '+SANS;X.fillText('It’s just a hope — with a deposit.',P(W/2),P(838));X.restore();})();
+  X.restore();}
+
+// ---------- SCENE 6: CONFIRM + CHECK THE CHART 117.4 - 135.2 ----------
+function scConfirm(){const a=sA(117.4,135.2);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('CONFIRM · CHECK THE CHART',150,140,GRN);
+  const bx=300,by=250,bw=1320,bh=500;
+  (function(){const u=rv(118.06,0.6);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u);
+    pbox(bx,by,bw,bh,GRN,0.5);drawCandles(bx+20,by+20,bw-40,bh-40,22,4.7,-1);
+    hLine(bx,bw,by+bh*0.20,RED,'STOP LOSS','2361.0',rv(122.04,0.5));
+    hLine(bx,bw,by+bh*0.52,CYAN,'POSITION','2354.0',rv(120.86,0.5));
+    hLine(bx,bw,by+bh*0.82,GRN,'TAKE PROFIT','2349.0',rv(124.32,0.5));X.restore();})();
+  (function(){const u=rv(126.58,0.5);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.textAlign='center';X.textBaseline='middle';
+    chkIcon(bx+bw/2-300,802,true,GRN,18);X.fillStyle=INK;X.font='800 40px '+SANS;X.fillText('Lines on the chart? You’re done.',P(bx+bw/2+30),P(802));X.restore();})();
+  (function(){const u=rv(129.4,0.5);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.textAlign='center';X.textBaseline='middle';
+    X.fillStyle=MUT;X.font='700 32px '+SANS;X.fillText('No staring. No refreshing every minute.',P(W/2),P(868));X.restore();})();
+  (function(){const u=rv(132.44,0.5);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.textAlign='center';X.textBaseline='middle';
+    X.fillStyle=GRN;X.font='800 36px '+SANS;X.fillText('The trade manages itself now.',P(W/2),P(930));X.restore();})();
+  X.restore();}
+
+// ---------- SCENE 7: MANAGE LIKE A PRO 135.0 - 159.9 ----------
+function scManage(){const a=sA(135.0,159.9);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('MANAGE LIKE A PRO',150,140,GOLD);
+  // TP1 hit badge
+  (function(){const u=rv(135.42,0.5);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(135.42));
+    pbox(180,240,480,96,GRN,0.8);chkIcon(240,288,true,GRN,20);X.fillStyle=GRN;X.font='900 40px '+SANS;X.textAlign='left';X.textBaseline='middle';X.fillText('TP1 HIT',P(290),P(288));X.restore();})();
+  (function(){const u=rv(137.54,0.5);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(137.54));
+    X.fillStyle=MUT;X.font='700 30px '+SANS;X.textAlign='left';X.textBaseline='middle';X.fillText('The channel posts it — this is where pros cash flow.',P(700),P(288));X.restore();})();
+  // partial close bar
+  (function(){const u=rv(141.62,0.6);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(141.62));
+    const bx=180,by=400,bw=1560,bh=90;
+    X.fillStyle=hexA(GRN,0.85);rr(bx,by,bw*0.4,bh,12);X.fill();
+    X.fillStyle=hexA(CYAN,0.75);rr(bx+bw*0.4+10,by,bw*0.6-10,bh,12);X.fill();
+    X.fillStyle='#0a0e10';X.font='800 30px '+SANS;X.textAlign='center';X.textBaseline='middle';X.fillText('CLOSE PART @ TP1',P(bx+bw*0.2),P(by+45));
+    X.fillStyle='#0a0e10';X.fillText('RIDE THE REST → TP2',P(bx+bw*0.7),P(by+45));X.restore();})();
+  // NEVER rule
+  (function(){const u=rv(149.7,0.6);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(149.7));
+    pbox(180,540,1560,150,RED,0.8);chkIcon(260,615,false,RED,22);
+    X.fillStyle=RED;X.font='800 26px '+MONO;X.textAlign='left';X.textBaseline='middle';X.fillText('THE ONE THING YOU NEVER DO',P(320),P(590));
+    X.fillStyle=INK;X.font='900 46px '+SANS;X.fillText('Never move your stop loss further away.',P(320),P(645));X.restore();})();
+  // comparison grow vs vanish
+  (function(){const u=rv(154.22,0.6);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(154.22));
+    pbox(180,730,760,190,GRN,0.7);chkIcon(250,825,true,GRN,18);X.fillStyle=GRN;X.font='900 42px '+SANS;X.textAlign='left';X.textBaseline='middle';X.fillText('Accounts that GROW',P(300),P(800));
+    X.fillStyle=MUT;X.font='600 26px '+SANS;X.fillText('hold the stop — take the small loss',P(250),P(858));
+    pbox(980,730,760,190,RED,0.7);chkIcon(1050,825,false,RED,18);X.fillStyle=RED;X.font='900 42px '+SANS;X.fillText('Accounts that VANISH',P(1100),P(800));
+    X.fillStyle=MUT;X.font='600 26px '+SANS;X.fillText('widen the stop — chase the loss down',P(1050),P(858));X.restore();})();
+  X.restore();}
+
+// ---------- SCENE 8: THE WHOLE WORKFLOW 159.7 - 178.2 ----------
+function scWorkflow(){const a=sA(159.7,178.2);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('THE WHOLE WORKFLOW',W/2-160,150,LIME);
+  const steps=[['1','Read the signal',161.98],['2','Check the entry',163.06],['3','Size by risk',164.22],['4','Set stop + targets',165.52],['5','Confirm',167.12],['6','Let it play out',168.8]];
+  const cw=250,gap=42,total=6*cw+5*gap,x0=W/2-total/2;
+  steps.forEach((s,i)=>{const u=rv(s[2],0.45);if(u<=0)return;const x=x0+i*(cw+gap),y=330;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(s[2]));
+    pbox(x,y,cw,160,LIME,0.65);X.fillStyle=hexA(LIME,0.2);X.beginPath();X.arc(P(x+cw/2),P(y+52),26,0,7);X.fill();
+    X.fillStyle=LIME;X.font='900 34px '+SANS;X.textAlign='center';X.textBaseline='middle';X.fillText(s[0],P(x+cw/2),P(y+52));
+    X.fillStyle=INK;X.font='700 25px '+SANS;wrapC(s[1],x+cw/2,y+118,cw-30,30);
+    if(i<5){X.fillStyle=hexA(MUT,Math.min(1,u));X.font='900 40px '+SANS;X.fillText('→',P(x+cw+gap/2),P(y+80));}X.restore();});
+  (function(){const u=rv(170.2,0.5);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.textAlign='center';X.textBaseline='middle';
+    X.fillStyle=INK;X.font='900 66px '+SANS;X.fillText('Simple · Repeatable · Boring',P(W/2),P(600));X.restore();})();
+  (function(){const u=rv(174.12,0.5);if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.textAlign='center';X.textBaseline='middle';
+    X.fillStyle=LIME;X.font='800 44px '+SANS;X.fillText('And that’s exactly why it works.',P(W/2),P(700));X.restore();})();
+  cap('See you in the channel.',CYAN,177.0,178.2);
+  X.restore();}
+
+function renderAt(ms){T=ms/1000;X.clearRect(0,0,W,H);bg();
+  scTitle();scAnatomy();scStep2();scStep3();scStep4();scConfirm();scManage();scWorkflow();
+  vignette();}
+window.renderAt=renderAt;window.__ready=true;renderAt(0);
+</script></body></html>

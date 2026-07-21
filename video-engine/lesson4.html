@@ -1,0 +1,332 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#070a10}canvas{position:absolute;left:0;top:0}</style>
+</head><body><canvas id="cv" width="1920" height="1080"></canvas><script>
+const X=document.getElementById('cv').getContext('2d');const W=1920,H=1080;
+const BG='#070a10',INK='#eaf2f8',MUT='#8b98a8',DIM='#5a6a80',LIME='#b6f04a',CYAN='#39d0d0',MAG='#e06bd8',RED='#ff5470',GRN='#33e08a',GOLD='#ffcf5c';
+const SANS='system-ui,-apple-system,"Segoe UI",Roboto,sans-serif',MONO='ui-monospace,"SF Mono",Menlo,monospace';
+const P=Math.round;let T=0;
+const clamp=(u,a,b)=>u<a?a:u>b?b:u;
+const es=u=>{u=clamp(u,0,1);return u<.5?4*u*u*u:1-Math.pow(-2*u+2,3)/2;};
+const eo=u=>{u=clamp(u,0,1);return 1-Math.pow(1-u,3);};
+const bo=u=>{u=clamp(u,0,1);const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(u-1,3)+c1*Math.pow(u-1,2);};
+const hexA=(h,a)=>{const n=parseInt(h.slice(1),16);return`rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;};
+const rr=(x,y,w,h,r)=>{x=P(x);y=P(y);w=P(w);h=P(h);X.beginPath();X.moveTo(x+r,y);X.arcTo(x+w,y,x+w,y+h,r);X.arcTo(x+w,y+h,x,y+h,r);X.arcTo(x,y+h,x,y,r);X.arcTo(x,y,x+w,y,r);X.closePath();};
+const rnd=s=>{s=Math.sin(s*127.1)*43758.5453;return s-Math.floor(s);};
+const sA=(t0,t1)=>{const i=clamp((T-t0)/0.4,0,1),o=clamp((t1-T)/0.4,0,1);return Math.max(0,Math.min(i,o));};
+const rv=(t0,d)=>es(clamp((T-t0)/(d||0.5),0,1));
+const ry=(t0,d)=>{const u=clamp((T-t0)/(d||0.55),0,1);return (1-bo(u))*22;};
+function pbox(x,y,w,h,col,a){X.fillStyle='rgba(12,18,26,0.5)';rr(x,y,w,h,18);X.fill();X.strokeStyle=hexA(col,a==null?0.5:a);X.lineWidth=2;rr(x,y,w,h,18);X.stroke();}
+function kick(txt,x,y,col){X.save();X.fillStyle=col;X.font='800 26px '+MONO;X.textAlign='left';X.textBaseline='alphabetic';X.fillText('● '+txt,P(x),P(y));X.restore();}
+function chkIcon(cx,cy,good,col,r){r=r||16;X.save();X.translate(P(cx),P(cy));X.fillStyle=col;X.beginPath();X.arc(0,0,r,0,7);X.fill();X.strokeStyle='#0a0e10';X.lineWidth=3.5;X.lineCap='round';X.lineJoin='round';
+  if(good){X.beginPath();X.moveTo(-r*0.42,0);X.lineTo(-r*0.1,r*0.38);X.lineTo(r*0.5,-r*0.44);X.stroke();}else{X.beginPath();X.moveTo(-r*0.4,-r*0.4);X.lineTo(r*0.4,r*0.4);X.moveTo(r*0.4,-r*0.4);X.lineTo(-r*0.4,r*0.4);X.stroke();}X.restore();}
+function bg(){X.fillStyle=BG;X.fillRect(0,0,W,H);
+  X.save();X.globalAlpha=0.045;X.strokeStyle='#5a6a80';X.lineWidth=1;const ox=P((T*8)%80);
+  for(let x=-80+ox;x<W;x+=80){X.beginPath();X.moveTo(P(x)+0.5,0);X.lineTo(P(x)+0.5,H);X.stroke();}
+  for(let y=0;y<H;y+=80){X.beginPath();X.moveTo(0,y+0.5);X.lineTo(W,y+0.5);X.stroke();}X.restore();
+  [[360,300,RED],[1560,760,MAG],[1180,220,GOLD]].forEach((o,i)=>{const ph=T*0.2+i*2.1;const gx=o[0]+Math.sin(ph)*50,gy=o[1]+Math.cos(ph*0.8)*38;
+    const g=X.createRadialGradient(gx,gy,0,gx,gy,540);g.addColorStop(0,hexA(o[2],0.07));g.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=g;X.fillRect(gx-540,gy-540,1080,1080);});}
+function vignette(){const g=X.createRadialGradient(W/2,H/2,H*0.4,W/2,H/2,H*0.9);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,0.5)');X.fillStyle=g;X.fillRect(0,0,W,H);}
+function cap(txt,col,t0,t1){const a=sA(t0,t1);if(a<=0)return;X.save();X.globalAlpha=a;X.textAlign='center';X.textBaseline='middle';
+  const y=H-112;X.font='800 38px '+SANS;const w=X.measureText(txt).width+76;X.fillStyle='#0c1420';rr(W/2-w/2,y-38,w,76,16);X.fill();
+  X.strokeStyle=hexA(col,0.7);X.lineWidth=2;rr(W/2-w/2,y-38,w,76,16);X.stroke();X.fillStyle=INK;X.fillText(txt,P(W/2),P(y));X.restore();}
+function wrapText(txt,x,y,maxw,lh){const ws=txt.split(' ');let line='',yy=y;const lines=[];
+  for(const w of ws){const t=line?line+' '+w:w;if(X.measureText(t).width>maxw&&line){lines.push(line);line=w;}else line=t;}lines.push(line);
+  const sy=y-(lines.length-1)*lh/2;lines.forEach((l,i)=>X.fillText(l,P(x),P(sy+i*lh)));}
+function wrapC(txt,cx,y,maxw,lh){X.textAlign='center';const ws=txt.split(' ');let line='';const lines=[];
+  for(const w of ws){const t=line?line+' '+w:w;if(X.measureText(t).width>maxw&&line){lines.push(line);line=w;}else line=t;}lines.push(line);
+  const sy=y-(lines.length-1)*lh/2;lines.forEach((l,i)=>X.fillText(l,P(cx),P(sy+i*lh)));}
+function wrapL(txt,x,y,maxw,lh){X.textAlign='left';const ws=txt.split(' ');let line='';const lines=[];
+  for(const w of ws){const t=line?line+' '+w:w;if(X.measureText(t).width>maxw&&line){lines.push(line);line=w;}else line=t;}lines.push(line);
+  lines.forEach((l,i)=>X.fillText(l,P(x),P(y+i*lh)));}
+function avatar(cx,cy,r,col){X.save();X.translate(P(cx),P(cy));X.strokeStyle=col;X.lineWidth=3.5;X.lineCap='round';X.lineJoin='round';
+  X.beginPath();X.arc(0,-r*0.32,r*0.34,0,7);X.stroke();
+  X.beginPath();X.arc(0,r*0.62,r*0.62,Math.PI*1.12,Math.PI*1.88);X.stroke();X.restore();}
+
+// ---------- SCENE 1: TITLE 0-26.2 ----------
+function scTitle(){const a=sA(0,26.2);if(a<=0)return;X.save();X.globalAlpha=a;X.textAlign='center';X.textBaseline='middle';
+  const kk=rv(0.2,0.5);if(kk>0){X.fillStyle=CYAN;X.font='800 30px '+MONO;X.fillText('● LESSON 4',P(W/2),P(H/2-210+(1-kk)*20));}
+  X.font='900 116px '+SANS;const lines=['WHAT IS','RETAIL MONEY?'];
+  lines.forEach((l,i)=>{const lu=rv(0.5+i*0.28,0.7);if(lu<=0)return;X.save();X.globalAlpha*=Math.min(1,lu*1.2);
+    X.fillStyle=i===1?CYAN:INK;if(i===1){X.shadowColor=hexA(CYAN,0.5);X.shadowBlur=28;}
+    X.fillText(l,P(W/2),P(H/2-90+i*118+(1-bo(lu))*40));X.restore();});
+  const s1=rv(10.44,0.6);if(s1>0){X.save();X.globalAlpha*=Math.min(1,s1*1.2);X.fillStyle=MUT;X.font='600 36px '+SANS;
+    X.fillText('The market is not one anonymous crowd — it has SIDES',P(W/2),P(H/2+150));X.restore();}
+  const s2=rv(14.24,0.6);if(s2>0){X.save();X.globalAlpha*=Math.min(1,s2*1.2);X.fillStyle=LIME;X.font='800 40px '+SANS;
+    X.fillText('Today decides which side you are on',P(W/2),P(H/2+230));X.restore();}
+  X.restore();}
+// ---------- SCENE 2: DEFINE 26.2-33.6 ----------
+function scDefine(){const a=sA(26.2,33.6);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('DEFINE IT PROPERLY',150,150,CYAN);
+  const u=rv(28.28,0.7);if(u>0){X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(28.28));
+    pbox(W/2-780,340,1560,360,CYAN,0.55);
+    X.textAlign='center';X.textBaseline='middle';X.fillStyle=CYAN;X.font='800 26px '+MONO;X.fillText('RETAIL TRADER',P(W/2),P(410));
+    X.fillStyle=INK;X.font='800 54px '+SANS;
+    X.fillText('A private market participant',P(W/2),P(500));
+    // two-part line with highlight
+    const l2a='who trades with their ',l2b='OWN capital';X.font='800 54px '+SANS;
+    const wa=X.measureText(l2a).width,wb=X.measureText(l2b).width,tot=wa+wb,sx=W/2-tot/2;
+    X.textAlign='left';X.fillStyle=INK;X.fillText(l2a,P(sx),P(575));X.fillStyle=LIME;X.fillText(l2b,P(sx+wa),P(575));
+    X.restore();}
+  X.restore();}
+// ---------- SCENE 3: PERSONAS 33.6-51.2 ----------
+const PERS=[[34.18,'THE BEGINNER','first €500 in the account',RED],
+            [37.1,'HOBBY TRADER','checks charts on lunch break',GOLD],
+            [40.22,'YOUTUBE TRADER','copies setups from videos',MAG],
+            [43.8,'SMALL INVESTOR','a broker app on his phone',CYAN]];
+function scPersonas(){const a=sA(33.6,51.2);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('VERY DIFFERENT PEOPLE',150,150,CYAN);
+  const cw=400,gap=30,x0=(W-(4*cw+3*gap))/2,y=300,ch=440;
+  PERS.forEach((p,i)=>{const u=rv(p[0],0.5);if(u<=0)return;const x=x0+i*(cw+gap);X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(p[0]));
+    pbox(x,y,cw,ch,p[3],0.6);
+    avatar(x+cw/2,y+130,86,p[3]);
+    X.textAlign='center';X.textBaseline='middle';X.fillStyle=p[3];X.font='900 34px '+SANS;X.fillText(p[1],P(x+cw/2),P(y+270));
+    X.fillStyle=MUT;X.font='600 25px '+SANS;wrapC(p[2],x+cw/2,y+340,cw-70,32);X.restore();});
+  const cu=rv(49.04,0.5);if(cu>0){X.save();X.globalAlpha*=Math.min(1,cu*1.2);X.textAlign='center';X.textBaseline='middle';
+    X.fillStyle=LIME;X.font='800 42px '+SANS;X.fillText('…but look at what they ALL share',P(W/2),P(y+ch+90));X.restore();}
+  X.restore();}
+// ---------- SCENE 4: SHARED 51.2-72.2 ----------
+const SHAR=[[51.2,'Small–medium capital','they cannot move the market',RED],
+            [55.62,'Limited information','nobody sells them the real data feeds',GOLD],
+            [60.3,'The same free education','same YouTube, same free sources',MAG]];
+function scShared(){const a=sA(51.2,72.2);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('WHAT THEY ALL SHARE',150,150,CYAN);
+  SHAR.forEach((s,i)=>{const u=rv(s[0],0.5);if(u<=0)return;const y=270+i*130;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(s[0]));
+    pbox(W/2-720,y,1440,108,s[3],0.5);
+    chkIcon(W/2-660,y+54,false,s[3],17);
+    X.textAlign='left';X.textBaseline='middle';X.fillStyle=INK;X.font='800 38px '+SANS;X.fillText(s[1],P(W/2-600),P(y+54));
+    X.fillStyle=MUT;X.font='600 27px '+SANS;X.textAlign='right';X.fillText(s[2],P(W/2+680),P(y+54));X.restore();});
+  const cu=rv(67.4,0.6);if(cu>0){X.save();X.globalAlpha*=Math.min(1,cu*1.2);X.translate(0,ry(67.4));
+    pbox(W/2-560,700,1120,130,LIME,0.75);X.textAlign='center';X.textBaseline='middle';
+    X.fillStyle=LIME;X.font='900 48px '+SANS;X.fillText('=  Almost IDENTICAL strategies',P(W/2),P(765));X.restore();}
+  X.restore();}
+// ---------- SCENE 5: MASS 72.2-90.48 ----------
+function scMass(){const a=sA(72.2,90.48);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('RETAIL MONEY IS A MASS',150,150,MAG);
+  const px=120,py=250,pw=760,ph=560;pbox(px,py,pw,ph,MAG,0.5);
+  const cols=16,rows=11,mx=px+50,my=py+70,sx=(pw-100)/(cols-1),sy=(ph-140)/(rows-1);
+  // single highlighted person first
+  const single=rv(75.46,0.4);
+  // mass fills in
+  const fill=clamp((T-77.96)/2.4,0,1);
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){const idx=r*cols+c;const jx=(rnd(idx*1.7)-0.5)*10,jy=(rnd(idx*2.3)-0.5)*10;
+    const dx=mx+c*sx+jx,dy=my+r*sy+jy;const isHi=(r===5&&c===8);
+    let dv;if(isHi)dv=single; else dv=clamp((fill*(cols*rows+8)-idx)/8,0,1);
+    if(dv<=0)continue;X.save();X.globalAlpha*=dv;
+    X.fillStyle=isHi?CYAN:hexA(MAG,0.7);X.beginPath();X.arc(P(dx),P(dy),isHi?8:6,0,7);X.fill();X.restore();}
+  if(single>0&&fill<0.15){X.save();X.globalAlpha*=Math.min(1,single);X.textAlign='center';X.textBaseline='middle';
+    X.fillStyle=CYAN;X.font='700 22px '+MONO;X.fillText('one person',P(mx+8*sx),P(my+5*sy-30));X.restore();}
+  // right text
+  const rx=960;
+  const t1=rv(75.46,0.5);if(t1>0){X.save();X.globalAlpha*=Math.min(1,t1*1.2);X.textAlign='left';X.textBaseline='middle';
+    X.fillStyle=MUT;X.font='700 40px '+SANS;X.fillText('Not one person…',P(rx),P(340));X.restore();}
+  const t2=rv(77.96,0.6);if(t2>0){X.save();X.globalAlpha*=Math.min(1,t2*1.2);X.translate(0,ry(77.96));X.textAlign='left';X.textBaseline='middle';
+    X.fillStyle=INK;X.font='900 56px '+SANS;X.fillText('…the huge,',P(rx),P(440));
+    X.fillStyle=MAG;X.fillText('predictable MASS',P(rx),P(510));X.restore();}
+  const t3=rv(80.52,0.5);if(t3>0){X.save();X.globalAlpha*=Math.min(1,t3*1.2);X.textAlign='left';X.textBaseline='middle';
+    X.fillStyle=MUT;X.font='600 30px '+SANS;wrapL('acting the same way, at the same spots',rx,600,800,38);X.restore();}
+  const t4=rv(85.98,0.5);if(t4>0){X.save();X.globalAlpha*=Math.min(1,t4*1.2);X.textAlign='left';X.textBaseline='middle';
+    X.fillStyle=MAG;X.font='900 44px '+SANS;X.fillText('Not a person — a MASS',P(rx),P(720));X.restore();}
+  X.restore();}
+// ---------- SCENE 6: SOURCES 90.48-133.86 ----------
+function scSources(){const a=sA(90.48,133.86);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('WHERE DID YOU LEARN?',150,140,GOLD);
+  const q=rv(90.6,0.6);if(q>0){X.save();X.globalAlpha*=Math.min(1,q*1.2);X.textAlign='center';X.textBaseline='middle';
+    X.fillStyle=INK;X.font='800 46px '+SANS;X.fillText('Where did you learn trading?  Be honest.',P(W/2),P(250));X.restore();}
+  const sub=rv(97.5,0.5);if(sub>0){X.save();X.globalAlpha*=Math.min(1,sub*1.2);X.textAlign='center';X.textBaseline='middle';
+    X.fillStyle=GOLD;X.font='700 32px '+SANS;X.fillText('It comes down to exactly TWO sources',P(W/2),P(320));X.restore();}
+  // two columns
+  const cols=[[100.4,GOLD,'SOURCE 1','SOCIAL MEDIA',['YouTube','Instagram','TikTok','Discord groups']],
+             [101.2,MAG,'SOURCE 2','STANDARD EDUCATION',['Support & Resistance','Trendlines','Chart patterns','RSI · MACD']]];
+  cols.forEach((c,i)=>{const u=rv(c[0],0.6);if(u<=0)return;const x=i===0?150:1010,w=760,y=380,h=380;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(c[0]));
+    pbox(x,y,w,h,c[1],0.6);X.textAlign='left';X.textBaseline='alphabetic';
+    X.fillStyle=c[1];X.font='800 24px '+MONO;X.fillText('▸ '+c[2],P(x+40),P(y+58));
+    X.fillStyle=INK;X.font='900 46px '+SANS;X.fillText(c[3],P(x+40),P(y+118));
+    c[4].forEach((it,k)=>{const yy=y+180+k*54;X.fillStyle=hexA(c[1],0.9);X.beginPath();X.arc(P(x+52),P(yy-9),6,0,7);X.fill();
+      X.fillStyle=INK;X.font='600 30px '+SANS;X.fillText(it,P(x+76),P(yy));});X.restore();});
+  const cu=rv(102.54,0.6);if(cu>0){X.save();X.globalAlpha*=Math.min(1,cu*1.2);X.translate(0,ry(102.54));X.textAlign='center';X.textBaseline='middle';
+    pbox(W/2-460,810,920,120,RED,0.75);X.fillStyle=RED;X.font='900 46px '+SANS;X.fillText('→  Both produce the SAME result',P(W/2),P(870));X.restore();}
+  X.restore();}
+// ---------- SCENE 7: TRAP 133.86-175.46 ----------
+const CASC=[[153.46,'Everyone learns the same concepts'],
+            [156.24,'Everyone sees the same setups'],
+            [158.72,'Everyone enters at the same levels'],
+            [161.48,'Everyone puts the stop at the same spot']];
+function scTrap(){const a=sA(133.86,175.46);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('IT IS ALL CORRECT — THAT IS THE TRAP',150,140,RED);
+  const t1=rv(137.18,0.6);if(t1>0){X.save();X.globalAlpha*=Math.min(1,t1*1.2);X.textAlign='center';X.textBaseline='middle';
+    X.fillStyle=INK;X.font='800 44px '+SANS;X.fillText('None of this is wrong — it feels professional.',P(W/2),P(230));X.restore();}
+  const t2=rv(143.16,0.5);if(t2>0){X.save();X.globalAlpha*=Math.min(1,t2*1.2);X.textAlign='center';X.textBaseline='middle';
+    X.fillStyle=MUT;X.font='700 30px '+SANS;X.fillText('Millions of people · two sources · one identical toolbox',P(W/2),P(300));X.restore();}
+  CASC.forEach((c,i)=>{const u=rv(c[0],0.5);if(u<=0)return;const y=380+i*98;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(c[0]));
+    const act=i===3;pbox(W/2-560,y,1120,80,act?RED:MUT,act?0.75:0.4);
+    X.textAlign='left';X.textBaseline='middle';X.fillStyle=act?RED:DIM;X.font='900 34px '+SANS;X.fillText(i>0?'↓':' ',P(W/2-520),P(y+40));
+    X.fillStyle=act?INK:hexA(INK,0.85);X.font='800 34px '+SANS;X.fillText(c[1],P(W/2-460),P(y+40));X.restore();});
+  const sw=rv(167.16,0.5);if(sw>0){X.save();X.globalAlpha*=Math.min(1,sw*1.2);X.textAlign='center';X.textBaseline='middle';
+    X.fillStyle=RED;X.font='700 28px '+SANS;X.fillText('under the same swing low · above the same resistance · always',P(W/2),P(820));X.restore();}
+  X.restore();}
+// ---------- SCENE 8: CHAIN 175.46-196.18 ----------
+const CHN=[[176.0,'SAME EDUCATION',MUT],[181.26,'SAME ANALYSIS',GOLD],[184.62,'SAME POSITIONING',MAG],[187.88,'CROWD TRADES IDENTICALLY',RED]];
+function scChain(){const a=sA(175.46,196.18);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('THINK IT THROUGH — THE CHAIN',150,150,CYAN);
+  const bw=410,gap=40,x0=(W-(4*bw+3*gap))/2,y=440,bh=170;
+  CHN.forEach((n,i)=>{const u=rv(n[0],0.5);if(u<=0)return;const x=x0+i*(bw+gap);X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(n[0]));
+    pbox(x,y,bw,bh,n[2],i===3?0.85:0.55);X.textAlign='center';X.textBaseline='middle';
+    X.fillStyle=i===3?RED:INK;X.font='800 34px '+SANS;wrapC(n[1],x+bw/2,y+bh/2,bw-50,40);X.restore();
+    if(i>0){const au=rv(n[0]-0.1,0.4);if(au>0){X.save();X.globalAlpha*=Math.min(1,au);X.strokeStyle=hexA(n[2],0.7);X.fillStyle=hexA(n[2],0.7);X.lineWidth=5;X.lineCap='round';
+      const ax=x-gap-4,ay=y+bh/2;X.beginPath();X.moveTo(ax-gap+14,ay);X.lineTo(ax-6,ay);X.stroke();
+      X.beginPath();X.moveTo(ax-2,ay);X.lineTo(ax-18,ay-11);X.lineTo(ax-18,ay+11);X.closePath();X.fill();X.restore();}}});
+  const q=rv(193.52,0.5);if(q>0){X.save();X.globalAlpha*=Math.min(1,q*1.2);X.textAlign='center';X.textBaseline='middle';
+    X.fillStyle=RED;X.font='800 40px '+SANS;X.fillText('And now — the uncomfortable question…',P(W/2),P(710));X.restore();}
+  X.restore();}
+// ---------- SCENE 9: VISIBLE 196.18-210.98 ----------
+function scVisible(){const a=sA(196.18,210.98);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('THE CROWD IS VISIBLE',150,140,RED);
+  const px=130,py=250,pw=1060,ph=560;pbox(px,py,pw,ph,RED,0.4);
+  // price line
+  const N=64;const pts=[];for(let i=0;i<N;i++){const u=i/(N-1);
+    let v=0.30+0.22*Math.sin(u*4.2)+0.10*Math.sin(u*11)+0.34*u+(rnd(i*3.1)-0.5)*0.04;
+    if(u>0.72)v+=0.42*(u-0.72)/0.28; // sharp drop into swing low
+    pts.push([px+40+u*(pw-80),py+40+clamp(v,0,1)*(ph-90)]);}
+  X.save();X.beginPath();pts.forEach((p,i)=>i?X.lineTo(P(p[0]),P(p[1])):X.moveTo(P(p[0]),P(p[1])));
+  X.strokeStyle=hexA(CYAN,0.85);X.lineWidth=3;X.lineJoin='round';X.stroke();X.restore();
+  // swing-low stop cluster
+  let lowY=0,lowX=0;for(let i=Math.floor(N*0.72);i<N;i++){if(pts[i][1]>lowY){lowY=pts[i][1];lowX=pts[i][0];}}
+  const stopY=lowY+26;
+  const sl=rv(196.18,0.5);if(sl>0){X.save();X.globalAlpha*=Math.min(1,sl);X.strokeStyle=hexA(RED,0.8);X.lineWidth=2;X.setLineDash([12,8]);
+    X.beginPath();X.moveTo(P(px+30),P(stopY));X.lineTo(P(px+pw-30),P(stopY));X.stroke();X.setLineDash([]);
+    X.fillStyle=RED;X.font='700 22px '+MONO;X.textAlign='left';X.textBaseline='alphabetic';X.fillText('retail stop-loss cluster',P(px+40),P(stopY+34));
+    for(let k=0;k<16;k++){const sx=lowX-260+k*32+(rnd(k*5)-0.5)*10;X.globalAlpha=Math.min(1,sl)*clamp((T-196.18-k*0.02),0,1);
+      X.strokeStyle=hexA(RED,0.7);X.lineWidth=2;X.beginPath();X.moveTo(P(sx),P(stopY+6));X.lineTo(P(sx),P(stopY+24));X.stroke();}X.restore();}
+  // sweep arrow
+  const sw=rv(204.16,0.6);if(sw>0){X.save();X.globalAlpha*=Math.min(1,sw);const ex=lowX+40;
+    X.strokeStyle=RED;X.fillStyle=RED;X.lineWidth=6;X.lineCap='round';X.shadowColor=hexA(RED,0.6);X.shadowBlur=16;
+    X.beginPath();X.moveTo(P(ex+150),P(stopY-140));X.lineTo(P(ex),P(stopY+4));X.stroke();
+    X.beginPath();X.moveTo(P(ex),P(stopY+8));X.lineTo(P(ex+30),P(stopY-16));X.lineTo(P(ex-2),P(stopY-30));X.closePath();X.fill();X.restore();}
+  // right text
+  const rx=1240;
+  const t1=rv(196.5,0.5);if(t1>0){X.save();X.globalAlpha*=Math.min(1,t1*1.2);X.textAlign='left';X.textBaseline='middle';
+    X.fillStyle=INK;X.font='700 33px '+SANS;wrapL('Predict where millions of stops sit…',rx,340,600,42);X.restore();}
+  const t2=rv(200.18,0.5);if(t2>0){X.save();X.globalAlpha*=Math.min(1,t2*1.2);X.textAlign='left';X.textBaseline='middle';
+    X.fillStyle=GOLD;X.font='700 33px '+SANS;wrapL('…players with billions already can.',rx,470,600,42);X.restore();}
+  const t3=rv(207.08,0.6);if(t3>0){X.save();X.globalAlpha*=Math.min(1,t3*1.2);X.textAlign='left';X.textBaseline='middle';
+    X.fillStyle=RED;X.font='900 46px '+SANS;wrapL('The crowd is VISIBLE',rx,640,610,54);X.restore();}
+  X.restore();}
+// ---------- SCENE 10: TOOLS 210.98-258.76 ----------
+const TOOLS=[[226.12,'SUPPORT & RESISTANCE',GOLD,'where something COULD happen','a zone · a possibility · nothing more','sr'],
+             [234.14,'RSI',MAG,'what has ALREADY happened','lagging — built from past prices','rsi'],
+             [244.52,'CHART PATTERNS',CYAN,'only probabilities','60% still fails 4 out of 10','pat']];
+function scTools(){const a=sA(210.98,258.76);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('WHAT EACH TOOL REALLY TELLS YOU',150,140,GOLD);
+  const su=rv(216.82,0.5);if(su>0){X.save();X.globalAlpha*=Math.min(1,su*1.2);X.textAlign='center';X.textBaseline='middle';
+    X.fillStyle=MUT;X.font='700 30px '+SANS;X.fillText('If they are everywhere — why do they so often fall short?',P(W/2),P(220));X.restore();}
+  const cw=520,gap=30,x0=(W-(3*cw+2*gap))/2,y=290,ch=470;
+  TOOLS.forEach((t,i)=>{const u=rv(t[0],0.5);if(u<=0)return;const x=x0+i*(cw+gap);X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(t[0]));
+    pbox(x,y,cw,ch,t[2],0.6);
+    // mini glyph
+    const gx=x+cw/2,gy=y+120;X.save();X.strokeStyle=t[2];X.lineWidth=4;X.lineCap='round';X.lineJoin='round';
+    if(t[5]==='sr'){X.beginPath();X.moveTo(gx-120,gy-30);X.lineTo(gx+120,gy-30);X.moveTo(gx-120,gy+30);X.lineTo(gx+120,gy+30);X.stroke();
+      X.strokeStyle=hexA(t[2],0.5);X.beginPath();X.moveTo(gx-120,gy+10);X.lineTo(gx-40,gy-24);X.lineTo(gx+30,gy+18);X.lineTo(gx+120,gy-24);X.stroke();}
+    else if(t[5]==='rsi'){X.beginPath();for(let k=0;k<=48;k++){const xx=gx-120+k*5,yy=gy+Math.sin(k*0.5)*28;if(k)X.lineTo(xx,yy);else X.moveTo(xx,yy);}X.stroke();
+      X.strokeStyle=hexA(t[2],0.45);X.setLineDash([8,6]);X.beginPath();X.moveTo(gx-120,gy-30);X.lineTo(gx+120,gy-30);X.moveTo(gx-120,gy+30);X.lineTo(gx+120,gy+30);X.stroke();X.setLineDash([]);}
+    else{X.beginPath();X.moveTo(gx-120,gy-35);X.lineTo(gx+120,gy);X.lineTo(gx-120,gy+35);X.stroke();X.strokeStyle=hexA(t[2],0.5);X.beginPath();X.moveTo(gx-120,gy+35);X.lineTo(gx+120,gy);X.stroke();}
+    X.restore();
+    X.textAlign='center';X.textBaseline='middle';X.fillStyle=t[2];X.font='800 34px '+SANS;wrapC(t[1],x+cw/2,y+235,cw-50,40);
+    X.fillStyle=INK;X.font='700 28px '+SANS;wrapC(t[3],x+cw/2,y+330,cw-60,34);
+    X.fillStyle=MUT;X.font='600 24px '+SANS;wrapC(t[4],x+cw/2,y+410,cw-60,30);X.restore();});
+  X.restore();}
+// ---------- SCENE 11: RESULT 258.76-290.24 ----------
+const QS=[[266.02,'Why is the market moving right now?'],[268.58,'Who is buying?  Who is selling?'],[271.5,'Where is the liquidity sitting?']];
+function scResult(){const a=sA(258.76,290.24);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('THEY DESCRIBE THE RESULT',150,140,RED);
+  const h1=rv(261.76,0.5);if(h1>0){X.save();X.globalAlpha*=Math.min(1,h1*1.2);X.textAlign='center';X.textBaseline='middle';
+    X.fillStyle=INK;X.font='800 40px '+SANS;X.fillText('None answer the questions that decide your trade:',P(W/2),P(230));X.restore();}
+  QS.forEach((q,i)=>{const u=rv(q[0],0.5);if(u<=0)return;const y=310+i*92;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(q[0]));
+    pbox(W/2-540,y,1080,74,MAG,0.55);X.textAlign='left';X.textBaseline='middle';
+    X.fillStyle=MAG;X.font='900 30px '+MONO;X.fillText('?',P(W/2-500),P(y+37));
+    X.fillStyle=INK;X.font='700 32px '+SANS;X.fillText(q[1],P(W/2-450),P(y+37));X.restore();});
+  const r1=rv(283.64,0.5);if(r1>0){X.save();X.globalAlpha*=Math.min(1,r1*1.2);X.translate(0,ry(283.64));
+    pbox(W/2-620,640,590,150,MUT,0.5);X.textAlign='center';X.textBaseline='middle';
+    X.fillStyle=DIM;X.font='700 26px '+SANS;X.fillText('Retail tools show',P(W/2-325),P(695));
+    X.fillStyle=MUT;X.font='900 46px '+SANS;X.fillText('THE RESULT',P(W/2-325),P(745));X.restore();}
+  const r2=rv(286.38,0.5);if(r2>0){X.save();X.globalAlpha*=Math.min(1,r2*1.2);X.translate(0,ry(286.38));
+    pbox(W/2+30,640,590,150,LIME,0.75);X.textAlign='center';X.textBaseline='middle';
+    X.fillStyle=hexA(LIME,0.8);X.font='700 26px '+SANS;X.fillText('never',P(W/2+325),P(695));
+    X.fillStyle=LIME;X.font='900 46px '+SANS;X.fillText('THE CAUSE',P(W/2+325),P(745));X.restore();}
+  X.restore();}
+// ---------- SCENE 12: LEVEL 2 290.24-341.02 ----------
+function scLevel2(){const a=sA(290.24,341.02);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('LEVEL 2 DATA — A DIFFERENCE IN VISION',150,140,CYAN);
+  // left retail
+  const lu=rv(296.74,0.6);if(lu>0){X.save();X.globalAlpha*=Math.min(1,lu*1.2);X.translate(0,ry(296.74));
+    const x=120,y=240,w=800,h=430;pbox(x,y,w,h,MUT,0.5);X.textAlign='left';X.textBaseline='alphabetic';
+    X.fillStyle=MUT;X.font='800 24px '+MONO;X.fillText('RETAIL TRADER SEES',P(x+40),P(y+56));
+    const it=[['Price',true],['A few indicators',true],['Order book',false],['Level 2 data',false],['Liquidity map',false]];
+    it.forEach((r,k)=>{const yy=y+120+k*62;chkIcon(x+62,yy-8,r[1],r[1]?CYAN:RED,15);
+      X.fillStyle=r[1]?INK:hexA(INK,0.4);X.font='600 30px '+SANS;X.fillText(r[0],P(x+96),P(yy));});X.restore();}
+  // right institution
+  const iu=rv(303.78,0.6);if(iu>0){X.save();X.globalAlpha*=Math.min(1,iu*1.2);X.translate(0,ry(303.78));
+    const x=1000,y=240,w=800,h=430;pbox(x,y,w,h,CYAN,0.7);X.textAlign='left';X.textBaseline='alphabetic';
+    X.fillStyle=CYAN;X.font='800 24px '+MONO;X.fillText('AN INSTITUTION SEES',P(x+40),P(y+56));
+    const it=[[303.78,'Price'],[303.78,'The order book behind it'],[310.26,'Level 2 — who bids & offers'],[315.0,'Liquidity map · market depth']];
+    it.forEach((r,k)=>{const u=rv(r[0],0.4);if(u<=0)return;const yy=y+120+k*76;X.save();X.globalAlpha*=Math.min(1,u*1.2);
+      chkIcon(x+62,yy-8,true,GRN,15);X.fillStyle=INK;X.font='600 30px '+SANS;X.fillText(r[1],P(x+96),P(yy));X.restore();});X.restore();}
+  // poker line
+  const pk=rv(324.24,0.5);if(pk>0){X.save();X.globalAlpha*=Math.min(1,pk*1.2);X.textAlign='center';X.textBaseline='middle';
+    X.fillStyle=GOLD;X.font='700 30px '+SANS;X.fillText('Like poker: one side sees only their cards — the other sees the odds, the bets, the tells',P(W/2),P(730));X.restore();}
+  const g=rv(333.34,0.5);if(g>0){X.save();X.globalAlpha*=Math.min(1,g*1.2);X.translate(0,ry(333.34));X.textAlign='center';X.textBaseline='middle';
+    pbox(W/2-560,790,1120,110,LIME,0.75);X.fillStyle=LIME;X.font='900 44px '+SANS;X.fillText('That gap is not talent — it is DATA. It can be closed.',P(W/2),P(845));X.restore();}
+  X.restore();}
+// ---------- SCENE 13: SHIFT 341.02-373.18 ----------
+function scShift(){const a=sA(341.02,373.18);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('THE SHIFT THIS COURSE IS BUILT ON',150,140,LIME);X.textAlign='center';X.textBaseline='middle';
+  const b=rv(348.1,0.6);if(b>0){X.save();X.globalAlpha*=Math.min(1,b*1.2);X.translate(0,ry(348.1));
+    pbox(W/2-680,240,1360,150,RED,0.6);X.fillStyle=RED;X.font='800 24px '+MONO;X.textAlign='left';X.textBaseline='alphabetic';X.fillText('BEFORE',P(W/2-640),P(288));
+    X.fillStyle=INK;X.font='700 38px '+SANS;X.textAlign='center';X.textBaseline='middle';X.fillText('RSI · trend lines · classic retail setups',P(W/2),P(345));X.restore();}
+  const b2=rv(353.44,0.5);if(b2>0){X.save();X.globalAlpha*=Math.min(1,b2*1.2);X.fillStyle=MUT;X.font='600 30px '+SANS;X.textAlign='center';X.textBaseline='middle';
+    X.fillText('…grinding the same concepts — and the results felt random',P(W/2),P(440));X.restore();}
+  const ins=rv(359.3,0.5);if(ins>0){X.save();X.globalAlpha*=Math.min(1,ins*1.2);X.fillStyle=GOLD;X.font='700 30px '+MONO;X.textAlign='center';X.textBaseline='middle';
+    X.fillText('THEN — THE INSIGHT',P(W/2),P(520));X.restore();}
+  const q=rv(363.32,0.6);if(q>0){X.save();X.globalAlpha*=Math.min(1,q*1.2);X.translate(0,ry(363.32));
+    pbox(W/2-720,560,1440,270,LIME,0.75);X.textAlign='center';X.textBaseline='middle';
+    X.fillStyle=INK;X.font='900 48px '+SANS;wrapC('If the majority uses the same concepts and still loses…',W/2,650,1340,58);
+    X.fillStyle=LIME;X.font='900 52px '+SANS;X.fillText('why trade the same way?',P(W/2),P(760));X.restore();}
+  X.restore();}
+// ---------- SCENE 14: FOCUS 373.18-406.82 ----------
+const FOC=[[377.06,'MARKET PARTICIPANTS','who is actually in this move?',MAG],
+           [381.68,'LIQUIDITY','where the money is sitting',GOLD],
+           [385.64,'LEVEL 2 DATA','what the order book is really doing',CYAN]];
+function scFocus(){const a=sA(373.18,406.82);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('STOP STARING AT THE RESULT — STUDY THE CAUSE',150,140,LIME);
+  const cw=540,gap=30,x0=(W-(3*cw+2*gap))/2,y=280,ch=290;
+  FOC.forEach((f,i)=>{const u=rv(f[0],0.5);if(u<=0)return;const x=x0+i*(cw+gap);X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(f[0]));
+    pbox(x,y,cw,ch,f[3],0.65);X.textAlign='center';X.textBaseline='middle';
+    X.fillStyle=f[3];X.font='700 24px '+MONO;X.fillText('FOCUS '+(i+1),P(x+cw/2),P(y+55));
+    X.fillStyle=INK;X.font='900 40px '+SANS;wrapC(f[1],x+cw/2,y+140,cw-60,46);
+    X.fillStyle=MUT;X.font='600 26px '+SANS;wrapC(f[2],x+cw/2,y+225,cw-70,32);X.restore();});
+  const r=rv(392.88,0.5);if(r>0){X.save();X.globalAlpha*=Math.min(1,r*1.2);X.textAlign='center';X.textBaseline='middle';
+    X.fillStyle=INK;X.font='700 34px '+SANS;X.fillText('→  more understanding · better decisions · no more flying blind',P(W/2),P(670));X.restore();}
+  const cl=rv(400.16,0.6);if(cl>0){X.save();X.globalAlpha*=Math.min(1,cl*1.2);X.translate(0,ry(400.16));X.textAlign='center';X.textBaseline='middle';
+    pbox(W/2-560,740,1120,140,GRN,0.75);
+    const l1='Not a magic win rate — ',l2='CLARITY';X.font='800 48px '+SANS;const w1=X.measureText(l1).width,w2=X.measureText(l2).width,sx=W/2-(w1+w2)/2;
+    X.textAlign='left';X.fillStyle=INK;X.fillText(l1,P(sx),P(810));X.fillStyle=GRN;X.fillText(l2,P(sx+w1),P(810));X.restore();}
+  X.restore();}
+// ---------- SCENE 15: BOTTOM 406.82-430 ----------
+function scBottom(){const a=sA(406.82,430);if(a<=0)return;X.save();X.globalAlpha=a;X.textAlign='center';X.textBaseline='middle';
+  kick('BOTTOM LINE',W/2-110,150,LIME);
+  const u1=rv(410.46,0.6);if(u1>0){X.save();X.globalAlpha*=Math.min(1,u1*1.2);X.translate(0,ry(410.46));
+    const l1='Understand the ',l2='CAUSE',l3=' — not just the result';X.font='900 66px '+SANS;
+    const w1=X.measureText(l1).width,w2=X.measureText(l2).width,w3=X.measureText(l3).width,sx=W/2-(w1+w2+w3)/2;
+    X.textAlign='left';X.fillStyle=INK;X.fillText(l1,P(sx),P(320));X.fillStyle=LIME;X.fillText(l2,P(sx+w1),P(320));X.fillStyle=INK;X.fillText(l3,P(sx+w1+w2),P(320));X.restore();}
+  const u2=rv(414.16,0.5);if(u2>0){X.save();X.globalAlpha*=Math.min(1,u2*1.2);X.textAlign='center';X.textBaseline='middle';
+    X.fillStyle=MUT;X.font='700 34px '+SANS;X.fillText('That single sentence separates the mass from the professionals',P(W/2),P(430));X.restore();}
+  const u3=rv(418.8,0.6);if(u3>0){X.save();X.globalAlpha*=Math.min(1,u3*1.2);X.translate(0,ry(418.8));pbox(W/2-620,540,1240,200,CYAN,0.75);
+    X.fillStyle=CYAN;X.font='700 26px '+MONO;X.textAlign='left';X.textBaseline='alphabetic';X.fillText('▸ NEXT LESSON',P(W/2-570),P(600));
+    X.fillStyle=INK;X.font='800 46px '+SANS;X.textBaseline='middle';X.fillText('Level 2 data — LIVE',P(W/2-570),P(655));
+    X.fillStyle=MUT;X.font='600 30px '+SANS;X.fillText('the real order flow behind a chart',P(W/2-570),P(705));X.restore();}
+  X.restore();}
+
+function renderAt(ms){T=ms/1000;X.clearRect(0,0,W,H);bg();
+  scTitle();scDefine();scPersonas();scShared();scMass();scSources();scTrap();scChain();scVisible();scTools();scResult();scLevel2();scShift();scFocus();scBottom();
+  vignette();}
+window.renderAt=renderAt;window.__ready=true;renderAt(0);
+</script></body></html>

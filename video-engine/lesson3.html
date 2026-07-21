@@ -1,0 +1,191 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#070a10}canvas{position:absolute;left:0;top:0}</style>
+</head><body><canvas id="cv" width="1920" height="1080"></canvas><script>
+const X=document.getElementById('cv').getContext('2d');const W=1920,H=1080;
+const BG='#070a10',INK='#eaf2f8',MUT='#8b98a8',DIM='#5a6a80',LIME='#b6f04a',CYAN='#39d0d0',MAG='#e06bd8',RED='#ff5470',GRN='#33e08a',GOLD='#ffcf5c';
+const SANS='system-ui,-apple-system,"Segoe UI",Roboto,sans-serif',MONO='ui-monospace,"SF Mono",Menlo,monospace';
+const P=Math.round;let T=0;
+const clamp=(u,a,b)=>u<a?a:u>b?b:u;
+const es=u=>{u=clamp(u,0,1);return u<.5?4*u*u*u:1-Math.pow(-2*u+2,3)/2;};
+const eo=u=>{u=clamp(u,0,1);return 1-Math.pow(1-u,3);};
+const bo=u=>{u=clamp(u,0,1);const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(u-1,3)+c1*Math.pow(u-1,2);};
+const hexA=(h,a)=>{const n=parseInt(h.slice(1),16);return`rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;};
+const rr=(x,y,w,h,r)=>{x=P(x);y=P(y);w=P(w);h=P(h);X.beginPath();X.moveTo(x+r,y);X.arcTo(x+w,y,x+w,y+h,r);X.arcTo(x+w,y+h,x,y+h,r);X.arcTo(x,y+h,x,y,r);X.arcTo(x,y,x+w,y,r);X.closePath();};
+const rnd=s=>{s=Math.sin(s*127.1)*43758.5453;return s-Math.floor(s);};
+const sA=(t0,t1)=>{const i=clamp((T-t0)/0.4,0,1),o=clamp((t1-T)/0.4,0,1);return Math.max(0,Math.min(i,o));};
+const rv=(t0,d)=>es(clamp((T-t0)/(d||0.5),0,1));
+const ry=(t0,d)=>{const u=clamp((T-t0)/(d||0.55),0,1);return (1-bo(u))*22;};
+function pbox(x,y,w,h,col,a){X.fillStyle='rgba(12,18,26,0.5)';rr(x,y,w,h,18);X.fill();X.strokeStyle=hexA(col,a==null?0.5:a);X.lineWidth=2;rr(x,y,w,h,18);X.stroke();}
+function kick(txt,x,y,col){X.save();X.fillStyle=col;X.font='800 26px '+MONO;X.textAlign='left';X.textBaseline='alphabetic';X.fillText('● '+txt,P(x),P(y));X.restore();}
+function chkIcon(cx,cy,good,col,r){r=r||16;X.save();X.translate(P(cx),P(cy));X.fillStyle=col;X.beginPath();X.arc(0,0,r,0,7);X.fill();X.strokeStyle='#0a0e10';X.lineWidth=3.5;X.lineCap='round';X.lineJoin='round';
+  if(good){X.beginPath();X.moveTo(-r*0.42,0);X.lineTo(-r*0.1,r*0.38);X.lineTo(r*0.5,-r*0.44);X.stroke();}else{X.beginPath();X.moveTo(-r*0.4,-r*0.4);X.lineTo(r*0.4,r*0.4);X.moveTo(r*0.4,-r*0.4);X.lineTo(-r*0.4,r*0.4);X.stroke();}X.restore();}
+function bg(){X.fillStyle=BG;X.fillRect(0,0,W,H);
+  X.save();X.globalAlpha=0.045;X.strokeStyle='#5a6a80';X.lineWidth=1;const ox=P((T*8)%80);
+  for(let x=-80+ox;x<W;x+=80){X.beginPath();X.moveTo(P(x)+0.5,0);X.lineTo(P(x)+0.5,H);X.stroke();}
+  for(let y=0;y<H;y+=80){X.beginPath();X.moveTo(0,y+0.5);X.lineTo(W,y+0.5);X.stroke();}X.restore();
+  [[360,300,RED],[1560,760,MAG],[1180,220,GOLD]].forEach((o,i)=>{const ph=T*0.2+i*2.1;const gx=o[0]+Math.sin(ph)*50,gy=o[1]+Math.cos(ph*0.8)*38;
+    const g=X.createRadialGradient(gx,gy,0,gx,gy,540);g.addColorStop(0,hexA(o[2],0.07));g.addColorStop(1,'rgba(0,0,0,0)');X.fillStyle=g;X.fillRect(gx-540,gy-540,1080,1080);});}
+function vignette(){const g=X.createRadialGradient(W/2,H/2,H*0.4,W/2,H/2,H*0.9);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,0.5)');X.fillStyle=g;X.fillRect(0,0,W,H);}
+function cap(txt,col,t0,t1){const a=sA(t0,t1);if(a<=0)return;X.save();X.globalAlpha=a;X.textAlign='center';X.textBaseline='middle';
+  const y=H-112;X.font='800 38px '+SANS;const w=X.measureText(txt).width+76;X.fillStyle='#0c1420';rr(W/2-w/2,y-38,w,76,16);X.fill();
+  X.strokeStyle=hexA(col,0.7);X.lineWidth=2;rr(W/2-w/2,y-38,w,76,16);X.stroke();X.fillStyle=INK;X.fillText(txt,P(W/2),P(y));X.restore();}
+
+// ---------- SCENE 1: TITLE 0-16 ----------
+function scTitle(){const a=sA(0,15.8);if(a<=0)return;X.save();X.globalAlpha=a;X.textAlign='center';X.textBaseline='middle';
+  const u=rv(0.4,1.1);X.globalAlpha*=Math.min(1,u*1.2);
+  const kk=rv(0.2,0.5);if(kk>0){X.fillStyle=RED;X.font='800 30px '+MONO;X.fillText('● LESSON 3',P(W/2),P(H/2-170+(1-kk)*20));}
+  X.font='900 118px '+SANS;const lines=['WHY MOST TRADERS','LOSE MONEY'];
+  lines.forEach((l,i)=>{const lu=rv(0.5+i*0.25,0.7);if(lu<=0)return;X.save();X.globalAlpha*=Math.min(1,lu*1.2);
+    X.fillStyle=i===1?RED:INK;if(i===1){X.shadowColor=hexA(RED,0.5);X.shadowBlur=28;}X.fillText(l,P(W/2),P(H/2-40+i*118+(1-bo(lu))*40));X.restore();});
+  const su=rv(2.2,0.6);if(su>0){X.save();X.globalAlpha*=Math.min(1,su);X.fillStyle=MUT;X.font='600 34px '+SANS;
+    X.fillText('The exact mistakes that empty accounts — so you skip every one',P(W/2),P(H/2+150));X.restore();}
+  X.restore();}
+// ---------- SCENE 2: HOOK 16-42 ----------
+function scHook(){const a=sA(15.8,42.2);if(a<=0)return;X.save();X.globalAlpha=a;X.textAlign='center';X.textBaseline='middle';
+  kick('THE HONEST TRUTH',W/2-150,H/2-190,RED);
+  const u=rv(29.3,0.6);if(u>0){X.save();X.globalAlpha*=Math.min(1,u*1.2);X.fillStyle=INK;X.font='800 56px '+SANS;
+    X.fillText('Understand WHY the majority fails…',P(W/2),P(H/2-40));X.restore();}
+  const u2=rv(32.78,0.6);if(u2>0){X.save();X.globalAlpha*=Math.min(1,u2*1.2);X.fillStyle=LIME;X.font='900 60px '+SANS;
+    X.fillText('…and you already know half the game',P(W/2),P(H/2+60));X.restore();}
+  X.restore();}
+// ---------- SCENE 3: NUMBERS 42.2-90.5 ----------
+function scNumbers(){const a=sA(42.2,90.5);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('THE NUMBERS',150,150,RED);
+  // big gauge 80-90%
+  const gu=rv(50.5,0.8);if(gu>0){const cx=560,cy=520,R=210;
+    X.save();X.globalAlpha*=Math.min(1,gu*1.2);
+    X.lineWidth=34;X.strokeStyle=hexA(MUT,0.15);X.beginPath();X.arc(cx,cy,R,0.75*Math.PI,2.25*Math.PI);X.stroke();
+    const frac=0.85*eo(clamp((T-50.5)/1.6,0,1));
+    X.strokeStyle=RED;X.shadowColor=hexA(RED,0.6);X.shadowBlur=20;X.lineCap='round';X.beginPath();X.arc(cx,cy,R,0.75*Math.PI,(0.75+1.5*frac)*Math.PI);X.stroke();X.shadowBlur=0;
+    const val=Math.round(80+10*eo(clamp((T-50.5)/1.6,0,1)));
+    X.fillStyle=INK;X.font='900 120px '+SANS;X.textAlign='center';X.textBaseline='middle';X.fillText(val+'%',P(cx),P(cy-6));
+    X.fillStyle=MUT;X.font='700 28px '+SANS;X.fillText('of retail traders LOSE',P(cx),P(cy+78));X.restore();}
+  // right facts
+  const facts=[[54.64,'Of every 10 who open an account…'],[58.26,'…maybe 1–2 survive long-term'],[62.0,'Most fail within 1–2 years'],[73.3,'Same handful of mistakes — repeated'],[77.48,'→ which means avoidable']];
+  facts.forEach((f,i)=>{const u=rv(f[0],0.5);if(u<=0)return;const y=300+i*90;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(f[0]));
+    const acc=i>=3?LIME:INK;chkIcon(1030,y,i>=3,i>=3?LIME:RED,13);
+    X.fillStyle=acc;X.font='700 34px '+SANS;X.textAlign='left';X.textBaseline='middle';X.fillText(f[1],P(1065),P(y));X.restore();});
+  X.restore();}
+// ---------- SCENE 4: PUNCH 90.5-106.3 ----------
+function scPunch(){const a=sA(90.5,106.3);if(a<=0)return;X.save();X.globalAlpha=a;X.textAlign='center';X.textBaseline='middle';
+  const u1=rv(91.0,0.6);if(u1>0){X.save();X.globalAlpha*=Math.min(1,u1*1.2);
+    pbox(W/2-560,300,540,200,MUT,0.5);X.fillStyle=DIM;X.font='800 40px '+SANS;X.fillText('NOT the',P(W/2-290),P(370));X.fillStyle=MUT;X.fillText('MARKET',P(W/2-290),P(430));
+    X.save();X.strokeStyle=RED;X.lineWidth=6;X.lineCap='round';X.beginPath();X.moveTo(W/2-500,320);X.lineTo(W/2-80,480);X.stroke();X.restore();X.restore();}
+  const u2=rv(96.86,0.6);if(u2>0){X.save();X.globalAlpha*=Math.min(1,u2*1.2);
+    pbox(W/2+20,300,560,200,LIME,0.7);X.fillStyle=INK;X.font='800 40px '+SANS;X.fillText('YOUR own',P(W/2+300),P(370));X.fillStyle=LIME;X.fillText('DECISIONS',P(W/2+300),P(430));X.restore();}
+  const u3=rv(99.78,0.5);if(u3>0){X.save();X.globalAlpha*=Math.min(1,u3*1.2);X.fillStyle=MUT;X.font='600 32px '+SANS;
+    X.fillText('made without a plan · without rules · under emotion',P(W/2),P(600));X.restore();}
+  X.restore();}
+// ---------- SCENES 5-10: DESTROYERS 106.3-272.5 ----------
+const DESTS=[
+  [127.52,'No trading plan','decisions from pure gut feeling',
+    [[145.58,'Gut buys when it feels safe — the top'],[149.26,'Gut panics when it feels scary — the bottom']]],
+  [153.72,'Overtrading','15 trades when there were 2 good setups',
+    [[165.66,'Every extra trade costs twice: fees + focus'],[173.4,'The best traders are bored most of the day']]],
+  [180.40,'Risk far too high','one trade decides the whole week',
+    [[191.74,'One loss → you need 3 winners to get back'],[202.92,'Survive many small mistakes — not one big one']]],
+  [210.66,'Unrealistic expectations','the endless hunt for the holy grail',
+    [[224.76,'It does not exist — stop looking'],[228.48,'Every pro runs a system WITH losing trades']]],
+  [237.96,'Strategy hopping','jumping to the next YouTube strategy',
+    [[253.82,'10 wells 2m deep vs 1 well 20m deep'],[259.4,'Lots of work — and you never hit water']]],
+];
+function scDestroyers(){const a=sA(106.3,272.4);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('THE 5 ACCOUNT DESTROYERS',150,140,RED);
+  // left: numbered list (reveals as each destroyer starts; intro scaffold at 111.6)
+  DESTS.forEach((d,i)=>{const u=rv(i===0?111.6:d[0],0.5);if(u<=0)return;const y=210+i*112;const active=(T>=d[0]&&(i===4||T<DESTS[i+1][0]));
+    X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(i===0?111.6:d[0]));
+    X.fillStyle=active?hexA(RED,0.9):hexA(RED,0.16);rr(120,y,66,66,15);X.fill();X.strokeStyle=hexA(RED,0.7);X.lineWidth=2;rr(120,y,66,66,15);X.stroke();
+    X.fillStyle=active?'#0a0e10':RED;X.font='900 36px '+SANS;X.textAlign='center';X.textBaseline='middle';X.fillText(String(i+1),P(153),P(y+35));
+    X.fillStyle=active?INK:hexA(INK,0.55);X.font='800 32px '+SANS;X.textAlign='left';X.fillText(d[1],P(208),P(y+35));X.restore();});
+  // right: detail card for the active destroyer
+  DESTS.forEach((d,i)=>{const t0=d[0],t1=(i===4?272.4:DESTS[i+1][0]);const da=sA(t0+0.2,t1);if(da<=0)return;
+    X.save();X.globalAlpha*=da;const rx=980,ry0=250,rw=820,rh=420;pbox(rx,ry0,rw,rh,RED,0.6);
+    X.fillStyle=RED;X.font='800 24px '+MONO;X.textAlign='left';X.textBaseline='alphabetic';X.fillText('DESTROYER '+(i+1),P(rx+40),P(ry0+58));
+    X.fillStyle=INK;X.font='900 46px '+SANS;X.fillText(d[1],P(rx+40),P(ry0+118));
+    X.fillStyle=MUT;X.font='600 27px '+SANS;X.fillText(d[2],P(rx+40),P(ry0+162));
+    d[3].forEach((ln,k)=>{const u=rv(ln[0],0.5);if(u<=0)return;const y=ry0+240+k*82;X.save();X.globalAlpha*=Math.min(1,u*1.2);
+      chkIcon(rx+58,y,false,RED,14);X.fillStyle=INK;X.font='600 30px '+SANS;X.textAlign='left';X.textBaseline='middle';
+      wrapText(d[3][k][1],rx+92,y,rw-140,34);X.restore();});
+    X.restore();});
+  // punch
+  cap('Beginners lose because they trade without a SYSTEM',LIME,266.0,272.3);
+  X.restore();}
+function wrapText(txt,x,y,maxw,lh){const ws=txt.split(' ');let line='',yy=y;const lines=[];
+  for(const w of ws){const t=line?line+' '+w:w;if(X.measureText(t).width>maxw&&line){lines.push(line);line=w;}else line=t;}lines.push(line);
+  const sy=y-(lines.length-1)*lh/2;lines.forEach((l,i)=>X.fillText(l,P(x),P(sy+i*lh)));}
+// ---------- SCENE 11: EMOTIONS 272.5-322 ----------
+function scEmotions(){const a=sA(272.5,322.0);if(a<=0)return;X.save();X.globalAlpha=a;X.textAlign='center';X.textBaseline='middle';
+  kick('THE REAL ENGINE — EMOTIONS',W/2-260,150,MAG);
+  const em=[[283.68,'FEAR',RED,'Closes winners way too early','skips good setups after 2 losses'],
+            [296.6,'GREED',GOLD,'Whispers "double the size"','breaks your own rules'],
+            [308.92,'HOPE',MAG,'Lets losses run — "it\'ll come back"','holds a wrong bias for days']];
+  em.forEach((e,i)=>{const u=rv(e[0],0.5);if(u<=0)return;const x=W/2-600+i*600;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(e[0]));
+    pbox(x-270,280,540,380,e[2],0.7);X.fillStyle=e[2];X.font='900 56px '+SANS;X.fillText(e[1],P(x),P(370));
+    X.fillStyle=INK;X.font='600 28px '+SANS;wrapC(e[3],x,470,480,34);X.fillStyle=MUT;X.font='600 25px '+SANS;wrapC(e[4],x,570,480,32);X.restore();});
+  X.restore();}
+function wrapC(txt,cx,y,maxw,lh){X.textAlign='center';const ws=txt.split(' ');let line='';const lines=[];
+  for(const w of ws){const t=line?line+' '+w:w;if(X.measureText(t).width>maxw&&line){lines.push(line);line=w;}else line=t;}lines.push(line);
+  const sy=y-(lines.length-1)*lh/2;lines.forEach((l,i)=>X.fillText(l,P(cx),P(sy+i*lh)));}
+// ---------- SCENE 12: LOOP 322-362.3 ----------
+function scLoop(){const a=sA(322.0,362.3);if(a<=0)return;X.save();X.globalAlpha=a;X.textAlign='center';X.textBaseline='middle';
+  kick('THE DOOM LOOP',W/2-120,140,RED);
+  const cx=W/2,cy=560,R=250;const nodes=[[328.22,'EMOTIONS',-90],[330.5,'BAD DECISIONS',0],[333.32,'BROKEN RULES',90],[336.32,'LOSSES',180]];
+  // arrows along circle
+  nodes.forEach((n,i)=>{const u=rv(n[0],0.5);if(u<=0)return;const ang=(n[2])*Math.PI/180;const nx=cx+Math.cos(ang)*R,ny=cy+Math.sin(ang)*R;
+    // arc arrow to next
+    const n2=nodes[(i+1)%4];const a1=n[2]*Math.PI/180,a2=(n[2]+90)*Math.PI/180;
+    X.save();X.globalAlpha*=Math.min(1,u*1.2);X.strokeStyle=hexA(RED,0.5);X.lineWidth=4;X.beginPath();X.arc(cx,cy,R,a1+0.28,a2-0.28);X.stroke();
+    const ae=a2-0.28,ex=cx+Math.cos(ae)*R,ey=cy+Math.sin(ae)*R;X.fillStyle=hexA(RED,0.6);X.save();X.translate(ex,ey);X.rotate(ae+Math.PI/2);X.beginPath();X.moveTo(0,0);X.lineTo(-9,-16);X.lineTo(9,-16);X.closePath();X.fill();X.restore();
+    // node
+    pbox(nx-140,ny-46,280,92,RED,0.75);X.fillStyle=INK;X.font='800 30px '+SANS;X.fillText(n[1],P(nx),P(ny));X.restore();});
+  const u=rv(352.7,0.6);if(u>0){X.save();X.globalAlpha*=Math.min(1,u*1.2);X.fillStyle=RED;X.font='900 40px '+SANS;X.fillText('This loop empties accounts — not the market',P(cx),P(cy));X.restore();}
+  X.restore();}
+// ---------- SCENE 13: QUIET KILLERS 362.3-427.8 ----------
+function scKillers(){const a=sA(362.3,427.8);if(a<=0)return;X.save();X.globalAlpha=a;
+  kick('4 QUIET ACCOUNT KILLERS',150,140,GOLD);X.textBaseline='middle';
+  const ks=[[371.52,'Information overload','20 strategies, 50 opinions — master nothing'],
+            [384.5,'No real practice','100h of videos ≠ skill. Nobody swims from a book'],
+            [395.48,'No feedback','same mistake for months, journal empty'],
+            [406.44,'Marketing ≠ reality','Lambos & beach clips are a sales pitch']];
+  ks.forEach((k,i)=>{const u=rv(k[0],0.5);if(u<=0)return;const x=170+(i%2)*880,y=240+Math.floor(i/2)*360;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(k[0]));
+    pbox(x,y,800,300,GOLD,0.6);X.fillStyle=hexA(GOLD,0.16);rr(x+30,y+30,72,72,16);X.fill();X.strokeStyle=hexA(GOLD,0.6);X.lineWidth=2;rr(x+30,y+30,72,72,16);X.stroke();
+    X.fillStyle=GOLD;X.font='900 40px '+SANS;X.textAlign='center';X.textBaseline='middle';X.fillText(String(i+1),P(x+66),P(y+67));
+    X.fillStyle=INK;X.font='800 36px '+SANS;X.textAlign='left';X.fillText(k[1],P(x+130),P(y+55));
+    X.fillStyle=MUT;X.font='600 26px '+SANS;X.textBaseline='top';wrapL(k[2],x+130,y+90,630,32);X.restore();});
+  X.restore();}
+function wrapL(txt,x,y,maxw,lh){X.textAlign='left';const ws=txt.split(' ');let line='';const lines=[];
+  for(const w of ws){const t=line?line+' '+w:w;if(X.measureText(t).width>maxw&&line){lines.push(line);line=w;}else line=t;}lines.push(line);
+  lines.forEach((l,i)=>X.fillText(l,P(x),P(y+i*lh)));}
+// ---------- SCENE 14: FORMULA 427.8-471 ----------
+function scFormula(){const a=sA(427.8,471.2);if(a<=0)return;X.save();X.globalAlpha=a;X.textAlign='center';X.textBaseline='middle';
+  kick('THE HONEST FORMULA',W/2-160,180,LIME);
+  const terms=[['KNOWLEDGE',DIM,433.52],['EXPERIENCE',LIME,433.9],['DISCIPLINE',CYAN,434.3],['EXECUTION',GOLD,434.7]];
+  const u0=rv(433.52,0.5);if(u0>0){X.save();X.globalAlpha*=Math.min(1,u0*1.2);X.fillStyle=INK;X.font='900 50px '+SANS;X.fillText('PROFITABILITY  =',P(W/2),P(400));X.restore();}
+  terms.forEach((t,i)=>{const u=rv(t[2],0.5);if(u<=0)return;const x=W/2-690+i*460;X.save();X.globalAlpha*=Math.min(1,u*1.2);X.translate(0,ry(t[2]));
+    pbox(x-190,470,380,120,t[1],0.7);X.fillStyle=t[1];X.font='800 31px '+SANS;X.fillText(t[0],P(x),P(530));
+    if(i<3){X.fillStyle=INK;X.font='900 44px '+SANS;X.fillText('+',P(x+230),P(530));}X.restore();});
+  const u2=rv(443.92,0.5);if(u2>0){X.save();X.globalAlpha*=Math.min(1,u2*1.2);X.fillStyle=MUT;X.font='700 32px '+SANS;X.fillText('Knowledge is only 1 of 4 — the other three are where the work is',P(W/2),P(680));X.restore();}
+  const u3=rv(466.76,0.5);if(u3>0){X.save();X.globalAlpha*=Math.min(1,u3*1.2);X.fillStyle=GRN;X.font='900 40px '+SANS;X.fillText('Every single term is trainable',P(W/2),P(760));X.restore();}
+  X.restore();}
+// ---------- SCENE 15: BOTTOM LINE 471-518.8 ----------
+function scBottom(){const a=sA(471.0,518.8);if(a<=0)return;X.save();X.globalAlpha=a;X.textAlign='center';X.textBaseline='middle';
+  kick('BOTTOM LINE',W/2-110,150,LIME);
+  const u1=rv(479.82,0.6);if(u1>0){X.save();X.globalAlpha*=Math.min(1,u1*1.2);X.fillStyle=INK;X.font='900 62px '+SANS;
+    X.fillText('Focus on the PROCESS —',P(W/2),P(300));X.fillStyle=LIME;X.fillText('not on a single trade',P(W/2),P(372));X.restore();}
+  const u2=rv(485.42,0.5);if(u2>0){X.save();X.globalAlpha*=Math.min(1,u2*1.2);
+    pbox(W/2-620,450,590,120,MUT,0.5);X.fillStyle=MUT;X.font='700 30px '+SANS;X.fillText('1 trade = noise',P(W/2-325),P(510));
+    pbox(W/2+30,450,590,120,LIME,0.7);X.fillStyle=INK;X.font='800 30px '+SANS;X.fillText('100 trades, 1 system = business',P(W/2+325),P(510));X.restore();}
+  const steps=[[495.24,'Build'],[496.46,'Follow'],[497.82,'Review']];
+  steps.forEach((s,i)=>{const u=rv(s[0],0.4);if(u<=0)return;const x=W/2-420+i*420;X.save();X.globalAlpha*=Math.min(1,u*1.2);
+    pbox(x-170,620,340,84,LIME,0.6);X.fillStyle=LIME;X.font='800 32px '+SANS;X.fillText(s[1]+' the system',P(x),P(662));
+    if(i<2){X.fillStyle=MUT;X.font='900 38px '+SANS;X.fillText('→',P(x+210),P(662));}X.restore();});
+  const u4=rv(505.42,0.5);if(u4>0){X.save();X.globalAlpha*=Math.min(1,u4*1.2);pbox(W/2-560,750,1120,140,CYAN,0.7);
+    X.fillStyle=CYAN;X.font='700 24px '+MONO;X.textAlign='left';X.textBaseline='alphabetic';X.fillText('▸ NEXT LESSON',P(W/2-520),P(800));
+    X.fillStyle=INK;X.font='800 38px '+SANS;X.textBaseline='middle';X.fillText('What is retail money — and why the market knows',P(W/2-520),P(850));X.restore();}
+  X.restore();}
+
+function renderAt(ms){T=ms/1000;X.clearRect(0,0,W,H);bg();
+  scTitle();scHook();scNumbers();scPunch();scDestroyers();scEmotions();scLoop();scKillers();scFormula();scBottom();
+  vignette();}
+window.renderAt=renderAt;window.__ready=true;renderAt(0);
+</script></body></html>
