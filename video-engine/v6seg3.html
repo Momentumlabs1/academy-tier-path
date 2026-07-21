@@ -376,13 +376,19 @@ function renderAt(msIn){
   // footprint popover
   fpPop(T,yOf(4070.6));
   // furniture
+  // legend close = the last COMMITTED (whole-revealed) candle → changes only on a
+  // new candle, never every frame (anti-jitter)
+  const _lc=SER[Math.max(0,revN-1)];
   TVC.tvLegend(X,{name:'Gold Spot / U.S. Dollar',int:'1',src:'OANDA',
-    o:'4.068,915',h:'4.070,205',l:'4.068,730',c:'4.069,'+String(150+P((revealAt(T)%1)*800)).slice(0,3),chg:'+0,585 (+0,01%)',up:true,sell:'4.069,240',buy:'4.069,240'});
+    o:TVC.fmtDE(_lc.o,3),h:TVC.fmtDE(Math.max(_lc.o,_lc.c)+0.29,3),l:TVC.fmtDE(Math.min(_lc.o,_lc.c)-0.19,3),c:TVC.fmtDE(_lc.c,3),
+    chg:(_lc.c>=_lc.o?'+':'−')+TVC.fmtDE(Math.abs(_lc.c-_lc.o),3)+' ('+(_lc.c>=_lc.o?'+':'−')+'0,01%)',up:_lc.c>=_lc.o,sell:TVC.fmtDE(_lc.c,3),buy:TVC.fmtDE(_lc.c,3)});
   TVC.cvdRow(X,{y:CH.y1+16,vals:[['316',0],['507',0],['316',0],['507',0]]});
   TVC.timeAxis(X,{y:CH.y1+30,labels:[[240,'03:30'],[500,'04:00'],[760,'04:30'],[1020,'05:00'],[1280,'05:30'],[1540,'06:00'],[1800,'06:30']]});
   TVC.replayToolbar(X,{y:946,playing:(T>gS(41.6)&&T<gS(41.6)+4.0)||(T>gS(115.3)-1.5&&T<gS(115.3)+9.6),speed:'10x',int:'1m'});
   TVC.replayInfoBar(X);
-  TVC.tvBottomRow(X,{clockUTC:'21:'+String(24+P(T/8)).padStart(2,'0')+':'+String(P(45+((T*7)%14))).padStart(2,'0')});
+  // clock ticks once per whole second (no sub-second churn)
+  const _sec=Math.floor(T);
+  TVC.tvBottomRow(X,{clockUTC:'21:24:'+String((45+_sec)%60).padStart(2,'0')});
   TVC.tvLeftRail(X,{active:4});
   TVC.tvFloatBar(X,{brush:20});
   // crosshair

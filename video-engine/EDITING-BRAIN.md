@@ -439,6 +439,35 @@ All six scenes built + assembled into the full **video6.mp4** (~8:01):
   delivered file** → re-rendered from `lesson4.html` + `audio/l4_audio.m4a` (12.910 frames) +
   COSMO bubble via `render/buildlessons.sh`.
 
+### ⚠️ ANTI-JITTER DOCTRINE + SELF-TEST (user 2026-07-22)
+**User feedback:** "das Bild ist nicht steady, bewegt sich frame by frame wenn's eigentlich
+stillstehen sollte" — video6 v1 jittered. **Root cause (found via automated motion-diff, NOT
+eyeballing):** in deterministic f(t) frames, any element that changes as a function of T while
+the presenter is paused reads as jitter. Three culprits fixed:
+1. **`v6seg4` `pWin(t)` panned the price window ~57s almost continuously** → the WHOLE chart
+   drifted every frame. Fix: HOLD-then-PAN — dead-still window A, ONE eased 1.3s follow-pan when
+   the rally starts, then dead-still window B for the rest. Pixel-quantize the pan (round to /2).
+2. **Live-price legend digits** (`c:'4.069,'+String(...T...)`) recomputed every frame. Fix:
+   commit to the last WHOLE-revealed candle (`SER[floor(reveal)-1]`) → changes only on a new bar.
+3. **Watchlist tick-flash + clock sub-seconds** ran every frame. Fix: discrete tick schedule
+   (flash 0.5s at scheduled times, else exactly 0); clocks tick on whole seconds only.
+→ **RULE:** during any hold, adjacent frames must be **byte-identical**. Nothing may animate as
+   f(T) unless it's a deliberate, in-progress beat (reveal ramp, fade, the one pan, a label draw,
+   caret blink, outro grid). Idle cursor = dead still. Verified: holds now diff=0.
+
+**SELF-TEST WORKFLOW (built, reusable — the user's mandate "jede 5 Sekunde reviewen"):**
+- `render/motionaudit.py <framesdir> <fps> [step]` — at each 5s checkpoint diffs adjacent frames,
+  reports changed-pixel count + which UI region moved. A hold checkpoint with >~400px changed = a
+  jitter suspect. Whole-chart drift shows ~50k–130k px; legit local animation shows <15k.
+- `render/contactsheet.py <framesdir> <fps> [step] [cols]` — tiles the 5s-interval frames into
+  grids (`sheets/sheet_*`) so each checkpoint is compared with its neighbours for animation /
+  logic / formatting / causality in one glance.
+- `render/steadycheck.mjs` (PAGE=…, times) — renders 3 adjacent frames at named holds → confirm
+  byte-identical BEFORE committing to a full 5-min re-render.
+→ **RULE:** after every re-render, run motionaudit on each scene; every flagged checkpoint must be
+  explainable as an intended beat (confirm on the contact sheet). lesson1/3/4/5 (GSAP style)
+  audited clean — the jitter was specific to the new TV-mirror ticker/pan elements.
+
 ### Video 6 — component library to build (VO-independent; the heavy Fable visual work)
 - **TradingView chart page** (light theme): top toolbar, left favorites/drawing rail w/ tooltips,
   candles (up #089981 / dn #F23645), interval row, legend OHLC (f(cursorX)), bar-replay bar
