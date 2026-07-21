@@ -443,6 +443,19 @@ overshoot/correction + dwell → emit absolute-ms timeline. `renderAt(ms)`: appl
 sample timeline (+tremor) → hit-test → cursor shape → draw UI hover/press/crosshair from t → draw sharp
 cursor bitmap.
 
+**✅ IMPLEMENTED & VALIDATED (2026-07-21):** `interface-engine.js` exposes global `IFE`
+{mulberry32, hashSeed, noise1D, windMouse, arcLen, fittsMT, minJerk, **Cursor**, **drawCursor**}.
+`IFE.Cursor(actions, {start, seed, os})` → `{sample(ms)→{x,y,pressed,shape,scrollY}, totalMs}`.
+Actions: `{move:[x,y],W}`,`{click:true, decision?}`,`{dblclick}`,`{wait:ms}`,`{drag:[x,y]}`,
+`{scroll:px,dur}`,`{shape:'crosshair'|'pointer'|'text'|'default'}`. Embed via
+`<script src="interface-engine.js">` (loads over file:// in the render pipeline).
+QA harness `iftest.html` + `qacursor.mjs` → `.render/v6/cursor_path.jpg` plots the whole trajectory
+(dot density = speed). **Verified:** curved WindMouse paths, bell velocity, dwell knots at targets,
+drag wobble, hover-on-enter, sharp arrow/pointer/crosshair bitmaps. **RENDER GOTCHA:** after
+`evaluate(renderAt)` you MUST flush a paint (`await pg.evaluate(()=>new Promise(r=>rAF(()=>rAF(r))))`)
+before `screenshot`, else Playwright captures a stale layer (all frames come out byte-identical).
+Use `type:'jpeg'` like `rendv6.mjs`.
+
 **Sources:** WindMouse ben.land/post/2021/04/25/windmouse-human-mouse-movement · Fitts (Wikipedia;
 yorku.ca/mack Fitts throughput) · min-jerk Flash/Hogan (ima.org.uk survey PDF; arxiv 2110.00443) ·
 Meyer optimized-submovement (researchgate 19750579; submovement analysis 220208463) · momentum scroll

@@ -1,0 +1,77 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#0b0e14}canvas{position:absolute;left:0;top:0}</style>
+<script src="interface-engine.js"></script>
+</head><body><canvas id="cv" width="1920" height="1080"></canvas><script>
+const X=document.getElementById('cv').getContext('2d');const W=1920,H=1080;const P=Math.round;
+
+// ---- mock UI regions (buttons + chart) for hit-testing / drawing ----
+const NAV=[ {x:520,y:70,w:150,h:44,label:'Produkte'},{x:690,y:70,w:170,h:44,label:'Community'},
+  {x:880,y:70,w:140,h:44,label:'Märkte'},{x:1040,y:70,w:130,h:44,label:'Broker'} ];
+const CHART={x:120,y:180,w:1400,h:760};
+
+// ---- scenario: move to Märkte, click; move to Broker, click (dropdown); move into chart, drag-pan; scroll ----
+const cur = IFE.Cursor([
+  {wait:400},
+  {move:[NAV[2].x+70,NAV[2].y+22], W:140}, {click:true},
+  {move:[NAV[3].x+65,NAV[3].y+22], W:130}, {click:true},
+  {wait:300},
+  {shape:'crosshair'},
+  {move:[CHART.x+1000,CHART.y+300], W:400},
+  {drag:[CHART.x+500,CHART.y+340]},
+  {shape:'default'},
+  {move:[1560,500], W:40}, {scroll:-260, dur:600},
+], {start:[300,980], seed:20260721, os:'win'});
+
+function panel(){
+  X.fillStyle='#0b0e14';X.fillRect(0,0,W,H);
+  // window chrome
+  X.fillStyle='#131722';X.fillRect(0,0,W,120);
+  X.strokeStyle='#2A2E39';X.lineWidth=1;X.beginPath();X.moveTo(0,120.5);X.lineTo(W,120.5);X.stroke();
+  // traffic-lights (mac style, left) or win controls — use win look here (top-right)
+  X.fillStyle='#D1D4DC';X.font='700 22px system-ui';X.textBaseline='middle';X.textAlign='left';
+  X.fillText('TradingView',150,60);
+}
+function drawNav(samp){
+  X.font='600 20px system-ui';X.textBaseline='middle';
+  for(const b of NAV){
+    const hov = samp.x>=b.x&&samp.x<=b.x+b.w&&samp.y>=b.y&&samp.y<=b.y+b.h;
+    if(hov){X.fillStyle='#2A2E39';X.beginPath();X.rect(b.x,b.y,b.w,b.h);X.fill();}
+    X.fillStyle=hov?'#fff':'#D1D4DC';X.textAlign='center';X.fillText(b.label,b.x+b.w/2,b.y+b.h/2);
+  }
+}
+function drawChart(samp){
+  X.fillStyle='#0e1420';X.fillRect(CHART.x,CHART.y,CHART.w,CHART.h);
+  X.strokeStyle='#2A2E39';X.strokeRect(CHART.x+0.5,CHART.y+0.5,CHART.w,CHART.h);
+  // grid
+  X.strokeStyle='rgba(42,46,57,0.6)';X.lineWidth=1;
+  for(let gx=CHART.x;gx<CHART.x+CHART.w;gx+=120){X.beginPath();X.moveTo(P(gx)+0.5,CHART.y);X.lineTo(P(gx)+0.5,CHART.y+CHART.h);X.stroke();}
+  for(let gy=CHART.y;gy<CHART.y+CHART.h;gy+=100){X.beginPath();X.moveTo(CHART.x,P(gy)+0.5);X.lineTo(CHART.x+CHART.w,P(gy)+0.5);X.stroke();}
+  // crosshair if inside
+  const inside = samp.x>=CHART.x&&samp.x<=CHART.x+CHART.w&&samp.y>=CHART.y&&samp.y<=CHART.y+CHART.h;
+  if(inside){X.strokeStyle='#758696';X.setLineDash([4,4]);X.lineWidth=1;
+    X.beginPath();X.moveTo(CHART.x,P(samp.y)+0.5);X.lineTo(CHART.x+CHART.w,P(samp.y)+0.5);
+    X.moveTo(P(samp.x)+0.5,CHART.y);X.lineTo(P(samp.x)+0.5,CHART.y+CHART.h);X.stroke();X.setLineDash([]);}
+}
+
+function renderAt(ms){
+  const s=cur.sample(ms);
+  panel();drawNav(s);drawChart(s);
+  IFE.drawCursor(X,s.x,s.y,s.shape,s.pressed,cur.os);
+}
+// QA: plot the entire trajectory — point density encodes speed; color = pressed
+function renderPath(){
+  panel();
+  for(const b of NAV){X.strokeStyle='#2A2E39';X.strokeRect(b.x+0.5,b.y+0.5,b.w,b.h);}
+  X.strokeStyle='#2A2E39';X.strokeRect(CHART.x+0.5,CHART.y+0.5,CHART.w,CHART.h);
+  const step=12; // ms
+  for(let ms=0;ms<=cur.totalMs;ms+=step){
+    const s=cur.sample(ms);
+    X.fillStyle = s.pressed? '#ff5470' : (s.shape==='grabbing'?'#ffcf5c':'#39d0d0');
+    X.globalAlpha=0.9;X.beginPath();X.arc(s.x,s.y,s.pressed?3:1.6,0,7);X.fill();
+  }
+  X.globalAlpha=1;
+  X.fillStyle='#b6f04a';X.font='600 20px system-ui';X.textAlign='left';X.textBaseline='alphabetic';
+  X.fillText('TRAJECTORY QA — dots every 12ms (dense=slow, sparse=fast); red=click, gold=drag  total='+P(cur.totalMs)+'ms',140,1050);
+}
+window.renderAt=renderAt;window.renderPath=renderPath;window.__ready=true;window.__total=cur.totalMs;renderAt(0);
+</script></body></html>
