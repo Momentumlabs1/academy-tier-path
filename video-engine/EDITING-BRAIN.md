@@ -111,7 +111,7 @@ scLive, scMechanism, scPunch, scQuestions, scStates, scTool(s), scTrans, scWhy`.
 | L5 Level 2 Data | ✅ delivered v3 5:21 + LIVE deepchart + COSMO | `lesson5.html` + `deepchart.html` + `audio/l5_audio.m4a` |
 | Signals | ✅ ORIGINAL kept 2:57 — **do NOT rebuild** | original mp4 only |
 | Video 1 (course intro) | ⏳ awaiting user's script | — |
-| Video 6 | ⏳ IN PROGRESS — **INTRO built & rendered** (0–28s), rest of 44min pending | `lesson6.html` |
+| Video 6 | ⏳ IN PROGRESS — **MIRROR rebuild** (see §9/§10). Intro 0–28s = v1 (pre-mirror). Full 44min storyboard + UI anatomy mapped 2026-07-21 | `lesson6.html` |
 
 ### Video 6 — INTRO segment (delivered v1, 2026-07-19)
 - `lesson6.html` — engine header copied verbatim from `lesson5.html`, **`bg()` orbs stripped**
@@ -228,6 +228,35 @@ Goal: unique visual identity, away from system-font/generic look. Document insta
 ## 6. Decision & Feedback Log
 *(every user instruction: date + concrete example → generalized rule)*
 
+- **2026-07-21** — User handed over full production with the **MIRROR mandate**: Tim's original
+  videos are the source of truth; everything he shows on screen (desktop, TradingView, orderflow
+  terminal, platform clicks) is spiegeled **beat-for-beat**, code-rendered in our style (own
+  design ok, content + flow 1:1). No invented fake charts, nothing may look AI-generated.
+  → **Rule:** every screen/desktop/chart scene MIRRORS the real footage — same UI, same
+  sequence of actions/clicks, same data on screen — recreated in code. Scrub the source frames
+  and mirror what's actually there. Density rule still applies: compress Tim's dead air/rambling
+  but keep every meaningful beat (target ≈ the app lesson's `durationMin`, NOT the 44-min raw).
+- **2026-07-21** — User's #1 priority: **real computer-interface feel**. Early tests had weird
+  mouse motion + screens that didn't read as a real interface. Mandate: cursor with human physics
+  (ease-in-out, curved paths, micro-pauses, small overshoot before clicks, click feedback), real
+  UI anatomy (window frames, menus, hover states, scroll behavior, tooltips, real UI typography).
+  Must look like a **filmed screen, not an animation.** User told me to research best practices
+  online and document them here.
+  → **Rule:** all mirrored-screen scenes use the cursor/interface engine per §11 (Fitts +
+  min-jerk + WindMouse path + undershoot/correction + dwell-before-click + sharp stepping cursor
+  + 1:1 dead-stop chart pan + background ticks independent of cursor). Never a straight-line
+  linear cursor, never a smeared/blurred cursor, never instant-perfect clicks. Visually QA
+  mouse/interface frames before every "done".
+- **2026-07-21** — Export target confirmed from `origin/claude/academy-video-selfhost` (the
+  self-host refactor — NOT yet on `main`; `main` still uses `youtubeId`). App consumes
+  `videoUrl` from Supabase Storage public bucket **`lesson-videos`** (env `VITE_VIDEO_BASE`,
+  fallback `/videos`). Filenames: **lesson1.mp4**=l1 "What Is Trading?", **lesson3.mp4**=l3
+  "Why 90% Lose", **lesson4.mp4**=l8 "What Is Retail Money?", **lesson5.mp4**=l9 "Level 1 vs
+  Level 2", **video6.mp4**=l11 "Volume Profile: Value Area, HVN & LVN" (Elite, target 20 min).
+  → **Rule:** export exactly these filenames. Video 6's finished lesson is **l11 Volume Profile**
+  (~20 min) — theme the mirror around Volume Profile / Value Area / HVN / LVN as Tim shows it.
+  Do NOT merge `main` into the production branch just to "get videoUrl" — it isn't there and
+  risks conflicts with the 95-commit-ahead video-engine. Branch reconciliation is the app team's.
 - **2026-07-19** — User formalized the editor role and mandated this EDITING-BRAIN as the
   highest-priority living doc.
   → **Rule:** maintain the Brain every session; log each new requirement immediately as
@@ -284,3 +313,139 @@ ffmpeg/ffprobe come from `@ffmpeg-installer` (no system ffmpeg on this Mac).
 - [ ] Densify L5 ~1:42 and any other user-flagged flat spots.
 - [ ] Build Video 1 once script arrives.
 - [ ] Decide COSMO placement per lesson (corner bubble vs intercut).
+- [ ] Reconcile production branch vs `main`/`academy-video-selfhost` (app team) — not blocking.
+
+---
+
+## 9. MIRROR mandate + scope (2026-07-21)
+
+**MIRROR = source of truth is Tim's real footage.** Every desktop/TradingView/orderflow/click
+scene is spiegeled beat-for-beat, code-rendered in our style. Own design ok; **content + flow
+1:1**. No invented charts, nothing AI-looking. Density rule still holds → **compress dead air,
+keep every meaningful beat.** Finished length ≈ the app lesson's `durationMin`, not the raw 44 min.
+
+**#1 priority = real computer-interface feel** (see §11 engine). Filmed screen, not animation.
+
+**Export:** Supabase bucket `lesson-videos` / `/videos`. `video6.mp4` = l11 "Volume Profile:
+Value Area, HVN & LVN" (Elite, ~20 min target). Names: lesson1/3/4/5.mp4 + video6.mp4 (§6).
+
+---
+
+## 10. Video 6 — full MIRROR storyboard + UI anatomy (from real frames, 2026-07-21)
+
+Source: `~/Downloads/Video 6 Bildschirm.mp4` (44:15, 1916×1076, screen) + `Video 6 Gesicht &
+Stimme.mov` (45:23, face+voice; ~68s longer → find sync offset by matching first spoken beat to
+first screen action). Contact sheets `.render/v6/mirror/sheet_{01..05}.jpg` (15s grid, 9min each);
+full-res refs `.render/v6/ref/t*.jpg`.
+
+**Timecoded arc (what to mirror, in order):**
+| Time | Screen content | Mirror as |
+|---|---|---|
+| 0:00–~2:45 | **TradingView Marktübersicht** (market overview). Red DAX area chart 25.067,09 −0,20%, watchlist, AAPL 315,32. Broker dropdown opens (cursor hovers "Broker vergleichen"). The long intro hang. | Recreate the TV overview page + cursor moving to nav / opening dropdown. Density: build watchlist rows, animate the DAX sparkline, quotes tick. |
+| ~2:45–~4:30 | TradingView **symbol pages** + first line/candle charts (Gold Spot/USD 4.120,67). | TV chart page shell; symbol search + load; chart draws in. |
+| ~4:30–~19:30 | TradingView **analysis**: candlesticks, **Volume Profile** (blue histograms), **Volumen-Fußabdruck/footprint** (bid×ask cells + "Delta Gesamt" per candle — in **Bar-Replay** mode), drawn **supply/demand zones** (green/red + blue/yellow boxes), horizontal levels, line charts. | Mirror each: VP overlay (POC/VA/HVN/LVN — the l11 theme!), footprint grid, zone-drawing with drag handles, replay scrubbing. This is the teaching core. |
+| ~19:30–~41:00 | **Deepchart® orderflow terminal** (dxFeed 15m delayed) — candles w/ footprint numbers + green/magenta orderflow bubbles sized by delta, green supply / red demand zones ("318,50$ \| 637 ticks", "BUY 1 \| R:R 2,72"), delta-heatmap footer (orange ΣV headers + purple/green ΔV/Δ% cells), bottom OF-VP/D-VP radio bar. Brief Windows-desktop flash ~25min (app switch). | **Extend `deepchart.html`** to this exact layout — it already mirrors this real app (no fake chart). The bulk / climax. |
+| ~41:00–44:15 | Back to **TradingView line charts** (XAUUSD) w/ supply/demand zones. Wrap-up. | TV line chart + zones; outro. |
+
+**Exact UI anatomy (for code-recreation) — 3 states:**
+
+1. **TradingView Marktübersicht** (`ref/t35.jpg`): Chrome/Windows chrome, tabs (Amazon/noon/NQ1/
+   XAUUSD/RØDE/Subscriptions/R\|Trader/Membership/**TradingView-Alle** active), URL `de.tradingview.com`.
+   TV nav: logo · Suche(Ctrl+K) · Produkte · Community · Märkte · **Broker**▾ · Mehr. Broker dropdown:
+   Top-Broker / Broker vergleichen / Konto eröffnen / Auszeichnungen / brokers (Fusion 4.6★, Capital.com
+   4.6★, FOREX.com 4.4★, Tickmill, TradeStation, Blueberry) / Handelsraum. Left "Marktübersicht›",
+   DAX card (X icon, 25.067,09 POINT −0,20%, red area chart, axis 10:00–19:00). Right watchlist:
+   BTCUSD 64.096,26 +0,48% · NQ1! 30.032,25 +0,32% · XAUUSD 4.120,670 −0,08% · NAS100 29.875,21
+   +0,43% · GC1! 4.113,7 −0,65% · XAUUSD 4.111,51 −0,29% · USOIL 71,50 −0,42% · GBPUSD 1,34021
+   −0,05% · NDX 29.825,11 +0,33%. AAPL panel 315,32 −0,28%, "Markt geschlossen", news, Schlüssel-
+   Statistiken. Win taskbar clock 22:42 12.07.2026.
+2. **TradingView footprint chart** (`ref/t1080.jpg`): URL `de.tradingview.com/chart/...OANDA:XAUUSD`.
+   Legend "Gold Spot / U.S. Dollar · 1 · OANDA · Volumen-Fußabdruck [ATR 14, Kauf und Verkauf]".
+   VERKAUF/KAUF 4.070,990 buttons (red/blue). Timeframe row 1s…16h D W M. Footprint candles: green/red
+   columns, bid×ask cells (35\|52, 110\|134…), totals + "Delta Gesamt −260 1,38K". CVD 1D bottom.
+   "Handel im Wiedergabemodus" (bar replay). Clock 22:59.
+3. **Deepchart® orderflow terminal** (`ref/t2540.jpg`): dark Win app, drawing rail left + top
+   toolbar, symbol MNQ-202609 · 10D-BT · 1 Minute. Left: candles+footprint, green supply box
+   ("318,50$ \| 637 ticks") / red demand box ("−117,00$ \| 234 ticks"), "BUY 1 \| R:R 2,72".
+   Right: footprint number grid + OHLC header (O/H/L/C %V ΣV ΔV). Footer delta heatmap: orange
+   ΣV headers (12K 19K 16K…), ΔV row (−440 −2,3K 80 411 1,5K…), Δ% row. Bottom radios OF-VP/OF-B/A/
+   D-VP/D-DP/D-VL/W-VP/W-DP/C-VP + DOM Trading + Trading panel toggle. "Deepchart® - dxFeed 15m delayed".
+
+**Palette to match (TradingView dark):** bg `#131722`, panel/hover `#1E222D`–`#2A2E39`, border
+`#2A2E39`/`#363A45`, text `#D1D4DC`, secondary `#787B86`, accent `#2962FF`, up/buy `#089981`,
+down/sell `#F23645`. (Our brand palette still frames titles/lower-thirds; the *mirrored screen* uses
+the real app colors so it reads as the real tool.)
+
+---
+
+## 11. Interface-realism ENGINE — cursor/UI physics (research 2026-07-21, sources at end)
+
+**Determinism first:** never RNG per frame. Seeded PRNG (mulberry32) → derive every random value
+from `hash(seed, eventIndex, k)` at **build time**. Each move/click/scroll = an immutable
+descriptor (path polyline + arc-len LUT, durations, offsets). `renderAt(ms)` only interpolates.
+1D noise = value-noise over hashed integer lattice = pure f(t).
+
+**1. Mouse move.**
+- *Fitts duration:* `MT = 120 + 180·log2(D/W+1)` ms × seeded U(0.9,1.15), clamp [220,1300]. (D=dist,
+  W=target width along approach.) Small icons far away → slow (~1.1s); big near buttons → ~300ms.
+- *Min-jerk easing (the ease):* `τ=t/MT`; `s(τ)=10τ³−15τ⁴+6τ⁵`; apply along the PATH. Warp `s(τ^0.88)`
+  so peak speed sits at ~44% of MT (real hands peak early). **Do NOT use CSS cubic-bezier eases.**
+- *Path shape (WindMouse):* gravity G=9, wind W=3, maxStep M=15, damp D=12 → organic polyline; run at
+  build time; retime with min-jerk. (Straight lines are the #1 non-human tell.) Cheap fallback: cubic
+  Bézier with perpendicular offset 6–18% of D (cap ~100px), control pts asymmetric (0.8/0.4 → bow early),
+  one curl-direction bias per session.
+- *Undershoot + correction:* primary lands at 0.93–0.97·D, scatter SD≈W/5; pause 70–120ms; corrective
+  min-jerk hop 120–180ms to final point. ~8% of moves overshoot 2–6% then correct. Skip correction if
+  W>80px. Final click point ≠ center: Gaussian SD≈W/6, ~2px toward approach dir.
+- *Tremor:* perpendicular jitter `A(t)=0.3+0.02·|v|` px × noise1D(t·9Hz) — auto→0 at endpoints.
+  **Idle = dead still** (no continuous jitter — that screams synthetic); only rare 1–3px micro-drifts.
+- *Dwell before click:* `120 + 180·U(0,1)²` ms (right-skewed); 400–700ms before decision clicks (Buy/Sell).
+
+**2. Click/feedback (ms):** down→up 70–150 (≈90); dbl-click gap 80–200; click→UI response 1–3 frames
+(instant = fake, >150ms = laggy); drag: press→move 80–150, drag-slop 3–5px. **Pressed states, not
+Material ripples** (bg darken 8–12% for press duration). Optional tutorial-style soft click halo:
+44px, 25% alpha, scale 0.6→1.0, fade 350ms. **Cursor state machine** by hit-testing precomputed pos:
+arrow→pointer(buttons/rows)→I-beam(inputs)→col/ew-resize(splitters/price-axis)→crosshair(chart)→
+grabbing(pan). Flips exactly on region-cross frame, no tween between shapes. Tooltip after 300–500ms
+hover; caret blink 530ms square wave.
+
+**3. Scroll/pan.** Wheel notch ≈100px, ease-out ~120–160ms `1−(1−τ)³`, bursts of 2–8 notches (gap
+40–120ms). Trackpad momentum: `v(t)=v0·k^t`, k=0.998/ms, `y(t)=y0+v0·(k^t−1)/ln(k)`, τ≈325–500ms,
+stop at |v|<0.05px/ms. Overscroll rubber-band `(1−1/(0.55x/d+1))·d`, snap-back critically damped
+τ≈90ms. **TradingView chart pan = 1:1 pointer-lock, ZERO easing, dead-stop on release** (inertial
+chart pan = #1 fake tell); horizontal drag has ±2–4px vertical wobble (free from tremor). Wheel-zoom
+about cursor x, ~10%/notch, instant.
+
+**4. "Captured screen" look.** (a) **Sharp cursor, discrete steps, NO motion blur** — fast moves jump
+100–200px/frame with zero smear (that jump is CORRECT). (b) Real cursor bitmap + hotspot: macOS arrow
+black fill + 1.5px white outline ~17×23px, hotspot top-left tip, drop shadow (0,1px,2px,rgba(0,0,0,.3));
+OR Windows white-with-black — pick one, match the window chrome. Draw at integer/half-px (not subpixel).
+(c) **Frame-cadence jitter:** seeded schedule — every 4–10s repeat previous frame's sample time 1 frame
+(`t_eff=t−33ms`), 2 frames after heavy change. (d) JPG q≈80 supplies compression; optional ±1LSB dither
+on flat dark gradients. (e) **Alive UI:** hover bg on cell-enter frame; focus ring #2962FF after input
+click; text selection follows cursorX; **live clock ticking**; **prices/quotes updating on their own
+150–800ms cadence INDEPENDENT of the cursor** — background activity = "live" feel.
+
+**5. macOS chrome:** window radius 10px; title bar 28px (52 unified); traffic lights 12px circles
+#FF5F57/#FEBC2E/#28C840 at x=20/40/60, symbols on hover; menu bar 24px SF Pro 13px; overlay scrollbar
+7px pill rgba(255,255,255,.25), fades 250ms after ~1s idle.
+
+**Trading typography:** stack `-apple-system,BlinkMacSystemFont,"Trebuchet MS",Roboto,sans-serif`;
+tabular-nums for all numbers. Axis 11px; watchlist symbol 13/600 price 13/400; DOM/footprint row
+18–24px, 11–12px digits; depth bars alpha .25 length ∝ size/max; cell flash-on-update `α(t)=α0·e^(−t/120ms)`.
+
+**Top-5 highest-leverage tells:** (1) min-jerk timing on WindMouse path, (2) undershoot + 100ms-later
+micro-correction, (3) dwell before every click, (4) sharp stepping cursor no blur, (5) 1:1 dead-stop
+chart pan + background ticks independent of cursor.
+
+**Minimal glue:** `buildScenario(seed)` → per action compute Fitts MT + WindMouse path + arc-len LUT +
+overshoot/correction + dwell → emit absolute-ms timeline. `renderAt(ms)`: apply dropped-frame hold →
+sample timeline (+tremor) → hit-test → cursor shape → draw UI hover/press/crosshair from t → draw sharp
+cursor bitmap.
+
+**Sources:** WindMouse ben.land/post/2021/04/25/windmouse-human-mouse-movement · Fitts (Wikipedia;
+yorku.ca/mack Fitts throughput) · min-jerk Flash/Hogan (ima.org.uk survey PDF; arxiv 2110.00443) ·
+Meyer optimized-submovement (researchgate 19750579; submovement analysis 220208463) · momentum scroll
+ariya.io 2011; UIScrollView mechanics medium @esskeetit; Apple decelerationRate; github ktiays/fluid-scroll ·
+Win SetDoubleClickTime / TTM_SETDELAYTIME; ninjaone hover time · TradingView colors mobbin.com; TV custom-
+themes + lightweight-charts docs · synthetic-video cues arxiv 2605.06912; forasoft compression field guide.
