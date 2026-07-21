@@ -111,7 +111,7 @@ scLive, scMechanism, scPunch, scQuestions, scStates, scTool(s), scTrans, scWhy`.
 | L5 Level 2 Data | ✅ delivered v3 5:21 + LIVE deepchart + COSMO | `lesson5.html` + `deepchart.html` + `audio/l5_audio.m4a` |
 | Signals | ✅ ORIGINAL kept 2:57 — **do NOT rebuild** | original mp4 only |
 | Video 1 (course intro) | ⏳ awaiting user's script | — |
-| Video 6 | ⏳ IN PROGRESS — **MIRROR rebuild** (see §9/§10). Intro 0–28s = v1 (pre-mirror). Full 44min storyboard + UI anatomy mapped 2026-07-21 | `lesson6.html` |
+| Video 6 | ✅ **COMPLETE v1 delivered 2026-07-22** — 8:01, full MIRROR (S1–S6 + COSMO), `~/Downloads/video6.mp4` + `~/Desktop/EnterTrade Videos/`. Awaiting user review vs. original | `v6seg1..5.html` + `tvchrome.js` (`lesson6.html` = old pre-mirror intro, superseded) |
 
 ### Video 6 — INTRO segment (delivered v1, 2026-07-19)
 - `lesson6.html` — engine header copied verbatim from `lesson5.html`, **`bg()` orbs stripped**
@@ -430,6 +430,14 @@ All six scenes built + assembled into the full **video6.mp4** (~8:01):
   renders → per-scene encode → concat demuxer → COSMO bubble overlay → max-compat finalize →
   validate → copy to ~/Downloads + ~/Desktop/EnterTrade Videos/). Clock mirrors Tim's real
   taskbar times (22:42→23:24 across scenes).
+- **DELIVERED 2026-07-22: `video6.mp4` 8:01.13, 1920×1080 30fps, H.264 High yuv420p +faststart,
+  30,4 MB, ffmpeg-validated clean.** Full render of 14.433 frames took ~5 min on this Mac
+  (4 parallel Chromium workers ≈ 45–60 fps combined).
+- **L-series exports (2026-07-22):** delivered finals found ON DISK in ~/Downloads —
+  `lesson1_v11_send.mp4` (4:00.37, incl. Hedra intro), `lesson3_final5_send.mp4` (8:38.80),
+  `lesson5_FINAL3_send.mp4` (5:21.34) → copied to app names lesson1/3/5.mp4. **lesson4 had NO
+  delivered file** → re-rendered from `lesson4.html` + `audio/l4_audio.m4a` (12.910 frames) +
+  COSMO bubble via `render/buildlessons.sh`.
 
 ### Video 6 — component library to build (VO-independent; the heavy Fable visual work)
 - **TradingView chart page** (light theme): top toolbar, left favorites/drawing rail w/ tooltips,
