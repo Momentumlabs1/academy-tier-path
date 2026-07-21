@@ -322,7 +322,41 @@ ffmpeg/ffprobe come from `@ffmpeg-installer` (no system ffmpeg on this Mac).
 **MIRROR = source of truth is Tim's real footage.** Every desktop/TradingView/orderflow/click
 scene is spiegeled beat-for-beat, code-rendered in our style. Own design ok; **content + flow
 1:1**. No invented charts, nothing AI-looking. Density rule still holds → **compress dead air,
-keep every meaningful beat.** Finished length ≈ the app lesson's `durationMin`, not the raw 44 min.
+keep every meaningful beat.**
+
+**LENGTH (user 2026-07-21):** video6 target = **8–12 min** compact dense lesson (like the others),
+NOT real-time, NOT the 20-min slot, NOT 44 min. All content beats in Tim's order; dead air /
+rambling cut radically. Tim's 44 min = raw source only.
+
+**OUTPUT (user 2026-07-21):** in addition to the pipeline output, copy every finished
+segment/video as MP4 into **`~/Desktop/EnterTrade Videos/`** and tell the user the filename —
+that's where they review. (Repo stays free of big MP4s; <50MB only, per handover.)
+
+**Theme note:** Tim runs TradingView in **LIGHT theme** (white bg, red DAX area chart) for the
+market-overview + chart pages; Deepchart terminal = white chart area with dark side/top toolbars.
+Mirror those exact themes — do NOT default to a dark TradingView.
+
+**COSMO asset (found 2026-07-21):** `~/Downloads/COSMO.png` (2160×3840 RGBA, full character,
+transparent bg — blue cartoon guy, black tee, gold chain). Bubble pipeline: crop head/shoulders
+`crop=1100:1100:525:210` → `cosmo_key.png` → `cosmo-bubble.html`(=bubblecam.html) renders 90-frame
+lime-glow breathing loop (`render/rendbubble2.mjs`, deviceScaleFactor 2, omitBackground) → qtrle
+alpha `bubble_loop.mov` scaled 280px → overlay `overlay=40:H-h-30` (bottom-left). No Hedra needed.
+**Lower-thirds go bottom-CENTER** so they never collide with the bottom-left COSMO bubble.
+
+### ✅ Video 6 — SEGMENT 1 delivered v1 (2026-07-21)
+TradingView Marktübersicht MIRROR, 28s, beat-locked to the intro Harry VO (`.render/v6/vo/intro.mp3`
++ `intro.words.json`). `v6seg1.html` (+ `interface-engine.js`): faithful light-theme TV overview
+(Chrome tabs, de.tradingview.com, nav, DAX 25.067,09 red area chart w/ live leading dot, full
+9-row watchlist w/ Tim's exact values + tick-flash, AAPL 315,32 panel, Win taskbar 22:42). Cursor
+(IFE engine) beat-locked via new **`{at:ms}`** action (pads a wait to an absolute time): drifts to
+watchlist on "Level 2 data", scans on "volume profile", into DAX on "combination/live", to **Broker**
+nav on "The first is TradingView" → **opens the Broker dropdown** (matches Tim's t35) during the "99%
+of traders" count-up, back to watchlist on "Level 2 limited". Brand lower-thirds bottom-center
+(kicker → WAY 1·TradingView·99% → red "Level 2: limited"). COSMO bubble bottom-left.
+Render `render/rendseg1.mjs` (4 chunks, 840 frames, **paint-flush before screenshot**) → encode +
+COSMO overlay. **Exported:** `~/Desktop/EnterTrade Videos/Video6_Segment1_TradingView-Marktuebersicht_v1.mp4`.
+→ **Next:** await review; then Segment 2 (TradingView symbol pages + first candle/line charts,
+~2:45–4:30) → chart-page shell + symbol search/load + chart draw-in, same engine.
 
 **#1 priority = real computer-interface feel** (see §11 engine). Filmed screen, not animation.
 

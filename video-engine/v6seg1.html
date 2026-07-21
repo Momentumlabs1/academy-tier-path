@@ -1,0 +1,249 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#0a0d13}canvas{position:absolute;left:0;top:0}</style>
+<script src="interface-engine.js"></script>
+</head><body><canvas id="cv" width="1920" height="1080"></canvas><script>
+const X=document.getElementById('cv').getContext('2d');const W=1920,H=1080;const P=Math.round;let T=0;
+// brand palette (overlays / lower-thirds)
+const BG='#070a10',INK='#eaf2f8',MUT='#8b98a8',LIME='#b6f04a',CYAN='#39d0d0',MAG='#e06bd8',RED='#ff5470',GOLD='#ffcf5c';
+// TradingView LIGHT theme (mirror of Tim's screen)
+const TVBG='#ffffff',TVINK='#131722',TVSUB='#787b86',TVLINE='#e0e3eb',TVUP='#089981',TVDN='#f23645',TVBLUE='#2962ff',TVHOVER='#f0f3fa';
+const SANS='system-ui,-apple-system,"Trebuchet MS",Roboto,sans-serif';
+const clamp=(u,a,b)=>u<a?a:u>b?b:u;
+const es=u=>{u=clamp(u,0,1);return u<.5?4*u*u*u:1-Math.pow(-2*u+2,3)/2;};
+const eo=u=>{u=clamp(u,0,1);return 1-Math.pow(1-u,3);};
+const hexA=(h,a)=>{const n=parseInt(h.slice(1),16);return`rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;};
+function rr(x,y,w,h,r){x=P(x);y=P(y);w=P(w);h=P(h);X.beginPath();X.moveTo(x+r,y);X.arcTo(x+w,y,x+w,y+h,r);X.arcTo(x+w,y+h,x,y+h,r);X.arcTo(x,y+h,x,y,r);X.arcTo(x,y,x+w,y,r);X.closePath();}
+const rv=(t0,d)=>es(clamp((T-t0)/(d||0.5),0,1));
+
+// ---------- layout ----------
+const TAB={y0:0,h:40}, ADDR={y0:40,h:44}, NAV={y0:84,h:64};
+const NAVITEMS=[{label:'Produkte',x:500},{label:'Community',x:650},{label:'Märkte',x:830},{label:'Broker',x:975},{label:'Mehr',x:1105}];
+const SEARCH={x:300,y:96,w:170,h:40};
+const DAX={x:95,y:300,w:1300,h:560};
+const WL={x:1450,y:100,w:456,h:378};
+const AAPL={x:1450,y:510,w:456,h:530};
+const TASK={y0:1040,h:40};
+const WATCH=[
+ ['BTCUSD','64.096,26','+308,37','+0,48%',1],
+ ['NQ1!','30.032,25','+95,25','+0,32%',1],
+ ['XAUUSD','4.120,670','-3,120','-0,08%',0],
+ ['NAS100','29.875,21','+129,03','+0,43%',1],
+ ['GC1!','4.113,7','-27,1','-0,65%',0],
+ ['XAUUSD','4.111,51','-11,84','-0,29%',0],
+ ['USOIL','71,50','-0,30','-0,42%',0],
+ ['GBPUSD','1,34021','-0,00067','-0,05%',0],
+ ['NDX','29.825,11','+98,01','+0,33%',1],
+];
+const TABS=['Amazon.ae','noon.com','NQ1','XAUUSD 4.120,67','NQ1','RØDE PodMic','Subscriptions','R | Trader Pro','Your Membership','TradingView'];
+
+// deterministic quote flash after each tick (pure f(t))
+const PER=[0.55,0.8,0.42,0.9,0.7,0.5,1.1,0.95,0.6];
+function flashA(row){const per=PER[row]||0.7;const ph=(T%per)/per;return Math.max(0,1-ph*3.4);}
+
+// ---------- DAX intraday area chart (silhouette recreation) ----------
+const DAXPTS=[0.42,0.55,0.70,0.86,0.78,0.64,0.72,0.60,0.48,0.40,0.52,0.44,0.33,0.26,0.30,0.22,0.15,0.24,0.19,0.34,0.44];
+function daxChart(x,y,w,h,rvl){
+  const n=DAXPTS.length, dx=w/(n-1);
+  const px=i=>x+i*dx, py=i=>y+h-(DAXPTS[i]*h*0.80)-h*0.10;
+  const upto=clamp(rvl*(n-1),0,n-1), full=Math.floor(upto), f=upto-full;
+  const lastX=full<n-1?px(full)+dx*f:px(n-1);
+  const lastY=full<n-1?py(full)+(py(full+1)-py(full))*f:py(n-1);
+  X.beginPath();X.moveTo(px(0),py(0));
+  for(let i=1;i<=full;i++)X.lineTo(px(i),py(i));
+  if(full<n-1)X.lineTo(lastX,lastY);
+  X.lineTo(lastX,y+h);X.lineTo(px(0),y+h);X.closePath();
+  const g=X.createLinearGradient(0,y,0,y+h);g.addColorStop(0,hexA('#f23645',0.20));g.addColorStop(1,hexA('#f23645',0.015));X.fillStyle=g;X.fill();
+  X.beginPath();X.moveTo(px(0),py(0));
+  for(let i=1;i<=full;i++)X.lineTo(px(i),py(i));
+  if(full<n-1)X.lineTo(lastX,lastY);
+  X.strokeStyle=TVDN;X.lineWidth=2.5;X.lineJoin='round';X.stroke();
+  // live dot at leading edge
+  X.fillStyle=TVDN;X.beginPath();X.arc(lastX,lastY,4,0,7);X.fill();
+  X.fillStyle=TVSUB;X.font='400 15px '+SANS;X.textAlign='center';X.textBaseline='alphabetic';
+  const labels=['10','12:00','13:00','14:00','15:00','16:00','17:00','18:00','19:00'];
+  for(let i=0;i<labels.length;i++)X.fillText(labels[i],x+(i/(labels.length-1))*w,y+h+26);
+}
+
+// ---------- browser + TV chrome (light) ----------
+function browserChrome(){
+  X.fillStyle='#dee1e6';X.fillRect(0,0,W,TAB.h);
+  X.textBaseline='middle';X.font='400 13px '+SANS;
+  let tx=44;const tw=150;
+  for(let i=0;i<TABS.length;i++){
+    const active=i===TABS.length-1;
+    if(active){X.fillStyle='#ffffff';rr(tx,4,tw,TAB.h-4,8);X.fill();}
+    X.fillStyle=active?'#2962ff':'#9aa0a6';X.beginPath();X.arc(tx+14,TAB.h/2,5,0,7);X.fill();
+    X.fillStyle=active?TVINK:'#5f6368';X.textAlign='left';
+    const lbl=TABS[i].length>16?TABS[i].slice(0,15)+'…':TABS[i];
+    X.fillText(lbl,tx+26,TAB.h/2);
+    X.fillStyle='#9aa0a6';X.textAlign='right';X.fillText('×',tx+tw-10,TAB.h/2);
+    tx+=tw+2;
+  }
+  X.fillStyle='#9aa0a6';X.textAlign='left';X.font='300 22px '+SANS;X.fillText('+',tx+8,TAB.h/2);
+  // address bar
+  X.fillStyle='#ffffff';X.fillRect(0,TAB.h,W,ADDR.h);
+  X.strokeStyle='#e8eaed';X.lineWidth=1;X.beginPath();X.moveTo(0,TAB.h+ADDR.h+0.5);X.lineTo(W,TAB.h+ADDR.h+0.5);X.stroke();
+  X.fillStyle='#5f6368';X.font='400 20px '+SANS;X.textAlign='center';X.textBaseline='middle';
+  X.fillText('‹',30,ADDR.y0+ADDR.h/2);X.fillText('›',66,ADDR.y0+ADDR.h/2);X.fillText('⟳',102,ADDR.y0+ADDR.h/2);
+  X.fillStyle='#f1f3f4';rr(140,ADDR.y0+8,1500,ADDR.h-16,14);X.fill();
+  X.fillStyle='#5f6368';X.textAlign='left';X.font='400 15px '+SANS;X.fillText('🔒  de.tradingview.com',160,ADDR.y0+ADDR.h/2);
+  // TV nav bar
+  X.fillStyle=TVBG;X.fillRect(0,NAV.y0,W,NAV.h);
+  X.strokeStyle=TVLINE;X.beginPath();X.moveTo(0,NAV.y0+NAV.h+0.5);X.lineTo(W,NAV.y0+NAV.h+0.5);X.stroke();
+  X.fillStyle=TVINK;X.font='800 22px '+SANS;X.textAlign='left';X.textBaseline='middle';X.fillText('TradingView',120,NAV.y0+NAV.h/2);
+  X.fillStyle='#f1f3f4';rr(SEARCH.x,SEARCH.y,SEARCH.w,SEARCH.h,8);X.fill();
+  X.fillStyle=TVSUB;X.font='400 15px '+SANS;X.fillText('Suche (Ctrl+K)',SEARCH.x+16,SEARCH.y+SEARCH.h/2);
+}
+function tvNav(samp,dropOpen){
+  X.textBaseline='middle';X.font='600 18px '+SANS;
+  for(const it of NAVITEMS){
+    const w=X.measureText(it.label).width+30, bx=it.x-15, by=NAV.y0+12, bh=40;
+    const hov=samp.x>=bx&&samp.x<=bx+w&&samp.y>=by&&samp.y<=by+bh;
+    const open=it.label==='Broker'&&dropOpen>0;
+    if(hov||open){X.fillStyle=TVHOVER;rr(bx,by,w,bh,8);X.fill();}
+    X.fillStyle=(hov||open)?TVBLUE:TVINK;X.textAlign='left';X.fillText(it.label,it.x,NAV.y0+NAV.h/2);
+  }
+  X.fillStyle='#2962ff';X.beginPath();X.arc(1855,NAV.y0+NAV.h/2,18,0,7);X.fill();
+  X.fillStyle='#fff';X.font='700 16px '+SANS;X.textAlign='center';X.fillText('B',1855,NAV.y0+NAV.h/2+1);
+}
+function brokerDropdown(a){
+  if(a<=0)return;const bx=960,by=NAV.y0+NAV.h+4,bw=340,full=430,bh=full*eo(a);
+  X.save();X.globalAlpha=clamp(a*1.6,0,1);
+  X.shadowColor='rgba(0,0,0,0.18)';X.shadowBlur=24;X.shadowOffsetY=6;
+  X.fillStyle='#fff';rr(bx,by,bw,bh,12);X.fill();X.shadowColor='transparent';
+  X.strokeStyle=TVLINE;rr(bx,by,bw,bh,12);X.stroke();
+  X.save();rr(bx,by,bw,bh,12);X.clip();
+  const items=['Top-Broker','Broker vergleichen','Konto eröffnen','Auszeichnungen'];
+  X.textAlign='left';X.textBaseline='middle';
+  for(let i=0;i<items.length;i++){const iy=by+30+i*42;
+    X.fillStyle=TVBLUE;X.beginPath();X.arc(bx+28,iy,7,0,7);X.fill();
+    X.fillStyle=TVINK;X.font='500 17px '+SANS;X.fillText(items[i],bx+50,iy);}
+  X.fillStyle=TVSUB;X.font='600 12px '+SANS;X.fillText('UNTERSTÜTZTE BROKER',bx+24,by+205);
+  const brk=[['Fusion Markets','4.6'],['Capital.com','4.6'],['FOREX.com','4.4'],['Tickmill','4.4']];
+  for(let i=0;i<brk.length;i++){const iy=by+245+i*44;
+    X.fillStyle='#eef1f6';rr(bx+22,iy-15,30,30,7);X.fill();
+    X.fillStyle=TVINK;X.font='600 16px '+SANS;X.fillText(brk[i][0],bx+62,iy-4);
+    X.fillStyle='#f5a623';X.font='700 13px '+SANS;X.fillText('★ '+brk[i][1],bx+62,iy+13);}
+  X.restore();X.restore();
+}
+
+// ---------- market overview body ----------
+function card(x,y,w,h){X.save();X.shadowColor='rgba(20,30,50,0.07)';X.shadowBlur=18;X.shadowOffsetY=4;X.fillStyle='#fff';rr(x,y,w,h,14);X.fill();X.restore();X.strokeStyle=TVLINE;X.lineWidth=1;rr(x,y,w,h,14);X.stroke();}
+function marketBody(samp,rvl){
+  X.fillStyle='#f8f9fd';X.fillRect(0,NAV.y0+NAV.h+1,W,TASK.y0-(NAV.y0+NAV.h+1));
+  X.fillStyle=TVINK;X.font='800 34px '+SANS;X.textAlign='left';X.textBaseline='alphabetic';X.fillText('Marktübersicht',120,240);
+  X.fillStyle=TVSUB;X.font='800 26px '+SANS;X.fillText('›',372,238);
+  // DAX card
+  card(DAX.x,DAX.y,DAX.w,DAX.h);
+  // DAX header
+  X.fillStyle='#5468ff';X.beginPath();X.arc(DAX.x+44,DAX.y+52,24,0,7);X.fill();
+  X.fillStyle='#fff';X.font='800 22px '+SANS;X.textAlign='center';X.textBaseline='middle';X.fillText('X',DAX.x+44,DAX.y+53);
+  X.textBaseline='alphabetic';X.textAlign='left';
+  X.fillStyle=TVINK;X.font='800 26px '+SANS;X.fillText('DAX',DAX.x+82,DAX.y+46);
+  X.fillStyle=TVSUB;X.font='700 14px '+SANS;X.fillText('DAX',DAX.x+140,DAX.y+44);
+  X.fillStyle=TVINK;X.font='800 40px '+SANS;X.fillText('25.067,09',DAX.x+82,DAX.y+92);
+  X.fillStyle=TVSUB;X.font='600 15px '+SANS;X.fillText('POINT',DAX.x+300,DAX.y+92);
+  X.fillStyle=TVDN;X.font='700 22px '+SANS;X.fillText('−0,20%',DAX.x+370,DAX.y+92);
+  daxChart(DAX.x+40,DAX.y+140,DAX.w-90,DAX.h-210,rvl);
+  // Watchlist card
+  card(WL.x,WL.y,WL.w,WL.h);
+  X.fillStyle=TVINK;X.font='800 20px '+SANS;X.textAlign='left';X.textBaseline='middle';X.fillText('Watchlist',WL.x+22,WL.y+30);
+  X.fillStyle=TVSUB;X.font='600 13px '+SANS;
+  X.fillText('Symbol',WL.x+22,WL.y+64);X.textAlign='right';
+  X.fillText('Zuletzt',WL.x+250,WL.y+64);X.fillText('Änd',WL.x+345,WL.y+64);X.fillText('Änd. %',WL.x+WL.w-20,WL.y+64);
+  const rh=32, y0=WL.y+82;
+  for(let i=0;i<WATCH.length;i++){
+    const ry=y0+i*rh; const [sym,last,chg,pct,up]=WATCH[i];
+    const hov=samp.x>=WL.x&&samp.x<=WL.x+WL.w&&samp.y>=ry&&samp.y<=ry+rh;
+    if(hov){X.fillStyle=TVHOVER;X.fillRect(WL.x+1,ry,WL.w-2,rh);}
+    // tick flash bg on last price
+    const fa=flashA(i)*0.5;if(fa>0.02){X.fillStyle=hexA(up?'#089981':'#f23645',fa*0.18);X.fillRect(WL.x+170,ry,110,rh);}
+    X.textBaseline='middle';const my=ry+rh/2;
+    // color square + symbol
+    X.fillStyle=up?TVUP:TVDN;rr(WL.x+22,my-7,14,14,3);X.fill();
+    X.fillStyle=TVINK;X.font='700 15px '+SANS;X.textAlign='left';X.fillText(sym,WL.x+46,my);
+    X.fillStyle=TVINK;X.font='500 15px '+SANS;X.textAlign='right';X.fillText(last,WL.x+250,my);
+    X.fillStyle=up?TVUP:TVDN;X.fillText(chg,WL.x+345,my);X.fillText(pct,WL.x+WL.w-20,my);
+  }
+  // AAPL card
+  card(AAPL.x,AAPL.y,AAPL.w,AAPL.h);
+  X.fillStyle='#000';X.beginPath();X.arc(AAPL.x+40,AAPL.y+42,20,0,7);X.fill();
+  X.fillStyle='#fff';X.font='700 20px '+SANS;X.textAlign='center';X.textBaseline='middle';X.fillText('','',0);
+  X.fillStyle=TVINK;X.textAlign='left';X.font='800 22px '+SANS;X.textBaseline='alphabetic';X.fillText('AAPL',AAPL.x+72,AAPL.y+50);
+  X.fillStyle=TVSUB;X.font='500 15px '+SANS;X.fillText('Apple Inc · NASDAQ',AAPL.x+24,AAPL.y+92);
+  X.fillStyle=TVINK;X.font='800 42px '+SANS;X.fillText('315,32',AAPL.x+24,AAPL.y+150);
+  X.fillStyle=TVSUB;X.font='600 15px '+SANS;X.fillText('USD',AAPL.x+180,AAPL.y+150);
+  X.fillStyle=TVDN;X.font='700 20px '+SANS;X.fillText('−0,90  −0,28%',AAPL.x+230,AAPL.y+150);
+  X.fillStyle=TVSUB;X.font='500 15px '+SANS;X.fillText('Markt ist geschlossen',AAPL.x+24,AAPL.y+186);
+  // key stats
+  const stats=[['Nächster Geschäftsbericht','In 19 Tagen'],['Volumen','34,13 M'],['Durchschnittsvolumen (30)','62,16 M'],['Marktkapitalisierung','4,63 T'],['Earnings','19']];
+  X.font='500 16px '+SANS;
+  for(let i=0;i<stats.length;i++){const sy=AAPL.y+250+i*46;
+    X.fillStyle=TVSUB;X.textAlign='left';X.fillText(stats[i][0],AAPL.x+24,sy);
+    X.fillStyle=TVINK;X.textAlign='right';X.fillText(stats[i][1],AAPL.x+AAPL.w-24,sy);
+    X.strokeStyle='#eef1f6';X.beginPath();X.moveTo(AAPL.x+24,sy+16);X.lineTo(AAPL.x+AAPL.w-24,sy+16);X.stroke();}
+}
+function taskbar(){
+  X.fillStyle='#1c1f26';X.fillRect(0,TASK.y0,W,TASK.h);
+  // start + search pill
+  X.fillStyle='#2962ff';rr(560,TASK.y0+8,24,24,4);X.fill();
+  X.fillStyle='#2a2e37';rr(600,TASK.y0+7,190,26,13);X.fill();
+  X.fillStyle='#9aa0a6';X.font='400 13px '+SANS;X.textAlign='left';X.textBaseline='middle';X.fillText('Suche',636,TASK.y0+TASK.h/2);
+  // clock
+  X.fillStyle='#e6e8ea';X.textAlign='right';X.font='500 13px '+SANS;X.fillText('22:42',W-20,TASK.y0+15);X.fillText('12.07.2026',W-20,TASK.y0+31);
+}
+
+// ---------- brand overlays (lower-thirds, bottom-CENTER; bottom-left reserved for COSMO) ----------
+function ltPill(bx,by,bw,bh,edge){X.fillStyle=hexA('#070a10',0.86);rr(bx,by,bw,bh,14);X.fill();X.strokeStyle=hexA(edge,0.65);X.lineWidth=2;rr(bx,by,bw,bh,14);X.stroke();}
+function kicker(){const a=rv(0.2,0.6)*(1-clamp((T-6.5)/0.8,0,1));if(a<=0)return;
+  const bw=560,bh=58,bx=(W-bw)/2,by=H-96;X.save();X.globalAlpha=a;ltPill(bx,by,bw,bh,MAG);
+  X.fillStyle=MAG;X.font='800 20px '+SANS;X.textAlign='center';X.textBaseline='middle';
+  X.fillText('● LESSON · VOLUME PROFILE  +  LEVEL 2',W/2,by+bh/2);X.restore();}
+function wayChip(){ // "The first is TradingView" 18.35s → hold through 99% then cross-fade to limit
+  const a=rv(17.9,0.5)*(1-clamp((T-24.3)/0.4,0,1));if(a<=0)return;
+  const bw=560,bh=64,bx=(W-bw)/2,by=H-100;X.save();X.globalAlpha=a;ltPill(bx,by,bw,bh,CYAN);
+  X.fillStyle=CYAN;X.font='800 18px '+SANS;X.textAlign='left';X.textBaseline='middle';X.fillText('WAY 1',bx+24,by+bh/2);
+  X.fillStyle=INK;X.font='800 26px '+SANS;X.fillText('TradingView',bx+118,by+bh/2-2);
+  const cc=clamp((T-20.0)/1.4,0,1);if(cc>0){X.fillStyle=CYAN;X.font='900 30px '+SANS;X.textAlign='right';
+    X.fillText(Math.round(99*eo(cc))+'%',bx+bw-24,by+bh/2-2);
+    X.fillStyle=MUT;X.font='600 13px '+SANS;X.fillText('of traders',bx+bw-24,by+bh/2+18);}
+  X.restore();}
+function limitCallout(){ // "Level 2 data is limited" 24.6s
+  const a=clamp((T-24.5)/0.4,0,1);if(a<=0)return;
+  const bw=640,bh=64,bx=(W-bw)/2,by=H-100;X.save();X.globalAlpha=a;
+  X.fillStyle=hexA('#1a0c12',0.92);rr(bx,by,bw,bh,14);X.fill();X.strokeStyle=hexA(RED,0.75);X.lineWidth=2;rr(bx,by,bw,bh,14);X.stroke();
+  X.save();X.translate(bx+38,by+bh/2);X.fillStyle=RED;X.beginPath();X.arc(0,0,15,0,7);X.fill();
+  X.strokeStyle='#1a0c12';X.lineWidth=3;X.lineCap='round';X.beginPath();X.moveTo(-6,-6);X.lineTo(6,6);X.moveTo(6,-6);X.lineTo(-6,6);X.stroke();X.restore();
+  X.fillStyle=RED;X.font='800 24px '+SANS;X.textAlign='left';X.textBaseline='middle';X.fillText('Level 2 data on TradingView: limited',bx+70,by+bh/2-1);
+  X.restore();}
+
+// ---------- cursor scenario — beat-locked to VO onsets (ms) ----------
+const WLrow=i=>[WL.x+150, WL.y+82+i*32+16];
+const cur=IFE.Cursor([
+  {at:600},
+  {at:2600, move:WLrow(2), W:300},                       // "Level 2 data" 3.9s → watchlist (lands ~3.2s, hovers XAUUSD)
+  {at:5200, move:WLrow(5), W:260},                       // "volume profile" 5.6s → scan down
+  {at:8300, move:[DAX.x+680,DAX.y+360], W:520},          // "combination/live" 8.6–12s → into DAX chart
+  {at:15200, move:[DAX.x+980,DAX.y+300], W:400},         // "two ways" 15.8s → drift toward nav
+  {at:17700, move:[NAVITEMS[3].x+28,NAV.y0+NAV.h/2], W:110}, // "The first is TradingView" 18.35s → Broker
+  {click:true},                                          // opens dropdown ~18.5s
+  {at:23400, move:[WL.x+250, WL.y+82+2*32+16], W:260},   // "access to Level 2 limited" 24.8s → watchlist
+], {start:[300,1000], seed:60021, os:'win', t0:0});
+// dropdown envelope keyed to the same VO timeline (open ~18.5s, close ~24.0s)
+function dropAt(ms){const o=clamp((ms/1000-18.5)/0.32,0,1), c=1-clamp((ms/1000-24.0)/0.4,0,1);return Math.max(0,Math.min(o,c));}
+
+function renderAt(ms){T=ms/1000;const s=cur.sample(ms);
+  browserChrome();
+  const drop=dropAt(ms);
+  marketBody(s, clamp((T-0.3)/2.2,0,1));
+  tvNav(s, drop);
+  brokerDropdown(drop);
+  taskbar();
+  const inNav=s.y>=NAV.y0+12&&s.y<=NAV.y0+52&&s.x>=480&&s.x<=1180;
+  const inWL=s.x>=WL.x&&s.x<=WL.x+WL.w&&s.y>=WL.y+82&&s.y<=WL.y+WL.h;
+  const shape=(inNav||inWL)?'pointer':'default';
+  IFE.drawCursor(X,s.x,s.y,shape,s.pressed,cur.os);
+  kicker();wayChip();limitCallout();
+}
+window.renderAt=renderAt;window.__ready=true;window.__dur=28.0;renderAt(0);
+</script></body></html>

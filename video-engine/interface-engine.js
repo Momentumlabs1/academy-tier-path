@@ -166,6 +166,8 @@
 
     for (let i = 0; i < actions.length; i++) {
       const a = actions[i];
+      // absolute beat-lock: pad a wait so this action does not start before a.at (ms)
+      if (a.at != null && a.at > t) { ev.push({ type: 'wait', t0: t, dur: a.at - t, x, y }); t = a.at; }
       if (a.shape) { shape = a.shape; ev.push({ type: 'shapeset', t0: t, shape }); }
       if (a.move) pushMove(a.move[0], a.move[1], a.W, false);
       if (a.wait) { ev.push({ type: 'wait', t0: t, dur: a.wait, x, y }); t += a.wait; }
