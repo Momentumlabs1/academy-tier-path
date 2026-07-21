@@ -355,8 +355,57 @@ of traders" count-up, back to watchlist on "Level 2 limited". Brand lower-thirds
 (kicker → WAY 1·TradingView·99% → red "Level 2: limited"). COSMO bubble bottom-left.
 Render `render/rendseg1.mjs` (4 chunks, 840 frames, **paint-flush before screenshot**) → encode +
 COSMO overlay. **Exported:** `~/Desktop/EnterTrade Videos/Video6_Segment1_TradingView-Marktuebersicht_v1.mp4`.
-→ **Next:** await review; then Segment 2 (TradingView symbol pages + first candle/line charts,
-~2:45–4:30) → chart-page shell + symbol search/load + chart draw-in, same engine.
+→ **SUPERSEDED by user 2026-07-21:** no teaser segments — build the **complete final video6.mp4**
+(8–12 min) with ALL of Tim's content visible (same candles, same orderflow bubbles, footprint, his
+drawn zones/strategy) so he can compare to the original. Only then does he review. Segment 1 becomes
+the first ~28s of that full timeline.
+
+### Video 6 — Tim's ACTUAL strategy (from full transcript `tim_script_de.txt`, 2026-07-21)
+The lesson teaches a real, concrete **Volume-Profile + Orderflow** method. Beats, in his order:
+1. **Intro:** combine Level 2 + Volume Profile, live. Two ways — TradingView (99% use it, limited
+   L2, fine to start) vs pro software (real exchange L2). Look at both.
+2. **TradingView tour:** favorites/drawing rail; **Volume Profile Fixed Range** indicator; views =
+   line / candle / **Volumen-Fußabdruck (footprint)** showing delta volume + orders. TV footprint
+   good; software footprint more precise (data from a top exchange).
+3. **The VP method (core):** draw VP **Low → current point** (NOT Low→High — leaves a gap) → **Value
+   Area Low, Value Area High, Point of Control**. Rule: **don't trade the POC**; **wait for the VAL
+   to be swept**; respect structure (broke high ⇒ bullish ⇒ longs). Replay walkthrough: verify the
+   sweep happened at the candle's real time (M1 check, don't cheat); redraw VP as it changes; VAH of
+   down-move taken ⇒ continuation short; VAL taken + **Low Volume Node / imbalance** zone = strong.
+   Consolidation ⇒ draw its value area ⇒ wait for **sustainable** break of resistance + prior VAL.
+   **Entry via footprint delta:** negative delta + positive candle = passive buys = **ABSORPTION**
+   (e.g. 61 buys absorb sells, lift price) ⇒ entry, tight stop, runs to profit. R:R 1:2.8…1:6.
+4. **Orderflow software (Deepchart):** heatmap + deep trades + real footprint. **Absorption** = #1
+   entry confirmation (orders in, market doesn't move ⇒ absorbed by passive book). **Trapped buyers**
+   at a ceiling (214/202/290 buys, +11% delta, yet next candle sells off). Topping at higher-TF
+   **Value Area High of the day** ⇒ shorts. The short trade: big sells + break prior sells ⇒ short,
+   SL above absorption, TP next low / VAL of long move (R:R 1:1.5…1:6 w/ daily VP).
+5. **Why absorption = buying power:** closing a short = active buy; 500 shorts closing above = buying
+   power our way; absorption reveals hidden passive orders.
+6. **Wrap-up:** simple (VP + confirmations); momentum trades ~zero drawdown; learn VP = big edge;
+   world-champion systems; "learned from the best, giving it to you free."
+
+**Condensed EN Harry script (the build spine):** `.render/v6/script_en.md` — 6 scenes S1..S6,
+~1550 words ≈ ~10 min, faithful to Tim's beats. S1 = Segment 1 (done). S2 TV tour, S3 VP method,
+S4 orderflow absorption/trapped-buyers, S5 why-absorption, S6 wrap-up.
+
+**⛔ BLOCKER — VO key:** `.render/.voice.env` `ELEVEN_API_KEY` is **empty** locally (the intro VO
+was made in the prior session when it was set). Need the ElevenLabs key to generate S2..S6 Harry VO
+(`render/tts_ts.py` → mp3 + word onsets). **Asked user.** Meanwhile build the VO-independent visual
+component library (below).
+
+### Video 6 — component library to build (VO-independent; the heavy Fable visual work)
+- **TradingView chart page** (light theme): top toolbar, left favorites/drawing rail w/ tooltips,
+  candles (up #089981 / dn #F23645), interval row, legend OHLC (f(cursorX)), bar-replay bar
+  ("Handel im Wiedergabemodus"), crosshair. Views: line ↔ candle ↔ footprint morph.
+- **Volume Profile overlay:** horizontal buckets, VA shaded, **POC** bright line, **VAL/VAH** bands;
+  drawn Low→current with drag handles; redraw animation. (l11 theme: Value Area / HVN / LVN.)
+- **TV footprint (Volumen-Fußabdruck):** per-candle bid×ask cells + "Delta Gesamt", delta ramp.
+- **Zone drawing:** supply (red) / demand (green) / LVN boxes, drawn with handles, extended right.
+- **Deepchart orderflow terminal** (extend `deepchart.html`): candles + green/magenta bubbles sized
+  by delta, footprint number grid, delta-heatmap footer (orange ΣV / purple-green ΔV/Δ%), trapped-
+  buyers + absorption highlights, entry/SL/TP + R:R markers. This is the S4/S5 core (~7 min of Tim).
+- All choreographed with the IFE cursor engine (draw zones, scrub replay, hover cells, toggle views).
 
 **#1 priority = real computer-interface feel** (see §11 engine). Filmed screen, not animation.
 
