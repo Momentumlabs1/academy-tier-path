@@ -42,9 +42,11 @@ crontab -e
 
 1. **Migration `016_broker_ib_sync.sql`** auf dem Supabase-Projekt
    `qrgvltpakkubtkeukypa` (momentum-hq) ausführen (SQL Editor → Run).
-2. **Partner-Mapping** pflegen: pro Partner-Tenant die IB-E-Mail(s) setzen, z. B.
+2. **Partner-Mapping** pflegen: pro Partner-Tenant die IB-E-Mail(s) eintragen
+   (eigene, admin-only Tabelle — bewusst NICHT auf `tenants`, die ist public-read):
    ```sql
-   UPDATE tenants SET ib_emails = ARRAY['partner-ib@mail.com'] WHERE slug = 'zekoglobal';
+   INSERT INTO tenant_ib_emails (tenant_slug, ib_email)
+   VALUES ('zekoglobal', 'partner-ib@mail.com');
    ```
    Kunden, deren `Direct_IB_Email` matcht, werden automatisch diesem Partner
    zugeordnet (`members.referred_by_tenant`).
@@ -59,5 +61,12 @@ crontab -e
   Academy-Account bleiben einfach im Mirror liegen, bis sie sich registrieren —
   beim nächsten Lauf werden sie automatisch verifiziert.
 - **Sicherheit**: Broker-Rohdaten sind RLS-geschützt (nur Platform-Admin liest);
-  der Worker schreibt mit dem `service_role`-Key; MSSQL-Zugang ist read-only.
-  `.env` niemals committen.
+  der Worker schreibt mit dem `service_role`-Key; MSSQL-Zugang ist read-only;
+  TLS wird standardmäßig verifiziert (`MSSQL_TRUST_CERT=1` nur bei self-signed
+  Cert des Brokers). Cron läuft mit `flock` (kein Doppel-Lauf), der Rollup
+  zusätzlich mit Advisory-Lock. `.env` niemals committen.
+- **DSGVO-Hinweis**: `broker_clients` spiegelt personenbezogene Daten des
+  gesamten IB-Netzwerks (auch Kunden ohne Academy-Account). Ihr seid Master-IB
+  und bekommt diese Daten vertraglich vom Broker — trotzdem: Zugriff bleibt
+  admin-only, und ins Privacy-Policy-Dokument der Academy gehört ein Absatz
+  zur Broker-Datenverarbeitung.

@@ -26,7 +26,9 @@ const MSSQL = {
   database: need("MSSQL_DB"),
   user: need("MSSQL_USER"),
   password: need("MSSQL_PASSWORD"),
-  options: { encrypt: true, trustServerCertificate: true },
+  // TLS verified by default; set MSSQL_TRUST_CERT=1 only if the broker's
+  // endpoint uses a self-signed certificate.
+  options: { encrypt: true, trustServerCertificate: process.env.MSSQL_TRUST_CERT === "1" },
   requestTimeout: 300_000,
   pool: { max: 2, min: 0 },
 };
@@ -129,13 +131,17 @@ async function syncTrades(pool) {
     const req = pool.request();
     let where = "WHERE CloseTime IS NOT NULL";
     if (since) { req.input("since", sql.DateTime2, since); where += " AND CloseTime > @since"; }
+    // Total, stable ordering: CloseTime alone is not unique (trades close in
+    // bursts), so ties could be sliced differently between page queries and
+    // rows silently skipped. TradePositionID as tiebreaker fixes that.
     const rs = await req.query(`
       SELECT TradePositionID, AccountNumber, Symbol, Direction, VolumeLotSize,
              OpenTime, OpenPrice, CloseTime, ClosePrice, Profit, StopLoss, TakeProfit
         FROM dbo.trades
         ${where}
-        ORDER BY CloseTime ASC
+        ORDER BY CloseTime ASC, TradePositionID ASC
         OFFSET ${offset} ROWS FETCH NEXT ${PAGE} ROWS ONLY`);
+    const fetched = rs.recordset.length;
     const rows = rs.recordset.map((r) => ({
       trade_position_id: str(r.TradePositionID),
       account_number: str(r.AccountNumber),
@@ -151,11 +157,15 @@ async function syncTrades(pool) {
       take_profit: num(r.TakeProfit),
       synced_at: new Date().toISOString(),
     })).filter((r) => r.trade_position_id);
-    if (!rows.length) break;
-    await upsertChunks("broker_trades", rows, "trade_position_id");
-    total += rows.length;
-    offset += PAGE;
-    if (rows.length < PAGE) break;
+    // Terminate on the RAW fetch count, not the post-filter count — a single
+    // NULL TradePositionID must not end the loop and drop remaining pages.
+    if (!fetched) break;
+    if (rows.length) {
+      await upsertChunks("broker_trades", rows, "trade_position_id");
+      total += rows.length;
+    }
+    offset += fetched;
+    if (fetched < PAGE) break;
   }
   return total;
 }

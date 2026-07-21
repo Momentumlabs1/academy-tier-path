@@ -81,7 +81,17 @@ CREATE INDEX IF NOT EXISTS idx_broker_trades_account ON broker_trades (account_n
 
 -- ── Partner attribution mapping: a tenant's IB account e-mails ──────────────
 -- Clients whose Direct_IB_Email matches land under that partner.
-ALTER TABLE tenants ADD COLUMN IF NOT EXISTS ib_emails TEXT[] NOT NULL DEFAULT '{}';
+-- Own table (NOT a tenants column): tenants has a public-read RLS policy for
+-- the landing pages, and partner IB e-mails must not be world-readable.
+CREATE TABLE IF NOT EXISTS tenant_ib_emails (
+  tenant_slug TEXT NOT NULL REFERENCES tenants(slug) ON DELETE CASCADE,
+  ib_email    TEXT NOT NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (tenant_slug, ib_email)
+);
+ALTER TABLE tenant_ib_emails ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS tenant_ib_emails_admin_read ON tenant_ib_emails;
+CREATE POLICY tenant_ib_emails_admin_read ON tenant_ib_emails FOR SELECT USING (is_platform_admin());
 
 -- ── RLS: raw broker data is backend/admin-only ──────────────────────────────
 ALTER TABLE broker_clients  ENABLE ROW LEVEL SECURITY;
@@ -106,15 +116,20 @@ DECLARE
   r RECORD;
   v_delta NUMERIC;
 BEGIN
+  -- Serialize concurrent runs (cron overlap would double-book deltas).
+  PERFORM pg_advisory_xact_lock(hashtext('apply_broker_rollup'));
+
   -- 1) Partner attribution: fill referred_by_tenant where still unset.
+  --    DISTINCT ON + deterministic ORDER BY: a member with broker profiles
+  --    under several IBs always resolves to the same (earliest) partner.
   WITH matches AS (
-    SELECT m.id AS member_id, t.slug
+    SELECT DISTINCT ON (m.id) m.id AS member_id, tie.tenant_slug AS slug
       FROM members m
       JOIN broker_clients bc ON lower(bc.email) = lower(m.email)
-      JOIN tenants t
-        ON t.ib_emails IS NOT NULL
-       AND lower(coalesce(bc.direct_ib_email, '')) = ANY (SELECT lower(x) FROM unnest(t.ib_emails) AS x)
+      JOIN tenant_ib_emails tie
+        ON lower(tie.ib_email) = lower(coalesce(bc.direct_ib_email, ''))
      WHERE m.referred_by_tenant IS NULL
+     ORDER BY m.id, bc.registration_date ASC NULLS LAST, tie.tenant_slug ASC
   ), upd AS (
     UPDATE members m SET referred_by_tenant = matches.slug
       FROM matches WHERE m.id = matches.member_id
@@ -123,14 +138,19 @@ BEGIN
   SELECT count(*) INTO v_attributed FROM upd;
 
   -- 2) Deposits: reconcile the deposit_events ledger against broker net
-  --    deposit. Insert only the DELTA — the existing after_deposit_event
-  --    trigger then recalculates tier/active and fires unlock notifications.
+  --    deposit. AGGREGATED per member (one client can have profiles under
+  --    both brands, TQ + QM — summing first keeps the reconcile convergent
+  --    and idempotent). Insert only the DELTA — the existing
+  --    after_deposit_event trigger recalculates tier/active and fires
+  --    unlock notifications.
   FOR r IN
-    SELECT m.id AS member_id, bc.net_deposit,
+    SELECT m.id AS member_id,
+           round(SUM(bc.net_deposit), 2) AS net_deposit,
            COALESCE((SELECT SUM(d.amount) FROM deposit_events d WHERE d.member_id = m.id), 0) AS ledger
       FROM members m
       JOIN broker_clients bc ON lower(bc.email) = lower(m.email)
      WHERE bc.net_deposit IS NOT NULL
+     GROUP BY m.id
   LOOP
     v_delta := round(COALESCE(r.net_deposit, 0) - r.ledger, 2);
     IF abs(v_delta) >= 0.01 THEN

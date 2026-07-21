@@ -22,7 +22,7 @@ fi
 
 echo "==> Installing cron (every 10 min; does nothing until .env is filled)"
 ( crontab -l 2>/dev/null | grep -v broker-sync ; \
-  echo "*/10 * * * * cd /root/academy-tier-path/broker-sync && /usr/bin/node sync.mjs >> sync.log 2>&1" ) | crontab -
+  echo "*/10 * * * * cd /root/academy-tier-path/broker-sync && /usr/bin/flock -n /tmp/broker-sync.lock /usr/bin/node sync.mjs >> sync.log 2>&1" ) | crontab -
 
 echo ""
 echo "============================================================"
