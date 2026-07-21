@@ -1,0 +1,448 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#0a0d13}canvas{position:absolute;left:0;top:0}</style>
+<script src="interface-engine.js"></script>
+<script src="tvchrome.js"></script>
+<script src=".render/v6/vo/s4.words.js"></script>
+<script src=".render/v6/vo/s5.words.js"></script>
+</head><body><canvas id="cv" width="1920" height="1080"></canvas><script>
+// ====== SEGMENT 4 — Deepchart orderflow: absorption, trapped buyers (S4) + why-absorption (S5) ======
+const X=document.getElementById('cv').getContext('2d');const W=1920,H=1080;const P=Math.round;let T=0;
+const {C,SANS,TASK,DC}=TVC;const clamp=TVC.clamp,eo=TVC.eo,es=TVC.es,hexA=TVC.hexA,rr=TVC.rr;
+const INK='#eaf2f8',MUT='#8b98a8',LIME='#b6f04a',CYAN='#39d0d0',MAG='#e06bd8',RED='#ff5470',GOLD='#ffcf5c',GRN='#33e08a';
+
+// ---- S4 gaps ----
+const GAPS=[
+  {at:13.95,dur:3.5},  // absorption demo: 101 sells → 2 buys → bullish close
+  {at:34.90,dur:3.5},  // "Absorption." hold
+  {at:39.75,dur:1.2},  // buys in — up (1)
+  {at:43.95,dur:1.2},  // buys in — up (2)
+  {at:49.00,dur:3.0},  // top forming
+  {at:63.00,dur:2.0},  // footprint panel slides in
+  {at:80.80,dur:2.0},  // trapped buyers — nothing happens
+  {at:99.30,dur:2.5},  // 105 sells hit + break
+  {at:109.70,dur:2.0}, // short placed
+  {at:116.40,dur:9.0}, // trade runs
+];
+const tm=TVC.mkTimeMap(GAPS);
+const sT=vo=>tm.sceneT(vo);
+const gS=at=>{let s=at;for(const g of GAPS)if(g.at<at)s+=g.dur;return s;};
+const S4END=sT(VOW_S4.dur)+0.6;
+// ---- S5 (starts after S4) ----
+const OFF5=S4END+0.8;
+const GAPS5=[{at:15.10,dur:1.5},{at:21.90,dur:3.0}];
+const tm5=TVC.mkTimeMap(GAPS5);
+const sT5=vo=>OFF5+tm5.sceneT(vo);
+const gS5=at=>{let s=at;for(const g of GAPS5)if(g.at<at)s+=g.dur;return s;};
+const DUR=Math.ceil((sT5(VOW_S5.dur)+1.6)*10)/10;   // ≈ 185
+
+// ---- price/story series ----
+const PMIN=29610,PMAX=29900;
+const NARR=[[0,29706],[8,29698],[14,29690],[16,29702],[22,29745],[30,29796],[34,29816],[42,29818],[48,29806],[56,29799],[60,29797],[62,29788],[63,29785],[70,29768],[78,29753],[86,29758],[100,29764],[119,29770]];
+const N=120, SER=TVC.mkSeries(N,NARR,66120,4.2);
+// story candles
+SER[14].o=29694;SER[14].l=29684;SER[14].c=29699;SER[14].h=29701;      // absorption candle (starts red, closes green)
+for(let i=34;i<=42;i++){SER[i].h=Math.min(SER[i].h,29822);if(i%2)SER[i].c=Math.min(SER[i].c,29814);} // ceiling
+SER[60].o=29799;SER[60].h=29801;SER[60].l=29790;SER[60].c=29792;      // 105-sell candle
+SER[62].o=29791;SER[62].c=29784;SER[62].l=29782;                      // break candle
+for(let i=64;i<=78;i++){const u=(i-64)/14;SER[i].o=29785-u*30;SER[i].c=29783-u*31;SER[i].h=SER[i].o+3;SER[i].l=SER[i].c-3;}
+const CH={x0:DC.rail.w+16,x1:1180,y0:DC.top.h+52,y1:TASK.y0-DC.bottom.h-40}; // left panel (phase2+); full width in phase1
+const CHF={x0:DC.rail.w+16,x1:1846,y0:DC.top.h+52,y1:TASK.y0-DC.bottom.h-40};
+const cw=i=>((ch().x1-ch().x0-60)/86);
+function ch(){return fpEnv(T)>0.02?CH:CHF;}
+const xOf=i=>ch().x0+30+i*cw()+cw()/2;
+// dynamic price window — the trader "scrolls" with the market
+function pWin(t){
+  const k=[[0,29652,29742],[gS(36.3),29652,29742],[gS(47.9)-2,29668,29800],[gS(49.0)+2.5,29690,29852],[gS(63.0),29692,29856],[sT(93.5),29688,29866],[DUR,29688,29866]];
+  for(let i=0;i<k.length-1;i++)if(t>=k[i][0]&&t<=k[i+1][0]){
+    const u=es(clamp((t-k[i][0])/Math.max(0.001,k[i+1][0]-k[i][0]),0,1));
+    return [k[i][1]+(k[i+1][1]-k[i][1])*u, k[i][2]+(k[i+1][2]-k[i][2])*u];
+  }
+  return [29688,29866];
+}
+let PW=[29652,29742];
+const yOf=p=>ch().y1-(p-PW[0])/(PW[1]-PW[0])*(ch().y1-ch().y0);
+
+// footprint panel env (slides in at 63)
+const fpEnv=t=>Math.min(clamp((t-gS(63.0))/0.8,0,1),1);
+
+// ---- reveal ----
+function revealAt(t){
+  const k=[[0,15],[gS(13.95)+1.2,15],[gS(13.95)+3.4,16],[gS(36.3),16],[gS(47.9),31],[gS(49.0),31],[gS(49.0)+2.8,43],[sT(56.0),44],[sT(93.0),48],[sT(93.6),48],[gS(99.3),61],[gS(99.3)+2.2,63],[gS(109.7),63],[gS(109.7)+0.9,64],[gS(116.4),64],[gS(116.4)+8.6,79],[DUR,80]];
+  for(let i=0;i<k.length-1;i++)if(t>=k[i][0]&&t<=k[i+1][0]){
+    const u=(t-k[i][0])/Math.max(0.001,k[i+1][0]-k[i][0]);
+    return k[i][1]+(k[i+1][1]-k[i][1])*u;
+  }
+  return 80;
+}
+// absorption candle morph: red → green during demo
+function candleFix(i,t){
+  if(i!==14)return SER[i];
+  const u=clamp((t-(gS(13.95)+2.0))/1.2,0,1);
+  return {o:SER[14].o,h:SER[14].h,l:SER[14].l,c:29688+ (29699-29688)*es(u),v:SER[14].v};
+}
+
+// ---- bubbles (deterministic story events) ----
+// {i, p, v, buy, big, t0(scene sec)}
+const BUB=[];
+(function(){
+  const add=(i,p,v,buy,big,t0)=>BUB.push({i,p,v,buy,big,t0:t0==null?-1:t0});
+  // ambient small bubbles on early candles
+  for(let i=2;i<14;i++){const r=IFE.mulberry32(IFE.hashSeed(31,i));
+    if(r()>0.45)add(i,(SER[i].o+SER[i].c)/2+ (r()*8-4),P(40+r()*90),r()>0.5,false);}
+  // absorption demo
+  add(14,29686,101,false,true,gS(13.95)+0.3);
+  add(14,29688,2,true,false,gS(13.95)+1.6);
+  // "absorbed by passive orders" small sells absorbed 19–23
+  add(15,29697,64,false,false,sT(19.3));
+  // health: buys in — up
+  add(17,29708,142,true,true,gS(36.3)+0.9);
+  add(19,29722,118,true,true,gS(39.75)+0.2);
+  add(24,29752,163,true,true,gS(43.95)+0.2);
+  add(27,29774,127,true,false,sT(45.2));
+  // sellers step back in
+  add(30,29797,205,false,true,sT(45.9));
+  // top forming: buys absorbed at ceiling
+  add(35,29818,224,true,true,gS(49.0)+0.5);
+  add(37,29820,187,true,true,gS(49.0)+1.4);
+  add(39,29819,246,true,true,gS(49.0)+2.2);
+  add(41,29821,161,true,false,sT(52.4));
+  // the trade: 105 sells
+  add(60,29793,105,false,true,gS(99.3)+0.4);
+  add(62,29786,88,false,true,gS(99.3)+1.7);
+  // post-entry flow
+  for(let i=65;i<=77;i+=3)add(i,SER[i].c-2,P(50+((i*37)%110)),false,false,gS(116.4)+(i-65)*0.5);
+})();
+
+// ---- heatmap bands (passive book) 24.4–34.5 ----
+function heatmap(t){
+  const a=Math.min(clamp((t-sT(24.4))/0.8,0,1),1-clamp((t-sT(33.0))/1.2,0,1));
+  if(a<=0)return;
+  X.save();X.globalAlpha=a*0.55;
+  const rows=[[29686,0.95],[29694,0.5],[29702,0.35],[29676,0.6],[29668,0.3],[29712,0.25],[29722,0.2]];
+  for(const [p,s] of rows){
+    const y=yOf(p);
+    const g=X.createLinearGradient(ch().x0,0,ch().x1,0);
+    g.addColorStop(0,hexA(s>0.7?'#ffd54f':'#4fc3f7',0.02));
+    g.addColorStop(0.75,hexA(s>0.7?'#ffb300':'#29b6f6',0.16*s+0.08));
+    g.addColorStop(1,hexA(s>0.7?'#ff8f00':'#0288d1',0.30*s+0.1));
+    X.fillStyle=g;X.fillRect(ch().x0,y-7,ch().x1-ch().x0,14);
+  }
+  X.restore();
+  // label chip
+  X.save();X.globalAlpha=a;
+  X.fillStyle='rgba(30,32,38,0.92)';rr(X,ch().x1-330,yOf(29686)-16,196,26,5);X.fill();
+  X.fillStyle='#ffd54f';X.font='600 13px '+SANS;X.textAlign='left';X.textBaseline='middle';
+  X.fillText('Heatmap: passive Orders',ch().x1-318,yOf(29686)-3);
+  X.restore();
+}
+
+// ---- footprint right panel (phase 2) ----
+function fpPanel(t){
+  const a=fpEnv(t);if(a<=0.02)return;
+  const px0=CH.x1+18, px1=1846;
+  X.save();X.globalAlpha=1;
+  // panel divider + white canvas
+  X.fillStyle='#232429';X.fillRect(CH.x1,DC.top.h,18,TASK.y0-DC.bottom.h-DC.top.h);
+  X.fillStyle='#fff';X.fillRect(px0,DC.top.h+1,px1-px0+ (1920-px1),TASK.y0-DC.bottom.h-(DC.top.h+1));
+  const sl=(1-a)*300;X.translate(sl,0);
+  // OHLC header
+  X.textBaseline='middle';X.font='500 13px '+SANS;X.textAlign='left';
+  X.fillStyle='#131722';X.fillText('O:',px0+14,DC.top.h+18);X.fillStyle=C.dcUp;X.fillText('29.807,25',px0+30,DC.top.h+18);
+  X.fillStyle='#131722';X.fillText('H:',px0+126,DC.top.h+18);X.fillStyle=C.dcUp;X.fillText('29.821,75',px0+142,DC.top.h+18);
+  X.fillStyle='#131722';X.fillText('L:',px0+238,DC.top.h+18);X.fillStyle=C.dcDn;X.fillText('29.804,50',px0+252,DC.top.h+18);
+  X.fillStyle='#131722';X.fillText('C:',px0+348,DC.top.h+18);X.fillStyle=C.dcDn;X.fillText('29.809,00',px0+364,DC.top.h+18);
+  X.fillStyle='#787b86';X.fillText('%V: 0,00%  ΣV: 661  ΔV: 141',px0+470,DC.top.h+18);
+  // columns (same area of the market: the ceiling candles 34..42)
+  const nc=5,colW=118,rh=15,nr=30,gy=DC.top.h+56;
+  const trapRows=[[214,1],[202,1],[290,1]]; // ai=1 green highlight
+  for(let cI=0;cI<nc;cI++){
+    const gx=px0+26+cI*colW;
+    const rng=IFE.mulberry32(IFE.hashSeed(9911,cI));
+    const cells=[];
+    for(let r=0;r<nr;r++){
+      let b=P(rng()*260),a2=P(rng()*280),hb=0,ha=0;
+      // trapped buyers at top of column 1..3
+      if(cI>=1&&cI<=3&&r===cI-1){a2=trapRows[cI-1][0];ha=1;b=P(20+rng()*40);}
+      else{if(b>210)hb=2;if(a2>235)ha=2;if(a2>190&&a2<=235)ha=1;}
+      cells.push({b,a:a2,hb,ha,poc:r===P(12+rng()*6)});
+    }
+    TVC.dcFpColumn(X,{x:gx,y0:gy,rh,cells,cw:29,volUp:cI%2===0,volH:60+((cI*53)%90),volOff:30});
+  }
+  // price scale right
+  X.fillStyle='#9598a1';X.font='400 11px '+SANS;X.textAlign='left';
+  for(let i=0;i<12;i++)X.fillText(TVC.fmtDE(29822-i*2,0).replace('.','.'),1852,gy+14+i*38);
+  // delta footer
+  const cols=[{sv:'12K',dv:-440,dp:-4},{sv:'19K',dv:-2300,dp:-12},{sv:'16K',dv:80,dp:0},{sv:'13K',dv:411,dp:3},{sv:'13K',dv:1500,dp:12}];
+  TVC.dcDeltaFooter(X,{x0:px0+26,x1:px0+26+5*118,y0:TASK.y0-DC.bottom.h-148,cols,rowH:40});
+  X.fillStyle='#131722';X.font='500 12px '+SANS;X.fillText('CVD',px0+14,TASK.y0-DC.bottom.h-162);
+  X.restore();
+  // trapped-buyers callouts (right panel coords, un-translated)
+  if(t>=sT(71.4)){
+    const gx1=px0+26+1*118;
+    const cy=DC.top.h+56;
+    // scribble ellipse around the three green cells
+    const pr=clamp((t-sT(72.2))/0.9,0,1);
+    TVC.scribble(X,TVC.scribbleEllipse(px0+26+2*118+29,cy+24,175,40,4711,1.2),pr,{col:'rgba(233,30,140,0.5)',w:10});
+    // labels
+    const lb=(txt,tx,ty,t0,bg)=>{const aa=clamp((t-t0)/0.4,0,1);if(aa<=0)return;
+      X.save();X.globalAlpha=aa;X.font='700 13px '+SANS;
+      const w2=X.measureText(txt).width+16;
+      X.fillStyle=bg||'rgba(30,32,38,0.94)';rr(X,tx-w2/2,ty,w2,24,5);X.fill();
+      X.fillStyle='#fff';X.textAlign='center';X.textBaseline='middle';X.fillText(txt,tx,ty+12);X.restore();};
+    lb('TRAPPED BUYERS',px0+26+2*118+29,cy+78,sT(72.25),'rgba(233,30,140,0.95)');
+    lb('Δ +11%',px0+26+3*118+50,cy+8,sT(83.0),'rgba(38,166,154,0.95)');
+    if(t>=sT(89.2)){
+      // "next candle sells off" arrow on col 4
+      const ax=px0+26+4*118+29, ay=cy+40;
+      X.save();X.strokeStyle=C.dcDn;X.lineWidth=3;X.beginPath();X.moveTo(ax,ay);X.lineTo(ax,ay+90);X.lineTo(ax-8,ay+78);X.moveTo(ax,ay+90);X.lineTo(ax+8,ay+78);X.stroke();X.restore();
+    }
+  }
+}
+
+// ---- trade zones (phase 3) ----
+const ENTRY=29784,STOPP=29796,TGT1=29766,TGT2=29744;
+function tradeZones(t){
+  const a=clamp((t-gS(109.7))/0.6,0,1);if(a<=0)return;
+  const x0=xOf(63)-cw(), x1=Math.min(ch().x1-8,xOf(80)+cw()*2);
+  const ext=clamp((t-sT(119.4))/0.9,0,1);
+  const tgt=TGT1+(TGT2-TGT1)*es(ext);
+  // stop zone (red, above)
+  TVC.dcZone(X,{x0,x1,y0:yOf(STOPP),y1:yOf(ENTRY),kind:'dem',alpha:a,label:'−12,00$ | 48 ticks'});
+  // profit zone (green, below)
+  TVC.dcZone(X,{x0,x1,y0:yOf(ENTRY),y1:yOf(tgt),kind:'sup',alpha:a,label:(ext>0.5?'40,00$ | 160 ticks':'18,00$ | 72 ticks')});
+  // entry line + chip
+  X.save();X.globalAlpha=a;
+  X.strokeStyle='#131722';X.setLineDash([6,4]);X.beginPath();X.moveTo(x0,P(yOf(ENTRY))+0.5);X.lineTo(x1,P(yOf(ENTRY))+0.5);X.stroke();X.setLineDash([]);
+  X.fillStyle='rgba(30,32,38,0.94)';rr(X,x0+8,yOf(ENTRY)-30,150,24,4);X.fill();
+  X.fillStyle='#fff';X.font='700 12px '+SANS;X.textAlign='left';X.textBaseline='middle';
+  const rrv=ext>0.5?'6,00':'1,52';
+  X.fillText('SELL 1 | R:R '+rrv,x0+18,yOf(ENTRY)-18);
+  X.restore();
+  // R:R chips
+  const c1=Math.min(clamp((t-sT(117.5))/0.4,0,1),1);
+  if(c1>0){X.save();X.globalAlpha=c1;X.fillStyle='#089981';rr(X,xOf(74)-62,yOf(TGT1)+10,124,28,6);X.fill();
+    X.fillStyle='#fff';X.font='800 14px '+SANS;X.textAlign='center';X.textBaseline='middle';X.fillText('R:R  1 : 1,5',xOf(74),yOf(TGT1)+24);X.restore();}
+  const c2=clamp((t-sT(119.8))/0.4,0,1);
+  if(c2>0){X.save();X.globalAlpha=c2;X.fillStyle='#089981';rr(X,xOf(74)-84,yOf(TGT2)+10,168,28,6);X.fill();
+    X.fillStyle='#fff';X.font='800 13px '+SANS;X.textAlign='center';X.textBaseline='middle';X.fillText('R:R  1 : 6  (Daily VP)',xOf(74),yOf(TGT2)+24);X.restore();}
+  // prior-sell break line
+  X.save();X.globalAlpha=Math.min(clamp((t-sT(97.4))/0.5,0,1),1);
+  X.strokeStyle=hexA('#ef5350',0.85);X.setLineDash([7,5]);X.lineWidth=1.6;
+  X.beginPath();X.moveTo(xOf(50),P(yOf(29788))+0.5);X.lineTo(xOf(66),P(yOf(29788))+0.5);X.stroke();X.setLineDash([]);X.lineWidth=1;
+  X.fillStyle='#ef5350';X.font='600 12px '+SANS;X.textAlign='left';X.textBaseline='middle';
+  X.fillText('prior sells',xOf(50)+4,yOf(29788)-12);
+  X.restore();
+}
+
+// ---- S5 why-absorption overlay ----
+function s5Overlay(t){
+  if(t<OFF5-0.2)return;
+  const a=clamp((t-OFF5+0.2)/0.6,0,1);
+  // dim chart slightly
+  X.save();X.globalAlpha=a*0.25;X.fillStyle='#0b0e14';X.fillRect(ch().x0,ch().y0,ch().x1-ch().x0,ch().y1-ch().y0);X.restore();
+  // 500 shorts cluster at the ceiling zone
+  const cx=xOf(38), cy=yOf(29820);
+  const clA=clamp((t-sT5(4.55))/0.6,0,1);
+  if(clA>0){
+    X.save();X.globalAlpha=clA;
+    for(let k=0;k<9;k++){
+      const r=IFE.mulberry32(IFE.hashSeed(555,k));
+      TVC.dcBubble(X,cx-90+ (k%3)*90+ (r()*22-11), cy-26+Math.floor(k/3)*30+(r()*10-5), [214,202,290,168,143,120,96,84,77][k], false, k<3);
+    }
+    X.fillStyle='rgba(233,30,140,0.96)';rr(X,cx-108,cy-78,216,30,6);X.fill();
+    X.fillStyle='#fff';X.font='800 15px '+SANS;X.textAlign='center';X.textBaseline='middle';
+    X.fillText('≈ 500 SHORT-KONTRAKTE',cx,cy-63);
+    X.restore();
+  }
+  // "closing a short = active buy" arrows (9.1–15)
+  const arrN=Math.floor(clamp((t-sT5(9.3))/(sT5(14.9)-sT5(9.3)),0,1)*5);
+  for(let k=0;k<arrN;k++){
+    const ax=cx-80+k*40, ay=cy+18;
+    X.save();X.strokeStyle=GRN;X.lineWidth=3.5;X.lineCap='round';
+    X.beginPath();X.moveTo(ax,ay+46);X.lineTo(ax,ay);X.moveTo(ax-8,ay+12);X.lineTo(ax,ay);X.lineTo(ax+8,ay+12);X.stroke();X.restore();
+  }
+  if(arrN>0){
+    X.save();X.globalAlpha=clamp((t-sT5(13.1))/0.5,0,1);
+    X.fillStyle='rgba(8,153,129,0.96)';rr(X,cx-150,cy+74,300,30,6);X.fill();
+    X.fillStyle='#fff';X.font='800 14px '+SANS;X.textAlign='center';X.textBaseline='middle';
+    X.fillText('SHORT SCHLIESSEN = AKTIVER BUY',cx,cy+89);
+    X.restore();
+  }
+  // buying-power push (16.5+ / gap 21.9)
+  const pu=clamp((t-gS5(21.9)-OFF5+21.9- (21.9-16.6))/2.6,0,1); // ramp from ~16.6
+  const push=clamp((t-sT5(16.6))/( (gS5(21.9)+3.0+OFF5-0)-sT5(16.6)),0,1);
+  if(push>0){
+    X.save();X.globalAlpha=0.85;
+    const gx=xOf(16), gy0=yOf(29695), gx1=xOf(40), gy1=yOf(29825);
+    const g=X.createLinearGradient(0,gy0,0,gy1);
+    g.addColorStop(0,hexA(GRN,0));g.addColorStop(1,hexA(GRN,0.30));
+    X.fillStyle=g;
+    const hh=(gy0-gy1)*es(push);
+    X.fillRect(gx,gy0-hh,gx1-gx,hh);
+    // big arrow
+    X.strokeStyle=GRN;X.lineWidth=6;X.lineCap='round';
+    const ay0=gy0-6, ay1=gy0-hh+8;
+    X.beginPath();X.moveTo((gx+gx1)/2,ay0);X.lineTo((gx+gx1)/2,ay1);
+    X.moveTo((gx+gx1)/2-16,ay1+24);X.lineTo((gx+gx1)/2,ay1);X.lineTo((gx+gx1)/2+16,ay1+24);X.stroke();
+    X.restore();
+    X.save();X.globalAlpha=clamp((t-sT5(19.9))/0.5,0,1);
+    X.fillStyle='rgba(8,153,129,0.96)';rr(X,(gx+gx1)/2-120,(gy0+gy1)/2-16,240,30,6);X.fill();
+    X.fillStyle='#fff';X.font='800 15px '+SANS;X.textAlign='center';X.textBaseline='middle';
+    X.fillText('PURE BUYING POWER ↑',(gx+gx1)/2,(gy0+gy1)/2-1);
+    X.restore();
+  }
+}
+
+// ---- lower thirds ----
+function ltPill(bx,by,bw,bh,edge){X.fillStyle=hexA('#070a10',0.86);rr(X,bx,by,bw,bh,14);X.fill();X.strokeStyle=hexA(edge,0.65);X.lineWidth=2;rr(X,bx,by,bw,bh,14);X.stroke();X.lineWidth=1;}
+function lower(t0,t1,edge,label,sub){
+  const a=es(clamp((T-t0)/0.5,0,1))*(1-clamp((T-t1)/0.4,0,1));if(a<=0)return;
+  X.save();X.globalAlpha=a;
+  X.font='800 20px '+SANS;const w=Math.max(X.measureText(label).width+70,sub?X.measureText(sub).width+70:0);
+  const bw=Math.max(430,w),bh=sub?66:56,bx=(W-bw)/2,by=H-100;
+  ltPill(bx,by,bw,bh,edge);
+  X.fillStyle=edge;X.beginPath();X.arc(bx+30,by+bh/2,5,0,7);X.fill();
+  X.fillStyle=INK;X.textAlign='left';X.textBaseline='middle';X.font='800 20px '+SANS;
+  X.fillText(label,bx+52,by+(sub?24:bh/2));
+  if(sub){X.fillStyle=MUT;X.font='600 13px '+SANS;X.fillText(sub,bx+52,by+47);}
+  X.restore();
+}
+
+// ---- cursor ----
+const msS=v=>sT(v)*1000, ms5=v=>sT5(v)*1000;
+const cur=IFE.Cursor([
+  {at:1000, move:[820,520], W:200},
+  {at:msS(12.9), move:[xOf(14)+40,590], W:60},           // to absorption candle (xOf uses full width pre-fp; approx px)
+  {at:msS(18.9), move:[900,640], W:120},
+  {at:msS(24.5), move:[1030,600], W:90},                 // heatmap bands
+  {at:msS(28.3), move:[820,655], W:40},                  // the 101 bubble
+  {at:msS(36.3), move:[560,600], W:120},                 // health steps
+  {at:msS(44.8), move:[700,470], W:120},
+  {at:msS(48.0), move:[760,330], W:120},                 // top
+  {at:msS(58.2), move:[980,300], W:120},                 // VAH day line
+  {at:msS(64.1), move:[1320,320], W:160},                // footprint panel
+  {at:msS(71.2), move:[1478,150], W:80},                 // trapped cells
+  {at:msS(76.5), move:[1478,180], W:60},
+  {at:msS(83.1), move:[1650,120], W:70},                 // +11%
+  {at:msS(89.3), move:[1740,190], W:60},                 // sells off col
+  {at:msS(94.7), move:[640,560], W:140},                 // back left: waiting zone
+  {at:msS(100.4), move:[700,585], W:40},                 // 105 bubble
+  {at:msS(107.3), move:[730,615], W:60},                 // break
+  {at:msS(109.6), move:[724,P(1080*0.55)], W:26},        // entry
+  {click:true,decision:true},
+  {at:msS(112.6), move:[740,540], W:80},                 // stop zone
+  {at:msS(114.3), move:[800,700], W:90},                 // target low
+  {at:msS(117.4), move:[860,740], W:90},
+  // S5
+  {at:ms5(4.5), move:[520,300], W:140},                  // shorts cluster
+  {at:ms5(9.4), move:[500,420], W:90},                   // arrows
+  {at:ms5(16.8), move:[420,520], W:120},                 // push
+  {at:ms5(24.2), move:[760,480], W:160},
+], {start:[900,600], seed:92404, os:'win', t0:0});
+
+const sA=()=>Math.min(clamp(T/0.35,0,1),1-clamp((T-(DUR-0.35))/0.35,0,1));
+
+function renderAt(msIn){
+  T=msIn/1000;PW=pWin(T);const s=cur.sample(msIn);
+  // ---------- Deepchart window ----------
+  TVC.dcChrome(X,{symbol:'MNQ-202609',preset:'10D - BT',int:'1 Minute',selX:330});
+  TVC.dcRail(X,0,{active:1});
+  // canvas
+  const cc=ch();
+  X.fillStyle='#fff';X.fillRect(DC.rail.w,DC.top.h+1,(fpEnv(T)>0.02?CH.x1:1920)-DC.rail.w,TASK.y0-DC.bottom.h-(DC.top.h+1));
+  // OHLC header left panel
+  X.textBaseline='middle';X.font='500 13px '+SANS;X.textAlign='left';
+  {const kk=SER[Math.max(0,Math.min(N-1,Math.floor(revealAt(T))-1))];const up=kk.c>=kk.o;
+  X.fillStyle='#131722';X.fillText('O:',cc.x0+2,DC.top.h+18);X.fillStyle=up?C.dcUp:C.dcDn;X.fillText(TVC.fmtDE(kk.o,2),cc.x0+18,DC.top.h+18);
+  X.fillStyle='#131722';X.fillText('H:',cc.x0+112,DC.top.h+18);X.fillStyle=C.dcUp;X.fillText(TVC.fmtDE(kk.h,2),cc.x0+128,DC.top.h+18);
+  X.fillStyle='#131722';X.fillText('L:',cc.x0+222,DC.top.h+18);X.fillStyle=C.dcDn;X.fillText(TVC.fmtDE(kk.l,2),cc.x0+236,DC.top.h+18);
+  X.fillStyle='#131722';X.fillText('C:',cc.x0+330,DC.top.h+18);X.fillStyle=up?C.dcUp:C.dcDn;X.fillText(TVC.fmtDE(kk.c,2),cc.x0+346,DC.top.h+18);}
+  X.fillStyle='#9b9ea4';X.font='400 12px '+SANS;X.fillText('Connect dxFeed - 15m to see delayed data',cc.x0+2,DC.top.h+38);
+  // grid + price scale (right side of panel)
+  X.strokeStyle='#f2f4f7';
+  for(let p=Math.ceil(PW[0]/20)*20;p<=PW[1];p+=20){const y=yOf(p);if(y>cc.y0-4&&y<cc.y1+4){X.beginPath();X.moveTo(cc.x0,P(y)+0.5);X.lineTo(cc.x1,P(y)+0.5);X.stroke();}}
+  X.fillStyle='#9598a1';X.font='400 11px '+SANS;X.textAlign='left';
+  const sclX=fpEnv(T)>0.02?CH.x1-56:1852;
+  for(let p=Math.ceil(PW[0]/20)*20;p<=PW[1];p+=20){const y=yOf(p);if(y>cc.y0&&y<cc.y1)X.fillText(TVC.fmtDE(p,2),sclX,y);}
+  // heatmap under candles
+  heatmap(T);
+  // candles + bubbles
+  const rev=revealAt(T);const revN=Math.floor(rev);
+  for(let i=0;i<Math.min(N,revN);i++){
+    const k=candleFix(i,T);
+    const x=xOf(i);const up=k.c>=k.o;
+    X.strokeStyle=up?C.dcUp:C.dcDn;X.lineWidth=1.2;
+    X.beginPath();X.moveTo(P(x)+0.5,yOf(k.h));X.lineTo(P(x)+0.5,yOf(k.l));X.stroke();
+    X.fillStyle=up?C.dcUp:C.dcDn;
+    const yA=yOf(Math.max(k.o,k.c)),yB=yOf(Math.min(k.o,k.c));
+    X.fillRect(P(x-cw()*0.32),P(yA),Math.max(2,P(cw()*0.64)),Math.max(1.5,P(yB-yA)));
+  }
+  X.lineWidth=1;
+  for(const b of BUB){
+    if(b.i>=revN)continue;
+    if(b.t0>=0&&T<b.t0)continue;
+    const pop=b.t0>=0?es(clamp((T-b.t0)/0.35,0,1)):1;
+    if(pop<=0)continue;
+    X.save();X.globalAlpha=pop;
+    TVC.dcBubble(X,xOf(b.i),yOf(b.p),b.v,b.buy,b.big);
+    X.restore();
+  }
+  // ceiling line + VAH of day
+  if(T>=sT(50.1)){
+    const a=clamp((T-sT(50.1))/0.5,0,1);
+    X.save();X.globalAlpha=a;
+    X.strokeStyle='#131722';X.setLineDash([2,3]);X.beginPath();X.moveTo(xOf(32),P(yOf(29822))+0.5);X.lineTo(xOf(46),P(yOf(29822))+0.5);X.stroke();X.setLineDash([]);
+    X.restore();
+    TVC.scribble(X,TVC.scribbleEllipse(xOf(38),yOf(29819),120,26,833,1.15),clamp((T-sT(50.4))/0.8,0,1),{col:'rgba(233,30,140,0.45)',w:11});
+  }
+  if(T>=sT(58.4)){
+    const a=clamp((T-sT(58.4))/0.5,0,1);
+    X.save();X.globalAlpha=a;
+    X.strokeStyle='#f5a623';X.setLineDash([8,5]);X.lineWidth=2;
+    X.beginPath();X.moveTo(cc.x0,P(yOf(29824))+0.5);X.lineTo(cc.x1,P(yOf(29824))+0.5);X.stroke();X.setLineDash([]);X.lineWidth=1;
+    X.fillStyle='#f5a623';rr(X,cc.x0+10,yOf(29824)-30,196,24,5);X.fill();
+    X.fillStyle='#3b2c05';X.font='700 12px '+SANS;X.textAlign='left';X.textBaseline='middle';
+    X.fillText('Value Area High (Tag)',cc.x0+20,yOf(29824)-18);
+    X.restore();
+  }
+  // absorption demo labels
+  {const a1=Math.min(clamp((T-(gS(13.95)+0.6))/0.4,0,1),1-clamp((T-sT(23.4))/0.6,0,1));
+   if(a1>0){X.save();X.globalAlpha=a1;
+     X.fillStyle='rgba(30,32,38,0.94)';rr(X,xOf(14)-150,yOf(29684)+26,300,26,5);X.fill();
+     X.fillStyle='#ff9c99';X.font='700 13px '+SANS;X.textAlign='center';X.textBaseline='middle';
+     X.fillText('101 Sell-Kontrakte — Markt fällt NICHT',xOf(14),yOf(29684)+39);X.restore();}
+   const a2=Math.min(clamp((T-sT(32.6))/0.4,0,1),1-clamp((T-sT(35.9)-2.0)/0.6,0,1));
+   if(a2>0){X.save();X.globalAlpha=a2;
+     X.fillStyle='rgba(8,153,129,0.96)';rr(X,xOf(14)-96,yOf(29701)-44,192,28,6);X.fill();
+     X.fillStyle='#fff';X.font='800 14px '+SANS;X.textAlign='center';X.textBaseline='middle';
+     X.fillText('ABSORPTION ✓',xOf(14),yOf(29701)-30);X.restore();}}
+  // footprint panel + callouts
+  fpPanel(T);
+  // trade
+  tradeZones(T);
+  // S5 overlay
+  s5Overlay(T);
+  // footer texts + bottom bar
+  X.fillStyle='#9b9ea4';X.font='400 12px '+SANS;X.textAlign='left';X.textBaseline='middle';
+  X.fillText('Deepchart® - dxFeed 15m delayed',DC.rail.w+16,TASK.y0-DC.bottom.h-34);
+  // time axis
+  X.fillStyle='#9598a1';X.font='400 11px '+SANS;X.textAlign='center';
+  const tl=['17:24','17:36','17:48','18:00','18:12','18:24','18:36','18:48','19:00','19:12'];
+  for(let i=0;i<tl.length;i++)X.fillText(tl[i],cc.x0+60+i*((cc.x1-cc.x0-100)/9),TASK.y0-DC.bottom.h-14- (fpEnv(T)>0.02?0:0));
+  TVC.dcBottomBar(X,{selected:fpEnv(T)>0.5?2:0,items:fpEnv(T)>0.5?['OF-VP','OF-B/A','D-VP','D-DP','D-VL','W-VP','W-DP','C-VP']:undefined,x0:46});
+  TVC.winTaskbar(X,{clock:'23:'+String(10+Math.min(13,P(T/15))).padStart(2,'0'),date:'12.07.2026',weather:['Feels hotter','Now']});
+  // cursor
+  IFE.drawCursor(X,s.x,s.y,s.y<DC.top.h?'default':'default',s.pressed,cur.os);
+  // lower thirds
+  lower(0.4,sT(8.3),CYAN,'WAY 2 · ORDERFLOW SOFTWARE','heatmap · deep trades · real footprint');
+  lower(sT(10.3),sT(13.8),MAG,'#1 ENTRY CONFIRMATION: ABSORPTION','');
+  lower(sT(47.9),sT(54.2),RED,'TOP FORMING','buyers absorbed — the ceiling holds');
+  lower(sT(71.3),sT(80.5),MAG,'TRAPPED BUYERS','214 · 202 · 290 — und nichts passiert');
+  lower(sT(108.8),sT(116.2),GOLD,'THE SHORT','stop above absorption · target the low / VAL');
+  lower(sT5(1.5),sT5(15.9),GRN,'WHY ABSORPTION MATTERS','closing a short = an active buy');
+  lower(sT5(19.6),sT5(28.4),LIME,'HIDDEN PASSIVE ORDERS','absorption makes them visible');
+  const a=sA();
+  if(a<1){X.fillStyle='rgba(7,10,16,'+(1-a)+')';X.fillRect(0,0,W,H);}
+}
+window.renderAt=renderAt;window.__ready=true;window.__dur=DUR;window.__off5=OFF5;window.__s4end=S4END;renderAt(0);
+</script></body></html>

@@ -1,0 +1,411 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#0a0d13}canvas{position:absolute;left:0;top:0}</style>
+<script src="interface-engine.js"></script>
+<script src="tvchrome.js"></script>
+<script src=".render/v6/vo/s3.words.js"></script>
+</head><body><canvas id="cv" width="1920" height="1080"></canvas><script>
+// ============ SEGMENT 3 — The Volume-Profile method (S3, teaching core) ============
+const X=document.getElementById('cv').getContext('2d');const W=1920,H=1080;const P=Math.round;let T=0;
+const {C,SANS,TV,TASK}=TVC;const clamp=TVC.clamp,eo=TVC.eo,es=TVC.es,hexA=TVC.hexA,rr=TVC.rr;
+const INK='#eaf2f8',MUT='#8b98a8',LIME='#b6f04a',CYAN='#39d0d0',MAG='#e06bd8',RED='#ff5470',GOLD='#ffcf5c';
+
+// ---- gaps: action beats where the voice pauses ----
+const GAPS=[
+  {at:14.85,dur:3.0},  // drag VP low→current
+  {at:26.90,dur:2.0},  // VAL/VAH/POC settle
+  {at:41.60,dur:4.0},  // replay run → sweep
+  {at:57.00,dur:2.5},  // redraw VP
+  {at:71.40,dur:2.0},  // LVN zone settles
+  {at:84.00,dur:3.0},  // sustainable break + retest
+  {at:111.50,dur:2.0}, // position tool appears
+  {at:115.30,dur:10.0}, // profit run + R:R
+];
+const tm=TVC.mkTimeMap(GAPS);
+const sT=vo=>tm.sceneT(vo);
+// gap START in scene time (sT(at) includes the gap's own duration — actions
+// that happen DURING a gap must be anchored at gS(at) instead)
+const gS=at=>{let s=at;for(const g of GAPS)if(g.at<at)s+=g.dur;return s;};
+const DUR=Math.ceil((sT(VOW_S3.dur)+1.4)*10)/10;   // ≈ 150.2
+
+// ---- chart ----
+const CH={x0:TV.rail.w+1,x1:1920-TV.scaleW,y0:126,y1:912};
+const PMIN=4058,PMAX=4082;
+const NARR=[[0,4077.5],[10,4071],[20,4066],[24,4063.8],[30,4065.5],[38,4071.5],[44,4073.8],[50,4069.5],[56,4067.0],[58,4068.4],[64,4071.8],[70,4068.5],[80,4065.9],[86,4066.8],[96,4067.6],[104,4068.2],[106,4069.9],[112,4070.8],[118,4071.8],[126,4073.2],[134,4073.6],[149,4074.2]];
+const N=150, SER=TVC.mkSeries(N,NARR,55110,0.55);
+// story-correct volume distribution: concentration in the 4068–4072 rally/chop
+// (POC ≈ 4069–70, VAL ≈ 4067 → candle-52 wick 4066.3 sweeps the VAL)
+for(let i=0;i<N;i++){
+  if(i>=32&&i<=43)SER[i].v*=1.9;
+  if(i>=44&&i<=56)SER[i].v*=2.1;
+  if(i>=18&&i<=30)SER[i].v*=0.6;
+}
+// force story candles:
+SER[52].l=Math.min(SER[52].l,4066.30);SER[52].c=4067.85;SER[52].o=4067.2;   // VAL sweep wick
+SER[105].o=4067.9;SER[105].c=4069.95;SER[105].h=4070.2;SER[105].l=4067.7;   // breakout
+SER[106].o=4069.3;SER[106].c=4069.15;SER[106].l=4068.75;SER[106].h=4069.9;  // retest/entry candle
+for(let i=107;i<=126;i++){const u=(i-107)/19;SER[i].o=4069.1+u*3.5;SER[i].c=4069.55+u*3.75;SER[i].h=SER[i].c+0.3;SER[i].l=SER[i].o-0.22;}
+const CWc=(CH.x1-CH.x0-60)/134;
+const xOf=i=>CH.x0+30+i*CWc+CWc/2;
+let yOf=null;
+
+// ---- replay reveal (visible candle count as f(sceneT)) ----
+function revealAt(t){
+  const k=[[0,52],[gS(41.60),52],[gS(41.60)+4.0,58],[sT(58.0),58],[sT(71.0),82],[sT(74.9),86],[gS(84.0),104],[gS(84.0)+1.6,106],[sT(86.0),107],[gS(115.30),107],[gS(115.30)+9.4,126],[DUR,126]];
+  for(let i=0;i<k.length-1;i++)if(t>=k[i][0]&&t<=k[i+1][0]){
+    const u=(t-k[i][0])/Math.max(0.001,k[i+1][0]-k[i][0]);
+    return k[i][1]+(k[i+1][1]-k[i][1])*u;
+  }
+  return 126;
+}
+
+// ---- volume histogram from visible candles (REAL VP mechanics) ----
+const hCache={};
+function histo(i0,i1){
+  const key=i0+'_'+i1;
+  if(hCache[key])return hCache[key];
+  const nb=44, lo=PMIN+1, hi=PMAX-1, bh=(hi-lo)/nb;
+  const rows=new Array(nb).fill(0);
+  for(let i=i0;i<=i1;i++){const k=SER[i];
+    const a=Math.max(lo,Math.min(k.l,k.o,k.c)), b=Math.min(hi,Math.max(k.h,k.o,k.c));
+    const j0=Math.floor((a-lo)/bh), j1=Math.floor((b-lo)/bh);
+    for(let j=Math.max(0,j0);j<=Math.min(nb-1,j1);j++)rows[j]+=k.v/(j1-j0+1);
+  }
+  let poc=0;for(let j=1;j<nb;j++)if(rows[j]>rows[poc])poc=j;
+  const tot=rows.reduce((a,b)=>a+b,0);let acc=rows[poc],a2=poc,b2=poc;
+  while(acc<tot*0.7&&(a2>0||b2<nb-1)){
+    const dn=a2>0?rows[a2-1]:-1, up=b2<nb-1?rows[b2+1]:-1;
+    if(up>=dn){b2++;acc+=rows[b2];}else{a2--;acc+=rows[a2];}
+  }
+  const out={rows:rows.map((v,j)=>({p:lo+(j+0.5)*bh,v})),bh,
+    poc:lo+(poc+0.5)*bh,val:lo+(a2)*bh,vah:lo+(b2+1)*bh,max:rows[poc]};
+  hCache[key]=out;return out;
+}
+
+// ---- VP display state ----
+function vpState(t){
+  // returns {i0,i1,drawFrac,alpha,handles} — VP1: low(24)→52 ; redraw: →58 ; cons: 86→104
+  const t1=sT(11.1), t1e=sT(14.85)+3.0;               // draw 24→52
+  const tR=sT(57.0), tRe=sT(57.0)+2.5;                // redraw →58
+  if(t<t1)return null;
+  if(t<tR){
+    const f=clamp((t-t1)/(t1e-t1),0,1);
+    return {i0:24,i1:52,drawFrac:f,alpha:1,handles:t<sT(30)};
+  }
+  const f=clamp((t-tR)/(tRe-tR),0,1);
+  const i1=P(52+(58-52)*f);
+  return {i0:24,i1,drawFrac:1,alpha:1,handles:f<1};
+}
+
+// ---- consolidation VP box (86..104) ----
+function consState(t){
+  const t0=sT(76.7), t1=sT(78.9);
+  if(t<t0)return null;
+  return {f:clamp((t-t0)/(t1-t0),0,1)};
+}
+
+// ---- scribbles (precomputed) ----
+const scrPOC=TVC.scribbleEllipse(0,0,90,26,911,1.2);        // positioned at draw time
+const scrHigh=TVC.scribbleEllipse(0,0,46,30,913,1.25);
+const scrSweep=TVC.scribbleEllipse(0,0,40,26,917,1.3);
+const scr61=TVC.scribbleEllipse(0,0,34,20,919,1.35);
+function drawScr(base,cx,cy,t0,dur,hold,col){
+  const pr=clamp((T-t0)/dur,0,1);if(pr<=0)return;
+  const fade=1-clamp((T-t0-dur-hold)/0.8,0,1);if(fade<=0)return;
+  X.save();X.globalAlpha=fade;
+  TVC.scribble(X,base.map(p=>[p[0]+cx,p[1]+cy]),pr,{col:col||'rgba(41,98,255,0.40)',w:13});
+  X.restore();
+}
+
+// ---- footprint popover (entry timing) ----
+function fpPop(t,yy){
+  const a=Math.min(clamp((t-sT(89.3))/0.4,0,1),1-clamp((t-sT(115.3)-6.2)/0.6,0,1));
+  if(a<=0)return;
+  const bx=xOf(101)-320, by=Math.max(236,yy-330), bw=300, bh=316;
+  X.save();X.globalAlpha=a;
+  X.shadowColor='rgba(20,30,50,0.25)';X.shadowBlur=26;X.shadowOffsetY=8;
+  X.fillStyle='#fff';rr(X,bx,by,bw,bh,10);X.fill();X.shadowColor='transparent';
+  X.strokeStyle=C.tvLine;rr(X,bx,by,bw,bh,10);X.stroke();
+  X.fillStyle=C.tvInk;X.font='700 14px '+SANS;X.textAlign='left';X.textBaseline='middle';
+  X.fillText('Volumen-Fußabdruck — Entry-Kerze',bx+16,by+24);
+  const cells=[[35,52,0,0],[110,134,0,0],[91,43,0,0],[53,39,0,0],[31,35,0,0],[31,61,0,1]];
+  const rh=34, cw=86, gx=bx+52, gy=by+48;
+  X.font='600 14px '+SANS;X.textAlign='center';
+  for(let i=0;i<cells.length;i++){
+    const [b,a2,bi,ai]=cells[i], y=gy+i*rh;
+    X.fillStyle=bi?'#f23645':(b>90?'#f6c6cb':'#fdeef0');X.fillRect(gx,y,cw,rh-2);
+    X.fillStyle=bi?'#fff':'#b1353f';X.fillText(String(b),gx+cw/2,y+rh/2-1);
+    X.fillStyle=ai?'#089981':(a2>100?'#bfe8d6':'#eaf7f1');X.fillRect(gx+cw+2,y,cw,rh-2);
+    X.fillStyle=ai?'#fff':'#0a7a56';X.fillText(String(a2),gx+cw+2+cw/2,y+rh/2-1);
+  }
+  // delta footer
+  X.fillStyle='#1e222d';rr(X,bx+16,gy+cells.length*rh+8,bw-32,40,4);X.fill();
+  X.fillStyle='#9598a1';X.font='500 11px '+SANS;X.textAlign='left';
+  X.fillText('Delta',bx+28,gy+cells.length*rh+21);X.fillText('Gesamt',bx+28,gy+cells.length*rh+37);
+  X.textAlign='right';
+  const puls=(t>sT(90.8)&&t<sT(94.5))?(0.7+0.3*Math.sin(T*6)):1;
+  X.fillStyle='rgba(255,'+P(122*puls)+','+P(134*puls)+',1)';X.font='700 13px '+SANS;
+  X.fillText('−67',bx+bw-28,gy+cells.length*rh+21);
+  X.fillStyle='#fff';X.fillText('645',bx+bw-28,gy+cells.length*rh+37);
+  // "61" highlight timing
+  if(t>=sT(105.6)){
+    const y61=gy+5*rh;
+    X.strokeStyle='#089981';X.lineWidth=3;X.strokeRect(gx+cw+2,y61,cw,rh-2);X.lineWidth=1;
+  }
+  X.restore();
+  if(t>=sT(105.6))drawScr(scr61,gx+cw+2+cw/2+ -0,gy+5*rh+16,sT(105.6),0.7,4.5,'rgba(8,153,129,0.5)');
+}
+
+// ---- position tool state ----
+const ENTRY=4069.2,STOP=4068.4,TGT1=4071.44,TGT2=4072.88;
+function posState(t){
+  const a=clamp((t-gS(111.5))/0.5,0,1);if(a<=0)return null;
+  const ext=clamp((t-sT(117.9))/0.8,0,1);          // target 1:2.8 → 1:4.6
+  const tgt=TGT1+(TGT2-TGT1)*es(ext);
+  // open pnl follows reveal price
+  const rev=Math.floor(revealAt(t));
+  const px=SER[Math.max(0,Math.min(N-1,rev-1))].c;
+  const pnl=Math.max(0,(px-ENTRY))*280;
+  const rrv=(px-ENTRY)/(ENTRY-STOP);
+  return {a,tgt,pnl,rrv:Math.max(0,rrv)};
+}
+
+// ---- lower thirds ----
+function ltPill(bx,by,bw,bh,edge){X.fillStyle=hexA('#070a10',0.86);rr(X,bx,by,bw,bh,14);X.fill();X.strokeStyle=hexA(edge,0.65);X.lineWidth=2;rr(X,bx,by,bw,bh,14);X.stroke();X.lineWidth=1;}
+function lower(t0,t1,edge,label,sub){
+  const a=es(clamp((T-t0)/0.5,0,1))*(1-clamp((T-t1)/0.4,0,1));if(a<=0)return;
+  X.save();X.globalAlpha=a;
+  X.font='800 20px '+SANS;const w=Math.max(X.measureText(label).width+70,sub?X.measureText(sub).width+70:0);
+  const bw=Math.max(430,w),bh=sub?66:56,bx=(W-bw)/2,by=H-100;
+  ltPill(bx,by,bw,bh,edge);
+  X.fillStyle=edge;X.beginPath();X.arc(bx+30,by+bh/2,5,0,7);X.fill();
+  X.fillStyle=INK;X.textAlign='left';X.textBaseline='middle';X.font='800 20px '+SANS;
+  X.fillText(label,bx+52,by+(sub?24:bh/2));
+  if(sub){X.fillStyle=MUT;X.font='600 13px '+SANS;X.fillText(sub,bx+52,by+47);}
+  X.restore();
+}
+
+// ---- cursor scenario ----
+const ms=vo=>sT(vo)*1000;
+const yPix=p=>CH.y1-(p-PMIN)/(PMAX-PMIN)*(CH.y1-CH.y0);
+const cur=IFE.Cursor([
+  {shape:'crosshair'},
+  {at:1200, move:[xOf(40),yPix(4072)], W:260},
+  // grab low → drag to current (VP draw)
+  {at:ms(10.9), move:[xOf(24),yPix(4063.8)], W:26},
+  {at:ms(11.35)},
+  {drag:[xOf(52),yPix(4067.0)], W:10},
+  // "not low to high" — glance to the high
+  {at:ms(15.2), move:[xOf(44),yPix(4073.8)], W:60},
+  // three things: point at VAL, VAH, POC
+  {at:ms(20.8), move:[xOf(38),yPix(4066.4)], W:46},
+  {at:ms(22.6), move:[xOf(38),yPix(4070.6)], W:46},
+  {at:ms(24.4), move:[xOf(34),yPix(4068.3)], W:46},
+  // rule: hover POC, then VAL
+  {at:ms(29.6), move:[xOf(44),yPix(4068.3)], W:60},
+  {at:ms(32.6), move:[xOf(48),yPix(4066.4)], W:60},
+  // structure: to the broken high
+  {at:ms(36.9), move:[xOf(38),yPix(4071.6)], W:44},
+  // replay ▶
+  {at:ms(40.9), shape:'default'},
+  {at:ms(41.05), move:[(1920-430)/2+236,968], W:26},
+  {click:true},
+  // to the sweep candle (M1 check)
+  {at:ms(45.3), shape:'crosshair'},
+  {at:ms(45.5), move:[xOf(52),yPix(4066.5)], W:22},
+  // redraw: grab right handle → drag
+  {at:ms(53.9), move:[xOf(52),yPix(4067.0)], W:14},
+  {at:ms(56.9)},
+  {drag:[xOf(58),yPix(4068.4)], W:10},
+  // VAH down-move / LVN pointing
+  {at:ms(59.6), move:[xOf(62),yPix(4071.4)], W:44},
+  {at:ms(66.3), move:[xOf(78),yPix(4065.8)], W:44},
+  // consolidation box draw
+  {at:ms(76.5), move:[xOf(86),yPix(4068.7)], W:22},
+  {at:ms(76.75)},
+  {drag:[xOf(104),yPix(4066.4)], W:10},
+  // resistance glance + break
+  {at:ms(80.3), move:[xOf(100),yPix(4068.6)], W:40},
+  {at:ms(84.9), move:[xOf(105),yPix(4070.0)], W:30},
+  // footprint pop region
+  {at:ms(89.5), move:[xOf(101)-170,yPix(4070.6)-60], W:120},
+  {at:ms(105.4), move:[xOf(101)-84,yPix(4070.6)+92], W:40},
+  // entry: place position (click at entry)
+  {at:ms(111.0), shape:'default'},
+  {at:ms(111.15), move:[xOf(107),yPix(ENTRY)], W:20},
+  {click:true,decision:true},
+  // replay ▶ for the run
+  {at:ms(113.4), move:[(1920-430)/2+236,968], W:26},
+  {click:true},
+  // watch it run
+  {at:ms(116.3), shape:'crosshair'},
+  {at:ms(116.5), move:[xOf(118),yPix(4072.4)], W:120},
+  {at:ms(120.6), move:[xOf(122),yPix(4072.0)], W:160},
+], {start:[860,430], seed:81303, os:'win', t0:0});
+
+const sA=()=>Math.min(clamp(T/0.35,0,1),1-clamp((T-(DUR-0.35))/0.35,0,1));
+
+function renderAt(msIn){
+  T=msIn/1000;const s=cur.sample(msIn);
+  TVC.browserChrome(X,{});
+  TVC.tvToolbar(X,{symbol:'XAUUSD',interval:'1m',replay:true});
+  X.fillStyle='#fff';X.fillRect(0,TV.tool.y0+TV.tool.h+1,W,TASK.y0-(TV.tool.y0+TV.tool.h+1));
+  yOf=TVC.priceScale(X,{y0:CH.y0,y1:CH.y1,pmin:PMIN,pmax:PMAX,step:2.5,dec:3,x0:CH.x0});
+  TVC.tvWatermark(X,{sym:'XAUUSD',int:'1',name:'Gold Spot / U.S. Dollar',replay:true});
+  const rev=revealAt(T);
+  const revN=Math.floor(rev);
+  // replay shade right of current candle
+  TVC.replayCut(X,{x:xOf(revN-1)+CWc,y0:CH.y0,y1:CH.y1,chip:'09 Jul \'26 05:'+String(22+P(revN/10)).padStart(2,'0')});
+  // candles
+  TVC.candles(X,{series:SER,x0:CH.x0+30,cw:CWc,yOf,reveal:rev,style:'blue'});
+  // ---- VP main ----
+  const vp=vpState(T);
+  if(vp){
+    const h=histo(vp.i0,vp.i1);
+    const x0=xOf(vp.i0)-CWc/2, x1=xOf(vp.i1)+CWc/2;
+    TVC.volProfile(X,{x0,x1,pLo:SER[24].l-0.3,pHi:4074.2,yOf,rows:h.rows.map(r=>({p:r.p,up:r.v*0.56,dn:r.v*0.44})),maxV:h.max,poc:h.poc,val:h.val,vah:h.vah,alpha:vp.alpha,drawFrac:vp.drawFrac,rowH:(CH.y1-CH.y0)/44,wMax:(x1-x0)*0.5});
+    if(vp.handles)TVC.vpHandles(X,{x0,x1,pLo:SER[24].l-0.3,pHi:4074.2,yOf});
+    // labels on scale once drawn
+    if(vp.drawFrac>0.8){
+      TVC.vpLabel(X,h.poc,yOf,'POC',C.tvDn);
+      TVC.vpLabel(X,h.vah,yOf,'VAH',C.tvBlue);
+      TVC.vpLabel(X,h.val,yOf,'VAL',C.tvBlue);
+      // text labels at left of range
+      X.font='700 13px '+SANS;X.textAlign='right';X.textBaseline='middle';
+      const lb=(p,txt,col,tOn)=>{const a=clamp((T-tOn)/0.4,0,1);if(a<=0)return;X.save();X.globalAlpha=a;
+        X.fillStyle=col;X.fillText(txt,x0-10,yOf(p));X.restore();};
+      lb(h.val,'Value Area Low',C.tvBlue,sT(20.99));
+      lb(h.vah,'Value Area High',C.tvBlue,sT(22.79));
+      lb(h.poc,'POC — Point of Control',C.tvDn,sT(24.7));
+    }
+  }
+  // "not low to high" ghost box (15.0–18.2)
+  {const a=Math.min(clamp((T-sT(15.0))/0.4,0,1),1-clamp((T-sT(17.9))/0.5,0,1));
+   if(a>0){X.save();X.globalAlpha=a*0.8;
+     X.strokeStyle=C.tvDn;X.setLineDash([6,5]);X.lineWidth=2;
+     X.strokeRect(xOf(24)-CWc/2,yOf(4074.4),xOf(44)-xOf(24),yOf(SER[24].l-0.3)-yOf(4074.4));X.setLineDash([]);X.lineWidth=1;
+     X.fillStyle=C.tvDn;X.font='700 14px '+SANS;X.textAlign='center';X.textBaseline='middle';
+     X.fillText('Low → High: große Lücke ✕',(xOf(24)+xOf(44))/2,yOf(4075.6));
+     X.restore();}}
+  // POC no-trade ✕ (29.5)
+  if(T>=sT(29.55)&&vp){
+    const h=histo(vp.i0,vp.i1);
+    drawScr(scrPOC,(xOf(vp.i0)+xOf(vp.i1))/2,yOf(h.poc),sT(29.55),0.8,4.0,'rgba(242,54,69,0.42)');
+    const a=Math.min(clamp((T-sT(29.9))/0.4,0,1),1-clamp((T-sT(35.6))/0.5,0,1));
+    if(a>0){X.save();X.globalAlpha=a;
+      X.fillStyle='#f23645';rr(X,(xOf(vp.i0)+xOf(vp.i1))/2+104,yOf(h.poc)-14,170,28,6);X.fill();
+      X.fillStyle='#fff';X.font='700 13px '+SANS;X.textAlign='center';X.textBaseline='middle';
+      X.fillText('POC: kein Trade ✕',(xOf(vp.i0)+xOf(vp.i1))/2+189,yOf(h.poc));X.restore();}
+  }
+  // broken high scribble (36.7)
+  drawScr(scrHigh,xOf(38),yOf(4071.8),sT(36.9),0.7,3.4);
+  {const a=Math.min(clamp((T-sT(38.3))/0.4,0,1),1-clamp((T-sT(41.2))/0.4,0,1));
+   if(a>0){X.save();X.globalAlpha=a;X.fillStyle=C.tvUp;rr(X,xOf(38)-62,yOf(4072.6)-34,124,24,5);X.fill();
+     X.fillStyle='#fff';X.font='700 12px '+SANS;X.textAlign='center';X.textBaseline='middle';
+     X.fillText('High gebrochen ✓',xOf(38),yOf(4072.6)-22);X.restore();}}
+  // sweep highlight (during/after run)
+  if(T>=sT(42.3)){
+    drawScr(scrSweep,xOf(52),yOf(4066.6),Math.max(sT(42.3),sT(41.6)+2.2),0.7,9.0,'rgba(242,54,69,0.45)');
+  }
+  // M1 check chip (45.5–52.9)
+  {const a=Math.min(clamp((T-sT(46.4))/0.4,0,1),1-clamp((T-sT(52.9))/0.5,0,1));
+   if(a>0){X.save();X.globalAlpha=a;
+     X.fillStyle='#2a2e39';rr(X,xOf(52)-96,yOf(SER[52].l)+18,220,44,6);X.fill();
+     X.fillStyle='#fff';X.font='600 12px '+SANS;X.textAlign='left';X.textBaseline='middle';
+     X.fillText('M1-Check: 05:27 — VAL noch',xOf(52)-84,yOf(SER[52].l)+33);
+     X.fillText('nicht erreicht → warten',xOf(52)-84,yOf(SER[52].l)+50);
+     X.restore();}}
+  // VAH down-move continuation short marker (58.1–63.5)
+  {const a=Math.min(clamp((T-sT(60.5))/0.4,0,1),1-clamp((T-sT(63.9))/0.5,0,1));
+   if(a>0){X.save();X.globalAlpha=a;
+     X.strokeStyle=C.tvDn;X.lineWidth=2.4;
+     const ax=xOf(64),ay=yOf(4071.9);
+     X.beginPath();X.moveTo(ax,ay-26);X.lineTo(ax,ay+16);X.lineTo(ax-7,ay+6);X.moveTo(ax,ay+16);X.lineTo(ax+7,ay+6);X.stroke();X.lineWidth=1;
+     X.fillStyle=C.tvDn;X.font='700 12px '+SANS;X.textAlign='left';X.textBaseline='middle';
+     X.fillText('VAH taken → continuation short',ax+14,ay-6);X.restore();}}
+  // LVN / imbalance zone (66.5+)
+  {const a=Math.min(clamp((T-sT(67.1))/0.6,0,1),1-clamp((T-sT(84.5))/0.8,0,1));
+   if(a>0){X.save();X.globalAlpha=a;
+     X.fillStyle='rgba(255,207,92,0.16)';X.fillRect(xOf(70),yOf(4066.3),xOf(104)-xOf(70),yOf(4065.1)-yOf(4066.3));
+     X.strokeStyle='rgba(240,185,60,0.9)';X.setLineDash([5,4]);
+     X.strokeRect(P(xOf(70))+0.5,P(yOf(4066.3))+0.5,P(xOf(104)-xOf(70)),P(yOf(4065.1)-yOf(4066.3)));X.setLineDash([]);
+     X.fillStyle='#8a6d1a';X.font='700 12px '+SANS;X.textAlign='left';X.textBaseline='middle';
+     X.fillText('LVN — Low Volume Node · Imbalance',xOf(70)+10,yOf(4065.7));
+     X.restore();}}
+  // consolidation value-area box (76.7 draw, hold to ~115)
+  const cs=consState(T);
+  if(cs){
+    const a=1-clamp((T-sT(116.5))/0.8,0,1);
+    if(a>0){X.save();X.globalAlpha=a;
+      const bx0=xOf(86)-CWc/2, bx1=bx0+(xOf(104)-xOf(86))*cs.f;
+      X.fillStyle='rgba(41,98,255,0.07)';X.fillRect(bx0,yOf(4068.7),bx1-bx0,yOf(4066.4)-yOf(4068.7));
+      X.strokeStyle=hexA(C.tvBlue,0.75);X.setLineDash([4,3]);
+      X.strokeRect(P(bx0)+0.5,P(yOf(4068.7))+0.5,P(bx1-bx0),P(yOf(4066.4)-yOf(4068.7)));X.setLineDash([]);
+      if(cs.f>0.95){
+        // resistance line + prior VAL line
+        X.strokeStyle=C.tvDn;X.setLineDash([7,5]);X.lineWidth=1.8;
+        X.beginPath();X.moveTo(bx0,P(yOf(4068.6))+0.5);X.lineTo(xOf(112),P(yOf(4068.6))+0.5);X.stroke();
+        X.setLineDash([]);X.lineWidth=1;
+        X.fillStyle=C.tvDn;X.font='600 12px '+SANS;X.textAlign='left';X.textBaseline='middle';
+        X.fillText('Resistance',bx0+6,yOf(4068.6)-12);
+      }
+      X.restore();}
+  }
+  // sustainable break check (84.9–87.3)
+  {const a=Math.min(clamp((T-sT(85.0))/0.4,0,1),1-clamp((T-sT(87.6))/0.5,0,1));
+   if(a>0){X.save();X.globalAlpha=a;
+     X.fillStyle=C.tvUp;rr(X,xOf(105)-78,yOf(SER[105].h)-42,190,28,6);X.fill();
+     X.fillStyle='#fff';X.font='700 13px '+SANS;X.textAlign='center';X.textBaseline='middle';
+     X.fillText('Sustainable break ✓',xOf(105)+17,yOf(SER[105].h)-28);X.restore();}}
+  // ---- position tool ----
+  const ps=posState(T);
+  if(ps){
+    const rrLive=ps.rrv;
+    TVC.positionTool(X,{x0:xOf(106)-CWc,x1:xOf(126)+CWc*2,entry:ENTRY,stop:STOP,target:ps.tgt,yOf,alpha:ps.a,dir:'long',
+      targetTxt:'Ziel: '+TVC.fmtDE((ps.tgt-ENTRY)*1000,0)+' ('+((ps.tgt-ENTRY)/ENTRY*100).toFixed(3).replace('.',',')+'%)  Betrag: '+TVC.fmtDE(Math.round((ps.tgt-ENTRY)*2800),0),
+      stopTxt:'Stopp: '+TVC.fmtDE((ENTRY-STOP)*1000,0)+' (0,020%)  Betrag: '+TVC.fmtDE(2240,0),
+      pnlTxt:'Offener G&V: '+TVC.fmtDE(Math.round(ps.pnl*10),0)+', Menge: 28\nVerhältnis Risiko/Gewinn: '+Math.max(0,rrLive).toFixed(2).replace('.',',')});
+  }
+  // R:R chips (116.4 / 117.9)
+  {const c1=Math.min(clamp((T-sT(116.6))/0.4,0,1),1-clamp((T-sT(122.8))/0.5,0,1));
+   const c2=Math.min(clamp((T-sT(118.15))/0.4,0,1),1-clamp((T-sT(122.8))/0.5,0,1));
+   X.textBaseline='middle';
+   if(c1>0){X.save();X.globalAlpha=c1;X.fillStyle='#089981';rr(X,xOf(114)-56,yOf(TGT1)-38,112,28,6);X.fill();
+     X.fillStyle='#fff';X.font='800 14px '+SANS;X.textAlign='center';X.fillText('R:R  1 : 2,8',xOf(114),yOf(TGT1)-24);X.restore();}
+   if(c2>0){X.save();X.globalAlpha=c2;X.fillStyle='#089981';rr(X,xOf(122)-56,yOf(TGT2)-38,112,28,6);X.fill();
+     X.fillStyle='#fff';X.font='800 14px '+SANS;X.textAlign='center';X.fillText('R:R  1 : 4,6',xOf(122),yOf(TGT2)-24);X.restore();}}
+  // footprint popover
+  fpPop(T,yOf(4070.6));
+  // furniture
+  TVC.tvLegend(X,{name:'Gold Spot / U.S. Dollar',int:'1',src:'OANDA',
+    o:'4.068,915',h:'4.070,205',l:'4.068,730',c:'4.069,'+String(150+P((revealAt(T)%1)*800)).slice(0,3),chg:'+0,585 (+0,01%)',up:true,sell:'4.069,240',buy:'4.069,240'});
+  TVC.cvdRow(X,{y:CH.y1+16,vals:[['316',0],['507',0],['316',0],['507',0]]});
+  TVC.timeAxis(X,{y:CH.y1+30,labels:[[240,'03:30'],[500,'04:00'],[760,'04:30'],[1020,'05:00'],[1280,'05:30'],[1540,'06:00'],[1800,'06:30']]});
+  TVC.replayToolbar(X,{y:946,playing:(T>gS(41.6)&&T<gS(41.6)+4.0)||(T>gS(115.3)-1.5&&T<gS(115.3)+9.6),speed:'10x',int:'1m'});
+  TVC.replayInfoBar(X);
+  TVC.tvBottomRow(X,{clockUTC:'21:'+String(24+P(T/8)).padStart(2,'0')+':'+String(P(45+((T*7)%14))).padStart(2,'0')});
+  TVC.tvLeftRail(X,{active:4});
+  TVC.tvFloatBar(X,{brush:20});
+  // crosshair
+  const onChart=s.x>CH.x0&&s.x<CH.x1&&s.y>CH.y0&&s.y<CH.y1;
+  if(onChart&&s.shape==='crosshair'&&!s.pressed){
+    X.save();X.strokeStyle='rgba(120,134,150,0.65)';X.setLineDash([4,4]);
+    X.beginPath();X.moveTo(CH.x0,P(s.y)+0.5);X.lineTo(CH.x1,P(s.y)+0.5);
+    X.moveTo(P(s.x)+0.5,CH.y0);X.lineTo(P(s.x)+0.5,CH.y1);X.stroke();X.setLineDash([]);X.restore();
+    const pv=PMIN+(1-(s.y-CH.y0)/(CH.y1-CH.y0))*(PMAX-PMIN);
+    TVC.priceTag(X,pv,yOf,TVC.fmtDE(pv,3),'#2a2e39');
+  }
+  TVC.priceTag(X,SER[Math.max(0,revN-1)].c,yOf,TVC.fmtDE(SER[Math.max(0,revN-1)].c,3),C.tvBlue);
+  TVC.winTaskbar(X,{clock:'22:'+String(50+Math.min(9,P(T/18))),date:'12.07.2026',weather:['34°C Partly cloudy','Now']});
+  IFE.drawCursor(X,s.x,s.y,onChart&&s.shape!=='default'?(s.pressed?'grabbing':'crosshair'):(s.y<TV.tool.y0+TV.tool.h?'pointer':s.shape),s.pressed,cur.os);
+  // lower thirds
+  lower(0.4,sT(9.2),LIME,'THE VOLUME PROFILE METHOD','value area · point of control · entries');
+  lower(sT(28.0),sT(35.8),RED,'RULE — never trade AT the POC','wait for the Value Area Low sweep');
+  lower(sT(51.3),sT(56.6),CYAN,'DON\'T CHEAT — CHECK THE M1','verify the sweep at the candle\'s real time');
+  lower(sT(72.75),sT(79.3),GOLD,'THE ENTRY','consolidation → sustainable break');
+  lower(sT(109.4),sT(115.2),MAG,'ABSORPTION','61 passive buys lift the market — our entry');
+  lower(sT(119.95),DUR-0.8,LIME,'VP + FOOTPRINT. THAT\'S IT.','tight stop · momentum · R:R up to 1:4,6');
+  const a=sA();
+  if(a<1){X.fillStyle='rgba(7,10,16,'+(1-a)+')';X.fillRect(0,0,W,H);}
+}
+window.renderAt=renderAt;window.__ready=true;window.__dur=DUR;renderAt(0);
+</script></body></html>

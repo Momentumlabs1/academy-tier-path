@@ -396,6 +396,41 @@ was made in the prior session when it was set). Need the ElevenLabs key to gener
 (`render/tts_ts.py` → mp3 + word onsets). **Asked user.** Meanwhile build the VO-independent visual
 component library (below).
 
+### ✅ Video 6 — COMPLETE build v1 (2026-07-22, local session)
+All six scenes built + assembled into the full **video6.mp4** (~8:01):
+- **Shared mirror library `tvchrome.js`** (global `TVC`): dark-Chrome browser chrome ("Zum
+  Aktualisieren neu starten" pill, dark tabs/omnibox), LIGHT Win11 taskbar (weather · centered
+  pills · tray · Tim's real clock), TV dark toolbar + white canvas + light left rail + floating
+  draw bar (+ 20px brush panel), legend/VERKAUF-KAUF pills, price scale + tags, replay furniture
+  (cut+shade+chip, "Balken auswählen" toolbar, "Handel im Wiedergabemodus" bar), blue replay
+  candles + mkSeries (keyframed anchors + seeded noise), **computed** Volume Profile
+  (histogram→POC/VA via 70% expansion) + handles + labels, position tool (Ziel/Stopp/G&V chips),
+  20px marker scribbles, TV footprint columns (bid×ask + "Delta Gesamt"), full Deepchart chrome
+  (top bar/rail/bottom radios), delta-sized bubbles, zone boxes w/ tick labels, footprint number
+  grid, ΣV/ΔV/Δ% delta footer, and `mkTimeMap(gaps)` for VO-pause action beats.
+- **⚠ THEME TRUTH (refs t35/t300/t600/t900/t1080):** Tim's browser chrome + TV toolbars = DARK,
+  chart canvas = WHITE with BLUE candles (replay mode), taskbar = LIGHT. §9's "light theme" note
+  was half-right; §10's "TV dark palette" applies to the TOOLBARS only. v6seg1 was refixed
+  accordingly (dark tabs + light taskbar).
+- Scenes: `v6seg1` (28.0s intro, refixed chrome) · `v6seg2` (58.6s TV tour: rail tooltips,
+  Indikatoren dialog, Linie/Kerzen/Fußabdruck morphs, Deepchart flash) · `v6seg3` (154.2s VP
+  method: draw low→current, not-low-to-high ghost, computed VAL/VAH/POC, replay sweep, M1-check,
+  redraw, LVN zone, consolidation break, footprint popover w/ 61-buys absorption, long position
+  runs to R:R 1:2,8→1:4,6 with live G&V) · `v6seg4` (189.1s Deepchart: absorption demo 101→2,
+  heatmap bands, health steps, top forming at day-VAH, footprint panel w/ trapped buyers
+  214/202/290 +11%, short trade 105 sells → R:R 1:1,5→1:6, then S5 why-absorption: 500-shorts
+  cluster → active-buy arrows → buying-power push; **dynamic price window pWin(t)** so the
+  trader "scrolls with the market") · `v6seg5` (51.2s wrap: line chart + zones + two
+  zero-drawdown momentum runs + brand outro card).
+- **Timing system:** every scene = VO + `GAPS=[{at,dur}]`; `sT(vo)` = onset→scene time,
+  `gS(at)` = gap START (action windows anchor there — `sT(at)` includes the gap's own dur!).
+  Audio built to match by `render/mixv6.py` (same gap tables → silences). **Duration source of
+  truth = the page's `__dur`/`__off5`** (read them headless; do NOT re-derive by hand).
+- Pipeline: `render/rendseg.mjs` (generic, paint-flush) + `render/buildv6.sh` (mix → 4-chunk
+  renders → per-scene encode → concat demuxer → COSMO bubble overlay → max-compat finalize →
+  validate → copy to ~/Downloads + ~/Desktop/EnterTrade Videos/). Clock mirrors Tim's real
+  taskbar times (22:42→23:24 across scenes).
+
 ### Video 6 — component library to build (VO-independent; the heavy Fable visual work)
 - **TradingView chart page** (light theme): top toolbar, left favorites/drawing rail w/ tooltips,
   candles (up #089981 / dn #F23645), interval row, legend OHLC (f(cursorX)), bar-replay bar

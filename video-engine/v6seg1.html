@@ -66,27 +66,34 @@ function daxChart(x,y,w,h,rvl){
 
 // ---------- browser + TV chrome (light) ----------
 function browserChrome(){
-  X.fillStyle='#dee1e6';X.fillRect(0,0,W,TAB.h);
+  // DARK Chrome (mirror t35: Tim's browser runs dark mode)
+  X.fillStyle='#202124';X.fillRect(0,0,W,TAB.h);
   X.textBaseline='middle';X.font='400 13px '+SANS;
   let tx=44;const tw=150;
   for(let i=0;i<TABS.length;i++){
     const active=i===TABS.length-1;
-    if(active){X.fillStyle='#ffffff';rr(tx,4,tw,TAB.h-4,8);X.fill();}
-    X.fillStyle=active?'#2962ff':'#9aa0a6';X.beginPath();X.arc(tx+14,TAB.h/2,5,0,7);X.fill();
-    X.fillStyle=active?TVINK:'#5f6368';X.textAlign='left';
+    if(active){X.fillStyle='#3c4043';rr(tx,4,tw,TAB.h-4,8);X.fill();}
+    X.fillStyle=active?'#8ab4f8':'#5f6368';X.beginPath();X.arc(tx+14,TAB.h/2,5,0,7);X.fill();
+    X.fillStyle=active?'#e8eaed':'#bdc1c6';X.textAlign='left';
     const lbl=TABS[i].length>16?TABS[i].slice(0,15)+'…':TABS[i];
     X.fillText(lbl,tx+26,TAB.h/2);
     X.fillStyle='#9aa0a6';X.textAlign='right';X.fillText('×',tx+tw-10,TAB.h/2);
     tx+=tw+2;
   }
-  X.fillStyle='#9aa0a6';X.textAlign='left';X.font='300 22px '+SANS;X.fillText('+',tx+8,TAB.h/2);
-  // address bar
-  X.fillStyle='#ffffff';X.fillRect(0,TAB.h,W,ADDR.h);
-  X.strokeStyle='#e8eaed';X.lineWidth=1;X.beginPath();X.moveTo(0,TAB.h+ADDR.h+0.5);X.lineTo(W,TAB.h+ADDR.h+0.5);X.stroke();
-  X.fillStyle='#5f6368';X.font='400 20px '+SANS;X.textAlign='center';X.textBaseline='middle';
+  X.fillStyle='#bdc1c6';X.textAlign='left';X.font='300 22px '+SANS;X.fillText('+',tx+8,TAB.h/2);
+  X.fillStyle='#bdc1c6';X.font='400 15px '+SANS;X.textAlign='center';
+  X.fillText('−',W-88,TAB.h/2);X.fillText('□',W-54,TAB.h/2);X.fillText('×',W-20,TAB.h/2);
+  // address bar (dark)
+  X.fillStyle='#35363a';X.fillRect(0,TAB.h,W,ADDR.h);
+  X.strokeStyle='#282a2d';X.lineWidth=1;X.beginPath();X.moveTo(0,TAB.h+ADDR.h+0.5);X.lineTo(W,TAB.h+ADDR.h+0.5);X.stroke();
+  X.fillStyle='#c8cbcf';X.font='400 20px '+SANS;X.textAlign='center';X.textBaseline='middle';
   X.fillText('‹',30,ADDR.y0+ADDR.h/2);X.fillText('›',66,ADDR.y0+ADDR.h/2);X.fillText('⟳',102,ADDR.y0+ADDR.h/2);
-  X.fillStyle='#f1f3f4';rr(140,ADDR.y0+8,1500,ADDR.h-16,14);X.fill();
-  X.fillStyle='#5f6368';X.textAlign='left';X.font='400 15px '+SANS;X.fillText('🔒  de.tradingview.com',160,ADDR.y0+ADDR.h/2);
+  X.fillStyle='#282a2d';rr(140,ADDR.y0+8,1500,ADDR.h-16,14);X.fill();
+  X.fillStyle='#c8cbcf';X.textAlign='left';X.font='400 15px '+SANS;X.fillText('◉  de.tradingview.com',160,ADDR.y0+ADDR.h/2);
+  X.fillStyle='#c94f42';X.beginPath();X.arc(1684,ADDR.y0+ADDR.h/2,11,0,7);X.fill();
+  X.fillStyle='#fff';X.font='600 12px '+SANS;X.textAlign='center';X.fillText('T',1684,ADDR.y0+ADDR.h/2+1);
+  X.fillStyle='#3c4043';rr(1706,ADDR.y0+9,178,ADDR.h-18,14);X.fill();
+  X.fillStyle='#e8eaed';X.font='400 12px '+SANS;X.textAlign='left';X.fillText('Zum Aktualisieren neu starten',1716,ADDR.y0+ADDR.h/2+1);
   // TV nav bar
   X.fillStyle=TVBG;X.fillRect(0,NAV.y0,W,NAV.h);
   X.strokeStyle=TVLINE;X.beginPath();X.moveTo(0,NAV.y0+NAV.h+0.5);X.lineTo(W,NAV.y0+NAV.h+0.5);X.stroke();
@@ -184,13 +191,38 @@ function marketBody(samp,rvl){
     X.strokeStyle='#eef1f6';X.beginPath();X.moveTo(AAPL.x+24,sy+16);X.lineTo(AAPL.x+AAPL.w-24,sy+16);X.stroke();}
 }
 function taskbar(){
-  X.fillStyle='#1c1f26';X.fillRect(0,TASK.y0,W,TASK.h);
-  // start + search pill
-  X.fillStyle='#2962ff';rr(560,TASK.y0+8,24,24,4);X.fill();
-  X.fillStyle='#2a2e37';rr(600,TASK.y0+7,190,26,13);X.fill();
-  X.fillStyle='#9aa0a6';X.font='400 13px '+SANS;X.textAlign='left';X.textBaseline='middle';X.fillText('Suche',636,TASK.y0+TASK.h/2);
-  // clock
-  X.fillStyle='#e6e8ea';X.textAlign='right';X.font='500 13px '+SANS;X.fillText('22:42',W-20,TASK.y0+15);X.fillText('12.07.2026',W-20,TASK.y0+31);
+  // LIGHT Win11 taskbar (mirror t35)
+  X.fillStyle='#f3f6fa';X.fillRect(0,TASK.y0,W,TASK.h);
+  X.strokeStyle='#e2e6ec';X.beginPath();X.moveTo(0,TASK.y0+0.5);X.lineTo(W,TASK.y0+0.5);X.stroke();
+  // weather left
+  X.fillStyle='#f5a623';X.beginPath();X.arc(26,TASK.y0+20,9,0,7);X.fill();
+  X.fillStyle='#444a52';X.font='500 12px '+SANS;X.textAlign='left';X.textBaseline='alphabetic';
+  X.fillText('Hot weather',44,TASK.y0+18);
+  X.fillStyle='#8a919b';X.font='400 11px '+SANS;X.fillText('Now',44,TASK.y0+32);
+  X.textBaseline='middle';
+  // start + search pill (centered like Win11)
+  X.fillStyle='#2f7fe0';const s8=8,sx=560,scy=TASK.y0+TASK.h/2;
+  X.fillRect(sx,scy-s8-1,s8,s8);X.fillRect(sx+s8+2,scy-s8-1,s8,s8);X.fillRect(sx,scy+1,s8,s8);X.fillRect(sx+s8+2,scy+1,s8,s8);
+  X.fillStyle='#ffffff';rr(600,TASK.y0+7,190,26,13);X.fill();X.strokeStyle='#dde2e9';rr(600,TASK.y0+7,190,26,13);X.stroke();
+  X.fillStyle='#5f6368';X.font='400 13px '+SANS;X.textAlign='left';X.fillText('Suche',636,TASK.y0+TASK.h/2);
+  X.fillStyle='#2e8b57';X.beginPath();X.arc(772,TASK.y0+TASK.h/2,9,0,7);X.fill();
+  // app tiles (compact row after search)
+  let ix=820;const cyy=TASK.y0+TASK.h/2;
+  const tile=(fn)=>{fn(ix,cyy);ix+=42;};
+  tile((x,y)=>{X.fillStyle='#f7c86b';rr(x-12,y-8,24,17,3);X.fill();});
+  tile((x,y)=>{const g=X.createLinearGradient(x-12,y,x+12,y);g.addColorStop(0,'#35c1f1');g.addColorStop(1,'#0d64c0');X.fillStyle=g;X.beginPath();X.arc(x,y,11,0,7);X.fill();});
+  tile((x,y)=>{X.fillStyle='#4a90d9';rr(x-11,y-8,22,16,3);X.fill();X.strokeStyle='#fff';X.beginPath();X.moveTo(x-9,y-6);X.lineTo(x,y+1);X.lineTo(x+9,y-6);X.stroke();});
+  tile((x,y)=>{X.fillStyle='#e8443a';X.beginPath();X.arc(x,y,11,0,7);X.fill();X.fillStyle='#fff';X.beginPath();X.arc(x,y,5.5,0,7);X.fill();X.fillStyle='#4a90d9';X.beginPath();X.arc(x,y,3.6,0,7);X.fill();});
+  tile((x,y)=>{X.fillStyle='#8f6ac2';rr(x-9,y-11,18,22,3);X.fill();});
+  tile((x,y)=>{X.fillStyle='#22242a';X.beginPath();X.arc(x,y,11,0,7);X.fill();X.fillStyle='#d43a2f';rr(x+2,y-13,20,12,6);X.fill();X.fillStyle='#fff';X.font='700 9px '+SANS;X.textAlign='center';X.fillText('536',x+12,y-7);});
+  tile((x,y)=>{X.fillStyle='#1848c8';rr(x-10,y-10,20,20,4);X.fill();X.fillStyle='#fff';X.font='800 12px '+SANS;X.textAlign='center';X.fillText('17',x,y+1);});
+  // tray + clock
+  X.fillStyle='#444a52';X.font='600 10px '+SANS;X.textAlign='center';
+  X.fillText('DEU',1744,TASK.y0+15);X.fillText('INTL',1744,TASK.y0+27);
+  X.strokeStyle='#444a52';X.lineWidth=1.5;
+  for(let r=3;r<=9;r+=3){X.beginPath();X.arc(1782,TASK.y0+24,r,Math.PI*1.22,Math.PI*1.78);X.stroke();}
+  X.fillStyle='#444a52';X.beginPath();X.moveTo(1806,TASK.y0+17);X.lineTo(1810,TASK.y0+17);X.lineTo(1816,TASK.y0+12);X.lineTo(1816,TASK.y0+28);X.lineTo(1810,TASK.y0+23);X.lineTo(1806,TASK.y0+23);X.closePath();X.fill();X.lineWidth=1;
+  X.fillStyle='#3d434b';X.textAlign='right';X.font='500 12px '+SANS;X.fillText('22:42',W-12,TASK.y0+16);X.fillText('12.07.2026',W-12,TASK.y0+31);
 }
 
 // ---------- brand overlays (lower-thirds, bottom-CENTER; bottom-left reserved for COSMO) ----------
