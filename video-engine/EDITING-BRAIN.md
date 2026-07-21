@@ -328,9 +328,11 @@ keep every meaningful beat.**
 NOT real-time, NOT the 20-min slot, NOT 44 min. All content beats in Tim's order; dead air /
 rambling cut radically. Tim's 44 min = raw source only.
 
-**OUTPUT (user 2026-07-21):** in addition to the pipeline output, copy every finished
-segment/video as MP4 into **`~/Desktop/EnterTrade Videos/`** and tell the user the filename —
-that's where they review. (Repo stays free of big MP4s; <50MB only, per handover.)
+**OUTPUT (user 2026-07-21, updated):** copy every finished MP4 into **`~/Downloads/`** (user moved
+it there from the Desktop folder) and tell the user the filename. **Encode max-compat:** libx264
+`-profile:v high -pix_fmt yuv420p -movflags +faststart -c:a aac` — a non-faststart / odd color-
+primaries file showed "Fehler" in Finder QuickLook (the file was actually valid; re-encode fixed the
+thumbnail). Always revalidate `ffmpeg -v error -i out.mp4 -f null -`. (Repo stays free of big MP4s.)
 
 **Theme note:** Tim runs TradingView in **LIGHT theme** (white bg, red DAX area chart) for the
 market-overview + chart pages; Deepchart terminal = white chart area with dark side/top toolbars.
