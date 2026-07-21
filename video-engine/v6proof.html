@@ -1,0 +1,147 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#fff}canvas{position:absolute;left:0;top:0}</style>
+<script src="interface-engine.js"></script>
+<script src="tvchrome.js"></script>
+</head><body><canvas id="cv" width="1920" height="1080"></canvas><script>
+// ===== 10s PROOF: exact mirror of Tim's footprint entry (screen ~18:00 / full_1080) =====
+const X=document.getElementById('cv').getContext('2d');const W=1920,H=1080;const P=Math.round;let T=0;
+const {C,SANS,TV,TASK}=TVC;const clamp=TVC.clamp,eo=TVC.eo,es=TVC.es,hexA=TVC.hexA,rr=TVC.rr,fmtDE=TVC.fmtDE;
+const INK='#eaf2f8',MUT='#8b98a8',GRN='#33e08a',MAG='#e06bd8',RED='#ff5470',LIME='#b6f04a';
+
+// price scale (native 4.063.000–4.068.000, gold shows 3-decimals as 4065.732)
+const CH={x0:TV.rail.w+1,x1:1920-64,y0:150,y1:900};
+const PMIN=4063.0,PMAX=4068.2;
+const yOf=p=>CH.y1-(p-PMIN)/(PMAX-PMIN)*(CH.y1-CH.y0);
+const ROW=0.5;                       // 0.5 gold points per footprint row
+const rowH=(yOf(PMIN)-yOf(PMIN+ROW)); // px per row
+
+// Tim's EXACT columns. price = center price of the TOP cell; cells stack downward by ROW.
+// cell = [bid, ask, hiBid, hiAsk]  (hi=black high-volume cell)
+const COLS=[
+ {x:735, top:4067.5, cells:[[35,52,0,0],[29,12,0,0],[15,5,0,0]], tot:[820,560], dg:['−260','1,38K',1], cndl:{o:4068.0,c:4066.4,col:'dn'}},
+ {x:895, top:4067.5, cells:[[4,5,0,0],[59,57,0,0],[110,134,1,1],[111,47,0,0],[70,42,0,0],[3,3,0,0]], tot:[356,289], dg:['−67','645',1], cndl:{o:4067.3,c:4065.9,col:'dn'}},
+ {x:1055,top:4066.5, cells:[[9,0,0,0],[91,43,1,1],[53,39,0,0],[31,35,0,0],[31,61,0,0]], tot:[216,178], dg:['−38','394',1], cndl:{o:4065.55,c:4065.95,col:'up'}, entry:true},
+ {x:1215,top:4067.5, cells:[[26,42,0,0],[0,18,0,0],[0,18,0,0],[0,15,0,0],[6,7,0,0],[6,2,0,0]], tot:[152,245], dg:['93','397',0], cndl:{o:4065.2,c:4067.6,col:'up'}, big:true},
+];
+const CW=150, CELLW=64;   // column + cell width
+
+// reveal: entry candle (col3) present from start; col4 (the push) appears on "lifted the market" (~7.96s)
+function col4Alpha(){return es(clamp((T-7.9)/0.7,0,1));}
+// price tag climbs as col4 pushes
+function curPrice(){ if(T<7.9)return 4065.732; return 4065.732+(4067.6-4065.732)*es(clamp((T-8.0)/2.6,0,1)); }
+
+function drawFootprint(){
+  for(let ci=0;ci<COLS.length;ci++){
+    const col=COLS[ci];
+    const a=ci===3?col4Alpha():1; if(a<=0)continue;
+    X.save();X.globalAlpha=a;
+    const bx=col.x;
+    // candle skeleton behind cells
+    const cc=col.cndl;
+    X.strokeStyle=cc.col==='up'?'#089981':'#f23645';X.lineWidth=2;
+    const yTop=yOf(col.top+ROW*0.6), yBot=yOf(col.top-ROW*(col.cells.length-0.4));
+    X.beginPath();X.moveTo(P(bx)+0.5,yTop);X.lineTo(P(bx)+0.5,yBot);X.stroke();
+    const yb0=yOf(Math.max(cc.o,cc.c)),yb1=yOf(Math.min(cc.o,cc.c));
+    X.fillStyle=cc.col==='up'?'#089981':'#f23645';X.globalAlpha=a*(col.big?1:0.9);
+    X.fillRect(P(bx-6),P(yb0),12,Math.max(3,P(yb1-yb0)));X.globalAlpha=a;
+    X.lineWidth=1;
+    // cells
+    X.textAlign='center';X.textBaseline='middle';X.font='700 22px '+SANS;
+    for(let r=0;r<col.cells.length;r++){
+      const [b,as,hb,ha]=col.cells[r];
+      const yc=yOf(col.top-r*ROW);
+      const shB=hb?'#c0202e':(b>=100?'#e3616c':b>=40?'#f0a6ad':b>=10?'#f8ccd0':'#fdeef0');
+      const shA=ha?'#0b6e4f':(as>=100?'#3fae86':as>=40?'#87d0b0':as>=10?'#c3e8d6':'#eef8f3');
+      // sell (bid) left
+      X.fillStyle=hb?'#111':shB;X.fillRect(P(bx-CELLW),P(yc-rowH/2),CELLW-1,P(rowH-1));
+      X.fillStyle=hb?'#fff':(b>=100?'#fff':'#a11b28');X.fillText(String(b),bx-CELLW/2,yc);
+      // buy (ask) right
+      X.fillStyle=ha?'#111':shA;X.fillRect(P(bx+1),P(yc-rowH/2),CELLW-1,P(rowH-1));
+      X.fillStyle=ha?'#fff':(as>=100?'#fff':'#0a7a56');X.fillText(String(as),bx+CELLW/2,yc);
+    }
+    // totals under column
+    const yT=yOf(col.top-col.cells.length*ROW)+8;
+    X.font='700 24px '+SANS;
+    X.fillStyle='#f23645';X.fillText(String(col.tot[0]),bx-CELLW/2,yT);
+    X.fillStyle='#089981';X.fillText(String(col.tot[1]),bx+CELLW/2,yT);
+    // Delta Gesamt box
+    const dy=yT+22, dbw=CW+14, dbx=bx-CELLW;
+    X.fillStyle='#fff';X.fillRect(dbx,dy,dbw,54);
+    X.strokeStyle='#e6e8ec';X.strokeRect(P(dbx)+0.5,P(dy)+0.5,dbw,54);
+    X.textAlign='left';X.font='500 18px '+SANS;X.fillStyle='#131722';
+    X.fillText('Delta',dbx+12,dy+18);X.fillText('Gesamt',dbx+12,dy+40);
+    X.textAlign='right';X.font='700 19px '+SANS;
+    X.fillStyle=col.dg[2]?'#f23645':'#089981';X.fillText(col.dg[0],dbx+dbw-12,dy+18);
+    X.fillStyle='#131722';X.fillText(col.dg[1],dbx+dbw-12,dy+40);
+    X.restore();
+  }
+}
+
+// absorption highlight on the 61 cell + delta (col3) — beat-locked to VO onsets
+function absorptionFx(){
+  const col=COLS[2];
+  const y61=yOf(col.top-4*ROW);
+  // ring lands on "Sixty-one" (3.74s)
+  const on=clamp((T-3.74)/0.4,0,1)*(1-clamp((T-11.0)/0.6,0,1));
+  if(on>0){
+    X.save();X.globalAlpha=on;
+    X.strokeStyle='#089981';X.lineWidth=4;X.strokeRect(P(col.x+1)+0.5,P(y61-rowH/2)+0.5,CELLW-1,P(rowH-1));
+    TVC.scribble(X,TVC.scribbleEllipse(col.x+CELLW/2,y61,54,rowH*0.7,919,1.3),clamp((T-3.84)/0.7,0,1),{col:'rgba(8,153,129,0.5)',w:9});
+    X.restore();
+  }
+  const lab=(txt,x,y,t0,bg)=>{const aa=clamp((T-t0)/0.4,0,1)*(1-clamp((T-11.3)/0.5,0,1));if(aa<=0)return;
+    X.save();X.globalAlpha=aa;X.font='800 18px '+SANS;const w=X.measureText(txt).width+22;
+    X.fillStyle=bg;rr(X,x-w/2,y,w,30,6);X.fill();X.fillStyle='#fff';X.textAlign='center';X.textBaseline='middle';
+    X.fillText(txt,x,y+15);X.restore();};
+  lab('−38 Delta · +Candle',COLS[2].x,yOf(4063.9),0.67,'rgba(30,32,38,0.94)');   // "negative delta"
+  lab('61 BUYS ABSORB THE SELLS',COLS[2].x,yOf(4063.35),6.54,'rgba(8,153,129,0.96)'); // "absorbed"
+  if(T>=7.96)lab('PUSH → PROFIT',COLS[3].x,yOf(4063.9),7.96,'rgba(8,153,129,0.96)');   // "lifted the market"
+}
+
+// cursor: to delta, then to 61 cell, small dwell
+const cur=IFE.Cursor([
+  {at:400, move:[COLS[2].x+40,yOf(4064.4)], W:80},                    // on the delta box (negative delta)
+  {at:2500, move:[COLS[2].x-30,yOf(4066.0)], W:120},                 // to the candle (positive candle)
+  {at:3740, move:[COLS[2].x+CELLW/2,yOf(COLS[2].top-4*0.5)], W:60},  // land on the 61 cell ("Sixty-one")
+  {at:7960, move:[COLS[3].x,yOf(4066.0)], W:120},                    // follow the push up
+], {start:[1200,600], seed:6161, os:'win', t0:0});
+
+function renderAt(msIn){
+  T=msIn/1000;const s=cur.sample(msIn);
+  TVC.browserChrome(X,{});
+  TVC.tvToolbar(X,{symbol:'XAUUSD',interval:'1m',replay:true});
+  X.fillStyle='#fff';X.fillRect(0,TV.tool.y0+TV.tool.h+1,W,TASK.y0-(TV.tool.y0+TV.tool.h+1));
+  const yScale=TVC.priceScale(X,{y0:CH.y0,y1:CH.y1,pmin:PMIN,pmax:PMAX,step:0.5,dec:3,x0:CH.x0});
+  // faint watermark
+  X.save();X.globalAlpha=0.6;X.textAlign='center';X.fillStyle='rgba(178,181,190,0.16)';
+  X.font='700 78px '+SANS;X.fillText('XAUUSD · 1',960,470);
+  X.font='400 40px '+SANS;X.fillText('◉ Wiedergabemodus',960,540);X.restore();
+  // footprint
+  drawFootprint();
+  absorptionFx();
+  // legend (exact)
+  TVC.tvLegend(X,{name:'Gold Spot / U.S. Dollar',int:'1',src:'OANDA',ind:'Volumen-Fußabdruck [ATR 14, Kauf und Verkauf]',
+    o:'4.066,245',h:'4.066,625',l:'4.064,870',c:'4.066,245',chg:'+0,090 (+0,00%)',up:true,sell:'4.070,990',buy:'4.070,990'});
+  // price tag (current)
+  TVC.priceTag(X,curPrice(),yScale,fmtDE(curPrice(),3),C.tvBlue);
+  // crosshair dashed at cursor
+  const onChart=s.x>CH.x0&&s.x<CH.x1&&s.y>CH.y0&&s.y<CH.y1;
+  if(onChart){X.save();X.strokeStyle='rgba(120,134,150,0.5)';X.setLineDash([4,4]);
+    X.beginPath();X.moveTo(CH.x0,P(s.y)+0.5);X.lineTo(CH.x1,P(s.y)+0.5);
+    X.moveTo(P(s.x)+0.5,CH.y0);X.lineTo(P(s.x)+0.5,CH.y1);X.stroke();X.setLineDash([]);X.restore();}
+  // time axis + replay furniture
+  TVC.timeAxis(X,{y:CH.y1+30,labels:[[760,'07:27'],[900,'07:28'],[1040,'07:29'],[1180,'07:30'],[1320,'07:31'],[1460,'07:32'],[1600,'07:33']]});
+  TVC.replayCut(X,{x:1470,y0:CH.y0,y1:CH.y1,chip:'09 Jul \'26 07:32'});
+  TVC.replayToolbar(X,{y:946,playing:(T>7.9&&T<10.6),speed:'10x',int:'1m'});
+  TVC.replayInfoBar(X);
+  TVC.tvBottomRow(X,{clockUTC:'20:59:'+String(25+Math.floor(T)%35).padStart(2,'0')});
+  TVC.tvLeftRail(X,{active:5});
+  TVC.tvFloatBar(X,{});
+  TVC.winTaskbar(X,{clock:'22:59',date:'12.07.2026',weather:['34°C Partly cloudy','Now']});
+  IFE.drawCursor(X,s.x,s.y,onChart?'crosshair':'default',s.pressed,cur.os);
+  // fades
+  const a=Math.min(clamp(T/0.3,0,1),1-clamp((T-11.9)/0.3,0,1));
+  if(a<1){X.fillStyle='rgba(255,255,255,'+(1-a)+')';X.fillRect(0,0,W,H);}
+}
+window.renderAt=renderAt;window.__ready=true;window.__dur=12.2;renderAt(0);
+</script></body></html>
