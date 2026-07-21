@@ -4,8 +4,19 @@
 set -euo pipefail
 
 echo "==> Installing Node.js + git"
-apt-get update -y
-apt-get install -y nodejs npm git
+if command -v apt-get >/dev/null 2>&1; then
+  # Debian / Ubuntu
+  apt-get update -y
+  apt-get install -y nodejs npm git
+elif command -v dnf >/dev/null 2>&1; then
+  # AlmaLinux / Rocky / RHEL (e.g. IONOS default image)
+  dnf -y module reset nodejs || true
+  dnf -y module enable nodejs:20 || true
+  dnf install -y nodejs npm git cronie
+  systemctl enable --now crond
+else
+  echo "Unsupported distro (need apt-get or dnf)"; exit 1
+fi
 
 echo "==> Cloning repo"
 cd /root
