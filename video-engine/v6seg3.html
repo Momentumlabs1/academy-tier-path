@@ -203,56 +203,56 @@ const yPix=p=>CH.y1-(p-PMIN)/(PMAX-PMIN)*(CH.y1-CH.y0);
 const cur=IFE.Cursor([
   {shape:'crosshair'},
   {at:1200, move:[xOf(40),yPix(4072)], W:260},
-  // grab low → drag to current (VP draw)
-  {at:ms(10.9), move:[xOf(24),yPix(4063.8)], W:26},
+  // grab the LOW (c26=4062) → drag to current (c52) = VP draw low→current
+  {at:ms(10.9), move:[xOf(26),yPix(4062.2)], W:26},
   {at:ms(11.35)},
-  {drag:[xOf(52),yPix(4067.0)], W:10},
-  // "not low to high" — glance to the high
-  {at:ms(15.2), move:[xOf(44),yPix(4073.8)], W:60},
+  {drag:[xOf(52),yPix(4076.0)], W:10},
+  // "not low to high" — glance to the prior high
+  {at:ms(15.2), move:[xOf(6),yPix(PRIORHI)], W:60},
   // three things: point at VAL, VAH, POC
-  {at:ms(20.8), move:[xOf(38),yPix(4066.4)], W:46},
-  {at:ms(22.6), move:[xOf(38),yPix(4070.6)], W:46},
-  {at:ms(24.4), move:[xOf(34),yPix(4068.3)], W:46},
+  {at:ms(20.8), move:[xOf(30),yPix(VAL_R)], W:46},
+  {at:ms(22.6), move:[xOf(30),yPix(VAH_R)], W:46},
+  {at:ms(24.4), move:[xOf(34),yPix(POC_R)], W:46},
   // rule: hover POC, then VAL
-  {at:ms(29.6), move:[xOf(44),yPix(4068.3)], W:60},
-  {at:ms(32.6), move:[xOf(48),yPix(4066.4)], W:60},
-  // structure: to the broken high
-  {at:ms(36.9), move:[xOf(38),yPix(4071.6)], W:44},
+  {at:ms(29.6), move:[xOf(44),yPix(POC_R)], W:60},
+  {at:ms(32.6), move:[xOf(40),yPix(VAL_R)], W:60},
+  // structure: to the broken high (BOS)
+  {at:ms(36.9), move:[xOf(48),yPix(4078.2)], W:44},
   // replay ▶
   {at:ms(40.9), shape:'default'},
   {at:ms(41.05), move:[(1920-430)/2+236,968], W:26},
   {click:true},
-  // to the sweep candle (M1 check)
+  // to the sweep candle (M1 check) — the dip at c56
   {at:ms(45.3), shape:'crosshair'},
-  {at:ms(45.5), move:[xOf(52),yPix(4066.5)], W:22},
-  // redraw: grab right handle → drag
-  {at:ms(53.9), move:[xOf(52),yPix(4067.0)], W:14},
+  {at:ms(45.5), move:[xOf(56),yPix(4062.9)], W:22},
+  // redraw VP: grab right handle → drag forward
+  {at:ms(53.9), move:[xOf(52),yPix(4076.0)], W:14},
   {at:ms(56.9)},
-  {drag:[xOf(58),yPix(4068.4)], W:10},
+  {drag:[xOf(60),yPix(4067.0)], W:10},
   // VAH down-move / LVN pointing
-  {at:ms(59.6), move:[xOf(62),yPix(4071.4)], W:44},
-  {at:ms(66.3), move:[xOf(78),yPix(4065.8)], W:44},
-  // consolidation box draw
-  {at:ms(76.5), move:[xOf(86),yPix(4068.7)], W:22},
+  {at:ms(59.6), move:[xOf(64),yPix(4071.4)], W:44},
+  {at:ms(66.3), move:[xOf(77),yPix(4063.5)], W:44},
+  // consolidation box draw (c88→c104, under resistance)
+  {at:ms(76.5), move:[xOf(88),yPix(4072.2)], W:22},
   {at:ms(76.75)},
-  {drag:[xOf(104),yPix(4066.4)], W:10},
+  {drag:[xOf(104),yPix(4069.0)], W:10},
   // resistance glance + break
-  {at:ms(80.3), move:[xOf(100),yPix(4068.6)], W:40},
-  {at:ms(84.9), move:[xOf(105),yPix(4070.0)], W:30},
-  // footprint pop region
-  {at:ms(89.5), move:[xOf(101)-170,yPix(4070.6)-60], W:120},
-  {at:ms(105.4), move:[xOf(101)-84,yPix(4070.6)+92], W:40},
-  // entry: place position (click at entry)
+  {at:ms(80.3), move:[xOf(104),yPix(4072.4)], W:40},
+  {at:ms(84.9), move:[xOf(112),yPix(4077.5)], W:30},
+  // footprint pop region (near the entry candle)
+  {at:ms(89.5), move:[xOf(112)-170,yPix(4073.5)-40], W:120},
+  {at:ms(105.4), move:[xOf(112)-84,yPix(4073.5)+92], W:40},
+  // entry: place position (click at entry ~4073.5)
   {at:ms(111.0), shape:'default'},
-  {at:ms(111.15), move:[xOf(107),yPix(ENTRY)], W:20},
+  {at:ms(111.15), move:[xOf(113),yPix(ENTRY)], W:20},
   {click:true,decision:true},
   // replay ▶ for the run
   {at:ms(113.4), move:[(1920-430)/2+236,968], W:26},
   {click:true},
-  // watch it run
+  // watch it run up
   {at:ms(116.3), shape:'crosshair'},
-  {at:ms(116.5), move:[xOf(118),yPix(4072.4)], W:120},
-  {at:ms(120.6), move:[xOf(122),yPix(4072.0)], W:160},
+  {at:ms(116.5), move:[xOf(120),yPix(4079.0)], W:120},
+  {at:ms(120.6), move:[xOf(126),yPix(4080.5)], W:160},
 ], {start:[860,430], seed:81303, os:'win', t0:0});
 
 const sA=()=>Math.min(clamp(T/0.35,0,1),1-clamp((T-(DUR-0.35))/0.35,0,1));
