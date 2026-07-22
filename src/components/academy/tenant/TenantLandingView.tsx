@@ -13,6 +13,7 @@ import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { writePartnerBrand } from "@/lib/partner-brand";
 import type { TenantConfig } from "@/lib/tenants";
+import { BROKER } from "@/lib/broker";
 
 const DEMO_SIGNALS = [
   { dir: "LONG", pair: "XAU/USD · Gold", entry: "2,318.40", sl: "2,311.00", tps: ["2,326", "2,334", "Open"], status: "TP2 hit", won: true },
@@ -157,6 +158,13 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           <p className="mx-auto mt-3 max-w-xl text-center text-sm text-foreground/70">
             No course fee, no subscription. You fund your <span className="font-semibold text-foreground/90">own</span> trading account at {tenant.brokerName} — the money stays yours. We have a deal with the broker and earn there, not from you. That's why you get signals & academy for free.
           </p>
+          <div className="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-1.5">
+            {BROKER.trust.map((t) => (
+              <span key={t.label} className="inline-flex items-center gap-1.5 text-xs text-white/55">
+                <span style={{ color: tenant.primaryColor }}>{t.icon}</span> {t.label}
+              </span>
+            ))}
+          </div>
           <div className="mt-7 grid gap-4 sm:grid-cols-3">
             {[
               { icon: "🔓", title: "Unlock for free", body: "Sign up, deposit — and all signals, lessons & trader tools open up." },

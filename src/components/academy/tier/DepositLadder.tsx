@@ -6,6 +6,7 @@ import { useMemberState } from "@/hooks/useMemberState";
 import { Card } from "@/components/academy/primitives/Card";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { BrokerTrustStrip } from "./BrokerTrustStrip";
 
 const NODES = [{ key: "start", name: "Start", minDeposit: 0, color: "oklch(0.65 0.02 250)" }, ...TIERS];
 const scale = (a: number) => Math.log10(1 + a);
@@ -90,6 +91,8 @@ export function DepositLadder({ compact = false }: { compact?: boolean }) {
           sub="across all tiers"
         />
       </div>
+
+      {!compact && <BrokerTrustStrip compact className="mt-5" />}
 
       {!compact && nextProduct && (
         <div className="mt-5 flex items-center gap-3 rounded-2xl bg-[color:var(--surface-2)]/60 px-4 py-3">

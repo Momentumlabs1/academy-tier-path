@@ -30,6 +30,7 @@ import { useMemberRefresh, useMemberState } from "@/hooks/useMemberState";
 import { usePartnerBrand, COSMO } from "@/lib/partner-brand";
 import { TIERS, tierForDeposit } from "@/lib/academy-data";
 import { PRODUCTS } from "@/lib/products";
+import { BROKER } from "@/lib/broker";
 import { formatMoney } from "@/lib/format";
 import { Card } from "@/components/academy/primitives/Card";
 import { cn } from "@/lib/utils";
@@ -76,7 +77,7 @@ function WelcomeVideoCard({ accent, onDone }: { accent: string; onDone: () => vo
         <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: COSMO.primaryColor }}>Step 1 of 2</div>
         <h2 className="font-display text-xl font-bold sm:text-2xl">Welcome! Cosmo explains how everything works — in 30 seconds</h2>
         <p className="mt-1 text-sm text-foreground/65">
-          In short: <span className="font-semibold text-foreground/85">you never pay us</span> — you fund your own broker account, and that is what unlocks everything here.
+          In short: <span className="font-semibold text-foreground/85">you never pay us</span> — you fund your own account at <b>TradeQuo</b> — a licensed, award-winning broker — and that is what unlocks everything here.
         </p>
 
         <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-black">
@@ -88,7 +89,7 @@ function WelcomeVideoCard({ accent, onDone }: { accent: string; onDone: () => vo
             <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 p-6 text-center" style={{ background: `linear-gradient(160deg, ${COSMO.bgFrom}, ${COSMO.bgTo})` }}>
               <PlayCircle className="h-12 w-12 text-white/30" />
               <p className="max-w-md text-sm text-white/70">
-                <b>How it works:</b> Your first deposit of {formatMoney(FOUNDATION_MIN, "€")}+ stays <b>your money</b> in <b>your</b> broker account — it unlocks signals, lessons and tools. We earn from the broker, not from you.
+                <b>How it works:</b> Your first deposit of {formatMoney(FOUNDATION_MIN, "€")}+ stays <b>your money</b> in <b>your own {BROKER.name} account</b> — it unlocks signals, lessons and tools. We earn from the broker, not from you.
               </p>
             </div>
           )}
@@ -116,7 +117,7 @@ function IgniteStrip({ accent }: { accent: string }) {
       </span>
       <p className="min-w-0 flex-1 text-sm">
         <span className="font-semibold">Next step:</span>{" "}
-        <span className="text-foreground/75">Make your first deposit of {formatMoney(FOUNDATION_MIN, "€")}+ — in the deposit path below. The moment it lands, everything here unlocks automatically.</span>
+        <span className="text-foreground/75">Make your first deposit of {formatMoney(FOUNDATION_MIN, "€")}+ at {BROKER.name} — see the deposit path below. The moment it lands, everything here unlocks automatically.</span>
       </p>
       <ArrowDown className="h-4 w-4 shrink-0 animate-bounce" style={{ color: accent }} />
     </div>
@@ -138,9 +139,9 @@ function TopupStrip({ accent, amount }: { accent: string; amount: number }) {
           <span className="font-bold">{formatMoney(amount, "€")} of {formatMoney(FOUNDATION_MIN, "€")}</span>{" "}
           <span className="text-foreground/75">— only <b style={{ color: accent }}>{formatMoney(missing, "€")}</b> to go until Foundation (signals, lessons & tools).</span>
         </p>
-        <Link to="/tier" className="shrink-0 rounded-full px-4 py-2 text-xs font-bold text-[#08111a] transition-transform hover:scale-[1.03]" style={{ background: accent }}>
-          Top up →
-        </Link>
+        <a href={BROKER.url} target="_blank" rel="noopener noreferrer" className="shrink-0 rounded-full px-4 py-2 text-xs font-bold text-[#08111a] transition-transform hover:scale-[1.03]" style={{ background: accent }}>
+          Top up at {BROKER.name} →
+        </a>
       </div>
       <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-white/10">
         <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, background: accent }} />
@@ -278,9 +279,9 @@ function CelebrationOverlay({ accent, amount, prevAmount, tierName, onClose }: {
               ))}
             </div>
             <div className="mt-6 flex flex-wrap gap-3">
-              <Link to="/tier" onClick={close} className="inline-flex flex-1 items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-[#08111a] transition-transform hover:scale-[1.02]" style={{ background: accent }}>
-                <Sparkles className="h-4 w-4" /> Top up {formatMoney(missing, "€")} & unlock
-              </Link>
+              <a href={BROKER.url} target="_blank" rel="noopener noreferrer" onClick={close} className="inline-flex flex-1 items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-[#08111a] transition-transform hover:scale-[1.02]" style={{ background: accent }}>
+                <Sparkles className="h-4 w-4" /> Top up {formatMoney(missing, "€")} at {BROKER.name}
+              </a>
               <button onClick={close} className="rounded-full border border-white/15 px-5 py-3 text-sm font-semibold text-foreground/80 hover:bg-white/5">
                 Okay
               </button>

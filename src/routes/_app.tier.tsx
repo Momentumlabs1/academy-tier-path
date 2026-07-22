@@ -4,6 +4,7 @@ import { TIERS } from "@/lib/academy-data";
 import { useMemberState } from "@/hooks/useMemberState";
 import { Card } from "@/components/academy/primitives/Card";
 import { DepositLadder } from "@/components/academy/tier/DepositLadder";
+import { BrokerTrustStrip } from "@/components/academy/tier/BrokerTrustStrip";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -26,9 +27,11 @@ function TierPage() {
       <div>
         <h1 className="font-display text-3xl font-bold tracking-tight lg:text-4xl">Membership Tiers</h1>
         <p className="mt-1 text-muted-foreground">
-          Verified deposit: <span className="font-semibold text-foreground">{formatMoney(state.lifetimeDeposits, "€")}</span>. Climb tiers by depositing through your broker.
+          Verified deposit: <span className="font-semibold text-foreground">{formatMoney(state.lifetimeDeposits, "€")}</span>. Tiers unlock automatically once your deposit is verified at our partner broker.
         </p>
       </div>
+
+      <BrokerTrustStrip />
 
       <DepositLadder compact />
 

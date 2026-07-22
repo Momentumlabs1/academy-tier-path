@@ -72,8 +72,8 @@ export function readPartnerBrand(): PartnerBrand | null {
       accentColor: b.accentColor ?? COSMO.accentColor,
       primaryColor: b.primaryColor ?? COSMO.primaryColor,
       telegramChannel: b.telegramChannel ?? "#",
-      brokerName: b.brokerName ?? "our partner broker",
-      brokerUrl: b.brokerUrl ?? "#",
+      brokerName: b.brokerName ?? "TradeQuo",
+      brokerUrl: b.brokerUrl ?? "https://tradequo.com",
     };
   } catch {
     return null;
