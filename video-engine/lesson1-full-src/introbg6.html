@@ -1,0 +1,50 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+  html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#000}
+  #stage{position:relative;width:1920px;height:1080px}
+  #plate{position:absolute;inset:0;width:1920px;height:1080px}
+  .scr{position:absolute;left:0;top:0;transform-origin:0 0;filter:brightness(.88) saturate(.92) contrast(.98)}
+  .glass{position:absolute;pointer-events:none;background:linear-gradient(115deg,rgba(255,255,255,.10) 0%,rgba(255,255,255,.02) 28%,rgba(0,0,0,0) 55%,rgba(0,0,0,.10) 100%)}
+</style></head><body>
+<div id="stage">
+  <img id="plate" src="../hedra/plate_v3.png">
+  <img id="scrL" class="scr" width="1280" height="960">
+  <img id="scrR" class="scr" width="1280" height="960">
+  <canvas id="glassC" style="position:absolute;left:0;top:0" width="1920" height="1080"></canvas>
+</div>
+<script>
+const SX=1920/1376, SY=1080/768;
+const sc=p=>[p[0]*SX,p[1]*SY];
+// measured screen quads in plate coords (TL,TR,BR,BL)
+const QL=[[47,312],[315,338],[315,504],[47,537]].map(sc);
+const QR=[[346,340],[598,349],[598,491],[346,500]].map(sc);
+// homography: unit square -> quad, then compose with 1/w,1/h scale
+function h4(q,w,h){
+  const [[x0,y0],[x1,y1],[x2,y2],[x3,y3]]=q;
+  const dx1=x1-x2,dx2=x3-x2,dy1=y1-y2,dy2=y3-y2;
+  const sx=x0-x1+x2-x3, sy=y0-y1+y2-y3;
+  const den=dx1*dy2-dx2*dy1;
+  const g=(sx*dy2-sy*dx2)/den, hh=(dx1*sy-dy1*sx)/den;
+  const a=x1-x0+g*x1, b=x3-x0+hh*x3, c=x0;
+  const d=y1-y0+g*y1, e=y3-y0+hh*y3, f=y0;
+  // matrix maps (u,v) in [0,1]^2; prescale by 1/w,1/h
+  return `matrix3d(${a/w},${d/w},0,${g/w},${b/h},${e/h},0,${hh/h},0,0,1,0,${c},${f},0,1)`;
+}
+document.getElementById('scrL').style.transform=h4(QL,1280,960);
+document.getElementById('scrR').style.transform=h4(QR,1280,960);
+// soft glass reflection clipped to each quad
+const g=document.getElementById('glassC').getContext('2d');
+for(const q of [QL,QR]){
+  g.save();g.beginPath();g.moveTo(q[0][0],q[0][1]);for(let i=1;i<4;i++)g.lineTo(q[i][0],q[i][1]);g.closePath();g.clip();
+  const gr=g.createLinearGradient(q[0][0],q[0][1],q[2][0],q[2][1]);
+  gr.addColorStop(0,'rgba(255,255,255,0.10)');gr.addColorStop(0.35,'rgba(255,255,255,0.02)');gr.addColorStop(0.7,'rgba(0,0,0,0)');gr.addColorStop(1,'rgba(0,0,0,0.12)');
+  g.fillStyle=gr;g.fillRect(0,0,1920,1080);g.restore();
+}
+window.setFrame=async(i)=>{
+  const n=String(i).padStart(5,'0');
+  const L=document.getElementById('scrL'),R=document.getElementById('scrR');
+  L.src=`../ds/f${n}.png`;R.src=`../ls2/f${n}.png`;
+  await Promise.all([L.decode(),R.decode()]);
+  return true;
+};
+window.__ready=true;
+</script></body></html>

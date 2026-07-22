@@ -1,0 +1,212 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#070a10;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+canvas{position:absolute;left:0;top:0}
+</style></head><body>
+<canvas id="cv" width="1920" height="1080"></canvas>
+<script>
+const cv=document.getElementById('cv'),X=cv.getContext('2d');
+const W=1920,H=1080;
+const BG='#070a10',INK='#eaf2f8',MUT='#8b98a8',LIME='#b6f04a',CYAN='#39d0d0',MAG='#e06bd8',RED='#ff5470',GRN='#33e08a';
+const SANS='system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+let T=0;
+const clamp=(u,a,b)=>u<a?a:u>b?b:u;
+const es=u=>{u=clamp(u,0,1);return u<.5?4*u*u*u:1-Math.pow(-2*u+2,3)/2;};
+const eo=u=>{u=clamp(u,0,1);return 1-Math.pow(1-u,3);};
+const bo=u=>{u=clamp(u,0,1);const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(u-1,3)+c1*Math.pow(u-1,2);};
+// window helper: progress of segment starting at t0 over d seconds
+const seg=(t0,d=0.6)=>es((T-t0)/d);
+const rr=(x,y,w,h,r)=>{X.beginPath();X.moveTo(x+r,y);X.arcTo(x+w,y,x+w,y+h,r);X.arcTo(x+w,y+h,x,y+h,r);X.arcTo(x,y+h,x,y,r);X.arcTo(x,y,x+w,y,r);X.closePath();};
+// deterministic hash rng
+const rnd=(s)=>{s=Math.sin(s*127.1)*43758.5453;return s-Math.floor(s);};
+
+// ---- animated background: drifting grid + orbs + floating particles ----
+function bgLayer(){
+  X.fillStyle=BG;X.fillRect(0,0,W,H);
+  X.save();X.globalAlpha=0.05;X.strokeStyle='#5a6a80';X.lineWidth=1;
+  const off=(T*10)%80;
+  for(let x=-80+off;x<W;x+=80){X.beginPath();X.moveTo(x,0);X.lineTo(x,H);X.stroke();}
+  for(let y=-80+((T*6)%80);y<H;y+=80){X.beginPath();X.moveTo(0,y);X.lineTo(W,y);X.stroke();}
+  X.restore();
+  const orbs=[[380,300,LIME],[1560,780,CYAN],[1200,220,MAG]];
+  orbs.forEach((o,i)=>{const ph=T*0.25+i*2.1;const ox=o[0]+Math.sin(ph)*60,oy=o[1]+Math.cos(ph*0.8)*44;
+    const g=X.createRadialGradient(ox,oy,0,ox,oy,520);g.addColorStop(0,hexA(o[2],0.10));g.addColorStop(1,'rgba(0,0,0,0)');
+    X.fillStyle=g;X.fillRect(ox-520,oy-520,1040,1040);});
+  // floating particles
+  X.save();
+  for(let i=0;i<40;i++){const sx=rnd(i+1)*W, spd=20+rnd(i+9)*30;
+    const y=(H - ((T*spd + rnd(i+3)*H)%(H+40)));
+    const x=sx+Math.sin(T*0.4+i)*20;const a=0.05+0.10*rnd(i+5);
+    X.fillStyle=hexA(i%3===0?LIME:CYAN,a);X.beginPath();X.arc(x,y,1.6+rnd(i+7)*2,0,7);X.fill();}
+  X.restore();
+}
+function hexA(hex,a){const n=parseInt(hex.slice(1),16);const r=(n>>16)&255,g=(n>>8)&255,b=n&255;return`rgba(${r},${g},${b},${a})`;}
+
+// ---- live candlestick chart that draws itself ----
+function candles(cx,cy,w,h,prog,accent){
+  const N=28; const drawn=clamp(Math.floor(prog*N),0,N); const cw=w/N;
+  X.save();
+  // grid frame (always present so the box never flashes empty)
+  X.strokeStyle=hexA(MUT,0.13);X.lineWidth=1;
+  for(let g=0;g<=3;g++){const gy=cy+h*g/3;X.beginPath();X.moveTo(cx,gy);X.lineTo(cx+w,gy);X.stroke();}
+  X.strokeStyle=hexA(MUT,0.22);X.beginPath();X.moveTo(cx,cy);X.lineTo(cx,cy+h);X.lineTo(cx+w,cy+h);X.stroke();
+  let path=[]; let prevC=cy+h*0.86;
+  for(let i=0;i<=drawn && i<N;i++){
+    const base=cy+h*(0.86-0.70*(i/(N-1)));            // strong uptrend
+    const noise=(rnd(i*7.3)-0.5)*h*0.16;
+    const c=clamp(base+noise, cy+h*0.05, cy+h*0.95);
+    const o=prevC; const up=c<o;
+    const bt=Math.min(o,c),bb=Math.max(o,c);
+    const hi=bt-Math.abs(rnd(i*3.1))*h*0.06, lo=bb+Math.abs(rnd(i*5.7))*h*0.06;
+    const x=cx+i*cw+cw*0.5; const col=up?GRN:RED;
+    let a=1; if(i===drawn){a=es((prog*N)-drawn);}
+    X.globalAlpha=a;
+    X.strokeStyle=col;X.lineWidth=2;X.beginPath();X.moveTo(x,hi);X.lineTo(x,lo);X.stroke();
+    X.fillStyle=col;rr(x-cw*0.32,bt,cw*0.64,Math.max(4,bb-bt),2);X.fill();
+    path.push([x,c]); prevC=c; X.globalAlpha=1;
+  }
+  if(path.length>1){X.save();X.strokeStyle=hexA(accent,0.9);X.lineWidth=2.5;X.shadowColor=hexA(accent,0.8);X.shadowBlur=14;
+    X.beginPath();X.moveTo(path[0][0],path[0][1]);for(const p of path)X.lineTo(p[0],p[1]);X.stroke();X.restore();
+    const hd=path[path.length-1];X.save();X.shadowColor=hexA(accent,0.9);X.shadowBlur=16;X.fillStyle=accent;X.beginPath();X.arc(hd[0],hd[1],6,0,7);X.fill();X.restore();}
+  X.restore();
+}
+
+// chip with icon glyph
+function chip(x,y,w,label,glyph,accent,u){
+  if(u<=0)return; const a=Math.min(1,u*1.3); const yy=y+(1-bo(u))*20;
+  X.save();X.globalAlpha=a;
+  X.fillStyle='#0e1622';rr(x,yy,w,74,16);X.fill();
+  X.strokeStyle=hexA(accent,0.8);X.lineWidth=2;rr(x,yy,w,74,16);X.stroke();
+  X.fillStyle=hexA(accent,0.18);rr(x+12,yy+15,44,44,12);X.fill();
+  X.fillStyle=accent;X.font='900 26px '+SANS;X.textAlign='center';X.textBaseline='middle';X.fillText(glyph,x+34,yy+38);
+  X.fillStyle=INK;X.font='700 27px '+SANS;X.textAlign='left';X.fillText(label,x+72,yy+38);
+  X.restore();
+}
+
+function titleKinetic(u){
+  // words fly in staggered, underline sweeps
+  const words=['WHAT','IS','TRADING?'];
+  X.textAlign='center';X.textBaseline='middle';
+  const cy=H/2-40; let totalW=0; X.font='900 150px '+SANS;
+  const ws=words.map(w=>X.measureText(w).width); const gap=40; totalW=ws.reduce((a,b)=>a+b,0)+gap*(words.length-1);
+  let x=W/2-totalW/2;
+  words.forEach((w,i)=>{
+    const wu=es((u*1.0)-(i*0.12)); const a=clamp(wu*1.3,0,1);
+    const yy=cy+(1-bo(wu))*60;
+    X.save();X.globalAlpha=a;
+    X.fillStyle=i===2?LIME:INK;
+    if(i===2){X.shadowColor=hexA(LIME,0.6);X.shadowBlur=30;}
+    X.fillText(w,x+ws[i]/2,yy);X.restore();
+    x+=ws[i]+gap;
+  });
+  // underline sweep
+  const su=es((u-0.35)/0.5); if(su>0){const uw=totalW*su;X.save();X.strokeStyle=LIME;X.lineWidth=6;X.lineCap='round';
+    X.shadowColor=hexA(LIME,0.8);X.shadowBlur=16;X.beginPath();X.moveTo(W/2-totalW/2,cy+110);X.lineTo(W/2-totalW/2+uw,cy+110);X.stroke();X.restore();}
+  // kicker
+  const ku=es((u-0.15)/0.4);if(ku>0){X.save();X.globalAlpha=ku;X.fillStyle=CYAN;X.font='800 30px ui-monospace,monospace';
+    X.fillText('● LESSON 1',W/2,cy-140+(1-ku)*20);X.restore();}
+}
+
+// big label lower-third that COSMO-narrated concept
+function lowerKey(text,accent,u){
+  if(u<=0)return;const a=Math.min(1,u*1.3);
+  X.save();X.globalAlpha=a;X.textAlign='center';X.textBaseline='middle';
+  const y=H-120+(1-bo(u))*24;
+  X.font='800 40px '+SANS;const w=X.measureText(text).width+80;
+  X.fillStyle='#0c1420';rr(W/2-w/2,y-40,w,80,18);X.fill();
+  X.strokeStyle=hexA(accent,0.7);X.lineWidth=2;rr(W/2-w/2,y-40,w,80,18);X.stroke();
+  X.fillStyle=INK;X.fillText(text,W/2,y);X.restore();
+}
+
+// ==================== SCENES ====================
+// Scene boundaries (s), synced to board_audio onsets
+function scene1(){ // 0 - 5.6  title
+  bgLayer(); titleKinetic(seg(0.2,2.4));
+}
+function scene2(){ // 4.5 - 18.0  buying/selling instruments; stocks indices commodities currencies; price moves; profit
+  bgLayer();
+  // heading already visible at the cut (anchored before boundary)
+  const hu=seg(4.3,0.45);X.save();X.globalAlpha=Math.min(1,hu*1.3);X.textAlign='left';X.textBaseline='alphabetic';
+  X.fillStyle=MUT;X.font='700 30px ui-monospace,monospace';X.fillText('BUYING & SELLING FINANCIAL INSTRUMENTS',150,140+(1-hu)*-15);X.restore();
+  // live chart, draws as he speaks
+  const cp=clamp((T-4.6)/9,0,1); candles(150,210,940,640,cp,LIME);
+  // instrument chips — tight on "stocks, indices, commodities, currencies" (~8.2-11.4)
+  chip(1180,210,560,'Stocks','▤',LIME, seg(8.2,0.4));
+  chip(1180,305,560,'Indices','▦',CYAN, seg(9.3,0.4));
+  chip(1180,400,560,'Commodities','◆',MAG, seg(10.4,0.4));
+  chip(1180,495,560,'Currencies','$',GRN, seg(11.5,0.4));
+  // "the goal? to profit" (~14.6) -> clean PROFIT callout near chart head, no confusing numbers
+  const gu=seg(14.6,0.5);
+  if(gu>0){X.save();X.globalAlpha=Math.min(1,gu*1.3);
+    const bx=1180,by=640;
+    X.fillStyle=hexA(GRN,0.15);rr(bx,by-38,330,76,16);X.fill();X.strokeStyle=hexA(GRN,0.8);X.lineWidth=2;rr(bx,by-38,330,76,16);X.stroke();
+    X.fillStyle=GRN;X.font='900 40px '+SANS;X.textAlign='left';X.textBaseline='middle';X.fillText('▲ PROFIT',bx+24,by+2);X.restore();}
+  lowerKey(T<12?'The active buying & selling of instruments':'Anything with a price that moves', CYAN, T<12?seg(4.8,0.5):seg(12.3,0.5));
+}
+function scene3(){ // 18.0 - 26.5  "short term or long term, up or down; that's it, the whole game"
+  bgLayer();
+  X.textAlign='center';X.textBaseline='middle';
+  function bigArrow(cx,up,col,label,sub,u){if(u<=0)return;X.save();X.globalAlpha=Math.min(1,u*1.3);
+    const cy=H/2-20+(1-bo(u))*40; const s=1;
+    X.translate(cx,cy);
+    X.fillStyle=hexA(col,0.14);rr(-200,-190,400,380,28);X.fill();X.strokeStyle=hexA(col,0.8);X.lineWidth=3;rr(-200,-190,400,380,28);X.stroke();
+    X.fillStyle=col;X.shadowColor=hexA(col,0.7);X.shadowBlur=30;
+    X.beginPath(); if(up){X.moveTo(0,-120);X.lineTo(90,-10);X.lineTo(34,-10);X.lineTo(34,110);X.lineTo(-34,110);X.lineTo(-34,-10);X.lineTo(-90,-10);}
+    else{X.moveTo(0,120);X.lineTo(90,10);X.lineTo(34,10);X.lineTo(34,-110);X.lineTo(-34,-110);X.lineTo(-34,10);X.lineTo(-90,10);} X.closePath();X.fill();X.shadowBlur=0;
+    X.fillStyle=INK;X.font='900 44px '+SANS;X.fillText(label,0,168);
+    X.fillStyle=MUT;X.font='600 26px '+SANS;X.fillText(sub,0,206);
+    X.restore();}
+  bigArrow(W/2-320,true,GRN,'GO LONG','profit when it rises',seg(17.8,0.5));
+  bigArrow(W/2+320,false,RED,'GO SHORT','profit when it falls',seg(18.9,0.5));
+  lowerKey(T<22?'Short term or long term — up or down':"That's the whole game", LIME, T<22?seg(17.9,0.5):seg(22.2,0.5));
+}
+function scene4(){ // 26.5 - 35.2  "separates the 5% who win from the 95% who lose"  (5% FIRST)
+  bgLayer();
+  X.textAlign='center';X.textBaseline='middle';
+  // heading present from the cut
+  const hu=seg(26.3,0.5);if(hu>0){X.save();X.globalAlpha=Math.min(1,hu*1.3);
+    X.fillStyle=MUT;X.font='800 34px ui-monospace,monospace';X.textAlign='center';X.textBaseline='alphabetic';
+    X.fillText('WHO WINS  —  WHO LOSES',W/2,220+(1-hu)*-14);X.restore();}
+  const total=1200; const x0=W/2-total/2; const y0=380;
+  // WIN 5% (lime) first (~29.8), then LOSE 95% (red) (~32.5)
+  const w5=total*0.05*eo((T-29.8)/1.1), w95=total*0.95*eo((T-32.4)/1.6);
+  X.save();X.textAlign='left';X.textBaseline='middle';
+  if(T>29.6){X.fillStyle=hexA(LIME,0.95);rr(x0,y0,Math.max(3,w5),120,12);X.fill();
+    if(T>30.0){X.fillStyle=INK;X.font='900 70px '+SANS;X.fillText('5%',x0+Math.max(w5,20)+30,y0+60);}
+    if(T>30.4){X.fillStyle=hexA(GRN,0.95);X.font='700 34px '+SANS;X.fillText('WIN',x0+Math.max(w5,20)+210,y0+62);}}
+  if(T>32.2){X.fillStyle=hexA(RED,0.9);rr(x0,y0+170,Math.max(3,w95),120,12);X.fill();
+    if(T>32.9){X.fillStyle=INK;X.font='900 70px '+SANS;X.fillText('95%',x0+w95+20,y0+230);}
+    if(T>32.6){X.fillStyle=hexA(INK,0.9);X.font='700 30px '+SANS;X.fillText('lose',x0+22,y0+230);}}
+  X.restore();
+  lowerKey('The 5% who win — the 95% who lose', MAG, seg(29.6,0.6));
+}
+function scene5(){ // 35.2 - 40  definition card assembles ("look at the definition card")
+  bgLayer();
+  const u=seg(34.9,0.5);
+  if(u>0){X.save();const sc=0.92+0.08*bo(u);X.globalAlpha=Math.min(1,u*1.3);
+    X.translate(W/2,H/2);X.scale(sc,sc);X.translate(-W/2,-H/2);
+    const cw2=1200,ch=460,cx=W/2-cw2/2,cy=H/2-ch/2;
+    X.shadowColor=hexA(CYAN,0.3);X.shadowBlur=50;X.fillStyle='#0e1622';rr(cx,cy,cw2,ch,26);X.fill();X.shadowBlur=0;
+    X.strokeStyle=hexA(CYAN,0.7);X.lineWidth=2.5;rr(cx,cy,cw2,ch,26);X.stroke();
+    X.fillStyle=CYAN;X.font='800 30px ui-monospace,monospace';X.textAlign='left';X.textBaseline='alphabetic';X.fillText('● DEFINITION',cx+50,cy+70);
+    X.fillStyle=INK;X.font='800 48px '+SANS;
+    const lines=['Trading = the active buying & selling of','financial instruments — to profit from','their price movements.'];
+    lines.forEach((l,i)=>{const lu=es((T-35.5-i*0.32)/0.55);if(lu<=0)return;X.save();X.globalAlpha*=lu;
+      X.fillText(l,cx+50,cy+150+i*72+(1-lu)*14);X.restore();});
+    X.restore();}
+  lowerKey('Five points that matter — coming up', LIME, seg(38.4,0.6));
+}
+
+function renderAt(t){
+  T=t/1000;
+  X.setTransform(1,0,0,1,0,0);X.clearRect(0,0,W,H);
+  if(T<4.5)scene1();
+  else if(T<18.0)scene2();
+  else if(T<26.5)scene3();
+  else if(T<35.2)scene4();
+  else scene5();
+  // subtle vignette
+  const vg=X.createRadialGradient(W/2,H/2,H*0.4,W/2,H/2,H*0.85);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,0.5)');
+  X.fillStyle=vg;X.fillRect(0,0,W,H);
+}
+window.renderAt=renderAt;window.__ready=true;renderAt(0);
+</script></body></html>
