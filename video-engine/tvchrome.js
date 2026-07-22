@@ -481,15 +481,21 @@ function volProfile(X, o){
   for(let i=0;i<nShow;i++){
     const r=rows[i], y=o.yOf(r.p), rh=Math.max(2,o.rowH-1);
     const w=(r.up+r.dn)/maxV*wMax;
-    const wUp=w*(r.up/(r.up+r.dn||1));
     const inVA=r.p>=o.val&&r.p<=o.vah;
-    X.fillStyle=inVA?'rgba(41,98,255,0.34)':'rgba(120,123,134,0.28)';
-    X.fillRect(o.x0,y-rh/2,w,rh);
-    X.fillStyle=inVA?'rgba(255,152,0,0.75)':'rgba(255,152,0,0.45)';
-    X.fillRect(o.x0,y-rh/2,Math.min(w,wUp*0.55),rh); // dn-vol accent (orange like Tim's SVP)
+    if(o.svp!==false){
+      // Tim's SVP HD look: gold/amber filled profile, value-area rows brighter
+      X.fillStyle=inVA?'rgba(232,176,64,0.92)':'rgba(232,176,64,0.55)';
+      X.fillRect(o.x0,y-rh/2,w,rh);
+    }else{
+      const wUp=w*(r.up/(r.up+r.dn||1));
+      X.fillStyle=inVA?'rgba(41,98,255,0.34)':'rgba(120,123,134,0.28)';
+      X.fillRect(o.x0,y-rh/2,w,rh);
+      X.fillStyle=inVA?'rgba(255,152,0,0.75)':'rgba(255,152,0,0.45)';
+      X.fillRect(o.x0,y-rh/2,Math.min(w,wUp*0.55),rh);
+    }
   }
   // VA shade across range
-  X.fillStyle='rgba(41,98,255,0.05)';
+  X.fillStyle=o.svp!==false?'rgba(41,98,255,0.045)':'rgba(41,98,255,0.05)';
   X.fillRect(o.x0,o.yOf(o.vah),o.x1-o.x0,o.yOf(o.val)-o.yOf(o.vah));
   // POC / VAH / VAL lines
   const line=(p,col,dash,lw)=>{X.strokeStyle=col;X.lineWidth=lw||1.6;if(dash)X.setLineDash([5,4]);

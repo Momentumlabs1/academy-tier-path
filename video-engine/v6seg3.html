@@ -81,13 +81,11 @@ function histo(i0,i1){
     for(let j=Math.max(0,j0);j<=Math.min(nb-1,j1);j++)rows[j]+=k.v/(j1-j0+1);
   }
   let poc=0;for(let j=1;j<nb;j++)if(rows[j]>rows[poc])poc=j;
-  const tot=rows.reduce((a,b)=>a+b,0);let acc=rows[poc],a2=poc,b2=poc;
-  while(acc<tot*0.7&&(a2>0||b2<nb-1)){
-    const dn=a2>0?rows[a2-1]:-1, up=b2<nb-1?rows[b2+1]:-1;
-    if(up>=dn){b2++;acc+=rows[b2];}else{a2--;acc+=rows[a2];}
-  }
+  // Value Area / POC are pinned to Tim's REAL traced levels so the narration matches
+  // exactly (VAL 4.062 · POC 4.075 · VAH 4.076). The profile SHAPE (rows) stays data-driven
+  // so the LVN thin spot (~4.063-4.066) shows naturally.
   const out={rows:rows.map((v,j)=>({p:lo+(j+0.5)*bh,v})),bh,
-    poc:lo+(poc+0.5)*bh,val:lo+(a2)*bh,vah:lo+(b2+1)*bh,max:rows[poc]};
+    poc:POC_R,val:VAL_R,vah:VAH_R,max:rows[poc]};
   hCache[key]=out;return out;
 }
 
