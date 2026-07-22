@@ -168,7 +168,8 @@ function fpPop(t,yy){
 }
 
 // ---- position tool state ----
-const ENTRY=4069.2,STOP=4068.4,TGT1=4071.44,TGT2=4072.88;
+// entry on the sustainable break (~4073.5), risk 1.5 → R:R 1:2.8 and 1:4.6
+const ENTRY=4073.5,STOP=4072.0,TGT1=4077.7,TGT2=4080.4;
 function posState(t){
   const a=clamp((t-gS(111.5))/0.5,0,1);if(a<=0)return null;
   const ext=clamp((t-sT(117.9))/0.8,0,1);          // target 1:2.8 → 1:4.6
@@ -308,23 +309,31 @@ function renderAt(msIn){
       X.fillStyle='#fff';X.font='700 13px '+SANS;X.textAlign='center';X.textBaseline='middle';
       X.fillText('POC: kein Trade ✕',(xOf(vp.i0)+xOf(vp.i1))/2+189,yOf(h.poc));X.restore();}
   }
-  // broken high scribble (36.7)
-  drawScr(scrHigh,xOf(38),yOf(4071.8),sT(36.9),0.7,3.4);
-  {const a=Math.min(clamp((T-sT(38.3))/0.4,0,1),1-clamp((T-sT(41.2))/0.4,0,1));
-   if(a>0){X.save();X.globalAlpha=a;X.fillStyle=C.tvUp;rr(X,xOf(38)-62,yOf(4072.6)-34,124,24,5);X.fill();
-     X.fillStyle='#fff';X.font='700 12px '+SANS;X.textAlign='center';X.textBaseline='middle';
-     X.fillText('High gebrochen ✓',xOf(38),yOf(4072.6)-22);X.restore();}}
-  // sweep highlight (during/after run)
-  if(T>=sT(42.3)){
-    drawScr(scrSweep,xOf(52),yOf(4066.6),Math.max(sT(42.3),sT(41.6)+2.2),0.7,9.0,'rgba(242,54,69,0.45)');
-  }
-  // M1 check chip (45.5–52.9)
-  {const a=Math.min(clamp((T-sT(46.4))/0.4,0,1),1-clamp((T-sT(52.9))/0.5,0,1));
+  // BOS — break of structure above the prior high (candle 46-50 → 4077.6), narrated ~38s
+  {const bx=xOf(6), by=yOf(PRIORHI);   // the prior swing high being broken
+   const a=Math.min(clamp((T-sT(36.9))/0.4,0,1),1-clamp((T-sT(41.2))/0.4,0,1));
    if(a>0){X.save();X.globalAlpha=a;
-     X.fillStyle='#2a2e39';rr(X,xOf(52)-96,yOf(SER[52].l)+18,220,44,6);X.fill();
+     // dashed line at the prior high + break arrow
+     X.strokeStyle=C.tvUp;X.setLineDash([6,4]);X.lineWidth=1.6;
+     X.beginPath();X.moveTo(bx,P(by)+0.5);X.lineTo(xOf(50),P(by)+0.5);X.stroke();X.setLineDash([]);X.lineWidth=1;
+     X.fillStyle=C.tvUp;rr(X,xOf(47)-40,yOf(4079.6)-30,150,26,5);X.fill();
+     X.fillStyle='#fff';X.font='800 13px '+SANS;X.textAlign='center';X.textBaseline='middle';
+     X.fillText('BOS — High gebrochen ✓',xOf(47)+35,yOf(4079.6)-17);X.restore();}
+   drawScr(scrHigh,xOf(48),yOf(4077.9),sT(37.4),0.7,3.0);}
+  // VAL sweep watch — dip at candle 56 minimally MISSES the VAL (4.062)
+  if(T>=sT(43.8)){
+    drawScr(scrSweep,xOf(56),yOf(4062.9),Math.max(sT(43.8),sT(41.6)+2.2),0.7,9.0,'rgba(242,54,69,0.45)');
+  }
+  // M1 check chip — "at that candle we were NOT at the VAL yet" (candle 56)
+  {const a=Math.min(clamp((T-sT(46.4))/0.4,0,1),1-clamp((T-sT(53.4))/0.5,0,1));
+   if(a>0){X.save();X.globalAlpha=a;
+     X.fillStyle='#2a2e39';rr(X,xOf(56)-104,yOf(4062.9)+16,232,44,6);X.fill();
      X.fillStyle='#fff';X.font='600 12px '+SANS;X.textAlign='left';X.textBaseline='middle';
-     X.fillText('M1-Check: 05:27 — VAL noch',xOf(52)-84,yOf(SER[52].l)+33);
-     X.fillText('nicht erreicht → warten',xOf(52)-84,yOf(SER[52].l)+50);
+     X.fillText('M1: zum Kerzen-Zeitpunkt NICHT',xOf(56)-92,yOf(4062.9)+31);
+     X.fillText('am VAL → nicht schummeln, warten',xOf(56)-92,yOf(4062.9)+48);
+     // tiny tick showing dip stopped just above VAL
+     X.strokeStyle='#39d689';X.lineWidth=1.4;X.beginPath();
+     X.moveTo(xOf(56)-30,P(yOf(VAL_R))+0.5);X.lineTo(xOf(56)+30,P(yOf(VAL_R))+0.5);X.stroke();X.lineWidth=1;
      X.restore();}}
   // VAH down-move continuation short marker (58.1–63.5)
   {const a=Math.min(clamp((T-sT(60.5))/0.4,0,1),1-clamp((T-sT(63.9))/0.5,0,1));
@@ -334,45 +343,45 @@ function renderAt(msIn){
      X.beginPath();X.moveTo(ax,ay-26);X.lineTo(ax,ay+16);X.lineTo(ax-7,ay+6);X.moveTo(ax,ay+16);X.lineTo(ax+7,ay+6);X.stroke();X.lineWidth=1;
      X.fillStyle=C.tvDn;X.font='700 12px '+SANS;X.textAlign='left';X.textBaseline='middle';
      X.fillText('VAH taken → continuation short',ax+14,ay-6);X.restore();}}
-  // LVN / imbalance zone (66.5+)
+  // LVN / imbalance zone — the genuine thin spot in the profile (4.063-4.066), price dips in at c77
   {const a=Math.min(clamp((T-sT(67.1))/0.6,0,1),1-clamp((T-sT(84.5))/0.8,0,1));
    if(a>0){X.save();X.globalAlpha=a;
-     X.fillStyle='rgba(255,207,92,0.16)';X.fillRect(xOf(70),yOf(4066.3),xOf(104)-xOf(70),yOf(4065.1)-yOf(4066.3));
+     X.fillStyle='rgba(255,207,92,0.16)';X.fillRect(xOf(72),yOf(4066.0),xOf(100)-xOf(72),yOf(4063.0)-yOf(4066.0));
      X.strokeStyle='rgba(240,185,60,0.9)';X.setLineDash([5,4]);
-     X.strokeRect(P(xOf(70))+0.5,P(yOf(4066.3))+0.5,P(xOf(104)-xOf(70)),P(yOf(4065.1)-yOf(4066.3)));X.setLineDash([]);
+     X.strokeRect(P(xOf(72))+0.5,P(yOf(4066.0))+0.5,P(xOf(100)-xOf(72)),P(yOf(4063.0)-yOf(4066.0)));X.setLineDash([]);
      X.fillStyle='#8a6d1a';X.font='700 12px '+SANS;X.textAlign='left';X.textBaseline='middle';
-     X.fillText('LVN — Low Volume Node · Imbalance',xOf(70)+10,yOf(4065.7));
+     X.fillText('LVN — Low Volume Node · Imbalance',xOf(72)+10,yOf(4064.5));
      X.restore();}}
   // consolidation value-area box (76.7 draw, hold to ~115)
   const cs=consState(T);
   if(cs){
     const a=1-clamp((T-sT(116.5))/0.8,0,1);
     if(a>0){X.save();X.globalAlpha=a;
-      const bx0=xOf(86)-CWc/2, bx1=bx0+(xOf(104)-xOf(86))*cs.f;
-      X.fillStyle='rgba(41,98,255,0.07)';X.fillRect(bx0,yOf(4068.7),bx1-bx0,yOf(4066.4)-yOf(4068.7));
+      const bx0=xOf(88)-CWc/2, bx1=bx0+(xOf(104)-xOf(88))*cs.f;
+      X.fillStyle='rgba(41,98,255,0.07)';X.fillRect(bx0,yOf(4072.2),bx1-bx0,yOf(4069.0)-yOf(4072.2));
       X.strokeStyle=hexA(C.tvBlue,0.75);X.setLineDash([4,3]);
-      X.strokeRect(P(bx0)+0.5,P(yOf(4068.7))+0.5,P(bx1-bx0),P(yOf(4066.4)-yOf(4068.7)));X.setLineDash([]);
+      X.strokeRect(P(bx0)+0.5,P(yOf(4072.2))+0.5,P(bx1-bx0),P(yOf(4069.0)-yOf(4072.2)));X.setLineDash([]);
       if(cs.f>0.95){
-        // resistance line + prior VAL line
+        // resistance line at the top of the consolidation
         X.strokeStyle=C.tvDn;X.setLineDash([7,5]);X.lineWidth=1.8;
-        X.beginPath();X.moveTo(bx0,P(yOf(4068.6))+0.5);X.lineTo(xOf(112),P(yOf(4068.6))+0.5);X.stroke();
+        X.beginPath();X.moveTo(bx0,P(yOf(4072.4))+0.5);X.lineTo(xOf(114),P(yOf(4072.4))+0.5);X.stroke();
         X.setLineDash([]);X.lineWidth=1;
         X.fillStyle=C.tvDn;X.font='600 12px '+SANS;X.textAlign='left';X.textBaseline='middle';
-        X.fillText('Resistance',bx0+6,yOf(4068.6)-12);
+        X.fillText('Resistance',bx0+6,yOf(4072.4)-12);
       }
       X.restore();}
   }
-  // sustainable break check (84.9–87.3)
+  // sustainable break check — break above resistance+VAH (candle 112)
   {const a=Math.min(clamp((T-sT(85.0))/0.4,0,1),1-clamp((T-sT(87.6))/0.5,0,1));
    if(a>0){X.save();X.globalAlpha=a;
-     X.fillStyle=C.tvUp;rr(X,xOf(105)-78,yOf(SER[105].h)-42,190,28,6);X.fill();
+     X.fillStyle=C.tvUp;rr(X,xOf(112)-78,yOf(SER[112].h)-42,196,28,6);X.fill();
      X.fillStyle='#fff';X.font='700 13px '+SANS;X.textAlign='center';X.textBaseline='middle';
-     X.fillText('Sustainable break ✓',xOf(105)+17,yOf(SER[105].h)-28);X.restore();}}
+     X.fillText('Nachhaltiger Break ✓',xOf(112)+20,yOf(SER[112].h)-28);X.restore();}}
   // ---- position tool ----
   const ps=posState(T);
   if(ps){
     const rrLive=ps.rrv;
-    TVC.positionTool(X,{x0:xOf(106)-CWc,x1:xOf(126)+CWc*2,entry:ENTRY,stop:STOP,target:ps.tgt,yOf,alpha:ps.a,dir:'long',
+    TVC.positionTool(X,{x0:xOf(112)-CWc,x1:xOf(130)+CWc,entry:ENTRY,stop:STOP,target:ps.tgt,yOf,alpha:ps.a,dir:'long',
       targetTxt:'Ziel: '+TVC.fmtDE((ps.tgt-ENTRY)*1000,0)+' ('+((ps.tgt-ENTRY)/ENTRY*100).toFixed(3).replace('.',',')+'%)  Betrag: '+TVC.fmtDE(Math.round((ps.tgt-ENTRY)*2800),0),
       stopTxt:'Stopp: '+TVC.fmtDE((ENTRY-STOP)*1000,0)+' (0,020%)  Betrag: '+TVC.fmtDE(2240,0),
       pnlTxt:'Offener G&V: '+TVC.fmtDE(Math.round(ps.pnl*10),0)+', Menge: 28\nVerhältnis Risiko/Gewinn: '+Math.max(0,rrLive).toFixed(2).replace('.',',')});
@@ -385,8 +394,8 @@ function renderAt(msIn){
      X.fillStyle='#fff';X.font='800 14px '+SANS;X.textAlign='center';X.fillText('R:R  1 : 2,8',xOf(114),yOf(TGT1)-24);X.restore();}
    if(c2>0){X.save();X.globalAlpha=c2;X.fillStyle='#089981';rr(X,xOf(122)-56,yOf(TGT2)-38,112,28,6);X.fill();
      X.fillStyle='#fff';X.font='800 14px '+SANS;X.textAlign='center';X.fillText('R:R  1 : 4,6',xOf(122),yOf(TGT2)-24);X.restore();}}
-  // footprint popover
-  fpPop(T,yOf(4070.6));
+  // footprint popover (the 61-buy absorption at the entry candle)
+  fpPop(T,yOf(4073.5));
   // furniture
   // legend close = the last COMMITTED (whole-revealed) candle → changes only on a
   // new candle, never every frame (anti-jitter)
