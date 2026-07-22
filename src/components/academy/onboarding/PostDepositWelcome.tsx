@@ -30,8 +30,9 @@ export function PostDepositWelcome() {
     setDismissed(typeof localStorage !== "undefined" && localStorage.getItem(DISMISS_KEY) === "1");
   }, []);
 
-  // Only for funded members, and only until they dismiss it.
-  if (!state.loaded || state.lifetimeDeposits <= 0 || dismissed) return null;
+  // Only once Foundation is actually reached (>= €100) — a €50 partial deposit
+  // must NOT trigger the "Freigeschaltet" welcome — and only until dismissed.
+  if (!state.loaded || state.lifetimeDeposits < 100 || dismissed) return null;
 
   function dismiss() {
     try { localStorage.setItem(DISMISS_KEY, "1"); } catch { /* private mode */ }

@@ -28,7 +28,8 @@ import {
 } from "lucide-react";
 import { useMemberRefresh, useMemberState } from "@/hooks/useMemberState";
 import { usePartnerBrand, COSMO } from "@/lib/partner-brand";
-import { TIERS } from "@/lib/academy-data";
+import { TIERS, tierForDeposit } from "@/lib/academy-data";
+import { PRODUCTS } from "@/lib/products";
 import { formatMoney } from "@/lib/format";
 import { Card } from "@/components/academy/primitives/Card";
 import { cn } from "@/lib/utils";
@@ -174,8 +175,10 @@ function Confetti({ accent, count = 56 }: { accent: string; count?: number }) {
   );
 }
 
-function CelebrationOverlay({ accent, amount, tierName, onClose }: {
-  accent: string; amount: number; tierName: string | undefined; onClose: () => void;
+const KIND_ICON = { telegram: Send, lessons: BookOpen, page: Sparkles, service: Radio } as const;
+
+function CelebrationOverlay({ accent, amount, prevAmount, tierName, onClose }: {
+  accent: string; amount: number; prevAmount: number; tierName: string | undefined; onClose: () => void;
 }) {
   const full = amount >= FOUNDATION_MIN;
   const missing = Math.max(0, FOUNDATION_MIN - amount);
@@ -183,11 +186,24 @@ function CelebrationOverlay({ accent, amount, tierName, onClose }: {
   const [step, setStep] = useState(0);
   const closed = useRef(false);
 
+  // Tier UPGRADE (was already Foundation+): show the NEWLY unlocked perks of the
+  // reached tier(s), not the base unlocks the member already had.
+  const items = useMemo(() => {
+    if (!full) return UNLOCKS;
+    const prevRank = (() => { const t = tierForDeposit(prevAmount); return t ? TIERS.findIndex((x) => x.key === t.key) : -1; })();
+    const newRank = (() => { const t = tierForDeposit(amount); return t ? TIERS.findIndex((x) => x.key === t.key) : -1; })();
+    if (prevRank < 0 || newRank <= prevRank) return UNLOCKS; // first funding → base tour
+    const fresh = PRODUCTS
+      .filter((p) => { const r = TIERS.findIndex((t) => t.key === p.requires); return r > prevRank && r <= newRank; })
+      .map((p) => ({ icon: KIND_ICON[p.kind] ?? Sparkles, title: p.name, body: p.description }));
+    return fresh.length ? fresh : UNLOCKS;
+  }, [full, amount, prevAmount]);
+
   useEffect(() => {
     if (!full) return;
-    const timers = UNLOCKS.map((_, i) => setTimeout(() => setStep(i + 1), 900 + i * 550));
+    const timers = items.map((_, i) => setTimeout(() => setStep(i + 1), 900 + i * 550));
     return () => timers.forEach(clearTimeout);
-  }, [full]);
+  }, [full, items]);
 
   const close = () => { if (!closed.current) { closed.current = true; onClose(); } };
 
@@ -217,7 +233,7 @@ function CelebrationOverlay({ accent, amount, tierName, onClose }: {
               Verifizierte Einzahlung: <b>{formatMoney(amount, "€")}</b> — das hier ist ab sofort alles deins:
             </p>
             <div className="mt-4 grid gap-2.5">
-              {UNLOCKS.map((u, i) => (
+              {items.map((u, i) => (
                 <div key={u.title} className={cn("flex items-center gap-3 rounded-2xl border border-white/8 bg-white/[0.04] px-4 py-3 transition-all", i < step ? "onb-unlock-pop opacity-100" : "opacity-0")}>
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: `color-mix(in oklch, ${accent} 14%, transparent)`, color: accent }}>
                     <u.icon className="h-4 w-4" />
@@ -292,7 +308,10 @@ export function OnboardingJourney() {
   const state = useMemberState();
   const brand = usePartnerBrand();
   const accent = brand?.accentColor ?? COSMO.primaryColor;
-  const [, bump] = useState(0);
+  // tick VALUE must be a memo dependency — advancing a stage writes localStorage
+  // (invisible to React), so we re-derive off this counter.
+  const [tick, setTick] = useState(0);
+  const advance = () => setTick((n) => n + 1);
 
   const email = state.profile.email;
   const amount = state.lifetimeDeposits;
@@ -304,12 +323,11 @@ export function OnboardingJourney() {
     if (amount <= 0) return readFlag(email, "video") ? "ignite" : "video";
     if (amount < FOUNDATION_MIN) return "topup";           // partially funded → real-amount strip
     return "done";
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.loaded, email, amount, bump]);
+  }, [state.loaded, email, amount, tick]);
 
   if (stage === "loading" || stage === "done") return null;
   if (stage === "video") {
-    return <WelcomeVideoCard accent={accent} onDone={() => { writeFlag(email, "video"); bump((n) => n + 1); }} />;
+    return <WelcomeVideoCard accent={accent} onDone={() => { writeFlag(email, "video"); advance(); }} />;
   }
   if (stage === "ignite") return <IgniteStrip accent={accent} />;
   if (stage === "topup") return <TopupStrip accent={accent} amount={amount} />;
@@ -317,8 +335,9 @@ export function OnboardingJourney() {
     <CelebrationOverlay
       accent={accent}
       amount={amount}
+      prevAmount={readSeen(email)}
       tierName={state.currentTier?.name}
-      onClose={() => { writeSeen(email, amount); writeFlag(email, "video"); bump((n) => n + 1); }}
+      onClose={() => { writeSeen(email, amount); writeFlag(email, "video"); advance(); }}
     />
   );
 }
