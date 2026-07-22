@@ -7,6 +7,7 @@ import { DepositLadder } from "@/components/academy/tier/DepositLadder";
 import { ProgressStats } from "@/components/academy/progress/ProgressStats";
 import { Card } from "@/components/academy/primitives/Card";
 import { LockedGate } from "@/components/academy/onboarding/LockedGate";
+import { OnboardingJourney } from "@/components/academy/onboarding/OnboardingJourney";
 import { PostDepositWelcome } from "@/components/academy/onboarding/PostDepositWelcome";
 import { LESSONS } from "@/lib/academy-data";
 import { useMemberState } from "@/hooks/useMemberState";
@@ -52,6 +53,10 @@ function Dashboard() {
 
   return (
     <div className="space-y-6">
+
+      {/* Guided first session: integrated welcome video → deposit ignite strip
+          (with live deposit watcher) → celebration + unlock tour. */}
+      <OnboardingJourney />
 
       {/* After the first deposit: the two Cosmo welcome videos light up here. */}
       <PostDepositWelcome />

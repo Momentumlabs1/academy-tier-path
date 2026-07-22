@@ -150,8 +150,13 @@ async function fetchMemberInput(): Promise<MemberInput> {
   };
 }
 
+// Separate context so components (e.g. the onboarding deposit-watcher) can
+// force a re-fetch without prop-drilling — value is a stable function.
+const MemberRefreshContext = createContext<() => void>(() => {});
+
 export function MemberProvider({ children }: { children: ReactNode }) {
   const [input, setInput] = useState<MemberInput>(EMPTY_INPUT);
+  const [refreshTick, setRefreshTick] = useState(0);
 
   useEffect(() => {
     let alive = true;
@@ -164,12 +169,21 @@ export function MemberProvider({ children }: { children: ReactNode }) {
     // Reload whenever auth state changes (sign-in after the registration gate).
     const { data: sub } = supabase.auth.onAuthStateChange(() => load());
     return () => { alive = false; sub.subscription.unsubscribe(); };
-  }, []);
+  }, [refreshTick]);
 
-  return createElement(MemberContext.Provider, { value: input }, children);
+  return createElement(
+    MemberRefreshContext.Provider,
+    { value: () => setRefreshTick((t) => t + 1) },
+    createElement(MemberContext.Provider, { value: input }, children),
+  );
 }
 
 export function useMemberState(): MemberState {
   const input = useContext(MemberContext);
   return useMemo(() => deriveState(input), [input]);
+}
+
+/** Force a live re-fetch of the member row (deposit watcher, post-action refresh). */
+export function useMemberRefresh(): () => void {
+  return useContext(MemberRefreshContext);
 }
