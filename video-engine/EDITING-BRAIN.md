@@ -468,6 +468,37 @@ the presenter is paused reads as jitter. Three culprits fixed:
   explainable as an intended beat (confirm on the contact sheet). lesson1/3/4/5 (GSAP style)
   audited clean — the jitter was specific to the new TV-mirror ticker/pan elements.
 
+### ⚠️⚠️ USER+TIM MANDATE 2026-07-22: CHART MUST MIRROR TIM 1:1 (approved rebuild to proof level)
+The invented price action broke the teaching. User forwarded **Tim's own corrections** — the
+spoken words reference SPECIFIC market structure; if the chart deviates the explanation is wrong.
+The 10s footprint proof was approved ("mach das gesamte Video auf dem Level"). Rebuild S3+S4 so
+price action / structure / volume profiles match Tim's real footage exactly.
+
+**Tim's REAL VP-method structure (traced from screen recording, XAUUSD Gold OANDA, replay, switches M15/M5/M1):**
+- Big down-move from ~4.092 → low ~4.032, then recovery up.
+- Consolidation range **~4.062 (VAL/bottom) … ~4.076 (VAH/red resistance)**, POC red **~4.075**.
+- Yellow **SVP HD** filled volume profile (NOT discrete bars) drawn as fixed-range blue box.
+  Early: Low→current. **Later he redraws High→current** (correction 2:38/2:47) — this 2nd VP is
+  what's MISSING in my build.
+- **BOS (correction 2:10):** on M1 price breaks ABOVE the 4.075 red level up to ~4.083 = clear
+  break of structure → bullish → look for longs. Must be visibly a broken high.
+- **VAL minimally NOT swept (correction 2:15):** the precision point — at the relevant candle's
+  time on M1 the VAL was *just barely not* taken. My build wrongly showed it already swept.
+- **LVN (correction 2:47):** must be a genuine thin spot in the yellow profile (~4.062–4.064),
+  not a drawn box with no profile backing.
+- **Consolidation under resistance (correction 3:01):** longer/cleaner M1 consolidation under the
+  ~4.075 resistance; Tim lays a VP over the consolidation box, waits for a *sustainable* break
+  above resistance AND VAH before the long.
+- **Footprint entry (screen ~18:00, PROVEN in v6proof.html):** XAUUSD ~4.065,732, cols
+  35|52 29|12 15|5 (Δ−260/1,38K) · 4|5 59|57 110|134 111|47 70|42 3|3 (Δ−67/645) ·
+  9|0 91|43 53|39 31|35 31|61 (Δ−38/394 = the 61-buy absorption) · 26|42 0|18 0|18 0|15 6|7 6|2
+  (Δ+93 push up). R:R 1:2,8 and 1:4,6 (targeting POC).
+- Key real levels: base ~4.072, red POC/resistance **4.075**, high after break **~4.083**,
+  entry **4.065,732**, consolidation low **~4.062**, big down low **~4.032**.
+Ref frames: `.render/v6/vp/full_680.jpg` (M1 BOS), `full_760.jpg` (15m consol+VP+LVN),
+`.render/v6/scan/full_660.jpg` (VP Low→current), `full_1080.jpg` (footprint entry).
+Proof: `v6proof.html` reproduces the footprint entry 1:1 (approved).
+
 ### Video 6 — component library to build (VO-independent; the heavy Fable visual work)
 - **TradingView chart page** (light theme): top toolbar, left favorites/drawing rail w/ tooltips,
   candles (up #089981 / dn #F23645), interval row, legend OHLC (f(cursorX)), bar-replay bar
