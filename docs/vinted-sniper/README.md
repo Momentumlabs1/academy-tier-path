@@ -12,6 +12,7 @@ Zustand ab „Sehr gut", Ziel-Resale ~30–40 €.
 | Datei | Inhalt |
 |---|---|
 | [`empfehlung-architektur.md`](./empfehlung-architektur.md) | **Die Empfehlung.** Sinnvollste Logik fürs Ganze: Trichter über den eigenen Vinted-Strom (LLM-Keywords = Recall, FashionCLIP = Precision). Ehrliche Antwort zur Bildersuche + geprüfte Optionen. |
+| [`setup-verbindungen.md`](./setup-verbindungen.md) | **Zum Loslegen.** Welche Services du verbinden musst (SerpApi, Anthropic, …), was sie kosten, und die Deploy-Befehle. |
 | [`strategie-und-kosten.md`](./strategie-und-kosten.md) | **Zuerst lesen.** Wie Sniping 2026 funktioniert, API-Realität, „geht's ohne Grabber?", Grabber-/Proxy-Kosten, Architektur in diesem Repo, Rechtliches, Quellen. |
 | [`presets.md`](./presets.md) | Fertige **Such-URLs** für vinted.at – heute schon manuell speicherbar. |
 | [`presets.json`](./presets.json) | Maschinenlesbare Presets, die der Poller einliest. |

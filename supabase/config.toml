@@ -17,3 +17,11 @@ verify_jwt = false
 # Admin settings API — guarded by its own ADMIN_KEY header, not a Supabase JWT.
 [functions.admin-tenants]
 verify_jwt = false
+
+# Vinted-Sniper: aufgerufen aus der App; eigener x-sniper-key-Header statt JWT.
+# (Kostenschutz gegen SerpApi-/Anthropic-Missbrauch.)
+[functions.visual-search]
+verify_jwt = false
+
+[functions.vision-keywords]
+verify_jwt = false

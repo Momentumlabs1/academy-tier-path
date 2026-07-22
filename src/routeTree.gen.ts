@@ -23,6 +23,7 @@ import { Route as AdminDepositsRouteImport } from './routes/admin.deposits'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AppUnlocksRouteImport } from './routes/_app.unlocks'
 import { Route as AppToolsRouteImport } from './routes/_app.tools'
+import { Route as AppSniperRouteImport } from './routes/_app.sniper'
 import { Route as AppTierRouteImport } from './routes/_app.tier'
 import { Route as AppSignalsRouteImport } from './routes/_app.signals'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
@@ -100,6 +101,11 @@ const AppToolsRoute = AppToolsRouteImport.update({
   path: '/tools',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSniperRoute = AppSniperRouteImport.update({
+  id: '/sniper',
+  path: '/sniper',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppTierRoute = AppTierRouteImport.update({
   id: '/tier',
   path: '/tier',
@@ -144,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof AppNotificationsRoute
   '/settings': typeof AppSettingsRoute
   '/signals': typeof AppSignalsRoute
+  '/sniper': typeof AppSniperRoute
   '/tier': typeof AppTierRoute
   '/tools': typeof AppToolsRoute
   '/unlocks': typeof AppUnlocksRoute
@@ -163,6 +170,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof AppNotificationsRoute
   '/settings': typeof AppSettingsRoute
   '/signals': typeof AppSignalsRoute
+  '/sniper': typeof AppSniperRoute
   '/tier': typeof AppTierRoute
   '/tools': typeof AppToolsRoute
   '/unlocks': typeof AppUnlocksRoute
@@ -187,6 +195,7 @@ export interface FileRoutesById {
   '/_app/notifications': typeof AppNotificationsRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/signals': typeof AppSignalsRoute
+  '/_app/sniper': typeof AppSniperRoute
   '/_app/tier': typeof AppTierRoute
   '/_app/tools': typeof AppToolsRoute
   '/_app/unlocks': typeof AppUnlocksRoute
@@ -212,6 +221,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/settings'
     | '/signals'
+    | '/sniper'
     | '/tier'
     | '/tools'
     | '/unlocks'
@@ -231,6 +241,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/settings'
     | '/signals'
+    | '/sniper'
     | '/tier'
     | '/tools'
     | '/unlocks'
@@ -254,6 +265,7 @@ export interface FileRouteTypes {
     | '/_app/notifications'
     | '/_app/settings'
     | '/_app/signals'
+    | '/_app/sniper'
     | '/_app/tier'
     | '/_app/tools'
     | '/_app/unlocks'
@@ -377,6 +389,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppToolsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/sniper': {
+      id: '/_app/sniper'
+      path: '/sniper'
+      fullPath: '/sniper'
+      preLoaderRoute: typeof AppSniperRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/tier': {
       id: '/_app/tier'
       path: '/tier'
@@ -448,6 +467,7 @@ interface AppRouteChildren {
   AppNotificationsRoute: typeof AppNotificationsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSignalsRoute: typeof AppSignalsRoute
+  AppSniperRoute: typeof AppSniperRoute
   AppTierRoute: typeof AppTierRoute
   AppToolsRoute: typeof AppToolsRoute
   AppUnlocksRoute: typeof AppUnlocksRoute
@@ -459,6 +479,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppNotificationsRoute: AppNotificationsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSignalsRoute: AppSignalsRoute,
+  AppSniperRoute: AppSniperRoute,
   AppTierRoute: AppTierRoute,
   AppToolsRoute: AppToolsRoute,
   AppUnlocksRoute: AppUnlocksRoute,

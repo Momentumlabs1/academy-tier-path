@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Bell, BookOpen, Calculator, LayoutDashboard, Radio, Settings, ShieldCheck, Trophy, Unlock } from "lucide-react";
+import { Bell, BookOpen, Calculator, LayoutDashboard, Radio, ScanSearch, Settings, ShieldCheck, Trophy, Unlock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CURRENT_MEMBER } from "@/lib/academy-data";
 import { useMemberState } from "@/hooks/useMemberState";
@@ -8,6 +8,7 @@ const MENU = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
   { to: "/lessons", label: "Lessons", icon: BookOpen },
   { to: "/tools", label: "Tools", icon: Calculator },
+  { to: "/sniper", label: "Sniper", icon: ScanSearch },
   { to: "/unlocks", label: "Unlocks", icon: Unlock },
   { to: "/signals", label: "Signals", icon: Radio },
   { to: "/tier", label: "Tier", icon: Trophy },
