@@ -16,19 +16,44 @@
  *   2) Raw: { to, subject, html, fromName?, replyTo? }
  */
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2";
 import { buildEmail, type BuildInput, type EmailKind } from "./_templates.ts";
 
 const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { "Content-Type": "application/json" } });
 
-const FROM_DOMAIN = Deno.env.get("MAIL_FROM_DOMAIN") ?? "send.cosmos-candles.com";
 const TEMPLATE_KINDS: EmailKind[] = [
   "doi", "welcome", "deposit_confirmed", "tier_unlocked",
   "tier_nudge", "inactivity_warning", "new_lesson", "broadcast",
 ];
 
+/**
+ * DB `app_secrets` (RLS-locked, service-role only) is the source of truth —
+ * env may hold stale keys from older setups; fall back to env only if the DB
+ * has no value. Cached per cold start.
+ */
+let _secretCache: Record<string, string> | null = null;
+async function loadSecrets(): Promise<Record<string, string>> {
+  if (_secretCache) return _secretCache;
+  _secretCache = {};
+  try {
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      { auth: { persistSession: false } },
+    );
+    const { data } = await admin.from("app_secrets").select("key, value");
+    for (const row of data ?? []) _secretCache[row.key as string] = row.value as string;
+  } catch (_e) { /* env-only */ }
+  return _secretCache;
+}
+async function secret(key: string): Promise<string | undefined> {
+  const db = await loadSecrets();
+  return db[key] ?? Deno.env.get(key);
+}
+
 async function resendSend(payload: Record<string, unknown>) {
-  const key = Deno.env.get("RESEND_API_KEY");
+  const key = await secret("RESEND_API_KEY");
   if (!key) return { ok: false, error: "RESEND_API_KEY not set" };
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -43,7 +68,7 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
 
   // Guard against an open relay: if SEND_SECRET is set, require it.
-  const guard = Deno.env.get("SEND_SECRET");
+  const guard = await secret("SEND_SECRET");
   if (guard && req.headers.get("x-send-secret") !== guard) {
     return json({ error: "unauthorized" }, 401);
   }
@@ -51,8 +76,9 @@ Deno.serve(async (req) => {
   let b: Record<string, unknown>;
   try { b = await req.json(); } catch { return json({ error: "invalid json" }, 400); }
 
+  const fromDomain = (await secret("MAIL_FROM_DOMAIN")) ?? "send.cosmos-candles.com";
   const brandName = String((b.brand as Record<string, unknown>)?.name ?? b.brandName ?? b.fromName ?? "Cosmos Candles Academy");
-  const from = `${brandName} <noreply@${FROM_DOMAIN}>`;
+  const from = `${brandName} <noreply@${fromDomain}>`;
 
   // ── Mode 1: templated ──────────────────────────────────────────────────────
   if (typeof b.kind === "string" && TEMPLATE_KINDS.includes(b.kind as EmailKind)) {
