@@ -27,23 +27,33 @@ const sT=vo=>tm.sceneT(vo);
 const gS=at=>{let s=at;for(const g of GAPS)if(g.at<at)s+=g.dur;return s;};
 const DUR=Math.ceil((sT(VOW_S3.dur)+1.4)*10)/10;   // ≈ 150.2
 
-// ---- chart ----
+// ---- chart — MIRROR of Tim's real M1 structure (XAUUSD) ----
+// Real levels traced from screen recording (full_680 / full_760):
+//   VAH/red resistance ≈ 4.076 · POC ≈ 4.075 · VAL ≈ 4.062 · high after BOS ≈ 4.083
 const CH={x0:TV.rail.w+1,x1:1920-TV.scaleW,y0:126,y1:912};
-const PMIN=4058,PMAX=4082;
-const NARR=[[0,4077.5],[10,4071],[20,4066],[24,4063.8],[30,4065.5],[38,4071.5],[44,4073.8],[50,4069.5],[56,4067.0],[58,4068.4],[64,4071.8],[70,4068.5],[80,4065.9],[86,4066.8],[96,4067.6],[104,4068.2],[106,4069.9],[112,4070.8],[118,4071.8],[126,4073.2],[134,4073.6],[149,4074.2]];
-const N=150, SER=TVC.mkSeries(N,NARR,55110,0.55);
-// story-correct volume distribution: concentration in the 4068–4072 rally/chop
-// (POC ≈ 4069–70, VAL ≈ 4067 → candle-52 wick 4066.3 sweeps the VAL)
+const PMIN=4059.5,PMAX=4085.5;
+const VAL_R=4062.0, POC_R=4075.0, VAH_R=4076.0, HIGH_R=4083.0, PRIORHI=4077.2;
+// beats: 6=prior high 4077 · 27=dip that MINIMALLY misses VAL (4.0626, VAL=4.062) ·
+//   46→52=break above 4.076 resistance (BOS) → high 4.083 · 76→80=pullback into VAL/LVN ·
+//   86→104=consolidation under resistance · 106+=sustainable break
+const NARR=[[0,4074.2],[6,PRIORHI],[12,4073],[18,4068.2],[24,4064],[27,4062.7],[30,4064.6],[36,4069],[42,4074],[46,4077.4],[52,HIGH_R],[58,4079.5],[64,4074.6],[70,4070],[76,4065],[80,4062.7],[86,4066],[92,4069.6],[98,4071],[104,4072.4],[106,4073.6],[112,4077.6],[118,4080.4],[124,4082.2],[130,4081],[149,4080.2]];
+const N=150, SER=TVC.mkSeries(N,NARR,55110,0.5);
+// volume distribution → POC ~4.075, wide value area down to VAL ~4.062 (Tim's yellow SVP)
 for(let i=0;i<N;i++){
-  if(i>=32&&i<=43)SER[i].v*=1.9;
-  if(i>=44&&i<=56)SER[i].v*=2.1;
-  if(i>=18&&i<=30)SER[i].v*=0.6;
+  const p=(SER[i].o+SER[i].c)/2;
+  if(p>=4073&&p<=4076.5)SER[i].v*=2.6;      // POC concentration just under resistance
+  else if(p>=4069&&p<4073)SER[i].v*=1.5;
+  else if(p>=4063&&p<4066)SER[i].v*=0.45;   // LVN — genuinely thin here (correction 2:47)
 }
-// force story candles:
-SER[52].l=Math.min(SER[52].l,4066.30);SER[52].c=4067.85;SER[52].o=4067.2;   // VAL sweep wick
-SER[105].o=4067.9;SER[105].c=4069.95;SER[105].h=4070.2;SER[105].l=4067.7;   // breakout
-SER[106].o=4069.3;SER[106].c=4069.15;SER[106].l=4068.75;SER[106].h=4069.9;  // retest/entry candle
-for(let i=107;i<=126;i++){const u=(i-107)/19;SER[i].o=4069.1+u*3.5;SER[i].c=4069.55+u*3.75;SER[i].h=SER[i].c+0.3;SER[i].l=SER[i].o-0.22;}
+// precision candle 27: low 4.0626 = VAL (4.062) MINIMALLY NOT swept (correction 2:15)
+SER[27].l=4062.55;SER[27].o=4064.2;SER[27].c=4063.9;SER[27].h=4064.4;
+// BOS: candle 46 closes above prior high 4.077 → break of structure (correction 2:10)
+SER[46].o=4074.6;SER[46].c=4077.5;SER[46].h=4077.8;SER[46].l=4074.3;
+SER[47].o=4077.5;SER[47].c=4079.2;SER[47].h=4079.6;SER[47].l=4077.2;
+// VAL of bullish move taken into LVN (candle 80): dips to 4.0622
+SER[80].l=4062.2;SER[80].o=4063.6;SER[80].c=4064.6;SER[80].h=4064.9;
+// sustainable break above resistance+VAH (candle 112)
+SER[112].o=4075.8;SER[112].c=4077.8;SER[112].h=4078.1;SER[112].l=4075.6;
 const CWc=(CH.x1-CH.x0-60)/134;
 const xOf=i=>CH.x0+30+i*CWc+CWc/2;
 let yOf=null;
