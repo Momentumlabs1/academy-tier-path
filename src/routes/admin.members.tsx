@@ -152,7 +152,7 @@ function AdminMembers() {
 
       {error && (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-          Daten konnten nicht geladen werden: {error}
+          Couldn't load data: {error}
         </div>
       )}
 
@@ -214,15 +214,15 @@ function AdminMembers() {
 
         {loading && (
           <div className="flex items-center justify-center gap-2 py-12 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" /> Lade Members…
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading members…
           </div>
         )}
 
         {!loading && rows.length === 0 && (
           <div className="flex flex-col items-center gap-2 py-14 text-center">
             <Users className="h-6 w-6 text-muted-foreground/60" />
-            <div className="text-sm text-muted-foreground">Noch keine Members.</div>
-            <div className="text-[11px] text-muted-foreground/70">Noch keine Daten — sobald sich Kunden registrieren, erscheinen sie hier.</div>
+            <div className="text-sm text-muted-foreground">No members yet.</div>
+            <div className="text-[11px] text-muted-foreground/70">No data yet — as soon as members sign up, they'll show up here.</div>
           </div>
         )}
 

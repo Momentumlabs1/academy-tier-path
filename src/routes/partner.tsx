@@ -18,7 +18,7 @@ import { COMMISSION_LADDER, levelForVolume, volumeToNextLevel } from "@/lib/comm
 import { formatMoney } from "@/lib/format";
 
 export const Route = createFileRoute("/partner")({
-  head: () => ({ meta: [{ title: "Partner-Portal — Cosmos Candles" }] }),
+  head: () => ({ meta: [{ title: "Partner Portal — Cosmos Candles" }] }),
   component: PartnerPortal,
 });
 
@@ -93,14 +93,14 @@ function PartnerPortal() {
       <div className="mx-auto max-w-4xl">
         <header className="mb-8 flex items-center justify-between">
           <div>
-            <div className="font-display text-2xl font-bold">Partner-Portal</div>
+            <div className="font-display text-2xl font-bold">Partner Portal</div>
             <div className="text-sm text-muted-foreground">{email}</div>
           </div>
           <button
             onClick={() => supabase.auth.signOut()}
             className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-muted-foreground hover:text-foreground"
           >
-            <LogOut className="h-4 w-4" /> Abmelden
+            <LogOut className="h-4 w-4" /> Sign out
           </button>
         </header>
 
@@ -110,11 +110,11 @@ function PartnerPortal() {
           <div className="flex justify-center py-16"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
         ) : rows.length === 0 ? (
           <div className="rounded-2xl border border-white/10 bg-[oklch(0.15_0.045_255)] p-8 text-center">
-            <div className="font-display text-lg font-bold">Noch kein Partner-Account verknüpft</div>
+            <div className="font-display text-lg font-bold">No partner account linked yet</div>
             <p className="mt-2 text-sm text-muted-foreground">
               {email.toLowerCase() === ADMIN_EMAIL.toLowerCase()
-                ? "Du bist als Master eingeloggt — deine Gesamtübersicht liegt im Admin-Bereich unter /admin."
-                : "Diesem Login ist noch keine Marke zugeordnet. Melde dich beim Master, damit dein Brand freigeschaltet wird."}
+                ? "You're signed in as master — your full overview lives in the admin area at /admin."
+                : "No brand is assigned to this login yet. Reach out to the master to get your brand unlocked."}
             </p>
           </div>
         ) : (
@@ -129,7 +129,7 @@ function PartnerCard({ row }: { row: PartnerRow }) {
   const isPercent = row.partner_rate_unit === "percent";
   const level = levelForVolume(row.partner_volume);
   const toNext = volumeToNextLevel(row.partner_volume);
-  const rateLabel = isPercent ? `${row.partner_rate}%` : `${row.partner_rate} $/Lot`;
+  const rateLabel = isPercent ? `${row.partner_rate}%` : `${row.partner_rate} $/lot`;
 
   const origin = typeof window !== "undefined" ? window.location.origin : "https://cosmos-candles.com";
   const shareUrl = `${origin}/${row.slug}`;
@@ -137,10 +137,10 @@ function PartnerCard({ row }: { row: PartnerRow }) {
   const [showPreview, setShowPreview] = useState(false);
 
   const stats = [
-    { label: "Klicks", value: row.clicks.toLocaleString("de-AT"), icon: MousePointerClick },
+    { label: "Clicks", value: row.clicks.toLocaleString("de-AT"), icon: MousePointerClick },
     { label: "Leads", value: row.leads.toLocaleString("de-AT"), icon: BarChart3 },
-    { label: "Kunden", value: row.members.toLocaleString("de-AT"), icon: Users },
-    { label: "Einzahlungen", value: formatMoney(row.total_deposits, "€"), icon: Wallet },
+    { label: "Customers", value: row.members.toLocaleString("de-AT"), icon: Users },
+    { label: "Deposits", value: formatMoney(row.total_deposits, "€"), icon: Wallet },
   ];
 
   return (
@@ -152,14 +152,14 @@ function PartnerCard({ row }: { row: PartnerRow }) {
         </div>
         <div className="text-right">
           <div className="text-2xl font-bold text-primary">{rateLabel}</div>
-          <div className="text-[11px] text-muted-foreground">deine Vergütung</div>
+          <div className="text-[11px] text-muted-foreground">your commission</div>
         </div>
       </div>
 
       {/* Dein teilbarer Link — genau den schickst du raus. */}
       <div className="mb-5 flex flex-col gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 sm:flex-row sm:items-center">
         <div className="min-w-0 flex-1">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary/80">Dein Link</div>
+          <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary/80">Your link</div>
           <div className="truncate font-mono text-sm">{shareUrl}</div>
         </div>
         <div className="flex gap-2">
@@ -172,13 +172,13 @@ function PartnerCard({ row }: { row: PartnerRow }) {
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90"
           >
             {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-            {copied ? "Kopiert" : "Kopieren"}
+            {copied ? "Copied" : "Copy"}
           </button>
           <a
             href={shareUrl} target="_blank" rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold hover:bg-white/[0.08]"
           >
-            Öffnen <ExternalLink className="h-3.5 w-3.5" />
+            Open <ExternalLink className="h-3.5 w-3.5" />
           </a>
         </div>
       </div>
@@ -200,22 +200,22 @@ function PartnerCard({ row }: { row: PartnerRow }) {
       {!isPercent && (
         <div className="mt-5 rounded-xl border border-white/5 bg-white/[0.02] p-4">
           <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
-            <TrendingUp className="h-4 w-4 text-primary" /> Level {level.level} — {level.usdPerLot} $/Lot
+            <TrendingUp className="h-4 w-4 text-primary" /> Level {level.level} — {level.usdPerLot} $/lot
           </div>
           <div className="flex gap-1.5">
             {COMMISSION_LADDER.map((l) => (
               <div
                 key={l.level}
                 className={`h-2 flex-1 rounded-full ${l.level <= level.level ? "bg-primary" : "bg-white/10"}`}
-                title={`Level ${l.level}: ${l.usdPerLot} $/Lot ab ${formatMoney(l.fromVolume, "€")}`}
+                title={`Level ${l.level}: ${l.usdPerLot} $/lot from ${formatMoney(l.fromVolume, "€")}`}
               />
             ))}
           </div>
           <div className="mt-2 text-[11px] text-muted-foreground">
-            Kundenvolumen unter dir: {formatMoney(row.partner_volume, "€")}
+            Customer volume under you: {formatMoney(row.partner_volume, "€")}
             {toNext
-              ? ` — noch ${formatMoney(toNext.remaining, "€")} bis Level ${toNext.next.level} (${toNext.next.usdPerLot} $/Lot)`
-              : " — höchstes Level erreicht 🎉"}
+              ? ` — ${formatMoney(toNext.remaining, "€")} to go until Level ${toNext.next.level} (${toNext.next.usdPerLot} $/lot)`
+              : " — top level reached 🎉"}
           </div>
         </div>
       )}
@@ -224,13 +224,13 @@ function PartnerCard({ row }: { row: PartnerRow }) {
       <div className="mt-5 rounded-xl border border-white/5 bg-white/[0.02] p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm font-semibold">
-            <Eye className="h-4 w-4 text-primary" /> Deine Seite
+            <Eye className="h-4 w-4 text-primary" /> Your page
           </div>
           <button
             onClick={() => setShowPreview((v) => !v)}
             className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold hover:bg-white/[0.08]"
           >
-            {showPreview ? "Ausblenden" : "Vorschau anzeigen"}
+            {showPreview ? "Hide" : "Show preview"}
           </button>
         </div>
         {showPreview && (
@@ -247,7 +247,7 @@ function PartnerCard({ row }: { row: PartnerRow }) {
               <div className="relative h-[420px] w-full overflow-hidden">
                 <iframe
                   src={`/${row.slug}`}
-                  title={`Vorschau ${row.name}`}
+                  title={`Preview ${row.name}`}
                   className="absolute left-0 top-0 origin-top-left"
                   style={{ width: "133.33%", height: "133.33%", transform: "scale(0.75)", border: "0" }}
                   loading="lazy"
@@ -255,7 +255,7 @@ function PartnerCard({ row }: { row: PartnerRow }) {
               </div>
             </div>
             <p className="mt-2 text-[11px] text-muted-foreground">
-              Nur Ansicht — Bearbeiten deiner Seite kommt später. Über deinen Link registrieren sich Kunden automatisch unter dir.
+              View only — editing your page is coming later. Customers who sign up through your link are automatically placed under you.
             </p>
           </div>
         )}
@@ -276,7 +276,7 @@ function PartnerLogin({ onDone }: { onDone: () => void }) {
     setError(null);
     const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
     setBusy(false);
-    if (error) { setError("E-Mail oder Passwort falsch."); return; }
+    if (error) { setError("Wrong email or password."); return; }
     onDone();
   }
 
@@ -284,12 +284,12 @@ function PartnerLogin({ onDone }: { onDone: () => void }) {
     <div className="flex min-h-screen items-center justify-center bg-[oklch(0.11_0.03_255)] px-4 text-foreground [background-image:radial-gradient(900px_500px_at_100%_-10%,oklch(0.9_0.2_140/0.05),transparent_60%)]">
       <form onSubmit={submit} className="w-full max-w-sm rounded-2xl border border-white/10 bg-[oklch(0.15_0.045_255)] p-7 shadow-2xl">
         <div className="mb-6">
-          <div className="font-display text-lg font-bold leading-tight">Partner-Portal</div>
-          <div className="text-[11px] text-muted-foreground">Melde dich mit deinen Partner-Zugangsdaten an</div>
+          <div className="font-display text-lg font-bold leading-tight">Partner Portal</div>
+          <div className="text-[11px] text-muted-foreground">Sign in with your partner credentials</div>
         </div>
 
         <label className="mb-3 block">
-          <span className="mb-1 block text-xs font-semibold text-muted-foreground">E-Mail</span>
+          <span className="mb-1 block text-xs font-semibold text-muted-foreground">Email</span>
           <input
             type="email" required autoComplete="username" value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -298,7 +298,7 @@ function PartnerLogin({ onDone }: { onDone: () => void }) {
           />
         </label>
         <label className="mb-5 block">
-          <span className="mb-1 block text-xs font-semibold text-muted-foreground">Passwort</span>
+          <span className="mb-1 block text-xs font-semibold text-muted-foreground">Password</span>
           <input
             type="password" required autoComplete="current-password" value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -314,7 +314,7 @@ function PartnerLogin({ onDone }: { onDone: () => void }) {
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
         >
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-          Anmelden
+          Sign in
         </button>
       </form>
     </div>

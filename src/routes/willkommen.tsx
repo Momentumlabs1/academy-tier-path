@@ -13,7 +13,7 @@ import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/willkommen")({
-  head: () => ({ meta: [{ title: "Willkommen — Cosmos Candles Academy" }] }),
+  head: () => ({ meta: [{ title: "Welcome — Cosmos Candles Academy" }] }),
   component: WelcomeForward,
 });
 

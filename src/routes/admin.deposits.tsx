@@ -80,34 +80,34 @@ function AdminDeposits() {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="Einzahlungs-Ledger" sub="Alle verifizierten Ein- und Auszahlungen" />
+      <AdminPageHeader title="Deposit ledger" sub="All verified deposits and withdrawals" />
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-        <AdminKpiCard label="Eingezahlt gesamt" value={formatMoney(totalDeposited, "€")} tone="ok" />
-        <AdminKpiCard label="Ausgezahlt gesamt" value={formatMoney(totalWithdrawn, "€")} tone="warn" />
+        <AdminKpiCard label="Total deposited" value={formatMoney(totalDeposited, "€")} tone="ok" />
+        <AdminKpiCard label="Total withdrawn" value={formatMoney(totalWithdrawn, "€")} tone="warn" />
         <AdminKpiCard label="Netto AUM" value={formatMoney(net, "€")} tone="primary" />
       </div>
 
       {error && (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-          Daten konnten nicht geladen werden: {error}
+          Couldn't load data: {error}
         </div>
       )}
 
       <div className="overflow-x-auto rounded-2xl border border-white/5 bg-[oklch(0.16_0.06_250)]">
         {loading ? (
           <div className="flex items-center justify-center gap-2 py-16 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" /> Lade Einzahlungen…
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading deposits…
           </div>
         ) : rows.length === 0 ? (
           <div className="px-4 py-16 text-center text-sm text-muted-foreground">
-            Noch keine Einzahlungen.
+            No deposits yet.
           </div>
         ) : (
           <table className="w-full min-w-[660px]">
             <thead className="border-b border-white/5">
               <tr>
-                {["Datum", "Kunde", "Betrag", "Typ", "Tier-Wechsel", "Notiz"].map((h) => (
+                {["Date", "Member", "Amount", "Type", "Tier change", "Note"].map((h) => (
                   <th key={h} className="py-3 pl-4 text-left text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{h}</th>
                 ))}
               </tr>
@@ -127,7 +127,7 @@ function AdminDeposits() {
                       {d.type === "withdrawal"
                         ? <ArrowUpRight className="h-3.5 w-3.5" />
                         : <ArrowDownLeft className="h-3.5 w-3.5" />}
-                      {d.type === "deposit" ? "Einzahlung" : "Auszahlung"}
+                      {d.type === "deposit" ? "Deposit" : "Withdrawal"}
                     </span>
                   </td>
                   <td className="py-3 pl-4 text-xs">
@@ -138,7 +138,7 @@ function AdminDeposits() {
                         <TierChip tier={d.tierAfter} />
                       </span>
                     ) : (
-                      <span className="text-muted-foreground">Keine Änderung</span>
+                      <span className="text-muted-foreground">No change</span>
                     )}
                   </td>
                   <td className="py-3 pl-4 pr-4 text-xs text-muted-foreground max-w-[200px] truncate">{d.note}</td>

@@ -34,12 +34,12 @@ function LoginPage() {
           </span>
           <div>
             <div className="font-display text-lg font-bold leading-tight">Command Center</div>
-            <div className="text-[11px] text-muted-foreground">Nur für Administratoren</div>
+            <div className="text-[11px] text-muted-foreground">Admins only</div>
           </div>
         </div>
 
         <label className="mb-3 block">
-          <span className="mb-1 block text-xs font-semibold text-muted-foreground">E-Mail</span>
+          <span className="mb-1 block text-xs font-semibold text-muted-foreground">Email</span>
           <input
             type="email" required autoComplete="username" value={email}
             onChange={(e) => setEmail(e.target.value)}
@@ -48,7 +48,7 @@ function LoginPage() {
           />
         </label>
         <label className="mb-5 block">
-          <span className="mb-1 block text-xs font-semibold text-muted-foreground">Passwort</span>
+          <span className="mb-1 block text-xs font-semibold text-muted-foreground">Password</span>
           <input
             type="password" required autoComplete="current-password" value={password}
             onChange={(e) => setPassword(e.target.value)}
@@ -64,7 +64,7 @@ function LoginPage() {
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
         >
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-          {busy ? "Anmelden…" : "Anmelden"}
+          {busy ? "Signing in…" : "Sign in"}
         </button>
       </form>
     </div>

@@ -20,30 +20,30 @@ import { formatMoney } from "@/lib/format";
 export const Route = createFileRoute("/partner-programm")({
   head: () => ({
     meta: [
-      { title: "Partner-Programm — Cosmos Candles" },
-      { name: "description", content: "Werde Partner: ein komplettes Trading-System gratis + transparente Vergütung pro gehandeltem Lot." },
+      { title: "Partner Program — Cosmos Candles" },
+      { name: "description", content: "Become a partner: a complete trading system for free + transparent commission per traded lot." },
     ],
   }),
   component: PartnerProgramm,
 });
 
 const CONTACT = "kontakt@momentumlabs.at";
-const applyHref = `mailto:${CONTACT}?subject=${encodeURIComponent("Partner werden — Cosmos Candles")}`;
+const applyHref = `mailto:${CONTACT}?subject=${encodeURIComponent("Become a partner — Cosmos Candles")}`;
 
 const WHAT_YOU_GET = [
-  { icon: LayoutDashboard, title: "Fertige, gebrandete Seite", body: "Deine eigene Landingpage unter cosmos-candles.com/deinname — mit deinem Namen, Farben, deinem Auftritt. Du musst nichts bauen." },
-  { icon: Radio, title: "Live-Telegram-Signale", body: "Deine Community bekommt echte Trade-Calls (Entry, Stop, Ziele) automatisch in einen privaten Kanal." },
-  { icon: GraduationCap, title: "Komplette Trading-Academy", body: "Strukturierte Lektionen von den Grundlagen bis zum echten Orderflow-Edge — nicht nur ein Broker-Link." },
-  { icon: Bot, title: "Auto-Onboarding & Bot", body: "Registrierung, Einzahlungs-Freischaltung und Telegram-Zugang laufen vollautomatisch. Kein manueller Aufwand." },
-  { icon: LayoutDashboard, title: "Dein eigenes Dashboard", body: "Klicks, Kunden, Einzahlungen, Provision und dein aktuelles Level — alles in Echtzeit, nur für dich sichtbar." },
-  { icon: Sparkles, title: "Kein eigenes Produkt nötig", body: "Du vermarktest ein fertiges System, das dich sonst Monate und tausende Euro kosten würde. Bio-Link rein, fertig." },
+  { icon: LayoutDashboard, title: "Ready-made, branded page", body: "Your own landing page at cosmos-candles.com/yourname — with your name, colors, your look. Nothing to build." },
+  { icon: Radio, title: "Live Telegram signals", body: "Your community gets real trade calls (entry, stop, targets) delivered automatically to a private channel." },
+  { icon: GraduationCap, title: "Complete trading academy", body: "Structured lessons from the basics to a real orderflow edge — not just a broker link." },
+  { icon: Bot, title: "Auto-onboarding & bot", body: "Sign-up, deposit unlock, and Telegram access run fully automatically. Zero manual work." },
+  { icon: LayoutDashboard, title: "Your own dashboard", body: "Clicks, customers, deposits, commission, and your current level — all in real time, visible only to you." },
+  { icon: Sparkles, title: "No product of your own needed", body: "You promote a finished system that would otherwise cost you months and thousands of euros. Drop it in your bio link — done." },
 ];
 
 const FAQ = [
-  { q: "Was kostet mich das?", a: "Nichts. Das komplette System (Website, Academy, Signale, Bot, Dashboard) bekommst du gratis. Du investierst nur deine Reichweite." },
-  { q: "Brauche ich Erfahrung oder eine Lizenz?", a: "Nein. Du bringst Menschen zusammen — die Academy, die Signale und das System übernehmen den Rest. Du gibst keine Anlageberatung." },
-  { q: "Wie werde ich bezahlt?", a: "Pro gehandeltem Lot deiner Kunden — transparent nach der Staffel unten. Du siehst jeden Betrag live in deinem Dashboard." },
-  { q: "Warum ist das fair für die Kunden?", a: "Wir verdienen an der Broker-Provision pro Lot, nicht an überzogenen Spreads. Günstiger als die meisten — deine Kunden bleiben länger aktiv, davon profitieren alle." },
+  { q: "What does it cost me?", a: "Nothing. You get the complete system (website, academy, signals, bot, dashboard) for free. All you invest is your reach." },
+  { q: "Do I need experience or a license?", a: "No. You bring people together — the academy, the signals, and the system handle the rest. You're not giving investment advice." },
+  { q: "How do I get paid?", a: "Per lot your customers trade — transparently, following the ladder below. You see every amount live in your dashboard." },
+  { q: "Why is this fair for customers?", a: "We earn from the broker commission per lot, not from inflated spreads. Cheaper than most — your customers stay active longer, and everyone benefits." },
 ];
 
 function PartnerProgramm() {
@@ -55,26 +55,26 @@ function PartnerProgramm() {
           <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-sm font-black text-primary-foreground">C</span>
           <span className="font-display text-lg font-bold">Cosmos Candles</span>
         </div>
-        <a href={applyHref} className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90">Partner werden</a>
+        <a href={applyHref} className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90">Become a partner</a>
       </header>
 
       {/* Hero */}
       <section className="mx-auto max-w-4xl px-4 pb-16 pt-12 text-center sm:px-8">
         <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 text-xs font-semibold text-primary">
-          <ShieldCheck className="h-3.5 w-3.5" /> Partner-Programm
+          <ShieldCheck className="h-3.5 w-3.5" /> Partner Program
         </div>
         <h1 className="font-display text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
-          Vergüte deine Community —<br /><span className="text-primary">ohne selbst ein Produkt zu bauen.</span>
+          Monetize your community —<br /><span className="text-primary">without building a product yourself.</span>
         </h1>
         <p className="mx-auto mt-5 max-w-2xl text-lg text-foreground/70">
-          Du bekommst ein komplettes, fertiges Trading-System gratis und wirst pro gehandeltem Lot vergütet — transparent, fair und günstiger als die meisten da draußen.
+          You get a complete, ready-made trading system for free and earn per lot traded — transparent, fair, and cheaper than most out there.
         </p>
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
           <a href={applyHref} className="inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3.5 text-sm font-bold text-primary-foreground shadow-[var(--shadow-lime)] transition-transform hover:-translate-y-0.5">
-            Partner werden <ArrowRight className="h-4 w-4" />
+            Become a partner <ArrowRight className="h-4 w-4" />
           </a>
           <a href="#verdienst" className="inline-flex items-center gap-2 rounded-full border border-white/12 bg-white/5 px-7 py-3.5 text-sm font-semibold hover:bg-white/10">
-            Wie du verdienst
+            How you earn
           </a>
         </div>
       </section>
@@ -82,17 +82,17 @@ function PartnerProgramm() {
       {/* Der Unterschied */}
       <section className="mx-auto max-w-5xl px-4 pb-16 sm:px-8">
         <div className="rounded-3xl border border-primary/15 bg-gradient-to-br from-primary/[0.07] to-transparent p-7 sm:p-10">
-          <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">Der Unterschied</div>
-          <h2 className="font-display text-2xl font-bold sm:text-3xl">Nicht nur ein Broker — ein komplettes System.</h2>
+          <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-primary">The difference</div>
+          <h2 className="font-display text-2xl font-bold sm:text-3xl">Not just a broker — a complete system.</h2>
           <p className="mt-4 max-w-3xl text-foreground/70">
-            Die meisten Affiliate-Programme geben dir nur einen Broker-Link und lassen dich allein. Bei uns bekommt dein Publikum eine <span className="font-semibold text-foreground">ganze Academy</span> — Signale, Lektionen, Bot, Community — und <span className="font-semibold text-foreground">du</span> bekommst ein fertiges White-Label-System, das für dich läuft. Das macht dein Angebot stärker, deine Kunden bleiben länger, und du verdienst wiederkehrend.
+            Most affiliate programs hand you a broker link and leave you on your own. With us, your audience gets a <span className="font-semibold text-foreground">full academy</span> — signals, lessons, bot, community — and <span className="font-semibold text-foreground">you</span> get a ready-made white-label system that runs for you. That makes your offer stronger, your customers stick around longer, and you earn recurring income.
           </p>
         </div>
       </section>
 
       {/* Was du bekommst */}
       <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-8">
-        <h2 className="mb-8 text-center font-display text-2xl font-bold sm:text-3xl">Was du als Partner bekommst</h2>
+        <h2 className="mb-8 text-center font-display text-2xl font-bold sm:text-3xl">What you get as a partner</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {WHAT_YOU_GET.map((f) => (
             <div key={f.title} className="rounded-3xl border border-white/6 bg-white/[0.03] p-6">
@@ -107,18 +107,18 @@ function PartnerProgramm() {
       {/* Wie du verdienst — Staffel */}
       <section id="verdienst" className="mx-auto max-w-5xl px-4 pb-16 sm:px-8">
         <div className="mb-2 flex items-center justify-center gap-2 text-primary"><TrendingUp className="h-5 w-5" /></div>
-        <h2 className="mb-2 text-center font-display text-2xl font-bold sm:text-3xl">Wie du verdienst</h2>
+        <h2 className="mb-2 text-center font-display text-2xl font-bold sm:text-3xl">How you earn</h2>
         <p className="mx-auto mb-8 max-w-2xl text-center text-foreground/70">
-          Du wirst <span className="font-semibold text-foreground">pro gehandeltem Lot</span> deiner Kunden vergütet — nicht pro Einzahlung. Je mehr Volumen deine Community handelt, desto höher steigt dein Satz. Vollständig transparent, live in deinem Dashboard.
+          You're paid <span className="font-semibold text-foreground">per lot your customers trade</span> — not per deposit. The more volume your community trades, the higher your rate climbs. Fully transparent, live in your dashboard.
         </p>
         <div className="grid gap-3 sm:grid-cols-4">
           {COMMISSION_LADDER.map((l, i) => (
             <div key={l.level} className="relative overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03] p-5 text-center">
               <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Level {l.level}</div>
               <div className="mt-2 font-display text-3xl font-bold text-primary">{l.usdPerLot} $</div>
-              <div className="text-[11px] text-muted-foreground">pro Lot</div>
+              <div className="text-[11px] text-muted-foreground">per lot</div>
               <div className="mt-3 border-t border-white/8 pt-3 text-[11px] text-foreground/60">
-                {l.toVolume ? `${formatMoney(l.fromVolume, "€")} – ${formatMoney(l.toVolume, "€")}` : `ab ${formatMoney(l.fromVolume, "€")}`}<br />Kundenvolumen
+                {l.toVolume ? `${formatMoney(l.fromVolume, "€")} – ${formatMoney(l.toVolume, "€")}` : `from ${formatMoney(l.fromVolume, "€")}`}<br />customer volume
               </div>
               {i === COMMISSION_LADDER.length - 1 && (
                 <span className="absolute right-2 top-2 rounded-full bg-primary/15 px-2 py-0.5 text-[9px] font-bold uppercase text-primary">Top</span>
@@ -127,7 +127,7 @@ function PartnerProgramm() {
           ))}
         </div>
         <p className="mt-4 text-center text-[12px] text-muted-foreground">
-          Start niedrig, mit Volumen nach oben — so refinanziert sich das System und du steigst mit deinem Erfolg. Kein Deckel nach unten, klarer Aufstieg nach oben.
+          Start low, climb with volume — that's how the system funds itself and you rise with your success. No downside cap, a clear path up.
         </p>
       </section>
 
@@ -136,16 +136,16 @@ function PartnerProgramm() {
         <div className="grid gap-4 md:grid-cols-2">
           <div className="rounded-3xl border border-white/6 bg-white/[0.03] p-7">
             <span className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 text-primary"><Wallet className="h-5 w-5" /></span>
-            <h3 className="font-display text-lg font-bold">Wie das Geld entsteht</h3>
+            <h3 className="font-display text-lg font-bold">Where the money comes from</h3>
             <p className="mt-2 text-sm text-foreground/70">
-              Wir verdienen an der <span className="font-semibold text-foreground">Broker-Provision pro gehandeltem Lot</span> (IB-Modell) — <span className="font-semibold text-foreground">nicht</span> daran, Kunden über überzogene Spreads abzuzocken. Faire, günstige Konditionen im Vergleich zu vielen anderen: Deine Kunden bleiben länger aktiv — und davon profitieren alle im Baum.
+              We earn from the <span className="font-semibold text-foreground">broker commission per traded lot</span> (IB model) — <span className="font-semibold text-foreground">not</span> by squeezing customers with inflated spreads. Fair, low-cost conditions compared to many others: your customers stay active longer — and everyone in the tree benefits.
             </p>
           </div>
           <div className="rounded-3xl border border-white/6 bg-white/[0.03] p-7">
             <span className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 text-primary"><Gauge className="h-5 w-5" /></span>
-            <h3 className="font-display text-lg font-bold">Wie wir arbeiten</h3>
+            <h3 className="font-display text-lg font-bold">How we work</h3>
             <p className="mt-2 text-sm text-foreground/70">
-              Alles läuft zentral & sauber über deinen Baum: <span className="font-semibold text-foreground">Master → Partner → Kunden</span>. Jeder Klick, jeder Kunde, jede Einzahlung und deine Provision sind in deinem eigenen Dashboard nachvollziehbar. Keine versteckten Gebühren, keine Kursgebühren für deine Kunden.
+              Everything runs centrally & cleanly through your tree: <span className="font-semibold text-foreground">Master → Partner → Customers</span>. Every click, every customer, every deposit, and your commission are traceable in your own dashboard. No hidden fees, no course fees for your customers.
             </p>
           </div>
         </div>
@@ -153,14 +153,14 @@ function PartnerProgramm() {
 
       {/* Warum guter Deal */}
       <section className="mx-auto max-w-4xl px-4 pb-16 sm:px-8">
-        <h2 className="mb-6 text-center font-display text-2xl font-bold sm:text-3xl">Warum das für dich ein guter Deal ist</h2>
+        <h2 className="mb-6 text-center font-display text-2xl font-bold sm:text-3xl">Why this is a good deal for you</h2>
         <div className="mx-auto grid max-w-2xl gap-2.5">
           {[
-            "Kein eigenes Produkt bauen — du vermarktest ein fertiges System.",
-            "Keine Kosten, kein Risiko: das System bekommst du gratis.",
-            "Wiederkehrende Vergütung pro Lot — nicht einmalig.",
-            "Du steigst mit deinem Volumen (5 → 10 $/Lot).",
-            "Dein Publikum bekommt echten Mehrwert (Academy + Signale), nicht nur einen Link.",
+            "No product to build — you promote a finished system.",
+            "No costs, no risk: you get the system for free.",
+            "Recurring commission per lot — not a one-off.",
+            "You level up with your volume (5 → 10 $/lot).",
+            "Your audience gets real value (academy + signals), not just a link.",
           ].map((p) => (
             <div key={p} className="flex items-start gap-3 rounded-xl border border-white/6 bg-white/[0.03] px-4 py-3">
               <BadgeCheck className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
@@ -172,7 +172,7 @@ function PartnerProgramm() {
 
       {/* FAQ */}
       <section className="mx-auto max-w-3xl px-4 pb-16 sm:px-8">
-        <h2 className="mb-6 text-center font-display text-2xl font-bold sm:text-3xl">Häufige Fragen</h2>
+        <h2 className="mb-6 text-center font-display text-2xl font-bold sm:text-3xl">FAQ</h2>
         <div className="space-y-3">
           {FAQ.map((f) => (
             <details key={f.q} className="group rounded-2xl border border-white/6 bg-white/[0.03] px-5 py-4">
@@ -189,20 +189,20 @@ function PartnerProgramm() {
       {/* CTA */}
       <section className="mx-auto max-w-4xl px-4 pb-20 sm:px-8">
         <div className="rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 to-transparent p-8 text-center sm:p-12">
-          <h2 className="font-display text-2xl font-bold sm:text-3xl">Bereit, Partner zu werden?</h2>
+          <h2 className="font-display text-2xl font-bold sm:text-3xl">Ready to become a partner?</h2>
           <p className="mx-auto mt-3 max-w-md text-foreground/70">
-            Schreib uns kurz — wir richten deine gebrandete Seite ein und du bist innerhalb von Minuten startklar.
+            Drop us a quick message — we'll set up your branded page and you're ready to go within minutes.
           </p>
           <a href={applyHref} className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-8 py-3.5 text-sm font-bold text-primary-foreground shadow-[var(--shadow-lime)] transition-transform hover:-translate-y-0.5">
-            Partner werden <ArrowRight className="h-4 w-4" />
+            Become a partner <ArrowRight className="h-4 w-4" />
           </a>
-          <p className="mt-4 text-[12px] text-muted-foreground">Oder direkt: <a href={`mailto:${CONTACT}`} className="underline hover:text-foreground">{CONTACT}</a></p>
+          <p className="mt-4 text-[12px] text-muted-foreground">Or directly: <a href={`mailto:${CONTACT}`} className="underline hover:text-foreground">{CONTACT}</a></p>
         </div>
       </section>
 
       {/* Footer */}
       <footer className="border-t border-white/6 px-4 py-6 text-center text-[11px] text-muted-foreground">
-        Cosmos Candles · Powered by <Link to="/" className="underline hover:text-foreground">Agent Trading Academy</Link> · Trading ist mit hohem Risiko verbunden. Einnahmen hängen von der Aktivität der Kunden ab und sind nicht garantiert.
+        Cosmos Candles · Powered by <Link to="/" className="underline hover:text-foreground">Agent Trading Academy</Link> · Trading involves risk — 74–89% of retail CFD accounts lose money. Earnings depend on customer activity and are not guaranteed.
       </footer>
     </div>
   );

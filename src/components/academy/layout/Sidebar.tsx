@@ -78,7 +78,7 @@ export function Sidebar() {
           )}
         </Link>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold">{state.profile.name || state.profile.email || "Dein Account"}</div>
+          <div className="truncate text-sm font-semibold">{state.profile.name || state.profile.email || "Your account"}</div>
           <div className="truncate text-[11px] text-muted-foreground">{state.currentTier?.name ?? "Below Foundation"} Member</div>
         </div>
       </div>

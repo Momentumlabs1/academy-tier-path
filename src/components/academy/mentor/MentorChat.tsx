@@ -21,7 +21,7 @@ interface Msg { role: "user" | "assistant"; content: string }
 const GREETING: Msg = {
   role: "assistant",
   content:
-    "Hey, ich bin Cosmo — dein KI-Mentor. 👋 Frag mich alles zur Academy, zu den Signalen, Tiers oder zur Strategie (Level 2, Volume Profile, Risikomanagement …). Ich bin ein KI-Assistent, keine persönliche Anlageberatung.",
+    "Hey, I'm Cosmo — your AI mentor. 👋 Ask me anything about the academy, the signals, tiers, or strategy (Level 2, Volume Profile, risk management …). I'm an AI assistant, not personal investment advice.",
 };
 
 export function MentorChat() {
@@ -45,17 +45,17 @@ export function MentorChat() {
     try {
       const { data: session } = await supabase.auth.getSession();
       const token = session.session?.access_token;
-      if (!token) throw new Error("Bitte melde dich an, um den Mentor zu nutzen.");
+      if (!token) throw new Error("Please sign in to use the mentor.");
       const res = await fetch(FN, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ message: text }),
       });
       const data = await res.json();
-      const reply = res.ok ? String(data.reply ?? "") : String(data.error ?? "Fehler.");
+      const reply = res.ok ? String(data.reply ?? "") : String(data.error ?? "Something went wrong.");
       setMsgs((m) => [...m, { role: "assistant", content: reply }]);
     } catch (err) {
-      setMsgs((m) => [...m, { role: "assistant", content: err instanceof Error ? err.message : "Netzwerkfehler." }]);
+      setMsgs((m) => [...m, { role: "assistant", content: err instanceof Error ? err.message : "Network error." }]);
     } finally {
       setBusy(false);
     }
@@ -67,7 +67,7 @@ export function MentorChat() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          aria-label="Mentor-Chat öffnen"
+          aria-label="Open mentor chat"
           className="fixed bottom-24 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-[var(--shadow-lime)] transition-transform hover:scale-105 lg:bottom-6"
         >
           <Bot className="h-6 w-6" />
@@ -84,9 +84,9 @@ export function MentorChat() {
             </span>
             <div className="min-w-0 flex-1">
               <div className="text-sm font-bold">Cosmo Mentor</div>
-              <div className="text-[11px] text-muted-foreground">KI-Assistent · keine Anlageberatung</div>
+              <div className="text-[11px] text-muted-foreground">AI assistant · not investment advice</div>
             </div>
-            <button onClick={() => setOpen(false)} aria-label="Schließen" className="rounded-lg p-1.5 text-muted-foreground hover:bg-white/5 hover:text-foreground">
+            <button onClick={() => setOpen(false)} aria-label="Close" className="rounded-lg p-1.5 text-muted-foreground hover:bg-white/5 hover:text-foreground">
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -121,7 +121,7 @@ export function MentorChat() {
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Frag den Mentor …"
+              placeholder="Ask the mentor …"
               className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm outline-none focus:border-primary/50"
             />
             <button

@@ -40,7 +40,7 @@ export function FunnelShell({ brand, children }: { brand: PartnerBrand | null; c
             >
               {brand.logoInitials}
             </span>
-            <span className="text-foreground/80">empfohlen von {brand.name}</span>
+            <span className="text-foreground/80">recommended by {brand.name}</span>
           </div>
         )}
       </header>
@@ -48,7 +48,7 @@ export function FunnelShell({ brand, children }: { brand: PartnerBrand | null; c
       <main className="flex flex-1 items-center justify-center px-4 py-8 sm:px-8">{children}</main>
 
       <footer className="px-4 py-6 text-center text-[11px] text-muted-foreground">
-        {COSMO.fullName} · Trading beinhaltet Risiko — 74–89 % der Retail-CFD-Konten verlieren Geld.
+        {COSMO.fullName} · Trading involves risk — 74–89% of retail CFD accounts lose money.
       </footer>
     </div>
   );

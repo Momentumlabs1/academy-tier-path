@@ -14,12 +14,12 @@ export const Route = createFileRoute("/admin/signals")({
 });
 
 const SETUP_STEPS = [
-  { title: "Bot erstellen", body: "Bei @BotFather /newbot ausführen → Bot-Token kopieren. Ein Bot bedient alle Brands." },
-  { title: "Secrets setzen", body: "In Supabase → Edge Functions → Secrets: TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET (random), MAIN_CHANNEL_ID." },
-  { title: "Function deployen", body: "supabase functions deploy telegram-webhook --no-verify-jwt" },
-  { title: "Webhook registrieren", body: "setWebhook mit der Function-URL + secret_token aufrufen (Befehl unten kopieren)." },
-  { title: "Bot als Admin", body: "Bot in den Main-Channel UND in jeden Brand-Channel als Admin einladen (Recht: Nachrichten senden + Invite-Links)." },
-  { title: "Channel-IDs eintragen", body: "telegram_channel_id pro Tenant in der Datenbank setzen — ab dann läuft der Fan-out automatisch." },
+  { title: "Create the bot", body: "Run /newbot with @BotFather → copy the bot token. One bot serves all brands." },
+  { title: "Set secrets", body: "In Supabase → Edge Functions → Secrets: TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET (random), MAIN_CHANNEL_ID." },
+  { title: "Deploy the function", body: "supabase functions deploy telegram-webhook --no-verify-jwt" },
+  { title: "Register the webhook", body: "Call setWebhook with the function URL + secret_token (copy the command below)." },
+  { title: "Bot as admin", body: "Add the bot as admin to the main channel AND every brand channel (permissions: send messages + invite links)." },
+  { title: "Add channel IDs", body: "Set telegram_channel_id per tenant in the database — from then on the fan-out runs automatically." },
 ];
 
 // Function URL derived from the app's configured Supabase project; only the token/secret stay placeholders.
@@ -108,23 +108,23 @@ function AdminSignals() {
     <div className="space-y-6">
       <AdminPageHeader
         title="Signal Relay"
-        sub="Ein Main-Channel, ein Bot — jede Brand bekommt jedes Signal automatisch in ihren eigenen Channel, mit eigenem Broker-Link."
+        sub="One main channel, one bot — every brand automatically gets every signal in its own channel, with its own broker link."
       />
 
       {/* Connection settings — ready to go: paste real values once the bot exists */}
       <div className="rounded-2xl border border-white/5 bg-[oklch(0.16_0.06_250)] p-5">
         <div className="flex items-center justify-between gap-3">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Verbindung</div>
+          <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Connection</div>
           <span className={cn(
             "rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase",
             cfg.botUsername && cfg.mainChannelId ? "bg-primary/15 text-primary" : "bg-amber-400/15 text-amber-400",
           )}>
-            {cfg.botUsername && cfg.mainChannelId ? "Konfiguriert" : "Werte eintragen"}
+            {cfg.botUsername && cfg.mainChannelId ? "Configured" : "Add values"}
           </span>
         </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <label className="block">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Bot-Username (von @BotFather)</span>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Bot username (from @BotFather)</span>
             <input
               value={cfg.botUsername}
               onChange={(e) => update({ botUsername: e.target.value.replace(/^@/, "") })}
@@ -133,7 +133,7 @@ function AdminSignals() {
             />
           </label>
           <label className="block">
-            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Main-Channel-ID</span>
+            <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Main channel ID</span>
             <input
               value={cfg.mainChannelId}
               onChange={(e) => update({ mainChannelId: e.target.value })}
@@ -143,20 +143,20 @@ function AdminSignals() {
           </label>
         </div>
         <p className="mt-2 text-[11px] text-muted-foreground">
-          Bot-Token &amp; Webhook-Secret gehören <b>nur</b> in Supabase → Edge Functions → Secrets — nie hierher.
-          Channel-IDs findest du, indem du eine Channel-Nachricht an @userinfobot weiterleitest.
+          Bot token &amp; webhook secret belong <b>only</b> in Supabase → Edge Functions → Secrets — never here.
+          You can find channel IDs by forwarding a channel message to @userinfobot.
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <AdminKpiCard label="Main channel" value="Demo" sub="wire up via setup below" />
         <AdminKpiCard label="Brand channels" value={TENANTS.length} tone="primary" />
-        <AdminKpiCard label="Signals relayed" value={loading ? "…" : rows.length} sub="letzte 50" />
+        <AdminKpiCard label="Signals relayed" value={loading ? "…" : rows.length} sub="last 50" />
         <AdminKpiCard
           label="Delivery rate"
           value={loading ? "…" : totalDeliveries ? `${rate}%` : "—"}
           tone={!totalDeliveries ? undefined : rate === 100 ? "ok" : "warn"}
-          sub={!totalDeliveries ? "noch keine Zustellungen" : failed ? `${failed} fehlgeschlagen` : "alle zugestellt"}
+          sub={!totalDeliveries ? "no deliveries yet" : failed ? `${failed} failed` : "all delivered"}
         />
       </div>
 
@@ -171,7 +171,7 @@ function AdminSignals() {
             </span>
             <div className="min-w-0">
               <div className="text-sm font-bold">Main Signal Channel</div>
-              <div className="text-[11px] text-muted-foreground">Du postest genau 1×</div>
+              <div className="text-[11px] text-muted-foreground">You post exactly once</div>
             </div>
           </div>
 
@@ -185,7 +185,7 @@ function AdminSignals() {
             </span>
             <div className="min-w-0">
               <div className="text-sm font-bold">Relay Bot</div>
-              <div className="text-[11px] text-muted-foreground">copyMessage — kein „Forwarded"</div>
+              <div className="text-[11px] text-muted-foreground">copyMessage — no "Forwarded" tag</div>
             </div>
           </div>
 
@@ -204,7 +204,7 @@ function AdminSignals() {
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-xs font-semibold">{t.name}</div>
-                  <div className="truncate text-[10px] text-muted-foreground">+ eigener Broker-Link im Footer</div>
+                  <div className="truncate text-[10px] text-muted-foreground">+ own broker link in the footer</div>
                 </div>
                 <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold text-primary">
                   <CheckCircle2 className="h-3 w-3" /> ready
@@ -219,23 +219,23 @@ function AdminSignals() {
       <div className="overflow-hidden rounded-2xl border border-white/5 bg-[oklch(0.16_0.06_250)]">
         <div className="flex items-center justify-between px-5 pt-4 pb-3">
           <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Relay log</div>
-          <div className="text-[11px] text-muted-foreground">live aus signal_relays</div>
+          <div className="text-[11px] text-muted-foreground">live from signal_relays</div>
         </div>
 
         {error && (
           <div className="mx-5 mb-4 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-            Relay-Log konnte nicht geladen werden: {error}
+            Couldn't load relay log: {error}
           </div>
         )}
 
         {loading ? (
           <div className="flex items-center gap-2 px-5 py-10 text-sm text-muted-foreground">
-            <Loader2 className="h-4 w-4 animate-spin" /> Lade Relay-Log…
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading relay log…
           </div>
         ) : !error && rows.length === 0 ? (
           <div className="px-5 pb-6">
             <div className="rounded-xl border border-dashed border-white/10 px-4 py-10 text-center text-sm text-muted-foreground">
-              Noch keine relayten Signale.
+              No relayed signals yet.
             </div>
           </div>
         ) : (
@@ -246,9 +246,9 @@ function AdminSignals() {
               return (
                 <div key={r.id} className="flex items-center gap-3 px-5 py-3">
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm">{r.preview || "(kein Vorschautext)"}</div>
+                    <div className="truncate text-sm">{r.preview || "(no preview text)"}</div>
                     <div className="mt-0.5 text-[11px] text-muted-foreground">
-                      {timeAgo(r.createdAt)} · {okCount}/{entries.length} zugestellt
+                      {timeAgo(r.createdAt)} · {okCount}/{entries.length} delivered
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-1.5">
@@ -258,7 +258,7 @@ function AdminSignals() {
                       return (
                         <span
                           key={slug}
-                          title={ok ? `${t?.name ?? slug}: zugestellt` : `${t?.name ?? slug}: ${d.error ?? "fehlgeschlagen"}`}
+                          title={ok ? `${t?.name ?? slug}: delivered` : `${t?.name ?? slug}: ${d.error ?? "failed"}`}
                           className={cn(
                             "flex h-6 w-6 items-center justify-center rounded-md text-[9px] font-black",
                             ok ? "opacity-90" : "opacity-40 grayscale",
@@ -279,7 +279,7 @@ function AdminSignals() {
 
       {/* Setup checklist */}
       <div className="rounded-2xl border border-white/5 bg-[oklch(0.14_0.05_250)] p-5">
-        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Live schalten — 6 Schritte</div>
+        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Go live — 6 steps</div>
         <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {SETUP_STEPS.map((s, i) => (
             <div key={s.title} className="rounded-xl bg-white/[0.03] p-4">

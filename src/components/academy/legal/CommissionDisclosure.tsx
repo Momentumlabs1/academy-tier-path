@@ -9,7 +9,7 @@
  * terms; never phrase it as if we guarantee the refund.
  */
 export function CommissionDisclosure({
-  brokerName = "unserem Partner-Broker",
+  brokerName = "our partner broker",
   className = "",
 }: {
   brokerName?: string;
@@ -18,14 +18,14 @@ export function CommissionDisclosure({
   return (
     <div
       role="note"
-      aria-label="Transparenzhinweis"
+      aria-label="Transparency notice"
       className={`rounded-lg border border-white/10 bg-white/[0.03] p-3 text-xs leading-relaxed text-white/60 ${className}`}
     >
-      <span className="font-semibold text-white/75">Transparenz:</span>{" "}
-      Diese Seite enthält Werbung. Wir erhalten eine Provision von {brokerName}, wenn du
-      über unsere Links ein Konto eröffnest und handelst — für dich entstehen dadurch
-      keine zusätzlichen Kosten. Deine Einzahlung ist und bleibt dein eigenes Geld auf
-      deinem Broker-Konto und ist jederzeit gemäß den Bedingungen des Brokers auszahlbar.
+      <span className="font-semibold text-white/75">Transparency:</span>{" "}
+      This page contains advertising. We earn a commission from {brokerName} when you
+      open an account and trade through our links — at no extra cost to you. Your
+      deposit is and remains your own money in your broker account and can be withdrawn
+      at any time under the broker's terms.
     </div>
   );
 }

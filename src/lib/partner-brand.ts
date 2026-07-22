@@ -72,7 +72,7 @@ export function readPartnerBrand(): PartnerBrand | null {
       accentColor: b.accentColor ?? COSMO.accentColor,
       primaryColor: b.primaryColor ?? COSMO.primaryColor,
       telegramChannel: b.telegramChannel ?? "#",
-      brokerName: b.brokerName ?? "unserem Partner-Broker",
+      brokerName: b.brokerName ?? "our partner broker",
       brokerUrl: b.brokerUrl ?? "#",
     };
   } catch {
