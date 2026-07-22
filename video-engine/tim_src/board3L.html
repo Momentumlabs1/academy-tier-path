@@ -1,0 +1,234 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:#0a0e14;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+canvas{position:absolute;left:0;top:0}
+</style></head><body>
+<canvas id="cv" width="1920" height="1080"></canvas>
+<script>
+const cv=document.getElementById('cv'),X=cv.getContext('2d');
+const BG='#0a0e14',PANEL='#111823',PANEL2='#0e141d',LINE='#22304a',
+      INK='#eaf2f8',MUTED='#8b98a8',LIME='#b6f04a',CYAN='#39d0d0',MAGB='#e06bd8',RED='#ef5350';
+const SANS='system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+let T=0;
+const es=u=>u<0?0:u>1?1:(u<.5?4*u*u*u:1-Math.pow(-2*u+2,3)/2);
+function A(t0,k=0){return es((T/1000-t0-k*0.22)/0.48);}
+function bo(u){const c1=1.70158,c3=c1+1;return u<0?0:u>1?1:1+c3*Math.pow(u-1,3)+c1*Math.pow(u-1,2);}
+function grp(u,fn){if(u<=0)return;X.save();X.globalAlpha*=Math.min(1,u*1.2);
+  const s=0.94+0.06*bo(u);X.translate(0,(1-bo(u))*30);
+  fn(s);X.restore();}
+function rr(x,y,w,h,r){X.beginPath();X.moveTo(x+r,y);X.arcTo(x+w,y,x+w,y+h,r);X.arcTo(x+w,y+h,x,y+h,r);X.arcTo(x,y+h,x,y,r);X.arcTo(x,y,x+w,y,r);X.closePath();}
+function splitT(t,mc){const ws=t.split(' ');const o=[];let l='';for(const w of ws){const c=l?l+' '+w:w;if(c.length>mc&&l){o.push(l);l=w;}else l=c;}o.push(l);return o;}
+function badgeDot(x,y,n,pulse=0){
+  X.save();X.shadowColor='rgba(182,240,74,.55)';X.shadowBlur=26+18*pulse;
+  X.fillStyle=LIME;X.beginPath();X.arc(x,y,54,0,7);X.fill();X.restore();
+  X.fillStyle='#0c1608';X.font='900 54px '+SANS;X.textAlign='center';X.textBaseline='middle';X.fillText(String(n),x,y+2);}
+function chapterCard(cx,cy,title,w=1060,pulse=0,tEnd=1e9){
+  const lines=splitT(title,24),h=190+lines.length*88;
+  X.save();X.shadowColor=`rgba(182,240,74,${0.22+0.16*pulse})`;X.shadowBlur=60+30*pulse;
+  X.fillStyle=PANEL;rr(cx-w/2,cy-h/2,w,h,28);X.fill();X.restore();
+  X.strokeStyle=`rgba(182,240,74,${0.5+0.3*pulse})`;X.lineWidth=2.5;rr(cx-w/2,cy-h/2,w,h,28);X.stroke();
+  X.font='700 24px ui-monospace,monospace';X.fillStyle=LIME;X.textAlign='center';X.textBaseline='middle';
+  X.fillText('● CHAPTER',cx,cy-h/2+54);
+  X.font='900 76px '+SANS;
+  let fs2=76,maxw=0;
+  lines.forEach(l=>{const m=X.measureText(l).width;if(m>maxw)maxw=m;});
+  if(maxw>w-150)fs2=Math.floor(76*(w-150)/maxw);
+  X.font='900 '+fs2+'px '+SANS;X.fillStyle=INK;
+  lines.forEach((l,i)=>X.fillText(l,cx,cy+30+(i-(lines.length-1)/2)*88));
+  // animated underline sweep
+  const uw=Math.min(1,Math.max(0,(pulse>0?1:1)))*(w-160);
+  X.strokeStyle='rgba(182,240,74,.5)';X.lineWidth=3;X.lineCap='round';
+  const sw=(T/1000*0.25)%1, sx0=cx-uw/2;
+  X.beginPath();X.moveTo(sx0,cy+h/2-28);X.lineTo(sx0+uw,cy+h/2-28);X.stroke();
+  if(T/1000<tEnd){
+    const hx=sx0+uw*(0.5+0.5*Math.sin(T/1000*1.1));
+    X.save();X.shadowColor='rgba(182,240,74,.9)';X.shadowBlur=14;
+    X.fillStyle=LIME;X.beginPath();X.arc(hx,cy+h/2-28,5,0,7);X.fill();X.restore();}}
+function slideCard(x,y,w,h,heading){
+  X.fillStyle=PANEL;rr(x,y,w,h,22);X.fill();
+  X.strokeStyle=LINE;X.lineWidth=1.5;rr(x,y,w,h,22);X.stroke();
+  if(heading){X.font='700 34px '+SANS;X.fillStyle=MUTED;X.textAlign='left';X.textBaseline='alphabetic';X.fillText(heading,x+48,y+72);}}
+function sticky(x,y,w,h,text,accent=CYAN,fs=27){
+  X.fillStyle=PANEL2;rr(x,y,w,h,16);X.fill();
+  X.strokeStyle=accent;X.lineWidth=2;rr(x,y,w,h,16);X.stroke();
+  X.fillStyle=accent;rr(x+2,y+10,5,h-20,2.5);X.fill();
+  X.font='600 '+fs+'px '+SANS;
+  const ws=text.split(' ');let lines=[],l='';
+  for(const wd of ws){const t2=l?l+' '+wd:wd;if(X.measureText(t2).width>w-56&&l){lines.push(l);l=wd;}else l=t2;}
+  lines.push(l);
+  const lh=fs*1.34,sy=y+h/2-(lines.length-1)*lh/2;
+  X.fillStyle=INK;X.textAlign='center';X.textBaseline='middle';
+  lines.forEach((ln,i)=>X.fillText(ln,x+w/2+3,sy+i*lh));}
+function colCardRv(x,y,w,title,items,accent,t0,k0){
+  const h=170+items.length*58;const u0=A(t0,k0);if(u0<=0)return;
+  X.save();X.globalAlpha*=u0;
+  X.fillStyle=PANEL;rr(x,y,w,h,20);X.fill();
+  X.strokeStyle=accent;X.lineWidth=2;rr(x,y,w,h,20);X.stroke();
+  X.fillStyle=accent;rr(x,y,w,76,20);X.fill();X.fillRect(x,y+58,w,18);
+  X.fillStyle='#0c1014';X.font='800 30px '+SANS;X.textAlign='center';X.textBaseline='middle';X.fillText(title,x+w/2,y+40);
+  X.restore();
+  X.textAlign='left';
+  items.forEach((b,i)=>{const u=A(t0,k0+1+i*0.9);if(u<=0)return;
+    X.save();X.globalAlpha*=u;const yy=y+134+i*58+(1-u)*14;
+    X.fillStyle=accent;X.beginPath();X.arc(x+36,yy,5.5,0,7);X.fill();
+    X.font='500 27px '+SANS;X.fillStyle=INK;X.fillText(b,x+58,yy);X.restore();});}
+function route(pts){
+  X.save();X.strokeStyle='rgba(182,240,74,.35)';X.lineWidth=4;X.setLineDash([2,20]);
+  X.lineDashOffset=-(T/90)%22; X.lineCap='round';
+  X.beginPath();X.moveTo(pts[0][0],pts[0][1]);
+  for(let i=1;i<pts.length;i++){const [x,y]=pts[i],[px,py]=pts[i-1];
+    X.bezierCurveTo(px+(x-px)*0.5,py,x-(x-px)*0.5,y,x,y);}
+  X.stroke();X.restore();}
+/* clip anchors (s) — voice-driven */
+const T01=0.2,T02=24.8,T03=65.93,T04=89.14,T05=109.37,T06=136.14,T07=162.75,
+      T08=192.99,T09=220.23,T10=255.27,T11=304.39,T12=345.02,T13=410.13,T14=454.21;
+const ACT=[[0,89,1],[89,253.5,2],[253.5,343.2,3],[343.2,452.4,4],[452.4,999,5]];
+function pulseFor(cl){const t=T/1000;
+  for(const [a,b,c] of ACT){if(c===cl&&t>=a&&t<b)return 0.5+0.5*Math.sin(T/420);}return 0;}
+function bigLine(cx,cy,w,h,lines,t0,fs=44){
+  grp(A(t0,0),()=>{
+    X.save();X.shadowColor='rgba(182,240,74,.25)';X.shadowBlur=40;
+    X.fillStyle=PANEL2;rr(cx-w/2,cy,w,h,18);X.fill();X.restore();
+    X.strokeStyle='rgba(182,240,74,.55)';X.lineWidth=2;rr(cx-w/2,cy,w,h,18);X.stroke();});
+  lines.forEach((ln,i)=>{const u=A(t0,0.8+i*0.8);if(u<=0)return;
+    X.save();X.globalAlpha*=u;X.font='800 '+fs+'px '+SANS;X.fillStyle=INK;X.textAlign='center';X.textBaseline='middle';
+    X.fillText(ln,cx,cy+h/2-(lines.length-1)*fs*0.68+i*fs*1.36+(1-u)*12);X.restore();});
+  // light sweep once, 1.2s after full reveal
+  const sw=(T/1000-t0-1.6)/1.4;
+  if(sw>0&&sw<1){X.save();rr(cx-w/2,cy,w,h,18);X.clip();
+    const gx=cx-w/2+(w+240)*sw-120;
+    const g=X.createLinearGradient(gx-90,0,gx+90,0);
+    g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(0.5,'rgba(255,255,255,0.10)');g.addColorStop(1,'rgba(255,255,255,0)');
+    X.fillStyle=g;X.fillRect(cx-w/2,cy,w,h);X.restore();}}
+function drawWorld(){
+  X.fillStyle=BG;X.fillRect(-3000,-2000,18000,9000);
+  X.save();X.globalAlpha=0.045;X.strokeStyle='#8b98a8';X.lineWidth=1;
+  for(let gx=-3000;gx<15000;gx+=160){X.beginPath();X.moveTo(gx,-2000);X.lineTo(gx,7000);X.stroke();}
+  for(let gy=-2000;gy<7000;gy+=160){X.beginPath();X.moveTo(-3000,gy);X.lineTo(15000,gy);X.stroke();}
+  X.restore();
+  // ambient glow orbs (slow deterministic drift)
+  const orbs=[[2600,900,'182,240,74'],[7300,2100,'57,208,208'],[11200,1200,'224,107,216']];
+  orbs.forEach((o,i)=>{
+    const ph=T/1000*0.06+i*2.1;
+    const ox=o[0]+Math.sin(ph)*260, oy=o[1]+Math.cos(ph*0.8)*180;
+    const g=X.createRadialGradient(ox,oy,0,ox,oy,900);
+    g.addColorStop(0,`rgba(${o[2]},0.05)`);g.addColorStop(1,'rgba(0,0,0,0)');
+    X.fillStyle=g;X.fillRect(ox-900,oy-900,1800,1800);
+  });
+  route([[1500,530],[4200,530],[6900,530],[9600,530],[11600,1730]]);
+  /* ---- Station 1: THE HARD TRUTH ---- */
+  grp(A(T01),()=>badgeDot(1500,530,1,pulseFor(1)));
+  grp(A(T01,0.5),()=>chapterCard(1500,760,'WHY MOST TRADERS LOSE MONEY',1240,pulseFor(1),T02));
+  grp(A(T02,0),()=>slideCard(870,1030,1260,560,'The hard truth'));
+  const facts=['80–90% of retail traders lose money','Most fail within their first years','Most of these mistakes are avoidable'];
+  facts.forEach((f,i)=>{
+    grp(es((T/1000-(T02+2.0+i*11.0))/0.48),()=>sticky(940,1130+i*140,1120,116,f,i<2?CYAN:LIME,30));
+  });
+  bigLine(1500,1700,1240,210,['They don\'t lose because of the market —','they lose because of their decisions.'],T03+0.5,40);
+  /* ---- Station 2: THE 5 ACCOUNT DESTROYERS ---- */
+  grp(A(T04),()=>badgeDot(4200,530,2,pulseFor(2)));
+  grp(A(T04,0.5),()=>chapterCard(4200,760,'THE 5 ACCOUNT DESTROYERS',1240,pulseFor(2),T05));
+  colCardRv(3450,1060,460,'NO TRADING PLAN',['No clear rules','Pure gut feeling'],CYAN,T05+0.3,0);
+  colCardRv(3970,1060,460,'OVERTRADING',['Far too many trades','Forcing bad setups'],CYAN,T06+0.3,0);
+  colCardRv(4490,1060,460,'EXCESSIVE RISK',['Oversized positions','Accounts blow up fast'],RED,T07+0.3,0);
+  colCardRv(3710,1560,460,'UNREAL EXPECTATIONS',['Zero patience','Hunting the "holy grail"'],MAGB,T08+0.3,0);
+  colCardRv(4230,1560,460,'STRATEGY HOPPING',['Get-rich-quick mindset','Wrong picture of trading'],MAGB,T09+0.3,0);
+  bigLine(4200,2060,1760,150,['Beginners lose money because they trade without a system.'],T09+25.0,38);
+  /* ---- Station 3: THE EMOTION TRAP ---- */
+  grp(A(T10),()=>badgeDot(6900,530,3,pulseFor(3)));
+  grp(A(T10,0.5),()=>chapterCard(6900,760,'THE EMOTION TRAP',1100,pulseFor(3),T10+8));
+  colCardRv(6170,1060,460,'FEAR',['Closes winners too early','Skips good setups'],CYAN,T10+8.0,0);
+  colCardRv(6670,1060,460,'GREED',['Oversized positions','Ignores own rules'],RED,T10+24.0,0);
+  colCardRv(7170,1060,460,'HOPE',['Lets losses run','Clings to a bias'],MAGB,T10+34.0,0);
+  /* loss loop */
+  grp(A(T11,0),()=>{X.font='700 26px ui-monospace,monospace';X.fillStyle=LIME;X.textAlign='center';X.textBaseline='middle';
+    X.fillText('● THE LOSS LOOP',6570,1500);});
+  const pills=['EMOTIONS','BAD DECISIONS','BROKEN RULES','LOSSES'];
+  const px0=5380,pw=480,pg=120;
+  pills.forEach((p,i)=>{
+    const x=px0+i*(pw+pg);
+    grp(A(T11+4.0+i*5.0,0),()=>{
+      X.fillStyle=PANEL;rr(x,1560,pw,130,65);X.fill();
+      X.strokeStyle=i===3?RED:CYAN;X.lineWidth=2.5;rr(x,1560,pw,130,65);X.stroke();
+      X.font='800 34px '+SANS;X.fillStyle=INK;X.textAlign='center';X.textBaseline='middle';
+      X.fillText(p,x+pw/2,1625);});
+    if(i<3){const u=A(T11+6.0+i*5.0,0);if(u>0){
+      X.save();X.globalAlpha*=u;X.strokeStyle='rgba(234,242,248,.55)';X.lineWidth=4;X.lineCap='round';
+      X.beginPath();X.moveTo(x+pw+18,1625);X.lineTo(x+pw+pg-30,1625);X.stroke();
+      X.fillStyle='rgba(234,242,248,.55)';
+      X.beginPath();X.moveTo(x+pw+pg-30,1612);X.lineTo(x+pw+pg-30,1638);X.lineTo(x+pw+pg-12,1625);X.closePath();X.fill();X.restore();}}
+  });
+  {const u=A(T11+27.0,0);if(u>0){ // loop back
+    X.save();X.globalAlpha*=u;X.strokeStyle='rgba(239,83,80,.7)';X.lineWidth=4;X.lineCap='round';X.setLineDash([3,14]);
+    X.beginPath();X.moveTo(7660,1700);X.bezierCurveTo(7660,1900,5520,1900,5580,1715);X.stroke();X.setLineDash([]);
+    X.fillStyle='rgba(239,83,80,.8)';X.beginPath();X.moveTo(5566,1732);X.lineTo(5604,1728);X.lineTo(5582,1698);X.closePath();X.fill();
+    X.font='700 28px '+SANS;X.fillStyle='#ef9a97';X.textAlign='center';X.fillText('…and even more emotions',6600,1865);X.restore();}}
+  /* ---- Station 4: THE HIDDEN REASONS ---- */
+  grp(A(T12),()=>badgeDot(9600,530,4,pulseFor(4)));
+  grp(A(T12,0.5),()=>chapterCard(9600,760,'THE HIDDEN REASONS',1100,pulseFor(4),T12+6));
+  colCardRv(8590,1060,460,'INFO OVERLOAD',['Too many strategies','Too many opinions'],CYAN,T12+6.0,0);
+  colCardRv(9110,1060,460,'NO REAL PRACTICE',['Knowledge ≠ skill','Wrong strategy too long'],CYAN,T12+20.0,0);
+  colCardRv(9630,1060,460,'NO FEEDBACK',['Nobody corrects','your mistakes'],MAGB,T12+34.0,0);
+  colCardRv(10150,1060,460,'MARKETING ≠ REALITY',['"Lambos & fast money"','A pitch, not a plan'],RED,T12+46.0,0);
+  grp(A(T13+2.0,0),()=>{X.font='700 26px ui-monospace,monospace';X.fillStyle=LIME;X.textAlign='center';X.textBaseline='middle';
+    X.fillText('● THE FORMULA',9600,1580);});
+  {const u=A(T13+4.0,0);if(u>0){
+    X.save();X.globalAlpha*=u;
+    X.shadowColor='rgba(182,240,74,.25)';X.shadowBlur=40;
+    X.fillStyle=PANEL2;rr(8600,1650,2000,190,18);X.fill();X.shadowBlur=0;
+    X.strokeStyle='rgba(182,240,74,.55)';X.lineWidth=2;rr(8600,1650,2000,190,18);X.stroke();
+    X.textAlign='center';X.textBaseline='middle';
+    const terms=[['Profitability',INK],[' = ',MUTED],['Knowledge',CYAN],[' + ',MUTED],['Experience',CYAN],[' + ',MUTED],['Discipline',LIME],[' + ',MUTED],['Execution',LIME]];
+    let tot=0;X.font='800 46px '+SANS;
+    const ws=terms.map(([s])=>{X.font=/[=+]/.test(s)?'600 40px '+SANS:'800 46px '+SANS;return X.measureText(s).width;});
+    ws.forEach(w=>tot+=w);
+    let cx0=9600-tot/2;
+    terms.forEach(([s,col],i)=>{const u2=A(T13+4.5+i*0.8,0);
+      X.save();X.globalAlpha*=u2<0?0:u2;
+      X.font=/[=+]/.test(s)?'600 40px '+SANS:'800 46px '+SANS;
+      X.fillStyle=col;X.textAlign='left';X.fillText(s,cx0,1745);X.restore();cx0+=ws[i];});
+    X.restore();}}
+  /* ---- Station 5: BOTTOM LINE ---- */
+  grp(A(T14),()=>badgeDot(11600,1730,5,pulseFor(5)));
+  grp(A(T14+1.5,0),()=>{
+    X.save();X.shadowColor='rgba(182,240,74,.3)';X.shadowBlur=70;
+    X.fillStyle=PANEL;rr(10700,1860,1800,460,26);X.fill();X.restore();
+    X.strokeStyle='rgba(182,240,74,.6)';X.lineWidth=3;rr(10700,1860,1800,460,26);X.stroke();
+    X.font='700 24px ui-monospace,monospace';X.fillStyle=LIME;X.textAlign='center';X.textBaseline='middle';
+    X.fillText('● BOTTOM LINE',11600,1932);});
+  ['Successful traders focus on','the process — not on','a single trade.'].forEach((ln,i)=>{
+    const u=A(T14+3.0,0.4+i*0.8);if(u<=0)return;
+    X.save();X.globalAlpha*=u;X.font='900 62px '+SANS;X.fillStyle=INK;X.textAlign='center';X.textBaseline='middle';
+    X.fillText(ln,11600,2030+i*78+(1-u)*14);X.restore();});
+}
+/* camera — voice-driven holds */
+const HOLDVIEW=[
+  {a:0.0,b:23.0,v:{x:1500,y:730,z:1.1}},
+  {a:24.8,b:64.13,v:{x:1500,y:1400,z:1.25}},
+  {a:65.93,b:87.34,v:{x:1500,y:1525,z:1.0}},
+  {a:89.14,b:107.57,v:{x:4200,y:700,z:1.1}},
+  {a:109.37,b:191.19,v:{x:4200,y:1350,z:1.25}},
+  {a:192.99,b:253.47,v:{x:4200,y:1900,z:1.0}},
+  {a:255.27,b:302.59,v:{x:6900,y:910,z:1.15}},
+  {a:304.39,b:343.22,v:{x:6570,y:1700,z:0.78}},
+  {a:345.02,b:408.33,v:{x:9600,y:1575,z:0.87}},
+  {a:410.13,b:452.41,v:{x:9600,y:1575,z:0.87}},
+  {a:454.21,b:500.96,v:{x:11600,y:2000,z:1.0}}
+];
+function camAt(tms){const t=tms/1000;
+  if(t<=HOLDVIEW[0].b)return HOLDVIEW[0].v;
+  for(let i=0;i<HOLDVIEW.length;i++){const h=HOLDVIEW[i];
+    if(t>=h.a&&t<=h.b)return h.v;
+    if(i<HOLDVIEW.length-1){const n=HOLDVIEW[i+1];
+      if(t>h.b&&t<n.a){const u=es((t-h.b)/(n.a-h.b));
+        return {x:h.v.x+(n.v.x-h.v.x)*u,y:h.v.y+(n.v.y-h.v.y)*u,z:h.v.z+(n.v.z-h.v.z)*u};}}}
+  return HOLDVIEW[HOLDVIEW.length-1].v;}
+function renderAt(t){
+  T=t;const c0=camAt(t);
+  const c=c0;  // pixel-locked during holds (no breathing drift)
+  X.setTransform(1,0,0,1,0,0);X.fillStyle=BG;X.fillRect(0,0,1920,1080);
+  X.setTransform(c.z,0,0,c.z,960-c.x*c.z,540-c.y*c.z);
+  drawWorld();
+  X.setTransform(1,0,0,1,0,0);
+}
+window.renderAt=renderAt;window.__ready=true;renderAt(0);
+</script></body></html>

@@ -3,6 +3,7 @@ import { SignalOddsCard } from "../right-rail/SignalOddsCard";
 import { PopularList } from "../right-rail/PopularList";
 import { ProfitWidget } from "../right-rail/ProfitWidget";
 import { LockedGate } from "../onboarding/LockedGate";
+import { BrokerRailCard } from "../tier/BrokerTrustStrip";
 import { useMemberState } from "@/hooks/useMemberState";
 
 export function RightRail() {
@@ -22,6 +23,10 @@ export function RightRail() {
             ))}
           </div>
         </LockedGate>
+      </section>
+
+      <section>
+        <BrokerRailCard />
       </section>
 
       <section>
