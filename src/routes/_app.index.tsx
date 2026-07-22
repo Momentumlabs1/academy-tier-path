@@ -112,7 +112,7 @@ function Dashboard() {
       <ProgressStats />
 
       {/* Premium tiles — visible but gated (blurred + glowing) until first deposit. */}
-      <LockedGate locked={notFunded} label="Live-Signale & Mentoren mit deiner ersten Einzahlung freischalten">
+      <LockedGate locked={notFunded} label="Unlock live signals & mentors with your first deposit">
         <HeroBento />
       </LockedGate>
 

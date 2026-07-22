@@ -21,7 +21,7 @@ const DEFAULT_BRAND: Brand = {
 };
 
 const money = (n: number) =>
-  new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
+  new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 
 const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -33,7 +33,7 @@ function shell(brand: Brand, opts: { preheader: string; body: string; unsubUrl?:
     ? `<img src="${b.logoUrl}" alt="${esc(b.name)}" height="34" style="height:34px;display:block">`
     : `<span style="font-weight:800;font-size:18px;color:#f2ede4">${esc(b.name)}</span>`;
   return `<!doctype html>
-<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark"></head>
 <body style="margin:0;background:#080b11;color:#e9edf3;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
 <span style="display:none!important;opacity:0;color:transparent;height:0;width:0;overflow:hidden">${esc(opts.preheader)}</span>
@@ -43,9 +43,9 @@ function shell(brand: Brand, opts: { preheader: string; body: string; unsubUrl?:
     <tr><td style="padding:22px 28px;border-bottom:1px solid #1c2636">${logo}</td></tr>
     <tr><td style="padding:28px">${opts.body}</td></tr>
     <tr><td style="padding:18px 28px;border-top:1px solid #1c2636;color:#6b7788;font-size:11px;line-height:1.6">
-      Trading beinhaltet Risiko — 74–89 % der Retail-CFD-Konten verlieren Geld.<br>
-      ${b.supportEmail ? `Fragen? <a href="mailto:${b.supportEmail}" style="color:#8fa2b8">${b.supportEmail}</a> · ` : ""}
-      ${opts.unsubUrl ? `<a href="${opts.unsubUrl}" style="color:#8fa2b8">Abmelden</a>` : ""}
+      Trading involves risk — 74–89% of retail CFD accounts lose money.<br>
+      ${b.supportEmail ? `Questions? <a href="mailto:${b.supportEmail}" style="color:#8fa2b8">${b.supportEmail}</a> · ` : ""}
+      ${opts.unsubUrl ? `<a href="${opts.unsubUrl}" style="color:#8fa2b8">Unsubscribe</a>` : ""}
     </td></tr>
   </table>
   <div style="color:#3f4a5a;font-size:11px;margin-top:14px">© ${esc(b.name)}</div>
@@ -94,76 +94,76 @@ export function buildEmail(input: BuildInput): { subject: string; html: string }
   switch (input.kind) {
     case "doi":
       return {
-        subject: `Bitte bestätige deine E-Mail — ${brand.name}`,
-        html: wrap("Ein Klick und du bist dabei.",
-          h1("Nur noch ein Klick") +
-          p(`${hi}bitte bestätige deine E-Mail, damit wir dir Signale und Updates von <b>${esc(brand.name)}</b> schicken dürfen.`) +
-          `<div style="margin:22px 0">${button(a, input.confirmUrl ?? dash, "E-Mail bestätigen")}</div>` +
-          p(`<span style="color:#6b7788;font-size:13px">Du hast dich nicht angemeldet? Ignoriere diese Mail einfach.</span>`)),
+        subject: `Please confirm your e-mail — ${brand.name}`,
+        html: wrap("One click and you're in.",
+          h1("Just one more click") +
+          p(`${hi}please confirm your e-mail so we can send you signals and updates from <b>${esc(brand.name)}</b>.`) +
+          `<div style="margin:22px 0">${button(a, input.confirmUrl ?? dash, "Confirm e-mail")}</div>` +
+          p(`<span style="color:#6b7788;font-size:13px">Didn't sign up? Just ignore this e-mail.</span>`)),
       };
 
     case "welcome":
       return {
-        subject: `Willkommen bei ${brand.name} 👋`,
-        html: wrap("Dein Zugang ist frei — so geht's weiter.",
-          h1(`Willkommen${input.firstName ? `, ${esc(input.firstName)}` : ""}!`) +
-          p("Dein Account steht. Ab jetzt hast du Zugriff auf die Academy — und dein Willkommens-Video wartet schon im Dashboard.") +
-          p("Der nächste Schritt: deine erste Einzahlung ab 100 € schaltet Signale, Tools und die höheren Level frei. Dein Geld bleibt dabei auf <b>deinem eigenen</b> Broker-Konto.") +
-          `<div style="margin:22px 0">${button(a, dash, "Zum Dashboard")}</div>`),
+        subject: `Welcome to ${brand.name} 👋`,
+        html: wrap("Your access is live — here's what's next.",
+          h1(`Welcome${input.firstName ? `, ${esc(input.firstName)}` : ""}!`) +
+          p("Your account is ready. You now have access to the Academy — and your welcome video is already waiting in the dashboard.") +
+          p("Next step: your first deposit of €100+ unlocks signals, tools and the higher levels. Your money stays in <b>your own</b> broker account.") +
+          `<div style="margin:22px 0">${button(a, dash, "Go to dashboard")}</div>`),
       };
 
     case "deposit_confirmed":
       return {
-        subject: `Einzahlung bestätigt — willkommen im ${input.tierName ?? "nächsten"} Level 🎉`,
-        html: wrap("Deine Einzahlung ist da — neue Inhalte freigeschaltet.",
-          h1("Einzahlung bestätigt 🎉") +
-          p(`${hi}deine Einzahlung${input.depositAmount ? ` über <b>${money(input.depositAmount)}</b>` : ""} ist angekommen${input.tierName ? ` — du bist jetzt im <b style="color:${a}">${esc(input.tierName)}</b>-Level` : ""}.`) +
-          p("Deine neuen Signale, Lektionen und Tools sind ab sofort freigeschaltet. Viel Erfolg — und denk dran: Risiko pro Trade im Griff behalten.") +
-          `<div style="margin:22px 0">${button(a, dash, "Freigeschaltete Inhalte ansehen")}</div>`),
+        subject: `Deposit confirmed — welcome to the ${input.tierName ?? "next"} level 🎉`,
+        html: wrap("Your deposit landed — new content unlocked.",
+          h1("Deposit confirmed 🎉") +
+          p(`${hi}your deposit${input.depositAmount ? ` of <b>${money(input.depositAmount)}</b>` : ""} has arrived${input.tierName ? ` — you are now in the <b style="color:${a}">${esc(input.tierName)}</b> level` : ""}.`) +
+          p("Your new signals, lessons and tools are unlocked as of now. Good luck — and remember: keep your risk per trade under control.") +
+          `<div style="margin:22px 0">${button(a, dash, "See what's unlocked")}</div>`),
       };
 
     case "tier_unlocked":
       return {
-        subject: `${input.tierName ?? "Neues Level"} freigeschaltet`,
-        html: wrap("Ein neues Level ist offen.",
-          h1(`${esc(input.tierName ?? "Neues Level")} freigeschaltet`) +
-          p(`${hi}stark! Du hast das <b style="color:${a}">${esc(input.tierName ?? "")}</b>-Level erreicht. Neue Perks sind ab sofort in deinem Dashboard aktiv.`) +
-          `<div style="margin:22px 0">${button(a, dash, "Perks ansehen")}</div>`),
+        subject: `${input.tierName ?? "New level"} unlocked`,
+        html: wrap("A new level just opened.",
+          h1(`${esc(input.tierName ?? "New level")} unlocked`) +
+          p(`${hi}nice! You reached the <b style="color:${a}">${esc(input.tierName ?? "")}</b> level. New perks are live in your dashboard.`) +
+          `<div style="margin:22px 0">${button(a, dash, "View perks")}</div>`),
       };
 
     case "tier_nudge":
       return {
-        subject: `Nur noch ${input.amountToNext ? money(input.amountToNext) : "ein kleiner Schritt"} bis ${input.nextTierName ?? "zum nächsten Level"}`,
-        html: wrap("Du bist kurz vorm nächsten Level.",
-          h1("Du bist fast im nächsten Level") +
-          p(`${hi}dir fehlen nur noch ${input.amountToNext ? `<b>${money(input.amountToNext)}</b>` : "ein kleiner Schritt"} bis <b style="color:${a}">${esc(input.nextTierName ?? "zum nächsten Level")}</b> — mit mehr Signalen, Tools und Calls.`) +
-          `<div style="margin:22px 0">${button(a, dash + "/tier", "Zum nächsten Level")}</div>`),
+        subject: `Only ${input.amountToNext ? money(input.amountToNext) : "one small step"} to ${input.nextTierName ?? "the next level"}`,
+        html: wrap("You are one step from the next level.",
+          h1("You are almost at the next level") +
+          p(`${hi}you are only ${input.amountToNext ? `<b>${money(input.amountToNext)}</b>` : "one small step"} away from <b style="color:${a}">${esc(input.nextTierName ?? "the next level")}</b> — with more signals, tools and calls.`) +
+          `<div style="margin:22px 0">${button(a, dash + "/tier", "Go to the next level")}</div>`),
       };
 
     case "inactivity_warning":
       return {
-        subject: "Deine Signale pausieren bald ⏳",
-        html: wrap("Kurze Erinnerung, damit dein Zugang aktiv bleibt.",
-          h1("Bleib aktiv, damit's weiterläuft") +
-          p(`${hi}wir haben seit ${input.daysInactive ?? "einigen"} Tagen keine Aktivität auf deinem Konto gesehen. Damit dein Signal-Zugang aktiv bleibt, log dich kurz ein und mach deinen nächsten Trade.`) +
-          `<div style="margin:22px 0">${button(a, dash, "Jetzt aktiv bleiben")}</div>`),
+        subject: "Your signals will pause soon ⏳",
+        html: wrap("Quick reminder to keep your access active.",
+          h1("Stay active to keep it running") +
+          p(`${hi}we have not seen any activity on your account for ${input.daysInactive ?? "a few"} days. To keep your signal access active, log in and place your next trade.`) +
+          `<div style="margin:22px 0">${button(a, dash, "Stay active now")}</div>`),
       };
 
     case "new_lesson":
       return {
-        subject: `Neue Lektion: ${input.lessonTitle ?? "frisch verfügbar"}`,
-        html: wrap("Frischer Content in der Academy.",
-          h1("Neue Lektion verfügbar") +
-          p(`${hi}es gibt frischen Stoff: <b>${esc(input.lessonTitle ?? "")}</b> ist jetzt in deiner Academy.`) +
-          `<div style="margin:22px 0">${button(a, input.lessonUrl ?? (dash + "/lessons"), "Lektion ansehen")}</div>`),
+        subject: `New lesson: ${input.lessonTitle ?? "just released"}`,
+        html: wrap("Fresh content in the Academy.",
+          h1("New lesson available") +
+          p(`${hi}fresh material for you: <b>${esc(input.lessonTitle ?? "")}</b> is now in your Academy.`) +
+          `<div style="margin:22px 0">${button(a, input.lessonUrl ?? (dash + "/lessons"), "Watch the lesson")}</div>`),
       };
 
     case "broadcast":
       return {
-        subject: input.title ?? `Update von ${brand.name}`,
-        html: wrap(input.title ?? "Neuigkeiten",
+        subject: input.title ?? `Update from ${brand.name}`,
+        html: wrap(input.title ?? "News",
           (input.title ? h1(input.title) : "") + (input.bodyHtml ?? "") +
-          `<div style="margin:22px 0">${button(a, dash, "Zum Dashboard")}</div>`),
+          `<div style="margin:22px 0">${button(a, dash, "Go to dashboard")}</div>`),
       };
 
     default:

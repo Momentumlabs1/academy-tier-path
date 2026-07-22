@@ -16,8 +16,8 @@ import { Card } from "@/components/academy/primitives/Card";
 const DISMISS_KEY = "cosmo_welcome_done";
 
 const VIDEOS = [
-  { src: "/welcome.mp4", icon: Radio, title: "Willkommen — so geht's los", body: "Cosmo zeigt dir, wie du in die Telegram-Gruppen kommst und dich zurechtfindest." },
-  { src: "/signals-tutorial.mp4", icon: Sparkles, title: "Dein erstes Signal kopieren", body: "Entry, Stop-Loss, Take-Profit — so übernimmst du ein Signal in dein Konto." },
+  { src: "/welcome.mp4", icon: Radio, title: "Welcome — here's how to start", body: "Cosmo shows you how to join the Telegram groups and find your way around." },
+  { src: "/signals-tutorial.mp4", icon: Sparkles, title: "Copy your first signal", body: "Entry, stop-loss, take-profit — how to mirror a signal into your account." },
 ];
 
 export function PostDepositWelcome() {
@@ -41,12 +41,12 @@ export function PostDepositWelcome() {
 
   return (
     <Card variant="hero" className="animate-glow relative overflow-hidden p-5 sm:p-6">
-      <button onClick={dismiss} aria-label="Ausblenden" className="absolute right-3 top-3 rounded-lg p-1.5 text-foreground/50 hover:bg-white/10 hover:text-foreground">
+      <button onClick={dismiss} aria-label="Dismiss" className="absolute right-3 top-3 rounded-lg p-1.5 text-foreground/50 hover:bg-white/10 hover:text-foreground">
         <X className="h-4 w-4" />
       </button>
-      <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: COSMO.primaryColor }}>Freigeschaltet 🎉</div>
-      <h2 className="font-display text-xl font-bold sm:text-2xl">Willkommen in der Academy</h2>
-      <p className="mt-1 text-sm text-foreground/65">Deine Einzahlung ist da — hier sind deine ersten zwei Schritte.</p>
+      <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: COSMO.primaryColor }}>Unlocked 🎉</div>
+      <h2 className="font-display text-xl font-bold sm:text-2xl">Welcome to the Academy</h2>
+      <p className="mt-1 text-sm text-foreground/65">Your deposit is in — here are your first two steps.</p>
 
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         {VIDEOS.map((v) => (

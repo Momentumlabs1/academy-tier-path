@@ -73,10 +73,10 @@ function WelcomeVideoCard({ accent, onDone }: { accent: string; onDone: () => vo
     <Card variant="hero" className="relative overflow-hidden p-5 sm:p-6">
       <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full blur-3xl" style={{ background: `color-mix(in oklch, ${COSMO.primaryColor} 22%, transparent)` }} />
       <div className="relative">
-        <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: COSMO.primaryColor }}>Schritt 1 von 2</div>
-        <h2 className="font-display text-xl font-bold sm:text-2xl">Willkommen! Cosmo erklärt dir in 30 Sekunden, wie alles läuft</h2>
+        <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: COSMO.primaryColor }}>Step 1 of 2</div>
+        <h2 className="font-display text-xl font-bold sm:text-2xl">Welcome! Cosmo explains how everything works — in 30 seconds</h2>
         <p className="mt-1 text-sm text-foreground/65">
-          Kurz gesagt: <span className="font-semibold text-foreground/85">du zahlst nichts an uns</span> — du kapitalisierst dein eigenes Broker-Konto, und genau das schaltet hier alles frei.
+          In short: <span className="font-semibold text-foreground/85">you never pay us</span> — you fund your own broker account, and that is what unlocks everything here.
         </p>
 
         <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-black">
@@ -88,7 +88,7 @@ function WelcomeVideoCard({ accent, onDone }: { accent: string; onDone: () => vo
             <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 p-6 text-center" style={{ background: `linear-gradient(160deg, ${COSMO.bgFrom}, ${COSMO.bgTo})` }}>
               <PlayCircle className="h-12 w-12 text-white/30" />
               <p className="max-w-md text-sm text-white/70">
-                <b>So funktioniert's:</b> Deine erste Einzahlung ab {formatMoney(FOUNDATION_MIN, "€")} bleibt <b>dein Geld</b> auf <b>deinem</b> Broker-Konto — sie schaltet Signale, Lektionen und Tools frei. Wir verdienen über den Broker, nicht an dir.
+                <b>How it works:</b> Your first deposit of {formatMoney(FOUNDATION_MIN, "€")}+ stays <b>your money</b> in <b>your</b> broker account — it unlocks signals, lessons and tools. We earn from the broker, not from you.
               </p>
             </div>
           )}
@@ -96,9 +96,9 @@ function WelcomeVideoCard({ accent, onDone }: { accent: string; onDone: () => vo
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <button onClick={onDone} className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-bold text-[#08111a] transition-transform hover:scale-[1.03]" style={{ background: accent }}>
-            Alles klar — weiter <ArrowRight className="h-4 w-4" />
+            Got it — continue <ArrowRight className="h-4 w-4" />
           </button>
-          <span className="text-xs text-foreground/50">Danach zeigen wir dir, wo's losgeht.</span>
+          <span className="text-xs text-foreground/50">Next we'll show you where to start.</span>
         </div>
       </div>
     </Card>
@@ -115,8 +115,8 @@ function IgniteStrip({ accent }: { accent: string }) {
         <span className="relative inline-flex h-2.5 w-2.5 rounded-full" style={{ background: accent }} />
       </span>
       <p className="min-w-0 flex-1 text-sm">
-        <span className="font-semibold">Nächster Schritt:</span>{" "}
-        <span className="text-foreground/75">Erste Einzahlung ab {formatMoney(FOUNDATION_MIN, "€")} — unten im Einzahlungs-Pfad. Sobald sie ankommt, schaltet sich hier alles automatisch frei.</span>
+        <span className="font-semibold">Next step:</span>{" "}
+        <span className="text-foreground/75">Make your first deposit of {formatMoney(FOUNDATION_MIN, "€")}+ — in the deposit path below. The moment it lands, everything here unlocks automatically.</span>
       </p>
       <ArrowDown className="h-4 w-4 shrink-0 animate-bounce" style={{ color: accent }} />
     </div>
@@ -135,11 +135,11 @@ function TopupStrip({ accent, amount }: { accent: string; amount: number }) {
           <PiggyBank className="h-4 w-4" />
         </span>
         <p className="min-w-0 flex-1 text-sm">
-          <span className="font-bold">{formatMoney(amount, "€")} von {formatMoney(FOUNDATION_MIN, "€")}</span>{" "}
-          <span className="text-foreground/75">— dir fehlen noch <b style={{ color: accent }}>{formatMoney(missing, "€")}</b> bis Foundation (Signale, Lektionen & Tools).</span>
+          <span className="font-bold">{formatMoney(amount, "€")} of {formatMoney(FOUNDATION_MIN, "€")}</span>{" "}
+          <span className="text-foreground/75">— only <b style={{ color: accent }}>{formatMoney(missing, "€")}</b> to go until Foundation (signals, lessons & tools).</span>
         </p>
         <Link to="/tier" className="shrink-0 rounded-full px-4 py-2 text-xs font-bold text-[#08111a] transition-transform hover:scale-[1.03]" style={{ background: accent }}>
-          Auffüllen →
+          Top up →
         </Link>
       </div>
       <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-white/10">
@@ -151,10 +151,10 @@ function TopupStrip({ accent, amount }: { accent: string; amount: number }) {
 
 /* ── Stage 3: celebration overlay (partial vs full) ─────────────────────────── */
 const UNLOCKS = [
-  { icon: Send, title: "Telegram-Gruppe", body: "Live-Signale direkt aufs Handy" },
-  { icon: Radio, title: "Live-Signale", body: "Echtzeit-Calls vom Desk" },
-  { icon: BookOpen, title: "Academy-Lektionen", body: "Dein kompletter Kurs" },
-  { icon: Calculator, title: "Trader-Tools", body: "Size- & Risiko-Rechner" },
+  { icon: Send, title: "Telegram group", body: "Live signals straight to your phone" },
+  { icon: Radio, title: "Live signals", body: "Real-time calls from the desk" },
+  { icon: BookOpen, title: "Academy lessons", body: "Your complete course" },
+  { icon: Calculator, title: "Trader tools", body: "Size & risk calculators" },
 ];
 
 function Confetti({ accent, count = 56 }: { accent: string; count?: number }) {
@@ -211,7 +211,7 @@ function CelebrationOverlay({ accent, amount, prevAmount, tierName, onClose }: {
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
       <Confetti accent={accent} count={full ? 56 : 26} />
       <div className="onb-pop-in relative w-full max-w-lg rounded-3xl border border-white/10 bg-[#0d1420] p-6 shadow-2xl sm:p-8">
-        <button onClick={close} aria-label="Schließen" className="absolute right-3 top-3 rounded-lg p-1.5 text-foreground/50 hover:bg-white/10 hover:text-foreground">
+        <button onClick={close} aria-label="Close" className="absolute right-3 top-3 rounded-lg p-1.5 text-foreground/50 hover:bg-white/10 hover:text-foreground">
           <X className="h-4 w-4" />
         </button>
 
@@ -220,9 +220,9 @@ function CelebrationOverlay({ accent, amount, prevAmount, tierName, onClose }: {
             {full ? <PartyPopper className="h-6 w-6" /> : <PiggyBank className="h-6 w-6" />}
           </span>
           <div>
-            <div className="text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: accent }}>Einzahlung erkannt</div>
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: accent }}>Deposit detected</div>
             <h2 className="font-display text-2xl font-bold leading-tight">
-              {full ? <>Willkommen im {tierName ?? "Foundation"}-Level! 🎉</> : <>{formatMoney(amount, "€")} sind angekommen!</>}
+              {full ? <>Welcome to the {tierName ?? "Foundation"} level! 🎉</> : <>{formatMoney(amount, "€")} just arrived!</>}
             </h2>
           </div>
         </div>
@@ -230,7 +230,7 @@ function CelebrationOverlay({ accent, amount, prevAmount, tierName, onClose }: {
         {full ? (
           <>
             <p className="mt-3 text-sm text-foreground/70">
-              Verifizierte Einzahlung: <b>{formatMoney(amount, "€")}</b> — das hier ist ab sofort alles deins:
+              Verified deposit: <b>{formatMoney(amount, "€")}</b> — all of this is yours now:
             </p>
             <div className="mt-4 grid gap-2.5">
               {items.map((u, i) => (
@@ -248,17 +248,17 @@ function CelebrationOverlay({ accent, amount, prevAmount, tierName, onClose }: {
             </div>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link to="/signals" onClick={close} className="inline-flex flex-1 items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-[#08111a] transition-transform hover:scale-[1.02]" style={{ background: accent }}>
-                <Send className="h-4 w-4" /> Telegram verbinden
+                <Send className="h-4 w-4" /> Connect Telegram
               </Link>
               <button onClick={close} className="rounded-full border border-white/15 px-5 py-3 text-sm font-semibold text-foreground/80 hover:bg-white/5">
-                Später — zum Dashboard
+                Later — go to dashboard
               </button>
             </div>
           </>
         ) : (
           <>
             <p className="mt-3 text-sm text-foreground/70">
-              Stark — dein Geld ist auf deinem Broker-Konto angekommen. Für <b>Foundation</b> (Signale, Lektionen, Tools) fehlen dir nur noch <b style={{ color: accent }}>{formatMoney(missing, "€")}</b>:
+              Nice — your money landed in your broker account. You are only <b style={{ color: accent }}>{formatMoney(missing, "€")}</b> away from <b>Foundation</b> (signals, lessons, tools):
             </p>
             <div className="mt-4">
               <div className="mb-1.5 flex justify-between font-mono text-xs text-foreground/60">
@@ -273,13 +273,13 @@ function CelebrationOverlay({ accent, amount, prevAmount, tierName, onClose }: {
                 <div key={u.title} className="flex items-center gap-3 rounded-2xl border border-white/8 bg-white/[0.03] px-4 py-2.5">
                   <u.icon className="h-4 w-4 shrink-0 text-foreground/40" />
                   <span className="flex-1 text-sm text-foreground/60">{u.title}</span>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-foreground/40">ab {formatMoney(FOUNDATION_MIN, "€")}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-foreground/40">at {formatMoney(FOUNDATION_MIN, "€")}</span>
                 </div>
               ))}
             </div>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link to="/tier" onClick={close} className="inline-flex flex-1 items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-[#08111a] transition-transform hover:scale-[1.02]" style={{ background: accent }}>
-                <Sparkles className="h-4 w-4" /> {formatMoney(missing, "€")} auffüllen & freischalten
+                <Sparkles className="h-4 w-4" /> Top up {formatMoney(missing, "€")} & unlock
               </Link>
               <button onClick={close} className="rounded-full border border-white/15 px-5 py-3 text-sm font-semibold text-foreground/80 hover:bg-white/5">
                 Okay
