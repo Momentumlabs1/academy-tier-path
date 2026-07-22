@@ -32,28 +32,32 @@ const DUR=Math.ceil((sT(VOW_S3.dur)+1.4)*10)/10;   // ≈ 150.2
 //   VAH/red resistance ≈ 4.076 · POC ≈ 4.075 · VAL ≈ 4.062 · high after BOS ≈ 4.083
 const CH={x0:TV.rail.w+1,x1:1920-TV.scaleW,y0:126,y1:912};
 const PMIN=4059.5,PMAX=4085.5;
-const VAL_R=4062.0, POC_R=4075.0, VAH_R=4076.0, HIGH_R=4083.0, PRIORHI=4077.2;
-// beats: 6=prior high 4077 · 27=dip that MINIMALLY misses VAL (4.0626, VAL=4.062) ·
-//   46→52=break above 4.076 resistance (BOS) → high 4.083 · 76→80=pullback into VAL/LVN ·
-//   86→104=consolidation under resistance · 106+=sustainable break
-const NARR=[[0,4074.2],[6,PRIORHI],[12,4073],[18,4068.2],[24,4064],[27,4062.7],[30,4064.6],[36,4069],[42,4074],[46,4077.4],[52,HIGH_R],[58,4079.5],[64,4074.6],[70,4070],[76,4065],[80,4062.7],[86,4066],[92,4069.6],[98,4071],[104,4072.4],[106,4073.6],[112,4077.6],[118,4080.4],[124,4082.2],[130,4081],[149,4080.2]];
+const VAL_R=4062.0, POC_R=4075.0, VAH_R=4076.0, PRIORHI=4077.2;
+// TIMING-AWARE layout: candles must be visible when Harry narrates each beat
+// (reveal: 52 until 41.6s → 58 by 45.6s → 82 by 71s → 104+ later).
+//   c6=prior high 4.077 · c26=LOW=VAL 4.062 · c46-50=BOS break above prior high →4.0795
+//   c56=pullback dip 4.0625 MINIMALLY misses VAL (M1 check, visible ~44s) · c64=VAH-downmove
+//   c77=VAL taken + LVN · c88-104=consolidation under resistance · c112=sustainable break
+const NARR=[[0,4073.5],[6,PRIORHI],[11,4073],[17,4068],[23,4064],[26,4062.0],[30,4064.6],[36,4069],[42,4074],[46,4077.6],[50,4079.5],[53,4076],[56,4062.9],[60,4066],[64,4071.4],[68,4067.8],[72,4064],[77,4062.5],[82,4066],[88,4069],[94,4070.6],[100,4071.2],[104,4072],[107,4073.6],[112,4077.8],[118,4080],[124,4082],[130,4081],[149,4080.2]];
 const N=150, SER=TVC.mkSeries(N,NARR,55110,0.5);
-// volume distribution → POC ~4.075, wide value area down to VAL ~4.062 (Tim's yellow SVP)
+// volume distribution → POC ~4.075, wide value area to VAL 4.062, LVN thin at 4.063-4.066
 for(let i=0;i<N;i++){
   const p=(SER[i].o+SER[i].c)/2;
   if(p>=4073&&p<=4076.5)SER[i].v*=2.6;      // POC concentration just under resistance
   else if(p>=4069&&p<4073)SER[i].v*=1.5;
-  else if(p>=4063&&p<4066)SER[i].v*=0.45;   // LVN — genuinely thin here (correction 2:47)
+  else if(p>=4063&&p<4066)SER[i].v*=0.42;   // LVN — genuinely thin (correction 2:47)
 }
-// precision candle 27: low 4.0626 = VAL (4.062) MINIMALLY NOT swept (correction 2:15)
-SER[27].l=4062.55;SER[27].o=4064.2;SER[27].c=4063.9;SER[27].h=4064.4;
-// BOS: candle 46 closes above prior high 4.077 → break of structure (correction 2:10)
-SER[46].o=4074.6;SER[46].c=4077.5;SER[46].h=4077.8;SER[46].l=4074.3;
-SER[47].o=4077.5;SER[47].c=4079.2;SER[47].h=4079.6;SER[47].l=4077.2;
-// VAL of bullish move taken into LVN (candle 80): dips to 4.0622
-SER[80].l=4062.2;SER[80].o=4063.6;SER[80].c=4064.6;SER[80].h=4064.9;
+SER[26].l=4062.0;SER[26].o=4063.2;SER[26].c=4062.6;SER[26].h=4063.4;         // the LOW = VAL
+// BOS: candles 46-50 close above prior high 4.077 → break of structure (correction 2:10)
+SER[46].o=4074.8;SER[46].c=4077.6;SER[46].h=4077.9;SER[46].l=4074.5;
+SER[47].o=4077.6;SER[47].c=4079.0;SER[47].h=4079.4;SER[47].l=4077.3;
+SER[50].c=4079.5;SER[50].h=4079.8;
+// precision candle 56: dip low 4.0625 MINIMALLY misses VAL 4.062 (correction 2:15)
+SER[56].l=4062.55;SER[56].o=4064.0;SER[56].c=4063.4;SER[56].h=4064.2;
+// VAL of bullish move taken into LVN (candle 77): dips to 4.0622
+SER[77].l=4062.2;SER[77].o=4063.4;SER[77].c=4064.4;SER[77].h=4064.7;
 // sustainable break above resistance+VAH (candle 112)
-SER[112].o=4075.8;SER[112].c=4077.8;SER[112].h=4078.1;SER[112].l=4075.6;
+SER[112].o=4075.8;SER[112].c=4077.9;SER[112].h=4078.2;SER[112].l=4075.6;
 const CWc=(CH.x1-CH.x0-60)/134;
 const xOf=i=>CH.x0+30+i*CWc+CWc/2;
 let yOf=null;
