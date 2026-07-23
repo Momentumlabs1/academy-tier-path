@@ -33,36 +33,37 @@ const TICKER = [
   { s: "GBP/JPY", p: "199.84", up: true }, { s: "SPX500", p: "5,268", up: false },
 ];
 
-// Candles floating in 3D space around the meditating Cosmo. Each entry:
-// [x%, y%, depth 0..1, up?, delay(s)]. depth drives size, z-layer (behind Cosmo
-// when < 0.5, in front when ≥ 0.5), brightness and blur — so the candles read as
-// genuinely orbiting him, some behind, some in front, at real perspective sizes.
-const DEPTH_CANDLES: [number, number, number, boolean, number][] = [
-  // behind Cosmo (small, dim, soft) — upper hemisphere / far side
-  [50, 8, 0.24, true, 0.0], [31, 15, 0.30, false, 0.6], [69, 13, 0.32, true, 1.1],
-  [18, 33, 0.40, true, 1.5], [83, 30, 0.36, false, 0.9], [41, 6, 0.20, true, 1.9],
-  // in front of Cosmo (large, bright, sharp) — lower hemisphere / near side
-  [14, 50, 0.72, false, 0.3], [87, 53, 0.78, true, 1.2], [24, 67, 0.88, true, 0.7],
-  [79, 65, 0.82, false, 1.6], [33, 83, 1.0, true, 0.2], [67, 85, 0.95, true, 1.0],
-  [50, 91, 0.9, false, 1.4],
-];
+// Candles evenly distributed on a perspective ellipse AROUND Cosmo's torso, so
+// they read as a single ring orbiting him at a similar height rather than a
+// scattered cloud. Angle → position on the ellipse; the ellipse's near half
+// (bottom of screen) sits IN FRONT of him, the far half (top) BEHIND him.
+// Each entry: [x%, y%, depth 0..1, up?, delay(s)].
+const RING: [number, number, number, boolean, number][] = Array.from({ length: 13 }, (_, i) => {
+  const a = (i / 13) * Math.PI * 2 - Math.PI / 2; // start at the top (behind)
+  const cx = 50, cy = 49, rx = 42, ry = 21;
+  const x = cx + rx * Math.cos(a);
+  const y = cy + ry * Math.sin(a);
+  const depth = (Math.sin(a) + 1) / 2;            // 0 = far/behind, 1 = near/front
+  const isUp = i % 3 !== 1;
+  const delay = (i % 5) * 0.45;
+  return [Number(x.toFixed(1)), Number(y.toFixed(1)), Number(depth.toFixed(3)), isUp, delay];
+});
 
 function Candle3D({ up, down, isUp, depth }: { up: string; down: string; isUp: boolean; depth: number }) {
   const c = isUp ? up : down;
   const behind = depth < 0.5;
-  const h = 44 + depth * 88;               // px — front candles much larger
-  const w = h * 0.32;
-  const top = h * (isUp ? 0.28 : 0.22);     // body offset; wick shows above & below
+  const h = 34 + depth * 44;                 // px — slimmer, gentler size range
+  const w = Math.max(6, h * 0.17);           // thin candles
   return (
-    <span className="block" style={{ width: w, height: h, filter: behind ? `blur(${(0.5 - depth) * 5 + 1}px) saturate(0.8)` : "none", opacity: 0.4 + depth * 0.6 }}>
+    <span className="block" style={{ width: w, height: h, filter: behind ? `blur(${(0.5 - depth) * 4 + 0.6}px)` : "none", opacity: 0.45 + depth * 0.55 }}>
       <span className="relative block h-full w-full">
         {/* wick (top + bottom) */}
-        <span className="absolute left-1/2 top-0 h-full -translate-x-1/2 rounded-full" style={{ width: Math.max(2, w * 0.14), background: `color-mix(in oklch, ${c} 60%, transparent)` }} />
+        <span className="absolute left-1/2 top-0 h-full -translate-x-1/2 rounded-full" style={{ width: Math.max(1.5, w * 0.16), background: `color-mix(in oklch, ${c} 60%, transparent)` }} />
         {/* body with a soft top-lit gradient + glow for volume */}
-        <span className="absolute left-0 w-full rounded-[3px]" style={{
-          top, height: h * 0.46,
+        <span className="absolute left-0 w-full rounded-[2px]" style={{
+          top: h * (isUp ? 0.3 : 0.24), height: h * 0.44,
           background: `linear-gradient(180deg, color-mix(in oklch, ${c} 62%, white), ${c} 55%, color-mix(in oklch, ${c} 78%, black))`,
-          boxShadow: behind ? `0 0 10px -2px ${c}` : `0 0 22px -4px ${c}, inset 0 1px 0 color-mix(in oklch, ${c} 40%, white)`,
+          boxShadow: behind ? `0 0 8px -3px ${c}` : `0 0 16px -5px ${c}, inset 0 1px 0 color-mix(in oklch, ${c} 40%, white)`,
         }} />
       </span>
     </span>
@@ -202,7 +203,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                   <div className="absolute left-1/2 top-1/2 h-[38%] w-[38%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[55px]" style={{ background:`color-mix(in oklch, ${primary} 32%, transparent)` }} aria-hidden />
 
                   {/* candles BEHIND Cosmo (depth < 0.5) */}
-                  {DEPTH_CANDLES.filter(([, , d]) => d < 0.5).map(([x, y, depth, isUp, delay], i) => (
+                  {RING.filter(([, , d]) => d < 0.5).map(([x, y, depth, isUp, delay], i) => (
                     <div key={`b${i}`} className="chip-float absolute z-10 -translate-x-1/2 -translate-y-1/2" style={{ left:`${x}%`, top:`${y}%`, animationDelay:`${delay}s` }}>
                       <Candle3D up={up} down={down} isUp={isUp} depth={depth} />
                     </div>
@@ -213,7 +214,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                     className="cosmo-float absolute left-1/2 top-1/2 z-20 h-[76%] w-auto -translate-x-1/2 -translate-y-1/2 object-contain drop-shadow-2xl" />
 
                   {/* candles IN FRONT of Cosmo (depth ≥ 0.5) — bigger, sharp, glowing */}
-                  {DEPTH_CANDLES.filter(([, , d]) => d >= 0.5).map(([x, y, depth, isUp, delay], i) => (
+                  {RING.filter(([, , d]) => d >= 0.5).map(([x, y, depth, isUp, delay], i) => (
                     <div key={`f${i}`} className="chip-float absolute z-30 -translate-x-1/2 -translate-y-1/2" style={{ left:`${x}%`, top:`${y}%`, animationDelay:`${delay}s` }}>
                       <Candle3D up={up} down={down} isUp={isUp} depth={depth} />
                     </div>
