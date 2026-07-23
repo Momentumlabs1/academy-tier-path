@@ -1,13 +1,22 @@
 /**
- * TenantLandingView — the branded partner landing page, driven by a resolved
- * TenantConfig (static OR DB-backed). Rendered by both /t/:slug and /:slug so a
- * partner link works either way. No intro video required — the page carries all
- * the info (hero, live-signal demo, features, tiers, testimonials, how-it-works,
- * FAQ, CTA).
+ * TenantLandingView — the branded landing page, driven by a resolved
+ * TenantConfig (static OR DB-backed). Rendered by /t/:slug, /:slug AND as the
+ * master "/" (Cosmos Candles) page. It is the WHITE-LABEL TEMPLATE: every new
+ * partner created in the admin gets this exact page, skinned to their colors,
+ * broker, telegram and mascot — no code change required.
+ *
+ * The master brand (slug "cosmos-candles") lights up the full Cosmo treatment:
+ * the mascot appears in several forms across the page (full body hero, avatar
+ * coach, floating head badges, CTA head). Partner pages keep their own mascot
+ * (or none) and inherit the same structure, broker trust band, demo-video mount
+ * and section flow.
  */
 import { useEffect } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, CheckCircle2, Lock, Shield, TrendingUp, TrendingDown, Star } from "lucide-react";
+import {
+  ArrowRight, CheckCircle2, Lock, Shield, TrendingUp, TrendingDown, Star,
+  Sparkles, PlayCircle, BadgeCheck, Wallet, Building2, Radio, GraduationCap, LineChart,
+} from "lucide-react";
 import { TIERS } from "@/lib/academy-data";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -21,11 +30,19 @@ const DEMO_SIGNALS = [
   { dir: "LONG", pair: "BTC/USDT", entry: "64,200", sl: "63,400", tps: ["65,000", "65,800", "Open"], status: "TP1 hit", won: true },
 ];
 
+// Visual-only ticker — the "always-on desk" feeling under the hero.
+const TICKER = [
+  { s: "XAU/USD", p: "2,318.4", up: true }, { s: "BTC/USDT", p: "64,210", up: true },
+  { s: "NAS100", p: "20,050", up: false }, { s: "EUR/USD", p: "1.0842", up: true },
+  { s: "US30", p: "39,410", up: false }, { s: "ETH/USDT", p: "3,142", up: true },
+  { s: "GBP/JPY", p: "199.84", up: true }, { s: "SPX500", p: "5,268", up: false },
+];
+
 export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
   const navigate = useNavigate();
   const goRegister = () => navigate({ to: "/registrieren" });
 
-  // Cosmo is the face of the master brand. He anchors the hero on the central
+  // Cosmo is the face of the master brand. He anchors the page on the central
   // Cosmos Candles landing; partner pages keep their own mascot/skin untouched.
   const showCosmo = tenant.slug === "cosmos-candles";
   const heroHasMascot = tenant.mascot === "zeko" || showCosmo;
@@ -41,45 +58,76 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
     writePartnerBrand(tenant);
   }, [tenant]);
 
+  const primary = tenant.primaryColor;
+  const accent = tenant.accentColor;
+
   return (
     <div
-      className="min-h-screen font-sans"
+      className="relative min-h-screen overflow-clip font-sans"
       style={{ background: `linear-gradient(160deg, ${tenant.bgFrom} 0%, ${tenant.bgTo} 100%)` }}
     >
-      {/* Cosmo gets a gentle breathing float; stilled for reduced-motion users. */}
       <style>{`
         @keyframes cosmoFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
         .cosmo-float { animation: cosmoFloat 5.5s ease-in-out infinite; will-change: transform; }
-        @media (prefers-reduced-motion: reduce) { .cosmo-float { animation: none; } }
+        @keyframes cosmoBob { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-9px) rotate(2deg); } }
+        .cosmo-bob { animation: cosmoBob 6s ease-in-out infinite; will-change: transform; }
+        @keyframes chipFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .chip-float { animation: chipFloat 4.5s ease-in-out infinite; }
+        @keyframes tickerScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        .ticker-track { animation: tickerScroll 32s linear infinite; }
+        @media (prefers-reduced-motion: reduce) {
+          .cosmo-float, .cosmo-bob, .chip-float, .ticker-track { animation: none !important; }
+        }
       `}</style>
+
+      {/* Ambient brand wash — glows + faint grid, sits behind everything. */}
+      <div aria-hidden className="pointer-events-none absolute inset-0 z-0">
+        <div className="absolute -top-32 left-1/2 h-[560px] w-[560px] -translate-x-1/2 rounded-full blur-[120px]"
+          style={{ background: `color-mix(in oklch, ${primary} 18%, transparent)` }} />
+        <div className="absolute top-[40%] -right-40 h-[460px] w-[460px] rounded-full blur-[120px]"
+          style={{ background: `color-mix(in oklch, ${accent} 16%, transparent)` }} />
+        <div className="absolute inset-0 opacity-[0.04]"
+          style={{ backgroundImage: "linear-gradient(rgba(255,255,255,.6) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.6) 1px,transparent 1px)", backgroundSize: "48px 48px" }} />
+      </div>
+
+      <div className="relative z-10">
       {/* Nav */}
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5 sm:px-8">
-        <div className="flex items-center gap-2.5">
-          <span
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-sm font-black text-white"
-            style={{ background: tenant.primaryColor }}
-          >
-            {tenant.logoInitials}
-          </span>
-          <span className="font-display text-lg font-bold">{tenant.name}</span>
+      <header className="sticky top-0 z-30 border-b border-white/5 backdrop-blur-md"
+        style={{ background: `color-mix(in oklch, ${tenant.bgTo} 72%, transparent)` }}>
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5 sm:px-8">
+          <div className="flex items-center gap-2.5">
+            {showCosmo ? (
+              <span className="relative flex h-9 w-9 items-center justify-center">
+                <span className="absolute inset-0 rounded-full blur-md" style={{ background: `color-mix(in oklch, ${accent} 40%, transparent)` }} />
+                <img src="/cosmo/cosmo-head.png" alt="" className="relative h-9 w-9 object-contain" />
+              </span>
+            ) : (
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl text-sm font-black text-white" style={{ background: primary }}>
+                {tenant.logoInitials}
+              </span>
+            )}
+            <span className="font-display text-lg font-bold">{tenant.name}</span>
+          </div>
+          <div className="flex items-center gap-1 sm:gap-3">
+            <Link to="/login" className="hidden rounded-full px-4 py-2 text-sm font-medium text-foreground/70 hover:text-foreground sm:inline-block">
+              Sign in
+            </Link>
+            <button onClick={goRegister}
+              className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
+              style={{ background: primary }}>
+              Sign up free <ArrowRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
-        <a
-          href={`mailto:${tenant.affiliateEmail}`}
-          className="text-sm font-medium text-foreground/60 hover:text-foreground transition-colors"
-        >
-          Contact
-        </a>
       </header>
 
       {/* Hero */}
-      <section className="mx-auto max-w-6xl px-4 pb-16 pt-12 sm:px-8">
+      <section className="mx-auto max-w-6xl px-4 pb-10 pt-10 sm:px-8 sm:pt-14">
         <div className={cn("grid items-center gap-8 lg:gap-12", heroHasMascot && "lg:grid-cols-[1.1fr_0.9fr]")}>
           <div className={heroHasMascot ? "text-center lg:text-left" : "mx-auto max-w-3xl text-center"}>
-            <div
-              className="mb-6 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.14em]"
-              style={{ background: `color-mix(in oklch, ${tenant.primaryColor} 15%, transparent)`, color: tenant.primaryColor }}
-            >
-              <Shield className="h-3.5 w-3.5" /> {showCosmo ? "Meet Cosmo · Your trading guide" : "Powered by Cosmos Candles Academy"}
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.14em]"
+              style={{ background: `color-mix(in oklch, ${primary} 15%, transparent)`, color: primary }}>
+              <Sparkles className="h-3.5 w-3.5" /> {showCosmo ? "Meet Cosmo · Your trading guide" : "Powered by Cosmos Candles Academy"}
             </div>
 
             <h1 className="text-balance font-display text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
@@ -90,32 +138,30 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
             </p>
 
             <div className={cn("mt-8 flex flex-wrap items-center gap-3", heroHasMascot ? "justify-center lg:justify-start" : "justify-center")}>
-              <button
-                onClick={goRegister}
-                className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
-                style={{ background: tenant.primaryColor }}
-              >
+              <button onClick={goRegister}
+                className="inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
+                style={{ background: primary }}>
                 Sign up free <ArrowRight className="h-4 w-4" />
               </button>
               {tenant.telegramChannel && tenant.telegramChannel !== "#" && (
-                <a
-                  href={tenant.telegramChannel}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold hover:bg-white/10 transition-colors"
-                >
+                <a href={tenant.telegramChannel} target="_blank" rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-3.5 text-sm font-semibold hover:bg-white/10 transition-colors">
                   Join Telegram
                 </a>
               )}
+            </div>
+
+            {/* Inline trust row — the fast credibility hit under the CTA. */}
+            <div className={cn("mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-foreground/55", heroHasMascot ? "justify-center lg:justify-start" : "justify-center")}>
+              <span className="inline-flex items-center gap-1.5"><Star className="h-3.5 w-3.5 fill-current" style={{ color: accent }} /> 4.9 broker rating</span>
+              <span className="inline-flex items-center gap-1.5"><Shield className="h-3.5 w-3.5" style={{ color: primary }} /> Regulated broker</span>
+              <span className="inline-flex items-center gap-1.5"><BadgeCheck className="h-3.5 w-3.5" style={{ color: primary }} /> €0 — free forever</span>
             </div>
           </div>
 
           {tenant.mascot === "zeko" && (
             <div className="relative mx-auto w-full max-w-[360px]">
-              <div
-                className="absolute inset-4 rounded-full blur-3xl"
-                style={{ background: `color-mix(in oklch, ${tenant.primaryColor} 40%, transparent)` }}
-              />
+              <div className="absolute inset-4 rounded-full blur-3xl" style={{ background: `color-mix(in oklch, ${primary} 40%, transparent)` }} />
               <div className="relative aspect-square overflow-hidden rounded-full ring-4 ring-white/10 shadow-2xl">
                 <img src="/zeko-hero.png" alt="Zeko" className="h-full w-full scale-[1.35] object-cover object-top" />
               </div>
@@ -123,130 +169,171 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           )}
 
           {showCosmo && (
-            <div className="relative mx-auto flex w-full max-w-[420px] items-end justify-center">
-              {/* Soft accent glow behind the mascot */}
-              <div
-                className="absolute bottom-6 left-1/2 h-[62%] w-[78%] -translate-x-1/2 rounded-full blur-[70px]"
-                style={{ background: `color-mix(in oklch, ${tenant.accentColor} 55%, transparent)` }}
-                aria-hidden="true"
-              />
-              <div
-                className="absolute bottom-10 left-1/2 h-[42%] w-[52%] -translate-x-1/2 rounded-full blur-3xl"
-                style={{ background: `color-mix(in oklch, ${tenant.primaryColor} 40%, transparent)` }}
-                aria-hidden="true"
-              />
-              <img
-                src="/cosmo/cosmo-full.png"
-                alt="Cosmo, the Cosmos Candles Academy mascot"
-                className="cosmo-float relative z-10 h-auto w-full max-w-full object-contain drop-shadow-2xl"
-              />
+            <div className="relative mx-auto flex w-full max-w-[440px] items-end justify-center">
+              <div className="absolute bottom-6 left-1/2 h-[62%] w-[78%] -translate-x-1/2 rounded-full blur-[70px]"
+                style={{ background: `color-mix(in oklch, ${accent} 55%, transparent)` }} aria-hidden="true" />
+              <div className="absolute bottom-10 left-1/2 h-[42%] w-[52%] -translate-x-1/2 rounded-full blur-3xl"
+                style={{ background: `color-mix(in oklch, ${primary} 40%, transparent)` }} aria-hidden="true" />
+
+              {/* Orbiting candle / signal chips around Cosmo */}
+              <div className="chip-float absolute left-1 top-6 z-20 flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/40 px-2.5 py-1.5 text-[11px] font-bold text-[oklch(0.8_0.16_150)] shadow-xl backdrop-blur-sm" style={{ animationDelay: "0s" }}>
+                <TrendingUp className="h-3.5 w-3.5" /> XAU +1.4%
+              </div>
+              <div className="chip-float absolute right-0 top-24 z-20 flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/40 px-2.5 py-1.5 text-[11px] font-bold text-white/80 shadow-xl backdrop-blur-sm" style={{ animationDelay: "1.2s" }}>
+                <Radio className="h-3.5 w-3.5" style={{ color: primary }} /> Signal live
+              </div>
+              <div className="chip-float absolute bottom-16 left-0 z-20 flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/40 px-2.5 py-1.5 text-[11px] font-bold text-[oklch(0.8_0.16_150)] shadow-xl backdrop-blur-sm" style={{ animationDelay: "2.1s" }}>
+                <CheckCircle2 className="h-3.5 w-3.5" /> TP2 hit
+              </div>
+
+              <img src="/cosmo/cosmo-full.png" alt="Cosmo, the Cosmos Candles Academy mascot"
+                className="cosmo-float relative z-10 h-auto w-full max-w-full object-contain drop-shadow-2xl" />
             </div>
           )}
         </div>
+      </section>
 
-        {/* Stats row */}
-        <div className="mx-auto mt-14 grid max-w-3xl grid-cols-2 gap-4 sm:grid-cols-4">
+      {/* Live ticker strip — the always-on desk. */}
+      <div className="relative mb-14 overflow-hidden border-y border-white/5 bg-white/[0.02] py-2.5">
+        <div className="ticker-track flex w-max gap-8 whitespace-nowrap">
+          {[...TICKER, ...TICKER].map((t, i) => (
+            <span key={i} className="inline-flex items-center gap-2 font-mono text-xs text-foreground/60">
+              <span className="font-semibold text-foreground/80">{t.s}</span>
+              <span className="tabular-nums">{t.p}</span>
+              <span className={t.up ? "text-[oklch(0.8_0.16_150)]" : "text-[oklch(0.72_0.18_20)]"}>
+                {t.up ? "▲" : "▼"}
+              </span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Stats row */}
+      <section className="mx-auto max-w-6xl px-4 sm:px-8">
+        <div className="mx-auto grid max-w-3xl grid-cols-2 gap-4 sm:grid-cols-4">
           {tenant.stats.map((s) => (
-            <div key={s.label} className="rounded-2xl bg-white/5 px-4 py-4 text-center">
-              <div className="font-display text-2xl font-bold" style={{ color: tenant.primaryColor }}>{s.value}</div>
-              <div className="mt-0.5 text-[11px] text-muted-foreground uppercase tracking-[0.12em]">{s.label}</div>
+            <div key={s.label} className="rounded-2xl border border-white/5 bg-white/5 px-4 py-4 text-center">
+              <div className="font-display text-2xl font-bold" style={{ color: primary }}>{s.value}</div>
+              <div className="mt-0.5 text-[11px] uppercase tracking-[0.12em] text-muted-foreground">{s.label}</div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Cosmo explainer video — the soft Cosmo integration on the partner page.
-          Drop the rendered pitch clip into public/pitch.mp4. Framed in the
-          partner accent so the co-branding reads at a glance. */}
-      <section className="mx-auto max-w-3xl px-4 pb-16 sm:px-8">
-        <div
-          className="overflow-hidden rounded-3xl border p-1.5 shadow-2xl"
-          style={{ borderColor: `color-mix(in oklch, ${tenant.accentColor} 35%, transparent)`, background: `color-mix(in oklch, ${tenant.accentColor} 8%, transparent)` }}
-        >
-          <div className="relative aspect-video overflow-hidden rounded-[1.35rem] bg-black">
-            <video controls playsInline className="h-full w-full object-cover">
-              <source src="/pitch.mp4" type="video/mp4" />
-            </video>
-            <div
-              className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2"
-              style={{ background: `linear-gradient(160deg, ${tenant.bgFrom}, ${tenant.bgTo})` }}
-            >
-              <span className="flex h-14 w-14 items-center justify-center rounded-full" style={{ background: `color-mix(in oklch, ${tenant.primaryColor} 20%, transparent)` }}>
-                <ArrowRight className="h-6 w-6" style={{ color: tenant.primaryColor }} />
+      {/* Demo video holder — a browser-chrome mount with Cosmo peeking over the
+          corner. Drop the rendered pitch clip into public/pitch.mp4. */}
+      <section className="mx-auto max-w-4xl px-4 pt-16 sm:px-8">
+        <div className="mb-6 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: primary }}>Watch first · 60 seconds</p>
+          <h2 className="mt-2 text-balance font-display text-2xl font-bold sm:text-3xl">See how it works in one minute</h2>
+        </div>
+        <div className="relative">
+          {showCosmo && (
+            <div className="absolute -top-12 right-2 z-20 hidden sm:block">
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full blur-xl" style={{ background: `color-mix(in oklch, ${accent} 45%, transparent)` }} aria-hidden="true" />
+                <img src="/cosmo/cosmo-head.png" alt="" className="cosmo-bob relative h-24 w-24 object-contain drop-shadow-2xl" />
+              </div>
+            </div>
+          )}
+          <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0c0f17] shadow-2xl">
+            {/* window chrome */}
+            <div className="flex items-center gap-1.5 border-b border-white/8 px-4 py-2.5">
+              <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
+              <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
+              <span className="h-3 w-3 rounded-full bg-[#28c840]" />
+              <span className="ml-3 flex-1 truncate rounded-md bg-white/5 px-3 py-1 text-center text-[11px] text-foreground/40">
+                {tenant.name.toLowerCase().replace(/\s+/g, "")}.academy — welcome
               </span>
-              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">{tenant.name} × Cosmo · 60 sec</span>
+            </div>
+            <div className="relative aspect-video bg-black">
+              <video controls playsInline className="h-full w-full object-cover" poster="">
+                <source src="/pitch.mp4" type="video/mp4" />
+              </video>
+              {/* Play affordance overlay (shows until the video plays over it). */}
+              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3"
+                style={{ background: `linear-gradient(160deg, ${tenant.bgFrom}, ${tenant.bgTo})` }}>
+                <span className="flex h-16 w-16 items-center justify-center rounded-full shadow-lg" style={{ background: primary }}>
+                  <PlayCircle className="h-8 w-8 text-white" />
+                </span>
+                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">{tenant.name} × Cosmo · 60 sec</span>
+              </div>
             </div>
           </div>
         </div>
         <p className="mt-3 text-center text-xs text-muted-foreground">In short: what you get — and why it costs you nothing.</p>
       </section>
 
-      {/* "You don't pay us" — the model, upfront. Kills the "what's the catch?"
-          objection before the visitor ever reaches the deposit. */}
-      <section className="mx-auto max-w-5xl px-4 pb-20 sm:px-8">
-        <div
-          className="rounded-3xl border p-7 sm:p-9"
-          style={{ borderColor: "rgba(255,255,255,0.08)", background: `linear-gradient(160deg, color-mix(in oklch, ${tenant.primaryColor} 8%, transparent), transparent)` }}
-        >
-          {showCosmo && (
-            <div className="mb-5 flex justify-center">
-              <div className="relative">
-                <div
-                  className="absolute inset-0 rounded-full blur-2xl"
-                  style={{ background: `color-mix(in oklch, ${tenant.accentColor} 45%, transparent)` }}
-                  aria-hidden="true"
-                />
-                <img
-                  src="/cosmo/cosmo-avatar.png"
-                  alt="Cosmo"
-                  className="cosmo-float relative h-20 w-20 rounded-full object-cover ring-2 ring-white/10 sm:h-24 sm:w-24"
-                />
+      {/* Broker partnership band — the trust anchor. Members never deposit with
+          us; they fund their own account at the licensed partner broker. */}
+      <section className="mx-auto max-w-5xl px-4 pt-20 sm:px-8">
+        <div className="overflow-hidden rounded-3xl border border-white/10"
+          style={{ background: `linear-gradient(160deg, color-mix(in oklch, ${primary} 9%, transparent), transparent 60%)` }}>
+          <div className="grid gap-8 p-7 sm:p-10 lg:grid-cols-[1fr_0.9fr] lg:items-center">
+            <div>
+              <p className="mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: primary }}>
+                <Building2 className="h-4 w-4" /> Our broker partner
+              </p>
+              <h2 className="text-balance font-display text-2xl font-bold sm:text-3xl">You never deposit with us.</h2>
+              <p className="mt-3 max-w-xl text-sm leading-relaxed text-foreground/70">
+                You fund your <span className="font-semibold text-foreground/90">own</span> account at{" "}
+                <span className="font-semibold text-foreground/90">{tenant.brokerName}</span> — a licensed, award-winning global broker.
+                The money stays in your name and you can withdraw anytime. We earn from the broker, not from you — that's why the signals
+                and the whole academy are free.
+              </p>
+              <div className="mt-5 grid gap-2.5 sm:grid-cols-2">
+                {BROKER.trust.map((t) => (
+                  <div key={t.label} className="flex items-center gap-2.5 rounded-xl border border-white/8 bg-white/[0.03] px-3.5 py-2.5">
+                    <span className="text-base" style={{ color: primary }}>{t.icon}</span>
+                    <span className="text-xs font-medium text-foreground/75">{t.label}</span>
+                  </div>
+                ))}
               </div>
             </div>
-          )}
-          <p className="mb-2 text-center text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: tenant.primaryColor }}>The honest part</p>
-          <h2 className="text-balance text-center font-display text-2xl font-bold sm:text-3xl">You're not buying anything here.</h2>
-          <p className="mx-auto mt-3 max-w-xl text-center text-sm text-foreground/70">
-            No course fee, no subscription. You fund your <span className="font-semibold text-foreground/90">own</span> trading account at {tenant.brokerName} — the money stays yours. We have a deal with the broker and earn there, not from you. That's why you get signals & academy for free.
-          </p>
-          <div className="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-1.5">
-            {BROKER.trust.map((t) => (
-              <span key={t.label} className="inline-flex items-center gap-1.5 text-xs text-white/55">
-                <span style={{ color: tenant.primaryColor }}>{t.icon}</span> {t.label}
-              </span>
-            ))}
-          </div>
-          <div className="mt-7 grid gap-4 sm:grid-cols-3">
-            {[
-              { icon: "🔓", title: "Unlock for free", body: "Sign up, deposit — and all signals, lessons & trader tools open up." },
-              { icon: "💼", title: "Your money stays yours", body: "The deposit sits in your own broker account. You can withdraw anytime." },
-              { icon: "🤝", title: "We earn from the broker", body: "The broker pays us — not you. A fair, transparent partnership." },
-            ].map((c) => (
-              <div key={c.title} className="rounded-2xl border border-white/8 bg-white/[0.03] p-5 text-center">
-                <div className="mb-2 text-2xl">{c.icon}</div>
-                <div className="font-display text-base font-bold">{c.title}</div>
-                <p className="mt-1.5 text-xs text-foreground/65">{c.body}</p>
+
+            <div className="flex flex-col items-center gap-4">
+              {/* Broker wordmark on a clean plate — the standard trust treatment.
+                  A text wordmark renders reliably for every partner/broker. */}
+              <div className="flex w-full max-w-[300px] items-center justify-center gap-2 rounded-2xl bg-white px-8 py-7 shadow-xl">
+                <Building2 className="h-6 w-6 text-[#0b1220]" />
+                <span className="font-display text-2xl font-black tracking-tight text-[#0b1220]">{tenant.brokerName}</span>
               </div>
-            ))}
-          </div>
-          <div className="mt-7 text-center">
-            <button
-              onClick={goRegister}
-              className="inline-flex items-center gap-2 rounded-full px-7 py-3 text-sm font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
-              style={{ background: tenant.primaryColor }}
-            >
-              Sign up free <ArrowRight className="h-4 w-4" />
-            </button>
+              <a href={BROKER.url} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground/60 underline-offset-4 hover:text-foreground hover:underline">
+                Visit {tenant.brokerName} <ArrowRight className="h-3.5 w-3.5" />
+              </a>
+              <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2">
+                <Wallet className="h-4 w-4" style={{ color: primary }} />
+                <span className="text-xs font-medium text-foreground/75">Your money stays in your name</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
+      {/* Honest-part cards — the model, upfront. */}
+      <section className="mx-auto max-w-5xl px-4 pt-14 sm:px-8">
+        <div className="grid gap-4 sm:grid-cols-3">
+          {[
+            { icon: Lock, title: "Unlock for free", body: "Sign up, deposit — and all signals, lessons & trader tools open up." },
+            { icon: Wallet, title: "Your money stays yours", body: "The deposit sits in your own broker account. You can withdraw anytime." },
+            { icon: BadgeCheck, title: "We earn from the broker", body: "The broker pays us — not you. A fair, transparent partnership." },
+          ].map((c) => (
+            <div key={c.title} className="rounded-2xl border border-white/8 bg-white/[0.03] p-5">
+              <c.icon className="mb-3 h-5 w-5" style={{ color: primary }} />
+              <div className="font-display text-base font-bold">{c.title}</div>
+              <p className="mt-1.5 text-sm text-foreground/65">{c.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Live signals demo */}
-      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-8">
+      <section className="mx-auto max-w-6xl px-4 pt-20 sm:px-8">
         <div className="mb-2 flex items-center justify-center gap-2">
           <span className="relative flex h-2.5 w-2.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-70" style={{ background: tenant.primaryColor }} />
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full" style={{ background: tenant.primaryColor }} />
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-70" style={{ background: primary }} />
+            <span className="relative inline-flex h-2.5 w-2.5 rounded-full" style={{ background: primary }} />
           </span>
           <h2 className="text-center font-display text-2xl font-bold sm:text-3xl">See the signals</h2>
         </div>
@@ -281,11 +368,11 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
       </section>
 
       {/* Features */}
-      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-8">
+      <section className="mx-auto max-w-6xl px-4 pt-20 sm:px-8">
         <h2 className="mb-8 text-center font-display text-2xl font-bold sm:text-3xl">What you get</h2>
         <div className="grid gap-4 sm:grid-cols-3">
           {tenant.features.map((f) => (
-            <div key={f.title} className="rounded-3xl border border-white/5 bg-white/[0.04] p-6">
+            <div key={f.title} className="rounded-3xl border border-white/5 bg-white/[0.04] p-6 transition-colors hover:border-white/10">
               <div className="mb-3 text-3xl">{f.icon}</div>
               <h3 className="font-display text-lg font-bold">{f.title}</h3>
               <p className="mt-2 text-sm text-foreground/70">{f.body}</p>
@@ -295,21 +382,16 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
       </section>
 
       {/* Tiers */}
-      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-8">
+      <section className="mx-auto max-w-6xl px-4 pt-20 sm:px-8">
         <h2 className="mb-2 text-center font-display text-2xl font-bold sm:text-3xl">Member tiers</h2>
         <p className="mb-8 text-center text-sm text-muted-foreground">Deposit more, unlock more.</p>
         <div className="grid gap-4 sm:grid-cols-3">
           {TIERS.map((t, idx) => (
-            <div
-              key={t.key}
+            <div key={t.key}
               className="relative flex flex-col rounded-3xl border border-white/5 bg-white/[0.04] p-6"
-              style={idx === 1 ? { borderColor: `color-mix(in oklch, ${tenant.primaryColor} 40%, transparent)` } : {}}
-            >
+              style={idx === 1 ? { borderColor: `color-mix(in oklch, ${primary} 40%, transparent)` } : {}}>
               {idx === 1 && (
-                <span
-                  className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-[10px] font-bold uppercase text-white"
-                  style={{ background: tenant.primaryColor }}
-                >
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-[10px] font-bold uppercase text-white" style={{ background: primary }}>
                   Most popular
                 </span>
               )}
@@ -327,13 +409,9 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                   </li>
                 ))}
               </ul>
-              <button
-                onClick={goRegister}
+              <button onClick={goRegister}
                 className="mt-6 inline-flex items-center justify-center gap-2 rounded-full py-2.5 text-sm font-bold transition-opacity hover:opacity-90"
-                style={idx === 1
-                  ? { background: tenant.primaryColor, color: "white" }
-                  : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.9)" }}
-              >
+                style={idx === 1 ? { background: primary, color: "white" } : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.9)" }}>
                 Get started <ArrowRight className="h-4 w-4" />
               </button>
             </div>
@@ -343,14 +421,14 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
 
       {/* Testimonials */}
       {tenant.testimonials && tenant.testimonials.length > 0 && (
-        <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-8">
+        <section className="mx-auto max-w-6xl px-4 pt-20 sm:px-8">
           <h2 className="mb-8 text-center font-display text-2xl font-bold sm:text-3xl">Real members, real results</h2>
           <div className="grid gap-4 sm:grid-cols-3">
             {tenant.testimonials.map((t) => (
               <div key={t.handle} className="flex flex-col rounded-3xl border border-white/5 bg-white/[0.04] p-6">
                 <div className="mb-3 flex gap-0.5">
                   {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className="h-3.5 w-3.5 fill-current" style={{ color: tenant.accentColor }} />
+                    <Star key={i} className="h-3.5 w-3.5 fill-current" style={{ color: accent }} />
                   ))}
                 </div>
                 <p className="flex-1 text-sm text-foreground/80">"{t.text}"</p>
@@ -359,7 +437,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                     <div className="text-sm font-bold">{t.name}</div>
                     <div className="text-[11px] text-muted-foreground">{t.handle}</div>
                   </div>
-                  <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background: `color-mix(in oklch, ${tenant.primaryColor} 16%, transparent)`, color: tenant.primaryColor }}>
+                  <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background: `color-mix(in oklch, ${primary} 16%, transparent)`, color: primary }}>
                     {t.result}
                   </span>
                 </div>
@@ -369,17 +447,28 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         </section>
       )}
 
-      {/* How it works */}
-      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-8">
-        <h2 className="mb-8 text-center font-display text-2xl font-bold sm:text-3xl">How it works</h2>
+      {/* How it works — Cosmo coaches you through the three steps. */}
+      <section className="mx-auto max-w-6xl px-4 pt-20 sm:px-8">
+        <div className="mb-8 flex flex-col items-center gap-3 text-center">
+          {showCosmo && (
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full blur-xl" style={{ background: `color-mix(in oklch, ${accent} 40%, transparent)` }} aria-hidden="true" />
+              <img src="/cosmo/cosmo-avatar.png" alt="Cosmo" className="cosmo-float relative h-16 w-16 rounded-full object-cover ring-2 ring-white/10" />
+            </div>
+          )}
+          <h2 className="font-display text-2xl font-bold sm:text-3xl">How it works</h2>
+        </div>
         <div className="grid gap-4 sm:grid-cols-3">
           {[
-            { step: "01", title: "Sign up & fund your account", body: `Create your free account and deposit €100 or more at ${tenant.brokerName}.` },
-            { step: "02", title: "Connect Telegram", body: "Connect your Telegram — our bot verifies your deposit automatically and sends you your personal invite." },
-            { step: "03", title: "Trade with confidence", body: "Follow the signals, work through the lessons, and level up tier by tier." },
+            { step: "01", icon: GraduationCap, title: "Sign up & fund your account", body: `Create your free account and deposit €100 or more at ${tenant.brokerName}.` },
+            { step: "02", icon: Radio, title: "Connect Telegram", body: "Connect your Telegram — our bot verifies your deposit automatically and sends you your personal invite." },
+            { step: "03", icon: LineChart, title: "Trade with confidence", body: "Follow the signals, work through the lessons, and level up tier by tier." },
           ].map((s) => (
             <div key={s.step} className="rounded-3xl border border-white/5 bg-white/[0.04] p-6">
-              <div className="mb-3 font-display text-4xl font-black opacity-20">{s.step}</div>
+              <div className="mb-3 flex items-center justify-between">
+                <span className="font-display text-4xl font-black opacity-15">{s.step}</span>
+                <s.icon className="h-6 w-6" style={{ color: primary }} />
+              </div>
               <h3 className="font-display text-base font-bold">{s.title}</h3>
               <p className="mt-2 text-sm text-foreground/70">{s.body}</p>
             </div>
@@ -389,7 +478,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
 
       {/* FAQ */}
       {tenant.faq && tenant.faq.length > 0 && (
-        <section className="mx-auto max-w-3xl px-4 pb-20 sm:px-8">
+        <section className="mx-auto max-w-3xl px-4 pt-20 sm:px-8">
           <h2 className="mb-8 text-center font-display text-2xl font-bold sm:text-3xl">FAQ</h2>
           <div className="space-y-3">
             {tenant.faq.map((f) => (
@@ -406,21 +495,15 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
       )}
 
       {/* CTA */}
-      <section className="mx-auto max-w-6xl px-4 pb-24 sm:px-8">
-        <div
-          className="rounded-3xl p-8 text-center sm:p-12"
-          style={{ background: `linear-gradient(135deg, color-mix(in oklch, ${tenant.primaryColor} 15%, transparent), color-mix(in oklch, ${tenant.accentColor} 10%, transparent))`, border: `1px solid color-mix(in oklch, ${tenant.primaryColor} 20%, transparent)` }}
-        >
+      <section className="mx-auto max-w-6xl px-4 pt-20 pb-16 sm:px-8">
+        <div className="relative overflow-hidden rounded-3xl p-8 text-center sm:p-12"
+          style={{ background: `linear-gradient(135deg, color-mix(in oklch, ${primary} 15%, transparent), color-mix(in oklch, ${accent} 10%, transparent))`, border: `1px solid color-mix(in oklch, ${primary} 20%, transparent)` }}>
           {tenant.mascot === "zeko" && (
             <img src="/zeko-point.png" alt="" className="mx-auto mb-2 h-28 w-28 rounded-full object-cover object-top" />
           )}
           {showCosmo && (
             <div className="relative mx-auto mb-3 h-28 w-28">
-              <div
-                className="absolute inset-0 rounded-full blur-2xl"
-                style={{ background: `color-mix(in oklch, ${tenant.accentColor} 50%, transparent)` }}
-                aria-hidden="true"
-              />
+              <div className="absolute inset-0 rounded-full blur-2xl" style={{ background: `color-mix(in oklch, ${accent} 50%, transparent)` }} aria-hidden="true" />
               <img src="/cosmo/cosmo-head.png" alt="Cosmo" className="cosmo-float relative h-28 w-28 object-contain" />
             </div>
           )}
@@ -429,11 +512,9 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
             Join {tenant.name} today. Deposit at {tenant.brokerName}, verify via Telegram, and unlock your first signals in minutes.
           </p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <button
-              onClick={goRegister}
+            <button onClick={goRegister}
               className="inline-flex items-center gap-2 rounded-full px-8 py-3.5 text-sm font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
-              style={{ background: tenant.primaryColor }}
-            >
+              style={{ background: primary }}>
               Sign up free <ArrowRight className="h-4 w-4" />
             </button>
           </div>
@@ -443,11 +524,37 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         </div>
       </section>
 
+      {/* White-label band — only on the master brand. Turns the page into a
+          recruitment surface: partners can run this exact academy under their
+          own name. */}
+      {showCosmo && (
+        <section className="mx-auto max-w-5xl px-4 pb-20 sm:px-8">
+          <div className="flex flex-col items-center gap-4 rounded-3xl border border-white/8 bg-white/[0.02] p-7 text-center sm:flex-row sm:justify-between sm:text-left">
+            <div className="flex items-center gap-4">
+              <img src="/cosmo/cosmo-head.png" alt="" className="h-14 w-14 shrink-0 object-contain" />
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: primary }}>For creators & communities</p>
+                <h3 className="mt-1 font-display text-lg font-bold text-balance">Run your own branded academy</h3>
+                <p className="mt-1 max-w-md text-sm text-foreground/65">
+                  This entire platform is white-label. Bring your audience — we handle the signals, the academy, the broker deal and the tech.
+                </p>
+              </div>
+            </div>
+            <Link to="/partner-programm"
+              className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-bold hover:bg-white/10">
+              Become a partner <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </section>
+      )}
+
       {/* Footer */}
       <footer className="border-t border-white/5 px-4 py-6 text-center text-[11px] text-muted-foreground">
-        {tenant.name} · Powered by <Link to="/" className="hover:text-foreground underline">Cosmos Candles Academy</Link>
+        {tenant.name} · Powered by <Link to="/" className="underline hover:text-foreground">Cosmos Candles Academy</Link>
+        {" "}· In partnership with {tenant.brokerName}
         {" "}· <Lock className="inline h-2.5 w-2.5" /> Trading involves risk — 74–89% of retail CFD accounts lose money.
       </footer>
+      </div>
     </div>
   );
 }
