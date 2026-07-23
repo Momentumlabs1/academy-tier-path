@@ -58,9 +58,9 @@ export function PostDepositWelcome() {
             aria-hidden
           />
           <img
-            src="/cosmo/cosmo-avatar.png"
-            alt="Cosmo"
-            className="cosmo-welcome-float relative h-16 w-16 max-w-full object-contain drop-shadow-xl"
+            src="/cosmo/cosmo-thumbsup.png"
+            alt="Cosmo celebrating"
+            className="cosmo-welcome-float relative h-24 w-auto max-w-full object-contain object-bottom drop-shadow-xl"
           />
         </div>
         <div className="min-w-0">

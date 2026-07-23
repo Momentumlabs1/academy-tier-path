@@ -151,9 +151,9 @@ function RegisterPage() {
                 style={{ background: `radial-gradient(circle, color-mix(in oklch, ${accent} 45%, transparent), transparent 70%)` }}
               />
               <img
-                src="/cosmo/cosmo-avatar.png"
+                src="/cosmo/cosmo-wave.png"
                 alt="Cosmo, your Academy guide, waving hello"
-                className="cosmo-float relative h-52 w-auto max-w-full object-contain drop-shadow-2xl sm:h-60"
+                className="cosmo-float relative h-56 w-auto max-w-full object-contain object-bottom drop-shadow-2xl sm:h-72"
               />
             </div>
             <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
