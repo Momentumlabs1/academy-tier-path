@@ -13,6 +13,10 @@
 import "dotenv/config";
 import sql from "mssql";
 import { createClient } from "@supabase/supabase-js";
+// supabase-js constructs a RealtimeClient eagerly and needs a WebSocket. Node
+// < 22 has none natively, so provide the `ws` polyfill (we don't use realtime,
+// but this stops createClient from throwing on Node 20).
+import ws from "ws";
 
 const need = (k) => {
   const v = process.env[k];
@@ -35,6 +39,7 @@ const MSSQL = {
 
 const supabase = createClient(need("SUPABASE_URL"), need("SUPABASE_SERVICE_ROLE_KEY"), {
   auth: { persistSession: false },
+  realtime: { transport: ws },
 });
 
 const CHUNK = 500;             // rows per Supabase upsert
