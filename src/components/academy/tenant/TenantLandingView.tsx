@@ -197,9 +197,9 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                   <div className="chip-float absolute left-[2%] top-[30%] z-30 flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/60 px-2.5 py-1.5 text-[11px] font-bold shadow-xl backdrop-blur" style={{ color: up }}><TrendingUp className="h-3.5 w-3.5" /> XAU +1.4%</div>
                   <div className="chip-float absolute right-[0%] top-[54%] z-30 flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/60 px-2.5 py-1.5 text-[11px] font-bold text-white/85 shadow-xl backdrop-blur" style={{ animationDelay:"1.4s" }}><Radio className="h-3.5 w-3.5" style={{ color: primary }} /> Signal live</div>
 
-                  {/* Cosmo, floating & centred */}
-                  <img src="/cosmo/cosmo-full.png" alt="Cosmo, the Cosmos Candles Academy guide"
-                    className="cosmo-float absolute left-1/2 top-1/2 z-20 h-[82%] w-auto -translate-x-1/2 -translate-y-1/2 object-contain drop-shadow-2xl" />
+                  {/* Cosmo, meditating & floating at the centre of his cosmos */}
+                  <img src="/cosmo/cosmo-meditate.png" alt="Cosmo meditating, the Cosmos Candles Academy guide"
+                    className="cosmo-float absolute left-1/2 top-1/2 z-20 h-[74%] w-auto -translate-x-1/2 -translate-y-1/2 object-contain drop-shadow-2xl" />
 
                   <div className="absolute bottom-[2%] left-1/2 z-30 -translate-x-1/2">
                     <span className="inline-flex items-center gap-1.5 rounded-full border bg-[#070a12]/90 px-3 py-1 text-[11px] font-black uppercase tracking-[0.15em] backdrop-blur" style={{ borderColor: primary, color: primary, boxShadow:`0 0 24px -6px ${primary}` }}>Cosmo · your guide</span>
