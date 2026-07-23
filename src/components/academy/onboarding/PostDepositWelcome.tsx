@@ -1,24 +1,68 @@
 /**
- * PostDepositWelcome — the two Cosmo welcome videos that light up AFTER the
- * first deposit lands (deposit > 0). Video C ("you're in — how to reach the
- * Telegram groups") + Video D ("copy your first signal"). Dismissable so it
- * doesn't nag forever. Co-branded accent; the videos themselves stay pure Cosmo.
+ * PostDepositWelcome — the Cosmo tutorial that lights up AFTER the first deposit
+ * lands (Foundation reached, >= €100): "copy your first signal". Played from the
+ * private `academy-videos` bucket via a gated, time-limited signed URL (fetched
+ * only on play). Dismissable so it doesn't nag forever. Co-branded accent; the
+ * video itself stays pure Cosmo.
  *
  * Renders nothing until the member is funded — so it simply appears (and can be
- * dismissed) the moment the broker webhook flips deposit > 0.
+ * dismissed) the moment the broker webhook flips the deposit past Foundation.
  */
 import { useEffect, useState } from "react";
-import { PlayCircle, Radio, Sparkles, X } from "lucide-react";
+import { PlayCircle, Sparkles, X, Loader2 } from "lucide-react";
 import { useMemberState } from "@/hooks/useMemberState";
+import { useSignedVideoUrl } from "@/hooks/useSignedVideoUrl";
 import { usePartnerBrand, COSMO } from "@/lib/partner-brand";
 import { Card } from "@/components/academy/primitives/Card";
 
 const DISMISS_KEY = "cosmo_welcome_done";
 
-const VIDEOS = [
-  { src: "/welcome.mp4", icon: Radio, title: "Welcome — here's how to start", body: "Cosmo shows you how to join the Telegram groups and find your way around." },
-  { src: "/signals-tutorial.mp4", icon: Sparkles, title: "Copy your first signal", body: "Entry, stop-loss, take-profit — how to mirror a signal into your account." },
-];
+/** The one video that exists today: "copy your first signal" (signals-tutorial.mp4),
+ *  streamed from the private bucket via a gated signed URL (fetched on play). */
+function SignalTutorial({ accent }: { accent: string }) {
+  const [playing, setPlaying] = useState(false);
+  const { url, loading, error, load } = useSignedVideoUrl("signals-tutorial.mp4");
+
+  useEffect(() => { if (playing) load(); }, [playing, load]);
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03]">
+      <div className="relative aspect-video bg-black">
+        {playing ? (
+          url ? (
+            <video src={url} controls autoPlay playsInline preload="none" className="h-full w-full" />
+          ) : error ? (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center text-sm text-white/70">
+              <span>{error === "locked" ? "Available after your deposit." : error}</span>
+              <button onClick={load} className="text-primary hover:underline">Try again</button>
+            </div>
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center"><Loader2 className="h-7 w-7 animate-spin text-white/60" /></div>
+          )
+        ) : (
+          <button
+            onClick={() => setPlaying(true)}
+            className="group absolute inset-0"
+            aria-label="Play video"
+            style={{ background: `linear-gradient(160deg, ${COSMO.bgFrom}, ${COSMO.bgTo})` }}
+          >
+            <span className="absolute inset-0 flex items-center justify-center">
+              <PlayCircle className="h-14 w-14 text-white/70 transition-transform group-hover:scale-110" />
+            </span>
+          </button>
+        )}
+        {loading && !url && !error && <span className="sr-only">Loading…</span>}
+      </div>
+      <div className="flex items-start gap-3 p-4">
+        <Sparkles className="mt-0.5 h-5 w-5 shrink-0" style={{ color: accent }} />
+        <div>
+          <div className="font-display text-sm font-bold">Copy your first signal</div>
+          <div className="mt-0.5 text-xs text-foreground/60">Entry, stop-loss, take-profit — how to mirror a signal into your account.</div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function PostDepositWelcome() {
   const state = useMemberState();
@@ -31,7 +75,7 @@ export function PostDepositWelcome() {
   }, []);
 
   // Only once Foundation is actually reached (>= €100) — a €50 partial deposit
-  // must NOT trigger the "Freigeschaltet" welcome — and only until dismissed.
+  // must NOT trigger the "Unlocked" welcome — and only until dismissed.
   if (!state.loaded || state.lifetimeDeposits < 100 || dismissed) return null;
 
   function dismiss() {
@@ -66,30 +110,12 @@ export function PostDepositWelcome() {
         <div className="min-w-0">
           <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: COSMO.primaryColor }}>Unlocked 🎉</div>
           <h2 className="font-display text-xl font-bold text-balance sm:text-2xl">Welcome to Cosmos Candles</h2>
-          <p className="mt-1 max-w-[56ch] text-sm text-foreground/65">Your deposit landed — you're fully in. Cosmo walks you through your first two steps below.</p>
+          <p className="mt-1 max-w-[56ch] text-sm text-foreground/65">Your deposit landed — you're fully in. Here's your first step.</p>
         </div>
       </div>
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-2">
-        {VIDEOS.map((v) => (
-          <div key={v.src} className="overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03]">
-            <div className="relative aspect-video bg-black">
-              <video controls playsInline className="h-full w-full object-cover">
-                <source src={v.src} type="video/mp4" />
-              </video>
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center" style={{ background: `linear-gradient(160deg, ${COSMO.bgFrom}, ${COSMO.bgTo})` }}>
-                <PlayCircle className="h-12 w-12 text-white/40" />
-              </div>
-            </div>
-            <div className="flex items-start gap-3 p-4">
-              <v.icon className="mt-0.5 h-5 w-5 shrink-0" style={{ color: accent }} />
-              <div>
-                <div className="font-display text-sm font-bold">{v.title}</div>
-                <div className="mt-0.5 text-xs text-foreground/60">{v.body}</div>
-              </div>
-            </div>
-          </div>
-        ))}
+      <div className="mt-5 max-w-md">
+        <SignalTutorial accent={accent} />
       </div>
     </Card>
   );

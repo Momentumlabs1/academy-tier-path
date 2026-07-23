@@ -56,6 +56,7 @@ function LessonDetail() {
       {/* Video player */}
       <LessonVideo
         youtubeId={lesson.youtubeId}
+        videoObject={lesson.videoObject}
         title={lesson.title}
         playing={playing}
         onPlay={() => setPlaying(true)}
