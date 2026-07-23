@@ -1,21 +1,20 @@
 /**
- * TenantLandingView — the branded landing page, driven by a resolved
- * TenantConfig (static OR DB-backed). Rendered by /t/:slug, /:slug AND as the
- * master "/" (Cosmos Candles) page. It is the WHITE-LABEL TEMPLATE: every new
- * partner created in the admin gets this exact page, skinned to their colors,
- * broker, telegram and mascot — no code change required.
+ * TenantLandingView — the branded landing page and WHITE-LABEL TEMPLATE. Driven
+ * by a resolved TenantConfig (static OR DB-backed), rendered by /t/:slug, /:slug
+ * and the master "/" (Cosmos Candles) page.
  *
- * The master brand (slug "cosmos-candles") lights up the full Cosmo treatment:
- * the mascot appears in several forms across the page (full body hero, avatar
- * coach, floating head badges, CTA head). Partner pages keep their own mascot
- * (or none) and inherit the same structure, broker trust band, demo-video mount
- * and section flow.
+ * Art direction: the name is the concept. "Cosmos Candles" = a night-cosmos
+ * built out of candlesticks, and Cosmo is the guide who lives in it. The page
+ * commits to that world — a cinematic candle-field hero, oversized editorial
+ * section numbers, and the lime "COSMO" coach-badge motif recurring throughout.
+ * Every partner inherits the same world, skinned to their colors/broker/mascot.
  */
 import { useEffect } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
-  ArrowRight, CheckCircle2, Lock, Shield, TrendingUp, TrendingDown, Star,
-  Sparkles, PlayCircle, BadgeCheck, Wallet, Building2, Radio, GraduationCap, LineChart,
+  ArrowRight, ArrowUpRight, CheckCircle2, Lock, Shield, TrendingUp, Star,
+  PlayCircle, BadgeCheck, Wallet, Building2, Radio, GraduationCap, LineChart, Zap,
+  Bot, Trophy, Sparkles,
 } from "lucide-react";
 import { TIERS } from "@/lib/academy-data";
 import { formatMoney } from "@/lib/format";
@@ -23,14 +22,10 @@ import { cn } from "@/lib/utils";
 import { writePartnerBrand } from "@/lib/partner-brand";
 import type { TenantConfig } from "@/lib/tenants";
 import { BROKER } from "@/lib/broker";
+import {
+  SignalsPreview, BotPreview, AcademyPreview, QuizPreview, RewardsPreview, WhitelabelPreview,
+} from "@/components/academy/tenant/LandingPreviews";
 
-const DEMO_SIGNALS = [
-  { dir: "LONG", pair: "XAU/USD · Gold", entry: "2,318.40", sl: "2,311.00", tps: ["2,326", "2,334", "Open"], status: "TP2 hit", won: true },
-  { dir: "SHORT", pair: "NAS100", entry: "20,050", sl: "20,110", tps: ["19,980", "19,910"], status: "Running", won: null as boolean | null },
-  { dir: "LONG", pair: "BTC/USDT", entry: "64,200", sl: "63,400", tps: ["65,000", "65,800", "Open"], status: "TP1 hit", won: true },
-];
-
-// Visual-only ticker — the "always-on desk" feeling under the hero.
 const TICKER = [
   { s: "XAU/USD", p: "2,318.4", up: true }, { s: "BTC/USDT", p: "64,210", up: true },
   { s: "NAS100", p: "20,050", up: false }, { s: "EUR/USD", p: "1.0842", up: true },
@@ -38,20 +33,23 @@ const TICKER = [
   { s: "GBP/JPY", p: "199.84", up: true }, { s: "SPX500", p: "5,268", up: false },
 ];
 
+// A deterministic up-trending candle series — SSR-safe (no random). Each entry:
+// [bottom%, height%, up?] where % is share of the field height.
+const CANDLES: [number, number, boolean][] = [
+  [8, 10, true], [12, 8, false], [10, 16, true], [20, 12, true], [26, 9, false],
+  [24, 20, true], [36, 14, true], [44, 10, false], [40, 22, true], [52, 16, true],
+  [60, 11, false], [56, 24, true], [68, 15, true], [74, 12, false], [70, 26, true],
+  [82, 18, true], [88, 10, false], [84, 22, true], [92, 20, true], [86, 14, false],
+  [90, 28, true], [96, 16, true], [88, 12, false], [94, 24, true],
+];
+
 export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
   const navigate = useNavigate();
   const goRegister = () => navigate({ to: "/registrieren" });
 
-  // Cosmo is the face of the master brand. He anchors the page on the central
-  // Cosmos Candles landing; partner pages keep their own mascot/skin untouched.
   const showCosmo = tenant.slug === "cosmos-candles";
   const heroHasMascot = tenant.mascot === "zeko" || showCosmo;
 
-  // Partner attribution + co-branding skin. Two cookies, both 30 days:
-  //  · cosmo_ref   — slug only; the register step stamps it into user metadata so
-  //                  the DB trigger writes members.referred_by_tenant (credit).
-  //  · cosmo_brand — the slim visual skin (logo, accent, name, telegram) so the
-  //                  central Cosmo academy co-brands downstream WITHOUT a DB fetch.
   useEffect(() => {
     if (typeof document === "undefined") return;
     document.cookie = `cosmo_ref=${encodeURIComponent(tenant.slug)}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
@@ -60,386 +58,308 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
 
   const primary = tenant.primaryColor;
   const accent = tenant.accentColor;
+  const up = "oklch(0.82 0.17 150)";
+  const down = "oklch(0.66 0.2 22)";
 
   return (
-    <div
-      className="relative min-h-screen overflow-clip font-sans"
-      style={{ background: `linear-gradient(160deg, ${tenant.bgFrom} 0%, ${tenant.bgTo} 100%)` }}
-    >
+    <div className="relative min-h-screen overflow-clip bg-[#05070e] font-sans text-white">
       <style>{`
-        @keyframes cosmoFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
-        .cosmo-float { animation: cosmoFloat 5.5s ease-in-out infinite; will-change: transform; }
-        @keyframes cosmoBob { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-9px) rotate(2deg); } }
-        .cosmo-bob { animation: cosmoBob 6s ease-in-out infinite; will-change: transform; }
-        @keyframes chipFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes cosmoFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-16px); } }
+        .cosmo-float { animation: cosmoFloat 6s ease-in-out infinite; will-change: transform; }
+        @keyframes cosmoBob { 0%,100% { transform: translateY(0) rotate(-2deg); } 50% { transform: translateY(-10px) rotate(2deg); } }
+        .cosmo-bob { animation: cosmoBob 6.5s ease-in-out infinite; }
+        @keyframes chipFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-11px); } }
         .chip-float { animation: chipFloat 4.5s ease-in-out infinite; }
+        @keyframes candleGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+        .candle-grow { transform-origin: bottom; animation: candleGrow .9s cubic-bezier(.2,.8,.2,1) both; }
         @keyframes tickerScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-        .ticker-track { animation: tickerScroll 32s linear infinite; }
+        .ticker-track { animation: tickerScroll 34s linear infinite; }
+        @keyframes twinkle { 0%,100% { opacity:.15; } 50% { opacity:.8; } }
+        .twinkle { animation: twinkle 4s ease-in-out infinite; }
         @media (prefers-reduced-motion: reduce) {
-          .cosmo-float, .cosmo-bob, .chip-float, .ticker-track { animation: none !important; }
+          .cosmo-float,.cosmo-bob,.chip-float,.candle-grow,.ticker-track,.twinkle { animation: none !important; transform: none !important; }
         }
       `}</style>
 
-      {/* Ambient brand wash — glows + faint grid, sits behind everything. */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 z-0">
-        <div className="absolute -top-32 left-1/2 h-[560px] w-[560px] -translate-x-1/2 rounded-full blur-[120px]"
-          style={{ background: `color-mix(in oklch, ${primary} 18%, transparent)` }} />
-        <div className="absolute top-[40%] -right-40 h-[460px] w-[460px] rounded-full blur-[120px]"
-          style={{ background: `color-mix(in oklch, ${accent} 16%, transparent)` }} />
-        <div className="absolute inset-0 opacity-[0.04]"
-          style={{ backgroundImage: "linear-gradient(rgba(255,255,255,.6) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.6) 1px,transparent 1px)", backgroundSize: "48px 48px" }} />
-      </div>
-
-      <div className="relative z-10">
-      {/* Nav */}
-      <header className="sticky top-0 z-30 border-b border-white/5 backdrop-blur-md"
-        style={{ background: `color-mix(in oklch, ${tenant.bgTo} 72%, transparent)` }}>
+      {/* ─────────────────────────── NAV ─────────────────────────── */}
+      <header className="sticky top-0 z-40 border-b border-white/[0.06] bg-[#05070e]/80 backdrop-blur-xl">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5 sm:px-8">
           <div className="flex items-center gap-2.5">
             {showCosmo ? (
               <span className="relative flex h-9 w-9 items-center justify-center">
-                <span className="absolute inset-0 rounded-full blur-md" style={{ background: `color-mix(in oklch, ${accent} 40%, transparent)` }} />
+                <span className="absolute inset-0 rounded-full blur-md" style={{ background: `color-mix(in oklch, ${accent} 45%, transparent)` }} />
                 <img src="/cosmo/cosmo-head.png" alt="" className="relative h-9 w-9 object-contain" />
               </span>
             ) : (
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl text-sm font-black text-white" style={{ background: primary }}>
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl text-sm font-black text-black" style={{ background: primary }}>
                 {tenant.logoInitials}
               </span>
             )}
-            <span className="font-display text-lg font-bold">{tenant.name}</span>
+            <span className="font-display text-lg font-bold tracking-tight">{tenant.name}</span>
           </div>
           <div className="flex items-center gap-1 sm:gap-3">
-            <Link to="/login" className="hidden rounded-full px-4 py-2 text-sm font-medium text-foreground/70 hover:text-foreground sm:inline-block">
-              Sign in
-            </Link>
+            <Link to="/login" className="hidden rounded-full px-4 py-2 text-sm font-medium text-white/70 hover:text-white sm:inline-block">Sign in</Link>
             <button onClick={goRegister}
-              className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
-              style={{ background: primary }}>
+              className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold text-black shadow-lg transition-transform hover:-translate-y-0.5"
+              style={{ background: primary, boxShadow: `0 8px 30px -8px ${primary}` }}>
               Sign up free <ArrowRight className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="mx-auto max-w-6xl px-4 pb-10 pt-10 sm:px-8 sm:pt-14">
-        <div className={cn("grid items-center gap-8 lg:gap-12", heroHasMascot && "lg:grid-cols-[1.1fr_0.9fr]")}>
-          <div className={heroHasMascot ? "text-center lg:text-left" : "mx-auto max-w-3xl text-center"}>
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.14em]"
-              style={{ background: `color-mix(in oklch, ${primary} 15%, transparent)`, color: primary }}>
-              <Sparkles className="h-3.5 w-3.5" /> {showCosmo ? "Meet Cosmo · Your trading guide" : "Powered by Cosmos Candles Academy"}
+      {/* ─────────────────────────── HERO ─────────────────────────── */}
+      <section className="relative isolate overflow-hidden">
+        {/* cosmos backdrop: stars + nebula glows */}
+        <div aria-hidden className="absolute inset-0 -z-10">
+          <div className="absolute -top-40 left-[15%] h-[620px] w-[620px] rounded-full blur-[130px]" style={{ background: `color-mix(in oklch, ${accent} 26%, transparent)` }} />
+          <div className="absolute top-10 right-[5%] h-[520px] w-[520px] rounded-full blur-[130px]" style={{ background: `color-mix(in oklch, ${primary} 16%, transparent)` }} />
+          {[["12%","18%"],["28%","62%"],["44%","28%"],["70%","70%"],["82%","20%"],["58%","48%"],["36%","82%"],["90%","54%"],["20%","40%"],["66%","14%"]].map(([t,l],i)=>(
+            <span key={i} className="twinkle absolute h-1 w-1 rounded-full bg-white" style={{ top:t, left:l, animationDelay:`${i*0.5}s` }} />
+          ))}
+        </div>
+
+        <div className="mx-auto grid max-w-6xl items-center gap-6 px-4 pb-4 pt-14 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:pt-20">
+          {/* Left: copy */}
+          <div className="relative z-10 text-center lg:text-left">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
+              <span className="relative flex h-1.5 w-1.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-70" style={{ background: primary }} /><span className="relative inline-flex h-1.5 w-1.5 rounded-full" style={{ background: primary }} /></span>
+              {showCosmo ? "Cosmos Candles Academy" : `Powered by Cosmos Candles`}
             </div>
 
-            <h1 className="text-balance font-display text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
-              {tenant.headline ?? tenant.tagline}
+            <h1 className="font-display text-5xl font-black leading-[0.95] tracking-tight sm:text-6xl lg:text-7xl">
+              {showCosmo ? (
+                <>Learn to trade<br />the <span style={{ color: primary }}>whole cosmos.</span></>
+              ) : (tenant.headline ?? tenant.tagline)}
             </h1>
-            <p className={cn("mt-4 text-lg text-foreground/70", heroHasMascot ? "" : "mx-auto max-w-2xl")}>
-              {tenant.subhead ?? tenant.description}
+            <p className="mx-auto mt-5 max-w-xl text-base text-white/65 sm:text-lg lg:mx-0">
+              {showCosmo
+                ? "Live signals, a course that starts from zero and pro orderflow tools — free. Cosmo reads every candle with you, from your first trade to your first funded month."
+                : (tenant.subhead ?? tenant.description)}
             </p>
 
-            <div className={cn("mt-8 flex flex-wrap items-center gap-3", heroHasMascot ? "justify-center lg:justify-start" : "justify-center")}>
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
               <button onClick={goRegister}
-                className="inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
-                style={{ background: primary }}>
-                Sign up free <ArrowRight className="h-4 w-4" />
+                className="group inline-flex items-center gap-2 rounded-full px-7 py-4 text-sm font-black text-black transition-transform hover:-translate-y-0.5"
+                style={{ background: primary, boxShadow: `0 14px 40px -12px ${primary}` }}>
+                Start free — €0 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </button>
               {tenant.telegramChannel && tenant.telegramChannel !== "#" && (
                 <a href={tenant.telegramChannel} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-3.5 text-sm font-semibold hover:bg-white/10 transition-colors">
-                  Join Telegram
+                  className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-7 py-4 text-sm font-semibold hover:bg-white/10">
+                  Watch the signals <ArrowUpRight className="h-4 w-4" />
                 </a>
               )}
             </div>
 
-            {/* Inline trust row — the fast credibility hit under the CTA. */}
-            <div className={cn("mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-foreground/55", heroHasMascot ? "justify-center lg:justify-start" : "justify-center")}>
+            <div className="mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-white/50 lg:justify-start">
               <span className="inline-flex items-center gap-1.5"><Star className="h-3.5 w-3.5 fill-current" style={{ color: accent }} /> 4.9 broker rating</span>
               <span className="inline-flex items-center gap-1.5"><Shield className="h-3.5 w-3.5" style={{ color: primary }} /> Regulated broker</span>
-              <span className="inline-flex items-center gap-1.5"><BadgeCheck className="h-3.5 w-3.5" style={{ color: primary }} /> €0 — free forever</span>
+              <span className="inline-flex items-center gap-1.5"><Zap className="h-3.5 w-3.5" style={{ color: primary }} /> 200+ members live</span>
             </div>
           </div>
 
-          {tenant.mascot === "zeko" && (
-            <div className="relative mx-auto w-full max-w-[360px]">
-              <div className="absolute inset-4 rounded-full blur-3xl" style={{ background: `color-mix(in oklch, ${primary} 40%, transparent)` }} />
-              <div className="relative aspect-square overflow-hidden rounded-full ring-4 ring-white/10 shadow-2xl">
-                <img src="/zeko-hero.png" alt="Zeko" className="h-full w-full scale-[1.35] object-cover object-top" />
-              </div>
-            </div>
-          )}
-
-          {showCosmo && (
-            <div className="relative mx-auto flex w-full max-w-[440px] items-end justify-center">
-              <div className="absolute bottom-6 left-1/2 h-[62%] w-[78%] -translate-x-1/2 rounded-full blur-[70px]"
-                style={{ background: `color-mix(in oklch, ${accent} 55%, transparent)` }} aria-hidden="true" />
-              <div className="absolute bottom-10 left-1/2 h-[42%] w-[52%] -translate-x-1/2 rounded-full blur-3xl"
-                style={{ background: `color-mix(in oklch, ${primary} 40%, transparent)` }} aria-hidden="true" />
-
-              {/* Orbiting candle / signal chips around Cosmo */}
-              <div className="chip-float absolute left-1 top-6 z-20 flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/40 px-2.5 py-1.5 text-[11px] font-bold text-[oklch(0.8_0.16_150)] shadow-xl backdrop-blur-sm" style={{ animationDelay: "0s" }}>
-                <TrendingUp className="h-3.5 w-3.5" /> XAU +1.4%
-              </div>
-              <div className="chip-float absolute right-0 top-24 z-20 flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/40 px-2.5 py-1.5 text-[11px] font-bold text-white/80 shadow-xl backdrop-blur-sm" style={{ animationDelay: "1.2s" }}>
-                <Radio className="h-3.5 w-3.5" style={{ color: primary }} /> Signal live
-              </div>
-              <div className="chip-float absolute bottom-16 left-0 z-20 flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/40 px-2.5 py-1.5 text-[11px] font-bold text-[oklch(0.8_0.16_150)] shadow-xl backdrop-blur-sm" style={{ animationDelay: "2.1s" }}>
-                <CheckCircle2 className="h-3.5 w-3.5" /> TP2 hit
-              </div>
-
-              <img src="/cosmo/cosmo-full.png" alt="Cosmo, the Cosmos Candles Academy mascot"
-                className="cosmo-float relative z-10 h-auto w-full max-w-full object-contain drop-shadow-2xl" />
+          {/* Right: Cosmo standing in his candle-cosmos */}
+          {heroHasMascot && (
+            <div className="relative z-10 mx-auto flex w-full max-w-[440px] items-end justify-center">
+              <div className="absolute bottom-4 left-1/2 h-[58%] w-[80%] -translate-x-1/2 rounded-full blur-[80px]" style={{ background: `color-mix(in oklch, ${accent} 55%, transparent)` }} aria-hidden />
+              {showCosmo ? (
+                <>
+                  <div className="chip-float absolute -left-1 top-4 z-20 flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/50 px-2.5 py-1.5 text-[11px] font-bold shadow-xl backdrop-blur" style={{ color: up }}><TrendingUp className="h-3.5 w-3.5" /> XAU +1.4%</div>
+                  <div className="chip-float absolute right-0 top-28 z-20 flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/50 px-2.5 py-1.5 text-[11px] font-bold text-white/85 shadow-xl backdrop-blur" style={{ animationDelay:"1.3s" }}><Radio className="h-3.5 w-3.5" style={{ color: primary }} /> Signal live</div>
+                  <div className="chip-float absolute bottom-24 -left-2 z-20 flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/50 px-2.5 py-1.5 text-[11px] font-bold shadow-xl backdrop-blur" style={{ color: up, animationDelay:"2.2s" }}><CheckCircle2 className="h-3.5 w-3.5" /> TP2 hit</div>
+                  <img src="/cosmo/cosmo-full.png" alt="Cosmo, the Cosmos Candles Academy guide" className="cosmo-float relative z-10 h-auto w-full max-w-full object-contain drop-shadow-2xl" />
+                  {/* the lime coach badge — Cosmo's signature */}
+                  <div className="absolute -bottom-1 left-1/2 z-30 -translate-x-1/2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border bg-black/70 px-3 py-1 text-[11px] font-black uppercase tracking-[0.15em] backdrop-blur" style={{ borderColor: primary, color: primary, boxShadow:`0 0 24px -6px ${primary}` }}>Cosmo · your guide</span>
+                  </div>
+                </>
+              ) : (
+                <div className="relative aspect-square w-full max-w-[360px] overflow-hidden rounded-full ring-4 ring-white/10 shadow-2xl">
+                  <img src="/zeko-hero.png" alt="Zeko" className="h-full w-full scale-[1.35] object-cover object-top" />
+                </div>
+              )}
             </div>
           )}
         </div>
+
+        {/* candle field — the literal "Cosmos Candles" floor the whole hero rests on */}
+        <div aria-hidden className="relative mt-4 h-40 w-full sm:h-52">
+          <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage:"linear-gradient(rgba(255,255,255,.7) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.7) 1px,transparent 1px)", backgroundSize:"52px 52px", maskImage:"linear-gradient(to top,black,transparent)" }} />
+          <div className="mx-auto flex h-full max-w-6xl items-end justify-between gap-[0.6%] px-4 sm:px-8">
+            {CANDLES.map(([bottom, height, isUp], i) => (
+              <div key={i} className="candle-grow relative flex-1" style={{ height:`${bottom}%`, animationDelay:`${i*0.03}s` }}>
+                <span className="absolute bottom-0 left-1/2 w-[2px] -translate-x-1/2 rounded" style={{ height:"100%", background:`color-mix(in oklch, ${isUp?up:down} 45%, transparent)` }} />
+                <span className="absolute left-1/2 w-full -translate-x-1/2 rounded-[2px]" style={{ bottom:`${Math.max(4, bottom-height)}%`, height:`${height}%`, background: isUp?up:down, boxShadow:`0 0 12px -2px ${isUp?up:down}` }} />
+              </div>
+            ))}
+          </div>
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#05070e] to-transparent" />
+        </div>
       </section>
 
-      {/* Live ticker strip — the always-on desk. */}
-      <div className="relative mb-14 overflow-hidden border-y border-white/5 bg-white/[0.02] py-2.5">
-        <div className="ticker-track flex w-max gap-8 whitespace-nowrap">
+      {/* ─────────────────────── TICKER ─────────────────────── */}
+      <div className="relative overflow-hidden border-y border-white/[0.06] bg-white/[0.02] py-3">
+        <div className="ticker-track flex w-max gap-10 whitespace-nowrap">
           {[...TICKER, ...TICKER].map((t, i) => (
-            <span key={i} className="inline-flex items-center gap-2 font-mono text-xs text-foreground/60">
-              <span className="font-semibold text-foreground/80">{t.s}</span>
+            <span key={i} className="inline-flex items-center gap-2 font-mono text-xs text-white/55">
+              <span className="font-semibold text-white/80">{t.s}</span>
               <span className="tabular-nums">{t.p}</span>
-              <span className={t.up ? "text-[oklch(0.8_0.16_150)]" : "text-[oklch(0.72_0.18_20)]"}>
-                {t.up ? "▲" : "▼"}
-              </span>
+              <span style={{ color: t.up ? up : down }}>{t.up ? "▲" : "▼"}</span>
             </span>
           ))}
         </div>
       </div>
 
-      {/* Stats row */}
-      <section className="mx-auto max-w-6xl px-4 sm:px-8">
-        <div className="mx-auto grid max-w-3xl grid-cols-2 gap-4 sm:grid-cols-4">
+      {/* ─────────────────────── STATS ─────────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-8">
+        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-3xl border border-white/[0.06] bg-white/[0.04] sm:grid-cols-4">
           {tenant.stats.map((s) => (
-            <div key={s.label} className="rounded-2xl border border-white/5 bg-white/5 px-4 py-4 text-center">
-              <div className="font-display text-2xl font-bold" style={{ color: primary }}>{s.value}</div>
-              <div className="mt-0.5 text-[11px] uppercase tracking-[0.12em] text-muted-foreground">{s.label}</div>
+            <div key={s.label} className="bg-[#070a13] px-5 py-7 text-center">
+              <div className="font-display text-3xl font-black sm:text-4xl" style={{ color: primary }}>{s.value}</div>
+              <div className="mt-1 text-[11px] uppercase tracking-[0.14em] text-white/45">{s.label}</div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Demo video holder — a browser-chrome mount with Cosmo peeking over the
-          corner. Drop the rendered pitch clip into public/pitch.mp4. */}
-      <section className="mx-auto max-w-4xl px-4 pt-16 sm:px-8">
-        <div className="mb-6 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: primary }}>Watch first · 60 seconds</p>
-          <h2 className="mt-2 text-balance font-display text-2xl font-bold sm:text-3xl">See how it works in one minute</h2>
-        </div>
-        <div className="relative">
+      {/* ─────────────────────── DEMO VIDEO ─────────────────────── */}
+      <section className="mx-auto max-w-4xl px-4 py-10 sm:px-8">
+        <SectionHead n="01" kicker="Watch first · 60 seconds" title="See the whole thing in one minute" primary={primary} />
+        <div className="relative mt-8">
           {showCosmo && (
             <div className="absolute -top-12 right-2 z-20 hidden sm:block">
-              <div className="relative">
-                <div className="absolute inset-0 rounded-full blur-xl" style={{ background: `color-mix(in oklch, ${accent} 45%, transparent)` }} aria-hidden="true" />
-                <img src="/cosmo/cosmo-head.png" alt="" className="cosmo-bob relative h-24 w-24 object-contain drop-shadow-2xl" />
-              </div>
+              <div className="relative"><div className="absolute inset-0 rounded-full blur-xl" style={{ background:`color-mix(in oklch, ${accent} 45%, transparent)` }} /><img src="/cosmo/cosmo-head.png" alt="" className="cosmo-bob relative h-24 w-24 object-contain drop-shadow-2xl" /></div>
             </div>
           )}
           <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0c0f17] shadow-2xl">
-            {/* window chrome */}
             <div className="flex items-center gap-1.5 border-b border-white/8 px-4 py-2.5">
-              <span className="h-3 w-3 rounded-full bg-[#ff5f57]" />
-              <span className="h-3 w-3 rounded-full bg-[#febc2e]" />
-              <span className="h-3 w-3 rounded-full bg-[#28c840]" />
-              <span className="ml-3 flex-1 truncate rounded-md bg-white/5 px-3 py-1 text-center text-[11px] text-foreground/40">
-                {tenant.name.toLowerCase().replace(/\s+/g, "")}.academy — welcome
-              </span>
+              <span className="h-3 w-3 rounded-full bg-[#ff5f57]" /><span className="h-3 w-3 rounded-full bg-[#febc2e]" /><span className="h-3 w-3 rounded-full bg-[#28c840]" />
+              <span className="ml-3 flex-1 truncate rounded-md bg-white/5 px-3 py-1 text-center text-[11px] text-white/40">{tenant.name.toLowerCase().replace(/\s+/g,"")}.academy — welcome</span>
             </div>
             <div className="relative aspect-video bg-black">
-              <video controls playsInline className="h-full w-full object-cover" poster="">
-                <source src="/pitch.mp4" type="video/mp4" />
-              </video>
-              {/* Play affordance overlay (shows until the video plays over it). */}
-              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3"
-                style={{ background: `linear-gradient(160deg, ${tenant.bgFrom}, ${tenant.bgTo})` }}>
-                <span className="flex h-16 w-16 items-center justify-center rounded-full shadow-lg" style={{ background: primary }}>
-                  <PlayCircle className="h-8 w-8 text-white" />
-                </span>
+              <video controls playsInline className="h-full w-full object-cover"><source src="/pitch.mp4" type="video/mp4" /></video>
+              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3" style={{ background:`linear-gradient(160deg, ${tenant.bgFrom}, ${tenant.bgTo})` }}>
+                <span className="flex h-16 w-16 items-center justify-center rounded-full shadow-lg" style={{ background: primary }}><PlayCircle className="h-8 w-8 text-black" /></span>
                 <span className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">{tenant.name} × Cosmo · 60 sec</span>
               </div>
             </div>
           </div>
         </div>
-        <p className="mt-3 text-center text-xs text-muted-foreground">In short: what you get — and why it costs you nothing.</p>
       </section>
 
-      {/* Broker partnership band — the trust anchor. Members never deposit with
-          us; they fund their own account at the licensed partner broker. */}
-      <section className="mx-auto max-w-5xl px-4 pt-20 sm:px-8">
-        <div className="overflow-hidden rounded-3xl border border-white/10"
-          style={{ background: `linear-gradient(160deg, color-mix(in oklch, ${primary} 9%, transparent), transparent 60%)` }}>
-          <div className="grid gap-8 p-7 sm:p-10 lg:grid-cols-[1fr_0.9fr] lg:items-center">
+      {/* ─────────────────────── BROKER BAND ─────────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-8">
+        <div className="overflow-hidden rounded-[2rem] border border-white/10" style={{ background:`radial-gradient(120% 120% at 0% 0%, color-mix(in oklch, ${primary} 12%, transparent), transparent 55%)` }}>
+          <div className="grid gap-10 p-8 sm:p-12 lg:grid-cols-[1fr_0.85fr] lg:items-center">
             <div>
-              <p className="mb-3 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: primary }}>
-                <Building2 className="h-4 w-4" /> Our broker partner
+              <p className="mb-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: primary }}><Building2 className="h-4 w-4" /> Our broker partner</p>
+              <h2 className="font-display text-3xl font-black leading-tight sm:text-4xl">You never<br />deposit with us.</h2>
+              <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/65">
+                You fund your <span className="font-semibold text-white/90">own</span> account at <span className="font-semibold text-white/90">{tenant.brokerName}</span> — a licensed, award-winning global broker. The money stays in your name and you can withdraw anytime. We earn from the broker, not from you — that's why everything here is free.
               </p>
-              <h2 className="text-balance font-display text-2xl font-bold sm:text-3xl">You never deposit with us.</h2>
-              <p className="mt-3 max-w-xl text-sm leading-relaxed text-foreground/70">
-                You fund your <span className="font-semibold text-foreground/90">own</span> account at{" "}
-                <span className="font-semibold text-foreground/90">{tenant.brokerName}</span> — a licensed, award-winning global broker.
-                The money stays in your name and you can withdraw anytime. We earn from the broker, not from you — that's why the signals
-                and the whole academy are free.
-              </p>
-              <div className="mt-5 grid gap-2.5 sm:grid-cols-2">
+              <div className="mt-6 grid gap-2.5 sm:grid-cols-2">
                 {BROKER.trust.map((t) => (
-                  <div key={t.label} className="flex items-center gap-2.5 rounded-xl border border-white/8 bg-white/[0.03] px-3.5 py-2.5">
+                  <div key={t.label} className="flex items-center gap-2.5 rounded-xl border border-white/8 bg-white/[0.03] px-3.5 py-3">
                     <span className="text-base" style={{ color: primary }}>{t.icon}</span>
-                    <span className="text-xs font-medium text-foreground/75">{t.label}</span>
+                    <span className="text-xs font-medium text-white/75">{t.label}</span>
                   </div>
                 ))}
               </div>
             </div>
-
             <div className="flex flex-col items-center gap-4">
-              {/* Broker wordmark on a clean plate — the standard trust treatment.
-                  A text wordmark renders reliably for every partner/broker. */}
-              <div className="flex w-full max-w-[300px] items-center justify-center gap-2 rounded-2xl bg-white px-8 py-7 shadow-xl">
-                <Building2 className="h-6 w-6 text-[#0b1220]" />
-                <span className="font-display text-2xl font-black tracking-tight text-[#0b1220]">{tenant.brokerName}</span>
+              <div className="flex w-full max-w-[300px] items-center justify-center gap-2 rounded-2xl bg-white px-8 py-8 shadow-2xl">
+                <Building2 className="h-7 w-7 text-[#0b1220]" /><span className="font-display text-2xl font-black tracking-tight text-[#0b1220]">{tenant.brokerName}</span>
               </div>
-              <a href={BROKER.url} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground/60 underline-offset-4 hover:text-foreground hover:underline">
-                Visit {tenant.brokerName} <ArrowRight className="h-3.5 w-3.5" />
-              </a>
-              <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2">
-                <Wallet className="h-4 w-4" style={{ color: primary }} />
-                <span className="text-xs font-medium text-foreground/75">Your money stays in your name</span>
-              </div>
+              <a href={BROKER.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-medium text-white/60 underline-offset-4 hover:text-white hover:underline">Visit {tenant.brokerName} <ArrowUpRight className="h-3.5 w-3.5" /></a>
+              <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2"><Wallet className="h-4 w-4" style={{ color: primary }} /><span className="text-xs font-medium text-white/75">Your money stays in your name</span></div>
             </div>
           </div>
         </div>
-      </section>
-
-      {/* Honest-part cards — the model, upfront. */}
-      <section className="mx-auto max-w-5xl px-4 pt-14 sm:px-8">
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="mt-4 grid gap-4 sm:grid-cols-3">
           {[
             { icon: Lock, title: "Unlock for free", body: "Sign up, deposit — and all signals, lessons & trader tools open up." },
             { icon: Wallet, title: "Your money stays yours", body: "The deposit sits in your own broker account. You can withdraw anytime." },
             { icon: BadgeCheck, title: "We earn from the broker", body: "The broker pays us — not you. A fair, transparent partnership." },
           ].map((c) => (
-            <div key={c.title} className="rounded-2xl border border-white/8 bg-white/[0.03] p-5">
-              <c.icon className="mb-3 h-5 w-5" style={{ color: primary }} />
-              <div className="font-display text-base font-bold">{c.title}</div>
-              <p className="mt-1.5 text-sm text-foreground/65">{c.body}</p>
-            </div>
+            <div key={c.title} className="rounded-2xl border border-white/8 bg-white/[0.03] p-5"><c.icon className="mb-3 h-5 w-5" style={{ color: primary }} /><div className="font-display text-base font-bold">{c.title}</div><p className="mt-1.5 text-sm text-white/60">{c.body}</p></div>
           ))}
         </div>
       </section>
 
-      {/* Live signals demo */}
-      <section className="mx-auto max-w-6xl px-4 pt-20 sm:px-8">
-        <div className="mb-2 flex items-center justify-center gap-2">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-70" style={{ background: primary }} />
-            <span className="relative inline-flex h-2.5 w-2.5 rounded-full" style={{ background: primary }} />
-          </span>
-          <h2 className="text-center font-display text-2xl font-bold sm:text-3xl">See the signals</h2>
+      {/* ─────────────────── CAPABILITIES SHOWCASE ─────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-8">
+        <div className="mx-auto max-w-2xl text-center">
+          <SectionHead n="02" kicker="Everything included · free" title="Not a course. A whole trading operating system." primary={primary} center
+            sub="Live signals, an auto-trader, a full academy, quizzes that pay XP, a rewards ladder — and a white-label engine partners run under their own brand. Here's the real thing, not screenshots." />
         </div>
-        <p className="mb-8 text-center text-sm text-muted-foreground">Real calls, exactly as members get them — entry, stop-loss, targets. No screenshots, no hindsight.</p>
-        <div className="grid gap-4 sm:grid-cols-3">
-          {DEMO_SIGNALS.map((s) => {
-            const long = s.dir === "LONG";
-            return (
-              <div key={s.pair} className="overflow-hidden rounded-2xl border border-white/8 bg-white/[0.04]">
-                <div className="flex items-center justify-between px-4 py-3" style={{ background: long ? "rgba(52,209,122,.10)" : "rgba(255,85,102,.10)" }}>
-                  <span className={cn("inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 font-mono text-xs font-bold", long ? "text-[oklch(0.8_0.16_150)]" : "text-[oklch(0.72_0.18_20)]")}>
-                    {long ? <TrendingUp className="h-3.5 w-3.5" /> : <TrendingDown className="h-3.5 w-3.5" />} {s.dir}
-                  </span>
-                  <span className="font-mono text-xs text-foreground/80">{s.pair}</span>
-                </div>
-                <div className="space-y-1.5 px-4 py-4 font-mono text-[13px]">
-                  <Row k="Entry" v={s.entry} />
-                  <Row k="Stop" v={s.sl} tone="red" />
-                  {s.tps.map((tp, i) => <Row key={i} k={`TP${i + 1}`} v={tp} tone="green" />)}
-                </div>
-                <div className="flex items-center justify-between border-t border-white/8 px-4 py-2.5 text-xs">
-                  <span className="text-muted-foreground">Status</span>
-                  <span className={cn("font-semibold", s.won ? "text-[oklch(0.8_0.16_150)]" : "text-foreground/70")}>
-                    {s.won && "✓ "}{s.status}
-                  </span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        <p className="mt-4 text-center text-[11px] text-muted-foreground">For illustration only. Trading involves risk — never risk more than you can afford to lose.</p>
-      </section>
 
-      {/* Features */}
-      <section className="mx-auto max-w-6xl px-4 pt-20 sm:px-8">
-        <h2 className="mb-8 text-center font-display text-2xl font-bold sm:text-3xl">What you get</h2>
-        <div className="grid gap-4 sm:grid-cols-3">
-          {tenant.features.map((f) => (
-            <div key={f.title} className="rounded-3xl border border-white/5 bg-white/[0.04] p-6 transition-colors hover:border-white/10">
-              <div className="mb-3 text-3xl">{f.icon}</div>
-              <h3 className="font-display text-lg font-bold">{f.title}</h3>
-              <p className="mt-2 text-sm text-foreground/70">{f.body}</p>
-            </div>
-          ))}
+        <div className="mt-14 space-y-16 sm:space-y-24">
+          <Showcase primary={primary} icon={Radio} tag="Live signals"
+            title="Every call from the desk — on your phone in seconds"
+            body="Entry, stop-loss and targets, pushed the moment the desk fires. Nothing to interpret, no hindsight, no screenshots — just the trade."
+            points={["Real-time Telegram delivery", "Entry · SL · multiple targets", "Win/loss tracked openly"]}
+            preview={<SignalsPreview primary={primary} />} />
+
+          <Showcase primary={primary} reversed icon={Bot} tag="Auto-Trader"
+            title="Copy the master account — hands-off"
+            body="Mirror the desk's trades automatically into your own broker account. Position sizing scales to your balance; you stay in control and can switch it off anytime."
+            points={["One-tap copy of the master desk", "Risk scaled to your account", "Full transparency on every position"]}
+            preview={<BotPreview primary={primary} />} />
+
+          <Showcase primary={primary} icon={GraduationCap} tag="The Academy"
+            title="From your first candle to a funded month"
+            body="Twelve structured lessons with video, built to take you from zero to a repeatable edge. Progress is tracked and every lesson pays XP."
+            points={["12 video lessons, zero to pro", "Progress + completion tracking", "Orderflow tools most traders never see"]}
+            preview={<AcademyPreview primary={primary} accent={accent} />} />
+
+          <Showcase primary={primary} reversed icon={Sparkles} tag="Live quizzes"
+            title="Learn it, then prove it — and get paid XP"
+            body="Short quizzes lock in each lesson. Answer right, bank XP, climb the ladder. It turns passive watching into skills that stick."
+            points={["Quiz after every lesson", "Instant XP on correct answers", "Reinforces the exact rules that matter"]}
+            preview={<QuizPreview primary={primary} />} />
+
+          <Showcase primary={primary} icon={Trophy} tag="Earn & level up"
+            title="Every action earns — every level unlocks"
+            body="XP, streaks and levels turn progress into momentum. Verified deposits and completed lessons push you up the tiers, each one unlocking more of the platform."
+            points={["XP, streaks & levels", "Tier ladder tied to real progress", "Unlock the live room, auto-trader & more"]}
+            preview={<RewardsPreview primary={primary} accent={accent} />} />
         </div>
       </section>
 
-      {/* Tiers */}
-      <section className="mx-auto max-w-6xl px-4 pt-20 sm:px-8">
-        <h2 className="mb-2 text-center font-display text-2xl font-bold sm:text-3xl">Member tiers</h2>
-        <p className="mb-8 text-center text-sm text-muted-foreground">Deposit more, unlock more.</p>
-        <div className="grid gap-4 sm:grid-cols-3">
+      {/* ─────────────────────── TIERS ─────────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-8">
+        <SectionHead n="04" kicker="Deposit more, unlock more" title="Member tiers" primary={primary} />
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
           {TIERS.map((t, idx) => (
-            <div key={t.key}
-              className="relative flex flex-col rounded-3xl border border-white/5 bg-white/[0.04] p-6"
-              style={idx === 1 ? { borderColor: `color-mix(in oklch, ${primary} 40%, transparent)` } : {}}>
-              {idx === 1 && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-[10px] font-bold uppercase text-white" style={{ background: primary }}>
-                  Most popular
-                </span>
-              )}
-              <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: t.color }} />
-                <span className="font-display text-lg font-bold">{t.name}</span>
-              </div>
-              <div className="mt-3 font-display text-3xl font-bold">{formatMoney(t.minDeposit, "€")}<span className="text-base font-normal text-muted-foreground">+</span></div>
-              <div className="mb-4 text-[11px] uppercase tracking-[0.14em] text-muted-foreground">verified deposit</div>
+            <div key={t.key} className="relative flex flex-col rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6"
+              style={idx === 1 ? { borderColor:`color-mix(in oklch, ${primary} 45%, transparent)`, background:`linear-gradient(180deg, color-mix(in oklch, ${primary} 8%, transparent), transparent)` } : {}}>
+              {idx === 1 && <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-[10px] font-bold uppercase text-black" style={{ background: primary }}>Most popular</span>}
+              <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: t.color }} /><span className="font-display text-lg font-bold">{t.name}</span></div>
+              <div className="mt-3 font-display text-4xl font-black">{formatMoney(t.minDeposit, "€")}<span className="text-base font-normal text-white/40">+</span></div>
+              <div className="mb-4 text-[11px] uppercase tracking-[0.14em] text-white/45">verified deposit</div>
               <ul className="flex flex-1 flex-col gap-2">
-                {t.perks.map((perk) => (
-                  <li key={perk} className="flex items-start gap-2 text-sm">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" style={{ color: t.color }} />
-                    {perk}
-                  </li>
-                ))}
+                {t.perks.map((perk) => <li key={perk} className="flex items-start gap-2 text-sm text-white/80"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" style={{ color: t.color }} />{perk}</li>)}
               </ul>
-              <button onClick={goRegister}
-                className="mt-6 inline-flex items-center justify-center gap-2 rounded-full py-2.5 text-sm font-bold transition-opacity hover:opacity-90"
-                style={idx === 1 ? { background: primary, color: "white" } : { background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.9)" }}>
-                Get started <ArrowRight className="h-4 w-4" />
-              </button>
+              <button onClick={goRegister} className="mt-6 inline-flex items-center justify-center gap-2 rounded-full py-3 text-sm font-bold transition-opacity hover:opacity-90"
+                style={idx === 1 ? { background: primary, color: "black" } : { background: "rgba(255,255,255,0.08)", color: "white" }}>Get started <ArrowRight className="h-4 w-4" /></button>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Testimonials */}
+      {/* ─────────────────────── TESTIMONIALS ─────────────────────── */}
       {tenant.testimonials && tenant.testimonials.length > 0 && (
-        <section className="mx-auto max-w-6xl px-4 pt-20 sm:px-8">
-          <h2 className="mb-8 text-center font-display text-2xl font-bold sm:text-3xl">Real members, real results</h2>
-          <div className="grid gap-4 sm:grid-cols-3">
+        <section className="mx-auto max-w-6xl px-4 py-16 sm:px-8">
+          <SectionHead n="05" kicker="Proof" title="Real members, real results" primary={primary} />
+          <div className="mt-8 grid gap-4 sm:grid-cols-3">
             {tenant.testimonials.map((t) => (
-              <div key={t.handle} className="flex flex-col rounded-3xl border border-white/5 bg-white/[0.04] p-6">
-                <div className="mb-3 flex gap-0.5">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className="h-3.5 w-3.5 fill-current" style={{ color: accent }} />
-                  ))}
-                </div>
-                <p className="flex-1 text-sm text-foreground/80">"{t.text}"</p>
+              <div key={t.handle} className="flex flex-col rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6">
+                <div className="mb-3 flex gap-0.5">{Array.from({ length: 5 }).map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-current" style={{ color: accent }} />)}</div>
+                <p className="flex-1 text-sm text-white/80">"{t.text}"</p>
                 <div className="mt-4 flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-bold">{t.name}</div>
-                    <div className="text-[11px] text-muted-foreground">{t.handle}</div>
-                  </div>
-                  <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background: `color-mix(in oklch, ${primary} 16%, transparent)`, color: primary }}>
-                    {t.result}
-                  </span>
+                  <div><div className="text-sm font-bold">{t.name}</div><div className="text-[11px] text-white/45">{t.handle}</div></div>
+                  <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background:`color-mix(in oklch, ${primary} 16%, transparent)`, color: primary }}>{t.result}</span>
                 </div>
               </div>
             ))}
@@ -447,127 +367,133 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         </section>
       )}
 
-      {/* How it works — Cosmo coaches you through the three steps. */}
-      <section className="mx-auto max-w-6xl px-4 pt-20 sm:px-8">
-        <div className="mb-8 flex flex-col items-center gap-3 text-center">
+      {/* ─────────────────────── HOW IT WORKS ─────────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-8">
+        <div className="flex flex-col items-center gap-4 text-center">
           {showCosmo && (
             <div className="relative">
-              <div className="absolute inset-0 rounded-full blur-xl" style={{ background: `color-mix(in oklch, ${accent} 40%, transparent)` }} aria-hidden="true" />
+              <div className="absolute inset-0 rounded-full blur-xl" style={{ background:`color-mix(in oklch, ${accent} 40%, transparent)` }} />
               <img src="/cosmo/cosmo-avatar.png" alt="Cosmo" className="cosmo-float relative h-16 w-16 rounded-full object-cover ring-2 ring-white/10" />
             </div>
           )}
-          <h2 className="font-display text-2xl font-bold sm:text-3xl">How it works</h2>
+          <SectionHead n="06" kicker="Three steps" title="How it works" primary={primary} center />
         </div>
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
           {[
             { step: "01", icon: GraduationCap, title: "Sign up & fund your account", body: `Create your free account and deposit €100 or more at ${tenant.brokerName}.` },
-            { step: "02", icon: Radio, title: "Connect Telegram", body: "Connect your Telegram — our bot verifies your deposit automatically and sends you your personal invite." },
+            { step: "02", icon: Radio, title: "Connect Telegram", body: "Connect your Telegram — our bot verifies your deposit automatically and sends your personal invite." },
             { step: "03", icon: LineChart, title: "Trade with confidence", body: "Follow the signals, work through the lessons, and level up tier by tier." },
           ].map((s) => (
-            <div key={s.step} className="rounded-3xl border border-white/5 bg-white/[0.04] p-6">
-              <div className="mb-3 flex items-center justify-between">
-                <span className="font-display text-4xl font-black opacity-15">{s.step}</span>
-                <s.icon className="h-6 w-6" style={{ color: primary }} />
-              </div>
-              <h3 className="font-display text-base font-bold">{s.title}</h3>
-              <p className="mt-2 text-sm text-foreground/70">{s.body}</p>
+            <div key={s.step} className="rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6">
+              <div className="mb-3 flex items-center justify-between"><span className="font-display text-5xl font-black opacity-10">{s.step}</span><s.icon className="h-6 w-6" style={{ color: primary }} /></div>
+              <h3 className="font-display text-base font-bold">{s.title}</h3><p className="mt-2 text-sm text-white/65">{s.body}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* FAQ */}
+      {/* ─────────────────────── FAQ ─────────────────────── */}
       {tenant.faq && tenant.faq.length > 0 && (
-        <section className="mx-auto max-w-3xl px-4 pt-20 sm:px-8">
-          <h2 className="mb-8 text-center font-display text-2xl font-bold sm:text-3xl">FAQ</h2>
-          <div className="space-y-3">
+        <section className="mx-auto max-w-3xl px-4 py-16 sm:px-8">
+          <SectionHead n="07" kicker="Questions" title="Good to know" primary={primary} />
+          <div className="mt-8 space-y-3">
             {tenant.faq.map((f) => (
-              <details key={f.q} className="group rounded-2xl border border-white/5 bg-white/[0.04] px-5 py-4">
-                <summary className="flex cursor-pointer items-center justify-between text-sm font-semibold marker:content-['']">
-                  {f.q}
-                  <span className="ml-4 text-lg text-muted-foreground transition-transform group-open:rotate-45">+</span>
-                </summary>
-                <p className="mt-3 text-sm text-foreground/70">{f.a}</p>
+              <details key={f.q} className="group rounded-2xl border border-white/[0.07] bg-white/[0.04] px-5 py-4">
+                <summary className="flex cursor-pointer items-center justify-between text-sm font-semibold marker:content-['']">{f.q}<span className="ml-4 text-lg text-white/40 transition-transform group-open:rotate-45">+</span></summary>
+                <p className="mt-3 text-sm text-white/65">{f.a}</p>
               </details>
             ))}
           </div>
         </section>
       )}
 
-      {/* CTA */}
-      <section className="mx-auto max-w-6xl px-4 pt-20 pb-16 sm:px-8">
-        <div className="relative overflow-hidden rounded-3xl p-8 text-center sm:p-12"
-          style={{ background: `linear-gradient(135deg, color-mix(in oklch, ${primary} 15%, transparent), color-mix(in oklch, ${accent} 10%, transparent))`, border: `1px solid color-mix(in oklch, ${primary} 20%, transparent)` }}>
-          {tenant.mascot === "zeko" && (
-            <img src="/zeko-point.png" alt="" className="mx-auto mb-2 h-28 w-28 rounded-full object-cover object-top" />
-          )}
+      {/* ─────────────────────── FINAL CTA ─────────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-8">
+        <div className="relative overflow-hidden rounded-[2rem] border p-10 text-center sm:p-16"
+          style={{ borderColor:`color-mix(in oklch, ${primary} 22%, transparent)`, background:`radial-gradient(120% 140% at 50% 0%, color-mix(in oklch, ${primary} 16%, transparent), color-mix(in oklch, ${accent} 8%, transparent) 60%, transparent)` }}>
           {showCosmo && (
-            <div className="relative mx-auto mb-3 h-28 w-28">
-              <div className="absolute inset-0 rounded-full blur-2xl" style={{ background: `color-mix(in oklch, ${accent} 50%, transparent)` }} aria-hidden="true" />
+            <div className="relative mx-auto mb-4 h-28 w-28">
+              <div className="absolute inset-0 rounded-full blur-2xl" style={{ background:`color-mix(in oklch, ${accent} 50%, transparent)` }} />
               <img src="/cosmo/cosmo-head.png" alt="Cosmo" className="cosmo-float relative h-28 w-28 object-contain" />
             </div>
           )}
-          <h2 className="text-balance font-display text-2xl font-bold sm:text-3xl">Ready to get started?</h2>
-          <p className="mx-auto mt-3 max-w-md text-foreground/70">
-            Join {tenant.name} today. Deposit at {tenant.brokerName}, verify via Telegram, and unlock your first signals in minutes.
-          </p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <button onClick={goRegister}
-              className="inline-flex items-center gap-2 rounded-full px-8 py-3.5 text-sm font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
-              style={{ background: primary }}>
-              Sign up free <ArrowRight className="h-4 w-4" />
-            </button>
+          {tenant.mascot === "zeko" && <img src="/zeko-point.png" alt="" className="mx-auto mb-2 h-28 w-28 rounded-full object-cover object-top" />}
+          <h2 className="font-display text-3xl font-black sm:text-5xl">Your first candle<br />starts today.</h2>
+          <p className="mx-auto mt-4 max-w-md text-white/65">Join {tenant.name}. Deposit at {tenant.brokerName}, verify via Telegram, and unlock your first signals in minutes.</p>
+          <div className="mt-7 flex justify-center">
+            <button onClick={goRegister} className="inline-flex items-center gap-2 rounded-full px-9 py-4 text-sm font-black text-black transition-transform hover:-translate-y-0.5" style={{ background: primary, boxShadow:`0 14px 40px -12px ${primary}` }}>Start free — €0 <ArrowRight className="h-4 w-4" /></button>
           </div>
-          <p className="mt-4 text-[11px] text-muted-foreground">
-            Questions? <a href={`mailto:${tenant.affiliateEmail}`} className="underline hover:text-foreground">{tenant.affiliateEmail}</a>
-          </p>
+          <p className="mt-4 text-[11px] text-white/45">Questions? <a href={`mailto:${tenant.affiliateEmail}`} className="underline hover:text-white">{tenant.affiliateEmail}</a></p>
         </div>
       </section>
 
-      {/* White-label band — only on the master brand. Turns the page into a
-          recruitment surface: partners can run this exact academy under their
-          own name. */}
+      {/* ─────────────────────── WHITE-LABEL ─────────────────────── */}
       {showCosmo && (
-        <section className="mx-auto max-w-5xl px-4 pb-20 sm:px-8">
-          <div className="flex flex-col items-center gap-4 rounded-3xl border border-white/8 bg-white/[0.02] p-7 text-center sm:flex-row sm:justify-between sm:text-left">
-            <div className="flex items-center gap-4">
-              <img src="/cosmo/cosmo-head.png" alt="" className="h-14 w-14 shrink-0 object-contain" />
+        <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-8">
+          <div className="overflow-hidden rounded-[2rem] border border-white/[0.07] bg-white/[0.02]">
+            <div className="grid items-center gap-10 p-8 sm:p-12 lg:grid-cols-[0.95fr_1.05fr]">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: primary }}>For creators & communities</p>
-                <h3 className="mt-1 font-display text-lg font-bold text-balance">Run your own branded academy</h3>
-                <p className="mt-1 max-w-md text-sm text-foreground/65">
-                  This entire platform is white-label. Bring your audience — we handle the signals, the academy, the broker deal and the tech.
+                <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: primary }}>
+                  <Sparkles className="h-4 w-4" /> For creators & communities
                 </p>
+                <h2 className="mt-3 font-display text-3xl font-black leading-tight sm:text-4xl">Run this exact academy<br />under your own brand.</h2>
+                <p className="mt-4 max-w-md text-sm text-white/65">
+                  Everything you just scrolled — signals, auto-trader, academy, quizzes, rewards — is a white-label engine. Bring your audience; we handle the desk, the tech and the broker deal. Your colours, your name, your mascot.
+                </p>
+                <ul className="mt-5 space-y-2">
+                  {["Your branding, live in a day", "We run the signals & the platform", "You earn from the broker partnership"].map((p) => (
+                    <li key={p} className="flex items-center gap-2 text-sm text-white/80"><CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: primary }} />{p}</li>
+                  ))}
+                </ul>
+                <Link to="/partner-programm" className="mt-7 inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-black text-black transition-transform hover:-translate-y-0.5" style={{ background: primary, boxShadow: `0 12px 36px -12px ${primary}` }}>Become a partner <ArrowRight className="h-4 w-4" /></Link>
               </div>
+              <WhitelabelPreview primary={primary} />
             </div>
-            <Link to="/partner-programm"
-              className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-bold hover:bg-white/10">
-              Become a partner <ArrowRight className="h-4 w-4" />
-            </Link>
           </div>
         </section>
       )}
 
-      {/* Footer */}
-      <footer className="border-t border-white/5 px-4 py-6 text-center text-[11px] text-muted-foreground">
-        {tenant.name} · Powered by <Link to="/" className="underline hover:text-foreground">Cosmos Candles Academy</Link>
-        {" "}· In partnership with {tenant.brokerName}
-        {" "}· <Lock className="inline h-2.5 w-2.5" /> Trading involves risk — 74–89% of retail CFD accounts lose money.
+      <footer className="border-t border-white/[0.06] px-4 py-6 text-center text-[11px] text-white/40">
+        {tenant.name} · Powered by <Link to="/" className="underline hover:text-white">Cosmos Candles Academy</Link> · In partnership with {tenant.brokerName} · <Lock className="inline h-2.5 w-2.5" /> Trading involves risk — 74–89% of retail CFD accounts lose money.
       </footer>
-      </div>
     </div>
   );
 }
 
-function Row({ k, v, tone }: { k: string; v: string; tone?: "red" | "green" }) {
+function SectionHead({ n, kicker, title, sub, primary, center }: { n: string; kicker: string; title: string; sub?: string; primary: string; center?: boolean }) {
   return (
-    <div className="flex items-center justify-between">
-      <span className="text-muted-foreground">{k}</span>
-      <span className={cn(
-        "tabular-nums",
-        tone === "red" && "text-[oklch(0.72_0.18_20)]",
-        tone === "green" && "text-[oklch(0.8_0.16_150)]",
-      )}>{v}</span>
+    <div className={center ? "text-center" : ""}>
+      <div className={cn("flex items-baseline gap-3", center && "justify-center")}>
+        <span className="font-display text-sm font-black tabular-nums" style={{ color: primary }}>{n}</span>
+        <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/45">{kicker}</span>
+      </div>
+      <h2 className="mt-2 font-display text-3xl font-black leading-tight sm:text-4xl">{title}</h2>
+      {sub && <p className={cn("mt-3 max-w-2xl text-sm text-white/60", center && "mx-auto")}>{sub}</p>}
+    </div>
+  );
+}
+
+function Showcase({ tag, title, body, points, preview, primary, icon: Icon, reversed }: {
+  tag: string; title: string; body: string; points: string[]; preview: React.ReactNode;
+  primary: string; icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; reversed?: boolean;
+}) {
+  return (
+    <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-14">
+      <div className={cn(reversed && "lg:order-2")}>
+        <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: primary }}>
+          <Icon className="h-3.5 w-3.5" /> {tag}
+        </span>
+        <h3 className="mt-4 font-display text-2xl font-black leading-tight sm:text-3xl">{title}</h3>
+        <p className="mt-3 max-w-md text-sm leading-relaxed text-white/65">{body}</p>
+        <ul className="mt-5 space-y-2.5">
+          {points.map((p) => (
+            <li key={p} className="flex items-center gap-2.5 text-sm text-white/80">
+              <CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: primary }} /> {p}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className={cn(reversed && "lg:order-1")}>{preview}</div>
     </div>
   );
 }
