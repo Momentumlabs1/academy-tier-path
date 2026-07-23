@@ -22,6 +22,7 @@ import { PRODUCTS, type Product } from "@/lib/products";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface MemberState {
+  memberId: string;
   profile: { name: string; email: string; telegramHandle: string; joinedAt: string };
   lifetimeDeposits: number;
   currentTier: Tier | undefined;
@@ -43,6 +44,7 @@ export interface MemberState {
 
 /** Raw shape we pull from Supabase before deriving the tier maths. */
 interface MemberInput {
+  memberId: string;
   profile: { name: string; email: string; telegramHandle: string; joinedAt: string };
   deposit: number;
   monthlyLots: number;
@@ -52,6 +54,7 @@ interface MemberInput {
 }
 
 const EMPTY_INPUT: MemberInput = {
+  memberId: "",
   profile: { name: "", email: "", telegramHandle: "", joinedAt: "" },
   deposit: 0,
   monthlyLots: 0,
@@ -76,6 +79,7 @@ function deriveState(input: MemberInput): MemberState {
   const unlockedProducts = PRODUCTS.filter((p) => TIERS.findIndex((t) => t.key === p.requires) <= reached);
   const lockedProducts = PRODUCTS.filter((p) => !unlockedProducts.includes(p));
   return {
+    memberId: input.memberId,
     profile: input.profile,
     lifetimeDeposits: deposit,
     currentTier,
@@ -118,7 +122,7 @@ async function fetchMemberInput(): Promise<MemberInput> {
   };
 
   const [{ data: member }, { data: notifRows }] = await Promise.all([
-    client.from("members").select("name, email, telegram_handle, deposit, monthly_lots, activity_status, joined_at").eq("auth_user_id", user.id).maybeSingle(),
+    client.from("members").select("id, name, email, telegram_handle, deposit, monthly_lots, activity_status, joined_at").eq("auth_user_id", user.id).maybeSingle(),
     client.from("notifications").select("id, type, title, body, link, read_at, created_at").order("created_at", { ascending: false }),
   ]);
 
@@ -136,6 +140,7 @@ async function fetchMemberInput(): Promise<MemberInput> {
   // row hasn't been provisioned by the broker webhook yet.
   const meta = (user.user_metadata ?? {}) as Record<string, unknown>;
   return {
+    memberId: (member?.id as string) ?? "",
     profile: {
       name: (member?.name as string) ?? (typeof meta.name === "string" ? meta.name : "") ?? "",
       email: (member?.email as string) ?? user.email ?? "",

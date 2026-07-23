@@ -10,7 +10,10 @@
  */
 export const BROKER = {
   name: "TradeQuo",
-  url: ((import.meta.env as Record<string, unknown>).VITE_BROKER_URL as string) || "https://tradequo.com",
+  // The master IB referral link — every client who registers through it is
+  // placed under our master IB and shows up in the broker DB. Env-overridable.
+  url: ((import.meta.env as Record<string, unknown>).VITE_BROKER_URL as string) ||
+    "https://my.tradequo.com/register?referral=019f75ff-3dfe-7114-9ccd-eac9692578d4",
   /** Verifiable trust signals from the broker's own site. */
   trust: [
     { icon: "★", label: "4.9 on Trustpilot" },
@@ -22,3 +25,18 @@ export const BROKER = {
   oneLiner:
     "You never deposit with us. You fund your own account at TradeQuo — a licensed, award-winning global broker — and that's what unlocks everything here for free.",
 } as const;
+
+/**
+ * Build the deposit link for a signed-in member, carrying their member id as a
+ * tracking token. It rides the referral URL into the broker's registration and
+ * lands in their `utm_uri` / `utm_campaign` columns — so we match this member to
+ * their broker record by the token, NOT by requiring the same email on both
+ * sides. Falls back to the plain referral link when there's no member id
+ * (logged-out landing pages), or when an explicit brokerUrl override is given
+ * (e.g. a partner's own IB link from the admin).
+ */
+export function depositUrl(memberId?: string, brokerUrl: string = BROKER.url): string {
+  if (!memberId) return brokerUrl;
+  const sep = brokerUrl.includes("?") ? "&" : "?";
+  return `${brokerUrl}${sep}utm_campaign=cc_${memberId}&cc_uid=${memberId}`;
+}

@@ -9,7 +9,8 @@
  * rail (vertical mini-card for the right rail).
  */
 import { ArrowUpRight, BadgeCheck, ShieldCheck, Star, Trophy } from "lucide-react";
-import { BROKER } from "@/lib/broker";
+import { BROKER, depositUrl } from "@/lib/broker";
+import { useMemberState } from "@/hooks/useMemberState";
 import { cn } from "@/lib/utils";
 
 const LOGO = "/brokers/tradequo.svg";
@@ -33,9 +34,10 @@ function Pills({ center = false, dim = false }: { center?: boolean; dim?: boolea
 }
 
 function DepositCta({ className }: { className?: string }) {
+  const { memberId } = useMemberState();
   return (
     <a
-      href={BROKER.url}
+      href={depositUrl(memberId)}
       target="_blank"
       rel="noopener noreferrer"
       className={cn(

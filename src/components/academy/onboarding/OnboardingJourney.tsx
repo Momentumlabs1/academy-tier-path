@@ -30,7 +30,7 @@ import { useMemberRefresh, useMemberState } from "@/hooks/useMemberState";
 import { usePartnerBrand, COSMO } from "@/lib/partner-brand";
 import { TIERS, tierForDeposit } from "@/lib/academy-data";
 import { PRODUCTS } from "@/lib/products";
-import { BROKER } from "@/lib/broker";
+import { BROKER, depositUrl } from "@/lib/broker";
 import { formatMoney } from "@/lib/format";
 import { Card } from "@/components/academy/primitives/Card";
 import { cn } from "@/lib/utils";
@@ -127,6 +127,7 @@ function IgniteStrip({ accent }: { accent: string }) {
 /* ── Stage 2b: partial-deposit strip (real amount, progress to Foundation) ──── */
 function TopupStrip({ accent, amount }: { accent: string; amount: number }) {
   useDepositWatcher(true);
+  const { memberId } = useMemberState();
   const missing = Math.max(0, FOUNDATION_MIN - amount);
   const pct = Math.min(100, Math.round((amount / FOUNDATION_MIN) * 100));
   return (
@@ -139,7 +140,7 @@ function TopupStrip({ accent, amount }: { accent: string; amount: number }) {
           <span className="font-bold">{formatMoney(amount, "€")} of {formatMoney(FOUNDATION_MIN, "€")}</span>{" "}
           <span className="text-foreground/75">— only <b style={{ color: accent }}>{formatMoney(missing, "€")}</b> to go until Foundation (signals, lessons & tools).</span>
         </p>
-        <a href={BROKER.url} target="_blank" rel="noopener noreferrer" className="shrink-0 rounded-full px-4 py-2 text-xs font-bold text-[#08111a] transition-transform hover:scale-[1.03]" style={{ background: accent }}>
+        <a href={depositUrl(memberId)} target="_blank" rel="noopener noreferrer" className="shrink-0 rounded-full px-4 py-2 text-xs font-bold text-[#08111a] transition-transform hover:scale-[1.03]" style={{ background: accent }}>
           Top up at {BROKER.name} →
         </a>
       </div>
@@ -181,6 +182,7 @@ const KIND_ICON = { telegram: Send, lessons: BookOpen, page: Sparkles, service: 
 function CelebrationOverlay({ accent, amount, prevAmount, tierName, onClose }: {
   accent: string; amount: number; prevAmount: number; tierName: string | undefined; onClose: () => void;
 }) {
+  const { memberId } = useMemberState();
   const full = amount >= FOUNDATION_MIN;
   const missing = Math.max(0, FOUNDATION_MIN - amount);
   const pct = Math.min(100, Math.round((amount / FOUNDATION_MIN) * 100));
@@ -279,7 +281,7 @@ function CelebrationOverlay({ accent, amount, prevAmount, tierName, onClose }: {
               ))}
             </div>
             <div className="mt-6 flex flex-wrap gap-3">
-              <a href={BROKER.url} target="_blank" rel="noopener noreferrer" onClick={close} className="inline-flex flex-1 items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-[#08111a] transition-transform hover:scale-[1.02]" style={{ background: accent }}>
+              <a href={depositUrl(memberId)} target="_blank" rel="noopener noreferrer" onClick={close} className="inline-flex flex-1 items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-[#08111a] transition-transform hover:scale-[1.02]" style={{ background: accent }}>
                 <Sparkles className="h-4 w-4" /> Top up {formatMoney(missing, "€")} at {BROKER.name}
               </a>
               <button onClick={close} className="rounded-full border border-white/15 px-5 py-3 text-sm font-semibold text-foreground/80 hover:bg-white/5">
