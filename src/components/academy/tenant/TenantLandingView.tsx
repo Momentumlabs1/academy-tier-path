@@ -12,7 +12,7 @@
 import { useEffect } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
-  ArrowRight, ArrowUpRight, CheckCircle2, Lock, Shield, TrendingUp, Star,
+  ArrowRight, ArrowUpRight, CheckCircle2, Lock, Shield, Star,
   PlayCircle, BadgeCheck, Wallet, Building2, Radio, GraduationCap, LineChart, Zap,
   Bot, Trophy, Sparkles,
 } from "lucide-react";
@@ -33,20 +33,38 @@ const TICKER = [
   { s: "GBP/JPY", p: "199.84", up: true }, { s: "SPX500", p: "5,268", up: false },
 ];
 
-// Candles orbiting the meditating Cosmo — [top%, left%, up?, scale, delay(s)].
-const ORBIT: [number, number, boolean, number, number][] = [
-  [2, 44, true, 1.15, 0], [12, 72, false, 0.85, 0.6], [30, 90, true, 1, 1.2],
-  [56, 92, true, 0.9, 1.8], [80, 76, false, 1.05, 0.4], [90, 46, true, 1.2, 1.0],
-  [80, 16, true, 0.85, 1.5], [54, 4, false, 1, 0.9], [28, 6, true, 1.1, 2.1],
-  [12, 22, true, 0.8, 1.7],
+// Candles floating in 3D space around the meditating Cosmo. Each entry:
+// [x%, y%, depth 0..1, up?, delay(s)]. depth drives size, z-layer (behind Cosmo
+// when < 0.5, in front when ≥ 0.5), brightness and blur — so the candles read as
+// genuinely orbiting him, some behind, some in front, at real perspective sizes.
+const DEPTH_CANDLES: [number, number, number, boolean, number][] = [
+  // behind Cosmo (small, dim, soft) — upper hemisphere / far side
+  [50, 8, 0.24, true, 0.0], [31, 15, 0.30, false, 0.6], [69, 13, 0.32, true, 1.1],
+  [18, 33, 0.40, true, 1.5], [83, 30, 0.36, false, 0.9], [41, 6, 0.20, true, 1.9],
+  // in front of Cosmo (large, bright, sharp) — lower hemisphere / near side
+  [14, 50, 0.72, false, 0.3], [87, 53, 0.78, true, 1.2], [24, 67, 0.88, true, 0.7],
+  [79, 65, 0.82, false, 1.6], [33, 83, 1.0, true, 0.2], [67, 85, 0.95, true, 1.0],
+  [50, 91, 0.9, false, 1.4],
 ];
 
-function CandleGlyph({ up, down, isUp, scale }: { up: string; down: string; isUp: boolean; scale: number }) {
+function Candle3D({ up, down, isUp, depth }: { up: string; down: string; isUp: boolean; depth: number }) {
   const c = isUp ? up : down;
+  const behind = depth < 0.5;
+  const h = 44 + depth * 88;               // px — front candles much larger
+  const w = h * 0.32;
+  const top = h * (isUp ? 0.28 : 0.22);     // body offset; wick shows above & below
   return (
-    <span className="relative block" style={{ width: 12 * scale, height: 40 * scale }}>
-      <span className="absolute left-1/2 top-0 -translate-x-1/2 rounded" style={{ width: 2, height: "100%", background: `color-mix(in oklch, ${c} 55%, transparent)` }} />
-      <span className="absolute left-0 rounded-[2px]" style={{ top: `${isUp ? 24 : 18}%`, height: "46%", width: "100%", background: c, boxShadow: `0 0 12px -1px ${c}` }} />
+    <span className="block" style={{ width: w, height: h, filter: behind ? `blur(${(0.5 - depth) * 5 + 1}px) saturate(0.8)` : "none", opacity: 0.4 + depth * 0.6 }}>
+      <span className="relative block h-full w-full">
+        {/* wick (top + bottom) */}
+        <span className="absolute left-1/2 top-0 h-full -translate-x-1/2 rounded-full" style={{ width: Math.max(2, w * 0.14), background: `color-mix(in oklch, ${c} 60%, transparent)` }} />
+        {/* body with a soft top-lit gradient + glow for volume */}
+        <span className="absolute left-0 w-full rounded-[3px]" style={{
+          top, height: h * 0.46,
+          background: `linear-gradient(180deg, color-mix(in oklch, ${c} 62%, white), ${c} 55%, color-mix(in oklch, ${c} 78%, black))`,
+          boxShadow: behind ? `0 0 10px -2px ${c}` : `0 0 22px -4px ${c}, inset 0 1px 0 color-mix(in oklch, ${c} 40%, white)`,
+        }} />
+      </span>
     </span>
   );
 }
@@ -179,31 +197,27 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
             <div className="relative z-10 mx-auto w-full max-w-[500px]">
               {showCosmo ? (
                 <div className="relative mx-auto aspect-square w-full">
-                  {/* lotus aura */}
-                  <div className="aura-pulse absolute left-1/2 top-1/2 h-[62%] w-[62%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[60px]" style={{ background:`color-mix(in oklch, ${accent} 60%, transparent)` }} aria-hidden />
-                  <div className="absolute left-1/2 top-1/2 h-[40%] w-[40%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[50px]" style={{ background:`color-mix(in oklch, ${primary} 34%, transparent)` }} aria-hidden />
-                  {/* orbit rings */}
-                  <div className="spin-slow absolute left-1/2 top-1/2 h-[86%] w-[86%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-white/10" aria-hidden />
-                  <div className="spin-rev absolute left-1/2 top-1/2 h-[64%] w-[64%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/[0.06]" aria-hidden />
+                  {/* lotus aura — the glow he radiates */}
+                  <div className="aura-pulse absolute left-1/2 top-1/2 h-[58%] w-[58%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[70px]" style={{ background:`color-mix(in oklch, ${accent} 60%, transparent)` }} aria-hidden />
+                  <div className="absolute left-1/2 top-1/2 h-[38%] w-[38%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[55px]" style={{ background:`color-mix(in oklch, ${primary} 32%, transparent)` }} aria-hidden />
 
-                  {/* orbiting candles */}
-                  {ORBIT.map(([top, left, isUp, scale, delay], i) => (
-                    <div key={i} className="chip-float absolute z-20 -translate-x-1/2 -translate-y-1/2" style={{ top:`${top}%`, left:`${left}%`, animationDelay:`${delay}s` }}>
-                      <CandleGlyph up={up} down={down} isUp={isUp} scale={scale} />
+                  {/* candles BEHIND Cosmo (depth < 0.5) */}
+                  {DEPTH_CANDLES.filter(([, , d]) => d < 0.5).map(([x, y, depth, isUp, delay], i) => (
+                    <div key={`b${i}`} className="chip-float absolute z-10 -translate-x-1/2 -translate-y-1/2" style={{ left:`${x}%`, top:`${y}%`, animationDelay:`${delay}s` }}>
+                      <Candle3D up={up} down={down} isUp={isUp} depth={depth} />
                     </div>
                   ))}
 
-                  {/* info chips further out */}
-                  <div className="chip-float absolute left-[2%] top-[30%] z-30 flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/60 px-2.5 py-1.5 text-[11px] font-bold shadow-xl backdrop-blur" style={{ color: up }}><TrendingUp className="h-3.5 w-3.5" /> XAU +1.4%</div>
-                  <div className="chip-float absolute right-[0%] top-[54%] z-30 flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/60 px-2.5 py-1.5 text-[11px] font-bold text-white/85 shadow-xl backdrop-blur" style={{ animationDelay:"1.4s" }}><Radio className="h-3.5 w-3.5" style={{ color: primary }} /> Signal live</div>
-
-                  {/* Cosmo, meditating & floating at the centre of his cosmos */}
+                  {/* Cosmo, meditating & floating at the centre */}
                   <img src="/cosmo/cosmo-meditate.png" alt="Cosmo meditating, the Cosmos Candles Academy guide"
-                    className="cosmo-float absolute left-1/2 top-1/2 z-20 h-[74%] w-auto -translate-x-1/2 -translate-y-1/2 object-contain drop-shadow-2xl" />
+                    className="cosmo-float absolute left-1/2 top-1/2 z-20 h-[76%] w-auto -translate-x-1/2 -translate-y-1/2 object-contain drop-shadow-2xl" />
 
-                  <div className="absolute bottom-[2%] left-1/2 z-30 -translate-x-1/2">
-                    <span className="inline-flex items-center gap-1.5 rounded-full border bg-[#070a12]/90 px-3 py-1 text-[11px] font-black uppercase tracking-[0.15em] backdrop-blur" style={{ borderColor: primary, color: primary, boxShadow:`0 0 24px -6px ${primary}` }}>Cosmo · your guide</span>
-                  </div>
+                  {/* candles IN FRONT of Cosmo (depth ≥ 0.5) — bigger, sharp, glowing */}
+                  {DEPTH_CANDLES.filter(([, , d]) => d >= 0.5).map(([x, y, depth, isUp, delay], i) => (
+                    <div key={`f${i}`} className="chip-float absolute z-30 -translate-x-1/2 -translate-y-1/2" style={{ left:`${x}%`, top:`${y}%`, animationDelay:`${delay}s` }}>
+                      <Candle3D up={up} down={down} isUp={isUp} depth={depth} />
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <div className="relative mx-auto aspect-square w-full max-w-[360px] overflow-hidden rounded-full ring-4 ring-white/10 shadow-2xl">
