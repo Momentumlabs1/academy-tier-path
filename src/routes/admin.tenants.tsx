@@ -21,6 +21,7 @@ interface TenantRow {
   telegram_channel_id: number | null;
   broker_affiliate_url: string | null;
   signal_footer: string | null;
+  config: Record<string, unknown> | null;
 }
 
 // Static branding (colors/logo) merged with the live DB settings by slug.
@@ -108,11 +109,23 @@ function BrandCard({ row, origin, copied, onCopy, onSave }: {
   row: TenantRow; origin: string; copied: boolean;
   onCopy: () => void; onSave: (patch: Record<string, unknown>) => Promise<void>;
 }) {
-  const brand = BRAND[row.slug];
+  const brand = BRAND[row.slug];          // hard-coded static brand (if any)
+  const isStatic = Boolean(brand);        // static brands ignore DB `config` on the page
+  const cfg = (row.config ?? {}) as Record<string, string>;
   const [chan, setChan] = useState(row.telegram_channel_id?.toString() ?? "");
   const [broker, setBroker] = useState(row.broker_affiliate_url ?? "");
   const [footer, setFooter] = useState(row.signal_footer ?? "");
   const [active, setActive] = useState(row.active);
+  // Landing branding (persisted into tenants.config jsonb)
+  const [name, setName] = useState(row.name);
+  const [headline, setHeadline] = useState(cfg.headline ?? "");
+  const [subhead, setSubhead] = useState(cfg.subhead ?? "");
+  const [primaryColor, setPrimaryColor] = useState(cfg.primaryColor ?? "");
+  const [accentColor, setAccentColor] = useState(cfg.accentColor ?? "");
+  const [logoInitials, setLogoInitials] = useState(cfg.logoInitials ?? "");
+  const [tgLink, setTgLink] = useState(cfg.telegramChannel ?? "");
+  const [brokerName, setBrokerName] = useState(cfg.brokerName ?? "");
+  const [brokerUrl, setBrokerUrl] = useState(cfg.brokerUrl ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -120,17 +133,36 @@ function BrandCard({ row, origin, copied, onCopy, onSave }: {
     chan !== (row.telegram_channel_id?.toString() ?? "") ||
     broker !== (row.broker_affiliate_url ?? "") ||
     footer !== (row.signal_footer ?? "") ||
-    active !== row.active;
+    active !== row.active ||
+    name !== row.name ||
+    headline !== (cfg.headline ?? "") ||
+    subhead !== (cfg.subhead ?? "") ||
+    primaryColor !== (cfg.primaryColor ?? "") ||
+    accentColor !== (cfg.accentColor ?? "") ||
+    logoInitials !== (cfg.logoInitials ?? "") ||
+    tgLink !== (cfg.telegramChannel ?? "") ||
+    brokerName !== (cfg.brokerName ?? "") ||
+    brokerUrl !== (cfg.brokerUrl ?? "");
 
   async function save() {
     setSaving(true);
     try {
-      await onSave({ telegram_channel_id: chan, broker_affiliate_url: broker, signal_footer: footer, active });
+      // Merge branding into the existing config jsonb; only keep non-empty keys.
+      const nextCfg: Record<string, unknown> = { ...cfg };
+      const set = (k: string, v: string) => { if (v.trim()) nextCfg[k] = v.trim(); else delete nextCfg[k]; };
+      set("headline", headline); set("subhead", subhead);
+      set("primaryColor", primaryColor); set("accentColor", accentColor);
+      set("logoInitials", logoInitials); set("telegramChannel", tgLink);
+      set("brokerName", brokerName); set("brokerUrl", brokerUrl);
+      await onSave({
+        telegram_channel_id: chan, broker_affiliate_url: broker, signal_footer: footer, active,
+        name: name.trim() || row.name, config: nextCfg,
+      });
       setSaved(true); setTimeout(() => setSaved(false), 1800);
     } finally { setSaving(false); }
   }
 
-  const primary = brand?.primaryColor ?? "#888";
+  const primary = primaryColor || brand?.primaryColor || "#888";
   return (
     <div className="overflow-hidden rounded-2xl border border-white/5 bg-[oklch(0.16_0.06_250)]">
       <div className="flex items-center gap-3 p-4" style={{ background: brand ? `linear-gradient(135deg, ${brand.bgFrom}, ${brand.bgTo})` : undefined }}>
@@ -147,9 +179,34 @@ function BrandCard({ row, origin, copied, onCopy, onSave }: {
       </div>
 
       <div className="space-y-3 p-4">
+        <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary">Relay & broker</div>
         <Field label="Telegram channel ID" value={chan} onChange={setChan} placeholder="-1001234567890" mono />
-        <Field label="Broker affiliate link" value={broker} onChange={setBroker} placeholder="https://broker.com/ref?a=…" mono />
+        <Field label="Broker affiliate link (bot/attribution)" value={broker} onChange={setBroker} placeholder="https://broker.com/ref?a=…" mono />
         <Field label="Signal footer (optional)" value={footer} onChange={setFooter} placeholder="📈 Trade with our partner broker…" />
+
+        {/* ── Landing page — we build the partner's page here at integration ── */}
+        <div className="mt-2 border-t border-white/8 pt-3">
+          <div className="mb-2 flex items-center justify-between">
+            <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary">Landing page branding</div>
+            {isStatic && <span className="rounded-full bg-amber-400/15 px-2 py-0.5 text-[9px] font-bold uppercase text-amber-400">hard-coded brand</span>}
+          </div>
+          {isStatic && <p className="mb-2 text-[11px] text-amber-400/80">This brand's page is defined in code (tenants.ts), so these fields won't change its live page. They apply to partner-created brands.</p>}
+          <div className="space-y-3">
+            <Field label="Brand name" value={name} onChange={setName} placeholder="Max Trading Academy" />
+            <div className="grid grid-cols-3 gap-2">
+              <Field label="Primary color" value={primaryColor} onChange={setPrimaryColor} placeholder="#b6f04a" mono />
+              <Field label="Accent color" value={accentColor} onChange={setAccentColor} placeholder="#75B9F5" mono />
+              <Field label="Logo initials" value={logoInitials} onChange={setLogoInitials} placeholder="MT" />
+            </div>
+            <Field label="Hero headline" value={headline} onChange={setHeadline} placeholder="Trade smarter with Max" />
+            <Field label="Hero subhead" value={subhead} onChange={setSubhead} placeholder="Live signals, a full academy…" />
+            <div className="grid grid-cols-2 gap-2">
+              <Field label="Broker name (shown on page)" value={brokerName} onChange={setBrokerName} placeholder="TradeQuo" />
+              <Field label="Broker link (page CTA)" value={brokerUrl} onChange={setBrokerUrl} placeholder="https://tradequo.com/…" mono />
+            </div>
+            <Field label="Telegram link (page CTA)" value={tgLink} onChange={setTgLink} placeholder="https://t.me/yourchannel" mono />
+          </div>
+        </div>
 
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} className="h-4 w-4 accent-[color:var(--primary)]" />

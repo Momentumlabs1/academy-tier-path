@@ -33,48 +33,25 @@ const TICKER = [
   { s: "GBP/JPY", p: "199.84", up: true }, { s: "SPX500", p: "5,268", up: false },
 ];
 
-// ── Orbit engine ──────────────────────────────────────────────────────────
-// Candles genuinely circle Cosmo: one shared @keyframes traces a perspective
-// ellipse (position + scale + z-index + opacity), and each candle rides it with
-// a phase offset (negative animation-delay). The z-index ramps between 6 and 30
-// across the loop so a candle passes BEHIND Cosmo (z 20) on the far arc and IN
-// FRONT on the near arc — real occlusion, real rotation. SSR-safe (no random).
-const ORBIT_DUR = 26; // seconds per revolution
-const ORBIT_N = 13;
+// ── Orbit engine (pure CSS 3D — GPU only, no z-index, no per-frame repaint) ──
+// Candles sit on a real 3D ring around Cosmo. The ring spins on ONE animated
+// transform (rotateY); the browser resolves front/back occlusion against Cosmo
+// from 3D depth for free, and perspective handles the size falloff. Each candle
+// billboards (counter-rotates) so it always faces the camera. Buttery + cheap.
+const ORBIT_DUR = 34; // seconds per revolution (slow, calm)
+const ORBIT_N = 12;
 
-// Pure-transform orbit (GPU-smooth, no layout thrash): the item is pinned at the
-// stage centre and moves via translate() in container-query units (cqw), so the
-// ring scales perfectly with the responsive stage and never jitters.
-const ORBIT_KEYFRAMES = (() => {
-  const stops = 30;
-  const rx = 42, ry = 21; // % of stage
-  let out = "";
-  for (let k = 0; k <= stops; k++) {
-    const pct = ((k / stops) * 100).toFixed(3);
-    const a = (k / stops) * Math.PI * 2 - Math.PI / 2; // start behind (top)
-    const x = (rx * Math.cos(a)).toFixed(3);
-    const y = (ry * Math.sin(a)).toFixed(3);
-    const depth = (Math.sin(a) + 1) / 2;               // 0 far/behind, 1 near/front
-    const scale = (0.56 + depth * 0.64).toFixed(4);
-    const z = depth < 0.5 ? 6 : 30;                    // crossover happens at the sides
-    const op = (0.55 + depth * 0.45).toFixed(3);
-    out += `${pct}%{transform:translate(-50%,-50%) translate(${x}cqw,${y}cqw) translateY(var(--y,0px)) scale(calc(${scale} * var(--s,1)));z-index:${z};opacity:${op};}`;
-  }
-  return `@keyframes cosmoOrbit{${out}}`;
-})();
-
-// Per-candle: varied size, height offset, AND its own wick/body proportions so
-// every candle looks individually drawn — never a row of clones.
+// Per-candle: fixed angle on the ring + varied size, height and wick/body
+// proportions so no two look alike. SSR-safe (deterministic).
 const ORBIT_ITEMS = Array.from({ length: ORBIT_N }, (_, i) => {
-  const h = 30 + ((i * 17) % 9) * 4.5;        // 30 → 66 px, varied
-  const w = Math.max(6, h * 0.2);             // a touch chunkier for definition
-  const y = (((i * 7) % 5) - 2) * 8;          // −16 → 16 px height offset
-  const s = 0.82 + ((i * 13) % 6) / 10;       // 0.82 → 1.32 size multiplier
+  const angle = (i * 360) / ORBIT_N;
+  const h = 30 + ((i * 17) % 9) * 4.5;        // 30 → 66 px
+  const w = Math.max(6, h * 0.2);
+  const y = (((i * 7) % 5) - 2) * 9;          // −18 → 18 px height offset
   const bh = 40 + ((i * 11) % 5) * 6;         // body height 40 → 64 %
-  const bt = Math.min(80 - bh, Math.max(6, (100 - bh) / 2 + (((i * 3) % 3) - 1) * 9)); // body top → asymmetric wicks
+  const bt = Math.min(80 - bh, Math.max(6, (100 - bh) / 2 + (((i * 3) % 3) - 1) * 9));
   const isUp = (i * 5) % 3 !== 0;
-  const delay = -((i / ORBIT_N) * ORBIT_DUR);
-  return { h, w, y, s: Number(s.toFixed(2)), bh, bt: Number(bt.toFixed(1)), isUp, delay: Number(delay.toFixed(2)) };
+  return { angle, h, w, y, bh, bt: Number(bt.toFixed(1)), isUp };
 });
 
 function CandleShape({ up, down, isUp, bt, bh }: { up: string; down: string; isUp: boolean; bt: number; bh: number }) {
@@ -133,16 +110,22 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         .spin-rev { animation: spinSlow 60s linear infinite reverse; }
         @keyframes auraPulse { 0%,100% { opacity:.55; transform:scale(1);} 50% { opacity:.85; transform:scale(1.06);} }
         .aura-pulse { animation: auraPulse 7s ease-in-out infinite; }
-        ${ORBIT_KEYFRAMES}
-        .orbit-item { position:absolute; left:50%; top:50%; will-change:transform,opacity; backface-visibility:hidden; animation: cosmoOrbit ${ORBIT_DUR}s linear infinite; transition: filter .3s ease; }
-        /* hover: the whole scene reacts — Cosmo lifts & brightens, candles glow */
-        .orbit-stage { container-type: inline-size; transition: transform .5s cubic-bezier(.2,.8,.2,1); }
-        .orbit-stage:hover { transform: scale(1.03); }
-        .orbit-stage:hover .cosmo-lotus { filter: brightness(1.06) drop-shadow(0 0 26px color-mix(in oklch, ${accent} 45%, transparent)); }
-        .orbit-stage:hover .orbit-item { filter: brightness(1.2) saturate(1.1); }
-        .cosmo-lotus { transition: filter .4s ease, transform .4s ease; }
+        /* 3D orbit — one GPU transform drives the whole ring, no z-index/repaint */
+        @keyframes cosmoRingSpin { to { transform: rotateY(360deg); } }
+        @keyframes cosmoRingSpinRev { to { transform: rotateY(-360deg); } }
+        @keyframes cosmoLotusFloat { 0%,100% { transform: translate(-50%,-50%) translateZ(0.01px) translateY(0); } 50% { transform: translate(-50%,-50%) translateZ(0.01px) translateY(-14px); } }
+        .orbit-stage { perspective: 640px; }
+        .orbit-scene { position:absolute; inset:0; transform-style:preserve-3d; }
+        .orbit-ring { position:absolute; inset:0; transform-style:preserve-3d; animation: cosmoRingSpin ${ORBIT_DUR}s linear infinite; will-change: transform; }
+        .orbit-pos { position:absolute; left:50%; top:50%; transform-style:preserve-3d; }
+        .orbit-bill { transform-style:preserve-3d; }
+        .orbit-spin { animation: cosmoRingSpinRev ${ORBIT_DUR}s linear infinite; will-change: transform; }
+        .cosmo-lotus { position:absolute; left:50%; top:50%; transform: translate(-50%,-50%); animation: cosmoLotusFloat 6s ease-in-out infinite; transition: filter .4s ease; backface-visibility:hidden; }
+        /* hover: Cosmo brightens, candles speed up — cheap filter/timing only */
+        .orbit-stage:hover .cosmo-lotus { filter: brightness(1.05) drop-shadow(0 0 26px color-mix(in oklch, ${accent} 45%, transparent)); }
+        .orbit-stage:hover .orbit-ring, .orbit-stage:hover .orbit-spin { animation-duration: ${Math.round(ORBIT_DUR * 0.6)}s; }
         @media (prefers-reduced-motion: reduce) {
-          .cosmo-float,.cosmo-bob,.chip-float,.candle-grow,.ticker-track,.twinkle,.spin-slow,.spin-rev,.aura-pulse,.orbit-item { animation: none !important; }
+          .cosmo-float,.cosmo-bob,.chip-float,.candle-grow,.ticker-track,.twinkle,.spin-slow,.spin-rev,.aura-pulse,.orbit-ring,.orbit-spin,.cosmo-lotus { animation: none !important; }
         }
       `}</style>
 
@@ -228,23 +211,33 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               chart candles orbiting him. (Swap cosmo-full.png for the meditating
               cross-legged render when it's produced — same slot.) */}
           {heroHasMascot && (
-            <div className="relative z-10 mx-auto w-full max-w-[500px]">
+            <div className="relative z-10 mx-auto w-full max-w-[500px]" style={{ containerType: "inline-size" }}>
               {showCosmo ? (
                 <div className="orbit-stage relative mx-auto aspect-square w-full">
                   {/* lotus aura — the glow he radiates */}
                   <div className="aura-pulse absolute left-1/2 top-1/2 h-[58%] w-[58%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[70px]" style={{ background:`color-mix(in oklch, ${accent} 60%, transparent)` }} aria-hidden />
                   <div className="absolute left-1/2 top-1/2 h-[38%] w-[38%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[55px]" style={{ background:`color-mix(in oklch, ${primary} 32%, transparent)` }} aria-hidden />
 
-                  {/* Cosmo, meditating & floating at the centre (candles pass in front & behind via z-index) */}
-                  <img src="/cosmo/cosmo-meditate.png" alt="Cosmo meditating, the Cosmos Candles Academy guide"
-                    className="cosmo-lotus cosmo-float absolute left-1/2 top-1/2 h-[76%] w-auto -translate-x-1/2 -translate-y-1/2 object-contain drop-shadow-2xl" style={{ zIndex: 20 }} />
-
-                  {/* candles orbiting him — each rides the shared ellipse keyframe with a phase offset */}
-                  {ORBIT_ITEMS.map((it, i) => (
-                    <div key={i} className="orbit-item" style={{ height: it.h, width: it.w, animationDelay: `${it.delay}s`, ["--y" as string]: `${it.y}px`, ["--s" as string]: it.s }}>
-                      <CandleShape up={up} down={down} isUp={it.isUp} bt={it.bt} bh={it.bh} />
+                  {/* 3D scene: the ring and Cosmo share one preserve-3d space so the
+                      browser resolves who's in front of whom from depth alone. */}
+                  <div className="orbit-scene">
+                    <div className="orbit-ring">
+                      {ORBIT_ITEMS.map((it, i) => (
+                        <div key={i} className="orbit-pos" style={{ transform: `rotateY(${it.angle}deg) translateZ(30cqw) translateY(${it.y}px)` }}>
+                          <div className="orbit-bill" style={{ transform: `rotateY(${-it.angle}deg)` }}>
+                            <div className="orbit-spin">
+                              <div style={{ height: it.h, width: it.w, transform: "translate(-50%,-50%)" }}>
+                                <CandleShape up={up} down={down} isUp={it.isUp} bt={it.bt} bh={it.bh} />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                    {/* Cosmo at the centre (z ≈ 0): near-side candles occlude him, far-side pass behind. */}
+                    <img src="/cosmo/cosmo-meditate.png" alt="Cosmo meditating, the Cosmos Candles Academy guide"
+                      className="cosmo-lotus h-[76%] w-auto object-contain drop-shadow-2xl" />
+                  </div>
                 </div>
               ) : (
                 <div className="relative mx-auto aspect-square w-full max-w-[360px] overflow-hidden rounded-full ring-4 ring-white/10 shadow-2xl">

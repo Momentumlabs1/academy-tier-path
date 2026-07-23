@@ -6,10 +6,9 @@
  * touching the database directly. It also onboards new partners: create the
  * affiliate's login + brand and link them, so they can sign into /partner.
  *
- * Auth: sensitive actions (create_partner, update_partner) require the caller
- * to be the platform admin — we verify the Supabase access token in the
- * Authorization header and check the email. `list`/`update` stay open for the
- * existing admin UI (the whole /admin area sits behind the admin login).
+ * Auth: EVERY action requires the caller to be the platform admin — we verify
+ * the Supabase access token in the Authorization header and check the email.
+ * `update` can also set landing branding via the `config` jsonb.
  *
  * POST body:
  *   { "action": "list" }
@@ -34,7 +33,7 @@ const CORS = {
 const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { ...CORS, "Content-Type": "application/json" } });
 
-const FIELDS = ["slug", "name", "active", "telegram_channel_id", "broker_affiliate_url", "signal_footer"];
+const FIELDS = ["slug", "name", "active", "telegram_channel_id", "broker_affiliate_url", "signal_footer", "config"];
 
 const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
@@ -74,16 +73,20 @@ Deno.serve(async (req) => {
   }
 
   if (body.action === "list") {
+    if (!(await assertAdmin())) return json({ error: "unauthorized" }, 401);
     const { data, error } = await db.from("tenants").select(FIELDS.join(",")).order("name");
     if (error) return json({ error: error.message }, 500);
     return json({ tenants: data });
   }
 
   if (body.action === "update") {
+    if (!(await assertAdmin())) return json({ error: "unauthorized" }, 401);
     if (!body.slug || !body.patch) return json({ error: "slug and patch required" }, 400);
-    const allowed = ["telegram_channel_id", "broker_affiliate_url", "signal_footer", "active"];
+    const allowed = ["telegram_channel_id", "broker_affiliate_url", "signal_footer", "active", "name", "config"];
     const patch: Record<string, unknown> = {};
     for (const k of allowed) if (k in body.patch) patch[k] = body.patch[k];
+    if ("config" in patch && (typeof patch.config !== "object" || patch.config === null)) delete patch.config;
+    if ("name" in patch && !String(patch.name ?? "").trim()) delete patch.name;
     if (patch.telegram_channel_id === "" || patch.telegram_channel_id == null) patch.telegram_channel_id = null;
     else patch.telegram_channel_id = Number(patch.telegram_channel_id);
     if (patch.broker_affiliate_url === "") patch.broker_affiliate_url = null;

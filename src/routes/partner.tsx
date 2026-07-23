@@ -264,7 +264,7 @@ function PartnerCard({ row }: { row: PartnerRow }) {
               </div>
             </div>
             <p className="mt-2 text-[11px] text-muted-foreground">
-              View only — editing your page is coming later. Customers who sign up through your link are automatically placed under you.
+              Your page is built and maintained by our team — just share your link. Customers who sign up through it are automatically placed under you.
             </p>
           </div>
         )}
