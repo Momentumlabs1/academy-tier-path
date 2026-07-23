@@ -58,14 +58,36 @@ async function upsertChunks(table, rows, onConflict) {
   }
 }
 
+// The broker provisions each IB DB as a "skeleton" that may not yet carry every
+// documented column (they fill in as data arrives). So we discover the columns
+// that ACTUALLY exist and only SELECT those — missing ones map to null via the
+// str/num/ts helpers. Robust now (skeleton) and later (full schema).
+async function tableColumns(pool, schema, table) {
+  const rs = await pool.request()
+    .input("s", sql.VarChar, schema)
+    .input("t", sql.VarChar, table)
+    .query(`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+             WHERE TABLE_SCHEMA = @s AND TABLE_NAME = @t`);
+  return new Set(rs.recordset.map((r) => r.COLUMN_NAME.toLowerCase()));
+}
+// Build a "SELECT [col], [col2]" from the wanted columns that exist. Returns the
+// existing column set too, so callers can guard on required keys.
+function selectList(have, wanted) {
+  const present = wanted.filter((c) => have.has(c.toLowerCase()));
+  return present.length ? present.map((c) => `[${c}]`).join(", ") : null;
+}
+
 async function syncClients(pool) {
-  const rs = await pool.request().query(`
-    SELECT Brand, FirstName, LastName, Country, ClientID, Email, ClientType,
-           Direct_IB_ID, Direct_IB_Email, Registration_Date, First_Deposit_Date,
-           CRM_Deposit_USD, CRM_Withdrawal_USD, Net_Deposit, FirstDepositAmount_USD,
-           NotionalVolume_USD, IB_Rebates, Pnl_USD, Last_Trade_Date,
-           utm_uri, utm_referrer, utm_campaign
-      FROM dbo.clients`);
+  const have = await tableColumns(pool, "dbo", "clients");
+  if (!have.has("clientid")) { console.warn("clients: no ClientID column yet — skipping (skeleton)"); return 0; }
+  const cols = selectList(have, [
+    "Brand", "FirstName", "LastName", "Country", "ClientID", "Email", "ClientType",
+    "Direct_IB_ID", "Direct_IB_Email", "Registration_Date", "First_Deposit_Date",
+    "CRM_Deposit_USD", "CRM_Withdrawal_USD", "Net_Deposit", "FirstDepositAmount_USD",
+    "NotionalVolume_USD", "IB_Rebates", "Pnl_USD", "Last_Trade_Date",
+    "utm_uri", "utm_referrer", "utm_campaign",
+  ]);
+  const rs = await pool.request().query(`SELECT ${cols} FROM dbo.clients`);
   const rows = rs.recordset.map((r) => ({
     client_id: str(r.ClientID),
     brand: str(r.Brand),
@@ -96,10 +118,13 @@ async function syncClients(pool) {
 }
 
 async function syncAccounts(pool) {
-  const rs = await pool.request().query(`
-    SELECT Brand, ClientID, Email, AccountNumber, Currency,
-           Balance_Local, Balance_USD, AccountType, VolumeLots
-      FROM dbo.mt_accounts`);
+  const have = await tableColumns(pool, "dbo", "mt_accounts");
+  if (!have.has("accountnumber")) { console.warn("mt_accounts: no AccountNumber column yet — skipping (skeleton)"); return 0; }
+  const cols = selectList(have, [
+    "Brand", "ClientID", "Email", "AccountNumber", "Currency",
+    "Balance_Local", "Balance_USD", "AccountType", "VolumeLots",
+  ]);
+  const rs = await pool.request().query(`SELECT ${cols} FROM dbo.mt_accounts`);
   const rows = rs.recordset.map((r) => ({
     account_number: str(r.AccountNumber),
     brand: str(r.Brand),
@@ -130,6 +155,17 @@ async function tradesWatermark() {
 }
 
 async function syncTrades(pool) {
+  const have = await tableColumns(pool, "dbo", "trades");
+  // These two are structural (WHERE/ORDER/conflict key) — without them we can't
+  // page the trades safely, so skip until the broker provisions them.
+  if (!have.has("tradepositionid") || !have.has("closetime")) {
+    console.warn("trades: TradePositionID/CloseTime not present yet — skipping (skeleton)");
+    return 0;
+  }
+  const cols = selectList(have, [
+    "TradePositionID", "AccountNumber", "Symbol", "Direction", "VolumeLotSize",
+    "OpenTime", "OpenPrice", "CloseTime", "ClosePrice", "Profit", "StopLoss", "TakeProfit",
+  ]);
   const since = await tradesWatermark();
   let offset = 0, total = 0;
   for (;;) {
@@ -140,8 +176,7 @@ async function syncTrades(pool) {
     // bursts), so ties could be sliced differently between page queries and
     // rows silently skipped. TradePositionID as tiebreaker fixes that.
     const rs = await req.query(`
-      SELECT TradePositionID, AccountNumber, Symbol, Direction, VolumeLotSize,
-             OpenTime, OpenPrice, CloseTime, ClosePrice, Profit, StopLoss, TakeProfit
+      SELECT ${cols}
         FROM dbo.trades
         ${where}
         ORDER BY CloseTime ASC, TradePositionID ASC
