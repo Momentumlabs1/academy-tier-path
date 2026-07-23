@@ -105,9 +105,13 @@ function RegisterPage() {
   return (
     <FunnelShell brand={brand}>
       {resetSent ? (
-        <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/[0.03] p-7 text-center shadow-2xl">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full" style={{ background: `color-mix(in oklch, ${accent} 18%, transparent)`, color: accent }}>
-            <CheckCircle2 className="h-6 w-6" />
+        <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/[0.04] p-7 text-center shadow-2xl backdrop-blur-sm">
+          <div className="relative mx-auto mb-4 flex h-20 w-20 items-center justify-center">
+            <div aria-hidden className="pointer-events-none absolute inset-0 rounded-full blur-xl" style={{ background: `radial-gradient(circle, color-mix(in oklch, ${accent} 45%, transparent), transparent 70%)` }} />
+            <img src="/cosmo/cosmo-head.png" alt="Cosmo" className="cosmo-float relative h-16 w-16 object-contain" />
+            <span className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-[oklch(0.13_0.04_260)]" style={{ background: accent, color: "#0b1220" }}>
+              <CheckCircle2 className="h-4 w-4" />
+            </span>
           </div>
           <div className="mb-1 font-display text-2xl font-bold">Check your inbox</div>
           <p className="text-sm text-foreground/60">
@@ -119,9 +123,13 @@ function RegisterPage() {
           </button>
         </div>
       ) : confirmSent ? (
-        <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/[0.03] p-7 text-center shadow-2xl">
-          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full" style={{ background: `color-mix(in oklch, ${accent} 18%, transparent)`, color: accent }}>
-            <CheckCircle2 className="h-6 w-6" />
+        <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/[0.04] p-7 text-center shadow-2xl backdrop-blur-sm">
+          <div className="relative mx-auto mb-4 flex h-20 w-20 items-center justify-center">
+            <div aria-hidden className="pointer-events-none absolute inset-0 rounded-full blur-xl" style={{ background: `radial-gradient(circle, color-mix(in oklch, ${accent} 45%, transparent), transparent 70%)` }} />
+            <img src="/cosmo/cosmo-head.png" alt="Cosmo" className="cosmo-float relative h-16 w-16 object-contain" />
+            <span className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-[oklch(0.13_0.04_260)]" style={{ background: accent, color: "#0b1220" }}>
+              <CheckCircle2 className="h-4 w-4" />
+            </span>
           </div>
           <div className="mb-1 font-display text-2xl font-bold">Almost there</div>
           <p className="text-sm text-foreground/60">
@@ -133,33 +141,52 @@ function RegisterPage() {
           </button>
         </div>
       ) : (
-        <div className="w-full max-w-md">
-          <div className="mb-6 text-center">
-            <h1 className="font-display text-3xl font-bold leading-tight sm:text-4xl">
-              Your free access to the Academy
+        <div className="grid w-full max-w-4xl items-center gap-8 lg:grid-cols-[0.9fr_1fr] lg:gap-12">
+          {/* Cosmo greeting — the face of the brand welcomes you in. */}
+          <div className="flex flex-col items-center text-center lg:items-start lg:text-left">
+            <div className="relative flex items-center justify-center">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute h-56 w-56 rounded-full blur-2xl sm:h-64 sm:w-64"
+                style={{ background: `radial-gradient(circle, color-mix(in oklch, ${accent} 45%, transparent), transparent 70%)` }}
+              />
+              <img
+                src="/cosmo/cosmo-avatar.png"
+                alt="Cosmo, your Academy guide, waving hello"
+                className="cosmo-float relative h-52 w-auto max-w-full object-contain drop-shadow-2xl sm:h-60"
+              />
+            </div>
+            <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+              Welcome to the Academy
+            </p>
+            <h1 className="mt-2 text-balance font-display text-3xl font-bold leading-tight sm:text-4xl">
+              Hey, I&apos;m Cosmo — let&apos;s get you trading.
             </h1>
-            <p className="mx-auto mt-3 max-w-sm text-sm text-foreground/65">
-              Create your account in 20 seconds — then unlock your welcome video. Signals & trader tools open up with your first deposit.
+            <p className="mt-3 max-w-md text-sm leading-relaxed text-foreground/70">
+              Create your free account in about 20 seconds and I&apos;ll unlock your welcome video right away.
+              Live signals and the trader tools open up the moment you make your first deposit.
             </p>
           </div>
 
-          <form onSubmit={submit} className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 shadow-2xl sm:p-7">
-            <label className="mb-3 block">
-              <span className="mb-1 block text-xs font-semibold text-muted-foreground">Email</span>
+          <div className="w-full">
+          <form onSubmit={submit} className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl backdrop-blur-sm sm:p-7">
+            <label className="mb-4 block">
+              <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Email address</span>
               <input
                 required type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@email.com"
-                className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm outline-none focus:border-white/30"
+                className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm outline-none transition-colors focus-visible:border-white/40 focus-visible:ring-2 focus-visible:ring-white/10"
                 style={{ ["--tw-ring-color" as string]: accent }}
               />
             </label>
             <label className="mb-5 block">
-              <span className="mb-1 block text-xs font-semibold text-muted-foreground">Password</span>
+              <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Choose a password</span>
               <input
-                required type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)}
-                placeholder="at least 6 characters"
-                className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm outline-none focus:border-white/30"
+                required type="password" autoComplete="new-password" minLength={6} value={password} onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm outline-none transition-colors focus-visible:border-white/40 focus-visible:ring-2 focus-visible:ring-white/10"
               />
+              <span className="mt-1.5 block text-[11px] text-muted-foreground">At least 6 characters — pick something only you would guess.</span>
             </label>
 
             {error && <div className="mb-4 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">{error}</div>}
@@ -187,6 +214,7 @@ function RegisterPage() {
           <p className="mt-4 text-center text-xs text-muted-foreground">
             Already a member? Enter your email &amp; password above — you&apos;ll be signed in automatically.
           </p>
+          </div>
         </div>
       )}
     </FunnelShell>

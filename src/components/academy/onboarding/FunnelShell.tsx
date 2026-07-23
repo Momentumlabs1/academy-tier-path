@@ -10,19 +10,35 @@ import { COSMO, type PartnerBrand } from "@/lib/partner-brand";
 export function FunnelShell({ brand, children }: { brand: PartnerBrand | null; children: ReactNode }) {
   return (
     <div
-      className="flex min-h-screen flex-col text-foreground"
+      className="relative flex min-h-screen flex-col overflow-hidden text-foreground"
       style={{ background: `linear-gradient(160deg, ${COSMO.bgFrom} 0%, ${COSMO.bgTo} 100%)` }}
     >
-      <header className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-5 sm:px-8">
+      {/* Scoped, reduced-motion-safe mascot motion + glow — shared by the hero. */}
+      <style>{`
+        @keyframes cosmo-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .cosmo-float { animation: cosmo-float 5.5s ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) { .cosmo-float { animation: none; } }
+      `}</style>
+
+      {/* Ambient brand light — a soft lime + blue wash behind the whole funnel. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundImage: `radial-gradient(720px 420px at 88% -6%, color-mix(in oklch, ${COSMO.primaryColor} 14%, transparent), transparent 60%), radial-gradient(560px 360px at 6% 108%, color-mix(in oklch, ${COSMO.accentColor} 16%, transparent), transparent 60%)`,
+        }}
+      />
+
+      <header className="relative mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-5 sm:px-8">
         {/* Cosmo — always the lead brand */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-3">
           <span
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-sm font-black text-black"
-            style={{ background: COSMO.primaryColor }}
+            className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl"
+            style={{ background: `color-mix(in oklch, ${COSMO.primaryColor} 22%, transparent)` }}
           >
-            {COSMO.logoInitials}
+            <img src="/cosmo/cosmo-head.png" alt="Cosmo" className="h-8 w-8 object-contain" />
           </span>
-          <span className="font-display text-lg font-bold">{COSMO.fullName}</span>
+          <span className="font-display text-lg font-bold tracking-tight">{COSMO.fullName}</span>
         </div>
 
         {/* Partner — subtle recurring accent */}
@@ -45,9 +61,9 @@ export function FunnelShell({ brand, children }: { brand: PartnerBrand | null; c
         )}
       </header>
 
-      <main className="flex flex-1 items-center justify-center px-4 py-8 sm:px-8">{children}</main>
+      <main className="relative flex flex-1 items-center justify-center px-4 py-8 sm:px-8">{children}</main>
 
-      <footer className="px-4 py-6 text-center text-[11px] text-muted-foreground">
+      <footer className="relative px-4 py-6 text-center text-[11px] leading-relaxed text-muted-foreground">
         {COSMO.fullName} · Trading involves risk — 74–89% of retail CFD accounts lose money.
       </footer>
     </div>

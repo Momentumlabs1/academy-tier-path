@@ -44,9 +44,31 @@ export function PostDepositWelcome() {
       <button onClick={dismiss} aria-label="Dismiss" className="absolute right-3 top-3 rounded-lg p-1.5 text-foreground/50 hover:bg-white/10 hover:text-foreground">
         <X className="h-4 w-4" />
       </button>
-      <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: COSMO.primaryColor }}>Unlocked 🎉</div>
-      <h2 className="font-display text-xl font-bold sm:text-2xl">Welcome to the Academy</h2>
-      <p className="mt-1 text-sm text-foreground/65">Your deposit is in — here are your first two steps.</p>
+      <style>{`
+        @keyframes cosmo-welcome-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        .cosmo-welcome-float { animation: cosmo-welcome-float 4.5s ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) { .cosmo-welcome-float { animation: none; } }
+      `}</style>
+      <div className="flex items-center gap-4">
+        {/* Cosmo welcomes you in personally the moment your deposit lands. */}
+        <div className="relative hidden shrink-0 sm:block">
+          <div
+            className="pointer-events-none absolute inset-0 -m-2 rounded-full blur-2xl"
+            style={{ background: `radial-gradient(circle, color-mix(in oklch, #75B9F5 55%, transparent), transparent 70%)` }}
+            aria-hidden
+          />
+          <img
+            src="/cosmo/cosmo-avatar.png"
+            alt="Cosmo"
+            className="cosmo-welcome-float relative h-16 w-16 max-w-full object-contain drop-shadow-xl"
+          />
+        </div>
+        <div className="min-w-0">
+          <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: COSMO.primaryColor }}>Unlocked 🎉</div>
+          <h2 className="font-display text-xl font-bold text-balance sm:text-2xl">Welcome to Cosmos Candles</h2>
+          <p className="mt-1 max-w-[56ch] text-sm text-foreground/65">Your deposit landed — you're fully in. Cosmo walks you through your first two steps below.</p>
+        </div>
+      </div>
 
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
         {VIDEOS.map((v) => (

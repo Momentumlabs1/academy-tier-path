@@ -31,9 +31,9 @@ export const Route = createFileRoute("/$slug")({
   notFoundComponent: () => (
     <div className="flex min-h-screen items-center justify-center bg-[oklch(0.15_0.06_260)] px-4 text-center">
       <div>
-        <h1 className="font-display text-3xl font-bold">Seite nicht gefunden</h1>
-        <p className="mt-2 text-muted-foreground">Dieser Link ist ungültig oder abgelaufen.</p>
-        <Link to="/" className="mt-6 inline-flex items-center gap-1.5 text-primary hover:underline">Zur Academy</Link>
+        <h1 className="font-display text-3xl font-bold">Page not found</h1>
+        <p className="mt-2 text-muted-foreground">This link may be invalid or expired.</p>
+        <Link to="/" className="mt-6 inline-flex items-center gap-1.5 text-primary hover:underline">Back to the Academy</Link>
       </div>
     </div>
   ),

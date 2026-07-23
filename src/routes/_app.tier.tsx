@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_app/tier")({
   head: () => ({
     meta: [
-      { title: "Tier — Agent Trading Academy" },
+      { title: "Tier — Cosmos Candles Academy" },
       { name: "description", content: "Membership tiers and perks." },
     ],
   }),
@@ -25,8 +25,9 @@ function TierPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-3xl font-bold tracking-tight lg:text-4xl">Membership Tiers</h1>
-        <p className="mt-1 text-muted-foreground">
+        <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Your membership</div>
+        <h1 className="font-display text-3xl font-bold tracking-tight text-balance lg:text-4xl">Membership Tiers</h1>
+        <p className="mt-2 max-w-[65ch] text-muted-foreground">
           Verified deposit: <span className="font-semibold text-foreground">{formatMoney(state.lifetimeDeposits, "€")}</span>. Tiers unlock automatically once your deposit is verified at our partner broker.
         </p>
       </div>

@@ -9,10 +9,10 @@ export function Card({
   ...rest
 }: HTMLAttributes<HTMLDivElement> & { variant?: Variant }) {
   const styles: Record<Variant, string> = {
-    panel: "bg-[color:var(--surface-1)]",
-    surface: "bg-[color:var(--surface-2)]",
-    inner: "bg-[color:var(--surface-3)]",
-    hero: "",
+    panel: "bg-[color:var(--surface-1)] border border-white/5",
+    surface: "bg-[color:var(--surface-2)] border border-white/[0.06]",
+    inner: "bg-[color:var(--surface-3)] border border-white/[0.04]",
+    hero: "border border-white/10",
   };
   return (
     <div

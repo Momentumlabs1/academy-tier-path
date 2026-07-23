@@ -163,7 +163,7 @@ export const COSMOS_MASTER: TenantConfig = {
   name: "Cosmos Candles Academy",
   tagline: "Trade with real data. Every day.",
   description:
-    "The trading academy for ambitious retail traders. Real live signals, a structured course from the ground up, and orderflow tools 90% of the market never sees.",
+    "The trading academy for ambitious retail traders. Live signals, a course that starts from zero, and orderflow tools 90% of the market never sees.",
   logoInitials: "CC",
   primaryColor: "oklch(0.88 0.19 140)",
   accentColor: "oklch(0.7 0.18 270)",
@@ -173,9 +173,9 @@ export const COSMOS_MASTER: TenantConfig = {
   brokerUrl: "https://tradequo.com",
   telegramChannel: "https://t.me/agent_trading_signals",
   affiliateEmail: "kontakt@momentumlabs.at",
-  headline: "Your free access to the Academy",
+  headline: "Learn to trade — for free, with Cosmo",
   subhead:
-    "Learn trading with real Level 2 data, copy live signals and use orderflow tools — no course fees, no subscription.",
+    "Copy live signals, work through a course that starts from zero, and read the market with real Level 2 orderflow tools. No course fees, no subscription — Cosmo shows you the ropes.",
   stats: [
     { label: "Lessons", value: "12" },
     { label: "Signal accuracy", value: "74%" },
@@ -183,9 +183,9 @@ export const COSMOS_MASTER: TenantConfig = {
     { label: "Years live", value: "3+" },
   ],
   features: [
-    { icon: "📡", title: "Live Telegram Signals", body: "Real trade calls from our desk, straight to your phone." },
-    { icon: "📚", title: "Structured Course", body: "12 lessons from the basics to an elite-level edge." },
-    { icon: "🤖", title: "Orderflow Tools", body: "Level 2, volume profile & footprint — calculators and live charts." },
+    { icon: "📡", title: "Live Telegram Signals", body: "Every call from our desk lands on your phone with entry, stop-loss and targets — nothing to interpret." },
+    { icon: "📚", title: "Structured Course", body: "12 lessons that take you from your first candle to a repeatable, elite-level edge." },
+    { icon: "🤖", title: "Orderflow Tools", body: "Read the market like a pro: Level 2 depth, volume profile and footprint charts, plus built-in position calculators." },
   ],
 };
 

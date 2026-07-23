@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_app/lessons/")({
   head: () => ({
     meta: [
-      { title: "Lessons — Agent Trading Academy" },
+      { title: "Lessons — Cosmos Candles Academy" },
       { name: "description", content: "Browse the full lesson catalog." },
     ],
   }),
@@ -82,9 +82,10 @@ function LessonsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-3xl font-bold tracking-tight lg:text-4xl">Lessons</h1>
-        <p className="mt-1 text-muted-foreground">
-          {LESSONS.length} lessons. Locked items unlock as your verified deposit grows.
+        <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Learn to trade</div>
+        <h1 className="font-display text-3xl font-bold tracking-tight text-balance lg:text-4xl">Lessons</h1>
+        <p className="mt-2 max-w-[65ch] text-muted-foreground">
+          {LESSONS.length} lessons across the full curriculum, from first candle to funded trader. Locked lessons open automatically as your verified deposit grows.
         </p>
       </div>
 
@@ -111,8 +112,37 @@ function LessonsPage() {
       </div>
 
       {grouped.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-white/10 p-10 text-center text-sm text-muted-foreground">
-          No lessons match.
+        <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-white/10 px-6 py-12 text-center">
+          <style>{`
+            @keyframes cosmo-float { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-8px) } }
+            .cosmo-float { animation: cosmo-float 4s ease-in-out infinite }
+            @media (prefers-reduced-motion: reduce) { .cosmo-float { animation: none } }
+          `}</style>
+          <div className="relative flex h-24 w-24 items-center justify-center">
+            <div
+              className="absolute inset-0 rounded-full blur-2xl"
+              style={{ background: "radial-gradient(circle, color-mix(in oklch, var(--primary) 40%, transparent), transparent 70%)" }}
+              aria-hidden
+            />
+            <img src="/cosmo/cosmo-head.png" alt="Cosmo" className="cosmo-float relative h-20 w-20 object-contain" />
+          </div>
+          <div className="max-w-[42ch] space-y-1">
+            <p className="font-display text-lg font-bold text-balance">Nothing matches that search</p>
+            <p className="text-sm text-muted-foreground">
+              Cosmo couldn't find a lesson for “{q || tier}”. Try a different keyword or clear the filters to see the full catalog.
+            </p>
+          </div>
+          {(q !== "" || tier !== "all") && (
+            <button
+              onClick={() => {
+                setQ("");
+                setTier("all");
+              }}
+              className="rounded-full bg-white/5 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-foreground hover:bg-white/10 transition-colors"
+            >
+              Clear filters
+            </button>
+          )}
         </div>
       )}
 

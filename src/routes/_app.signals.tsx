@@ -14,7 +14,7 @@ const TELEGRAM_URL = "https://t.me/agent_trading_signals";
 export const Route = createFileRoute("/_app/signals")({
   head: () => ({
     meta: [
-      { title: "Signals — Agent Trading Academy" },
+      { title: "Signals — Cosmos Candles Academy" },
       { name: "description", content: "Real signals are delivered via Telegram." },
     ],
   }),
@@ -28,8 +28,9 @@ function SignalsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="font-display text-3xl font-bold tracking-tight lg:text-4xl">Signals</h1>
-        <p className="mt-1 text-muted-foreground">Real signals are delivered via Telegram. Open the channel to get live alerts.</p>
+        <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Live trade alerts</div>
+        <h1 className="font-display text-3xl font-bold tracking-tight text-balance lg:text-4xl">Signals</h1>
+        <p className="mt-2 max-w-[65ch] text-muted-foreground">Every signal is posted live to our private Telegram channel — entries, targets, and stops in real time. Open the channel below to get alerts the moment they drop.</p>
       </div>
 
       <Card variant="hero" className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center">
@@ -38,7 +39,7 @@ function SignalsPage() {
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <span className="font-display text-lg font-bold">Agent Trading · Signals</span>
+            <span className="font-display text-lg font-bold">Cosmos Candles · Signals</span>
             <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase",
               hasAccess ? "bg-primary/20 text-primary" : "bg-amber-400/20 text-amber-400")}>
               <span className={cn("h-1.5 w-1.5 rounded-full", hasAccess ? "bg-primary" : "bg-amber-400")} />

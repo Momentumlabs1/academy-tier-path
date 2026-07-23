@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_app/notifications")({
   head: () => ({
     meta: [
-      { title: "Notifications — Agent Trading Academy" },
+      { title: "Notifications — Cosmos Candles Academy" },
       { name: "description", content: "Your inbox." },
     ],
   }),
@@ -48,10 +48,16 @@ function NotificationsPage() {
 
   return (
     <div className="space-y-6">
+      <style>{`
+        @keyframes cosmo-float { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-8px) } }
+        .cosmo-float { animation: cosmo-float 4s ease-in-out infinite }
+        @media (prefers-reduced-motion: reduce) { .cosmo-float { animation: none } }
+      `}</style>
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-display text-3xl font-bold tracking-tight lg:text-4xl">Notifications</h1>
-          <p className="mt-1 text-muted-foreground">{unread > 0 ? `${unread} unread` : "All caught up"}</p>
+          <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Inbox</div>
+          <h1 className="font-display text-3xl font-bold tracking-tight text-balance lg:text-4xl">Notifications</h1>
+          <p className="mt-2 text-muted-foreground">{unread > 0 ? `${unread} unread` : "All caught up"}</p>
         </div>
         {unread > 0 && (
           <button
@@ -62,6 +68,35 @@ function NotificationsPage() {
           </button>
         )}
       </div>
+
+      {state.notifications.length === 0 && (
+        <div className="flex flex-col items-center gap-5 rounded-[var(--radius)] border border-dashed border-white/10 bg-[color:var(--surface-2)] px-6 py-14 text-center">
+          <div className="relative flex h-28 w-28 items-center justify-center">
+            <div
+              className="absolute inset-0 rounded-full blur-2xl"
+              style={{ background: "radial-gradient(circle, color-mix(in oklch, var(--primary) 45%, transparent), transparent 70%)" }}
+              aria-hidden
+            />
+            <img
+              src="/cosmo/cosmo-head.png"
+              alt="Cosmo"
+              className="cosmo-float relative h-24 w-24 object-contain drop-shadow-xl"
+            />
+          </div>
+          <div className="max-w-[46ch] space-y-1.5">
+            <h2 className="font-display text-xl font-bold text-balance">You're all caught up</h2>
+            <p className="text-sm text-muted-foreground">
+              No notifications yet. Cosmo will ping you here the moment you unlock a new tier, a fresh lesson drops, or your deposit gets verified. Keep learning and they'll roll in.
+            </p>
+          </div>
+          <Link
+            to="/lessons"
+            className="rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-lime)] hover:opacity-90 transition-opacity"
+          >
+            Continue learning
+          </Link>
+        </div>
+      )}
 
       <div className="flex flex-col gap-2">
         {state.notifications.map((n) => {

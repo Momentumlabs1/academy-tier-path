@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_app/unlocks")({
   head: () => ({
     meta: [
-      { title: "Unlocks — Agent Trading Academy" },
+      { title: "Unlocks — Cosmos Candles Academy" },
       { name: "description", content: "Products and perks unlocked by your deposit tier." },
     ],
   }),
@@ -24,8 +24,9 @@ function UnlocksPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-display text-3xl font-bold tracking-tight lg:text-4xl">Unlocks</h1>
-        <p className="mt-1 text-muted-foreground">Everything you get access to as you climb the deposit ladder.</p>
+        <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Perks &amp; products</div>
+        <h1 className="font-display text-3xl font-bold tracking-tight text-balance lg:text-4xl">Unlocks</h1>
+        <p className="mt-2 max-w-[65ch] text-muted-foreground">Every tool, room, and perk you earn as you climb the deposit ladder. Reach a tier and its unlocks activate instantly — no codes, no waiting.</p>
       </div>
 
       {TIERS.map((tier) => {

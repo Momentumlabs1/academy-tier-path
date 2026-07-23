@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_app/")({
   head: () => ({
     meta: [
-      { title: "Dashboard — Agent Trading Academy" },
+      { title: "Dashboard — Cosmos Candles Academy" },
       { name: "description", content: "Your live trading education hub." },
     ],
   }),
@@ -53,6 +53,12 @@ function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Cosmo's gentle idle float — respects reduced-motion. */}
+      <style>{`
+        @keyframes cosmo-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+        .cosmo-float { animation: cosmo-float 4.5s ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) { .cosmo-float { animation: none; } }
+      `}</style>
 
       {/* Guided first session: integrated welcome video → deposit ignite strip
           (with live deposit watcher) → celebration + unlock tour. */}
@@ -67,15 +73,38 @@ function Dashboard() {
         <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-primary/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-12 left-8 h-40 w-40 rounded-full bg-[oklch(0.7_0.18_270)]/15 blur-3xl" />
 
-        <div className="relative">
-          <p className="text-sm font-medium text-muted-foreground">{greeting()},</p>
-          <h1 className="mt-0.5 font-display text-2xl font-bold tracking-tight sm:text-3xl">
-            {(state.profile.name || state.profile.email).split(/[ @]/)[0] || "Trader"} 👋
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">Pick up where you left off.</p>
+        <div className="relative flex items-start gap-4 sm:gap-5">
+          {/* Cosmo — the face of the Academy, greeting you by name */}
+          <div className="relative hidden shrink-0 sm:block">
+            <div
+              className="pointer-events-none absolute inset-0 -m-2 rounded-full blur-2xl"
+              style={{ background: "radial-gradient(circle, color-mix(in oklch, #75B9F5 55%, transparent), transparent 70%)" }}
+              aria-hidden
+            />
+            <img
+              src="/cosmo/cosmo-avatar.png"
+              alt="Cosmo, your Academy guide"
+              className="cosmo-float relative h-20 w-20 max-w-full object-contain drop-shadow-xl"
+            />
+          </div>
 
-          {/* Quick-action launcher */}
-          <div className="mt-5 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+              {greeting()},
+            </p>
+            <h1 className="mt-1 font-display text-2xl font-bold tracking-tight text-balance sm:text-3xl">
+              {(state.profile.name || state.profile.email).split(/[ @]/)[0] || "Trader"}
+              <span className="ml-1.5 inline-block" aria-hidden>👋</span>
+            </h1>
+            <p className="mt-1.5 max-w-[52ch] text-sm text-muted-foreground">
+              Cosmo has your next moves ready. Jump back into your lessons, signals and tools below.
+            </p>
+          </div>
+        </div>
+
+        {/* Quick-action launcher */}
+        <div className="relative">
+          <div className="mt-6 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
             {QUICK_ACTIONS.map((a) => {
               const Icon = a.icon;
               return (

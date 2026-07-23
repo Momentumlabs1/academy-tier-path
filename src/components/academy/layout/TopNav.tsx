@@ -53,14 +53,23 @@ export function TopNav() {
         })}
       </nav>
 
-      {/* Mobile: logo wordmark + page title */}
+      {/* Mobile: Cosmos Candles logo lockup + page title */}
       <div className="flex items-center gap-3 md:hidden">
-        <Link to="/" className="flex items-center gap-1.5">
-          <span className="relative flex h-6 w-6 items-center justify-center">
-            <span className="absolute inset-0 rounded-full bg-primary/30 blur-sm" />
-            <span className="relative h-4 w-4 rounded-full bg-primary" />
+        <Link to="/" className="flex items-center gap-2" aria-label="Cosmos Candles Academy — home">
+          <span className="relative flex h-8 w-8 items-center justify-center">
+            <span
+              className="absolute inset-0 rounded-full blur-md"
+              style={{ background: "color-mix(in oklch, var(--primary) 45%, transparent)" }}
+            />
+            <img
+              src="/cosmo/cosmo-head.png"
+              alt="Cosmo"
+              className="relative h-8 w-8 max-w-full object-contain"
+            />
           </span>
-          <span className="font-display text-base font-bold tracking-tight">EnterTrade</span>
+          <span className="flex flex-col leading-none">
+            <span className="font-display text-base font-bold tracking-tight">Cosmos Candles</span>
+          </span>
         </Link>
         {pageTitle !== "Dashboard" && (
           <>

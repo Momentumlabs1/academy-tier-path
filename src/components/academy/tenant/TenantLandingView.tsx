@@ -25,6 +25,11 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
   const navigate = useNavigate();
   const goRegister = () => navigate({ to: "/registrieren" });
 
+  // Cosmo is the face of the master brand. He anchors the hero on the central
+  // Cosmos Candles landing; partner pages keep their own mascot/skin untouched.
+  const showCosmo = tenant.slug === "cosmos-candles";
+  const heroHasMascot = tenant.mascot === "zeko" || showCosmo;
+
   // Partner attribution + co-branding skin. Two cookies, both 30 days:
   //  · cosmo_ref   — slug only; the register step stamps it into user metadata so
   //                  the DB trigger writes members.referred_by_tenant (credit).
@@ -41,6 +46,12 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
       className="min-h-screen font-sans"
       style={{ background: `linear-gradient(160deg, ${tenant.bgFrom} 0%, ${tenant.bgTo} 100%)` }}
     >
+      {/* Cosmo gets a gentle breathing float; stilled for reduced-motion users. */}
+      <style>{`
+        @keyframes cosmoFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
+        .cosmo-float { animation: cosmoFloat 5.5s ease-in-out infinite; will-change: transform; }
+        @media (prefers-reduced-motion: reduce) { .cosmo-float { animation: none; } }
+      `}</style>
       {/* Nav */}
       <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5 sm:px-8">
         <div className="flex items-center gap-2.5">
@@ -62,23 +73,23 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
 
       {/* Hero */}
       <section className="mx-auto max-w-6xl px-4 pb-16 pt-12 sm:px-8">
-        <div className={cn("grid items-center gap-8 lg:gap-12", tenant.mascot && "lg:grid-cols-[1.1fr_0.9fr]")}>
-          <div className={tenant.mascot ? "text-center lg:text-left" : "mx-auto max-w-3xl text-center"}>
+        <div className={cn("grid items-center gap-8 lg:gap-12", heroHasMascot && "lg:grid-cols-[1.1fr_0.9fr]")}>
+          <div className={heroHasMascot ? "text-center lg:text-left" : "mx-auto max-w-3xl text-center"}>
             <div
-              className="mb-6 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold"
+              className="mb-6 inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.14em]"
               style={{ background: `color-mix(in oklch, ${tenant.primaryColor} 15%, transparent)`, color: tenant.primaryColor }}
             >
-              <Shield className="h-3.5 w-3.5" /> Powered by Cosmos Candles Academy
+              <Shield className="h-3.5 w-3.5" /> {showCosmo ? "Meet Cosmo · Your trading guide" : "Powered by Cosmos Candles Academy"}
             </div>
 
-            <h1 className="font-display text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
+            <h1 className="text-balance font-display text-4xl font-bold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
               {tenant.headline ?? tenant.tagline}
             </h1>
-            <p className={cn("mt-4 text-lg text-foreground/70", tenant.mascot ? "" : "mx-auto max-w-2xl")}>
+            <p className={cn("mt-4 text-lg text-foreground/70", heroHasMascot ? "" : "mx-auto max-w-2xl")}>
               {tenant.subhead ?? tenant.description}
             </p>
 
-            <div className={cn("mt-8 flex flex-wrap items-center gap-3", tenant.mascot ? "justify-center lg:justify-start" : "justify-center")}>
+            <div className={cn("mt-8 flex flex-wrap items-center gap-3", heroHasMascot ? "justify-center lg:justify-start" : "justify-center")}>
               <button
                 onClick={goRegister}
                 className="inline-flex items-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
@@ -108,6 +119,27 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               <div className="relative aspect-square overflow-hidden rounded-full ring-4 ring-white/10 shadow-2xl">
                 <img src="/zeko-hero.png" alt="Zeko" className="h-full w-full scale-[1.35] object-cover object-top" />
               </div>
+            </div>
+          )}
+
+          {showCosmo && (
+            <div className="relative mx-auto flex w-full max-w-[420px] items-end justify-center">
+              {/* Soft accent glow behind the mascot */}
+              <div
+                className="absolute bottom-6 left-1/2 h-[62%] w-[78%] -translate-x-1/2 rounded-full blur-[70px]"
+                style={{ background: `color-mix(in oklch, ${tenant.accentColor} 55%, transparent)` }}
+                aria-hidden="true"
+              />
+              <div
+                className="absolute bottom-10 left-1/2 h-[42%] w-[52%] -translate-x-1/2 rounded-full blur-3xl"
+                style={{ background: `color-mix(in oklch, ${tenant.primaryColor} 40%, transparent)` }}
+                aria-hidden="true"
+              />
+              <img
+                src="/cosmo/cosmo-full.png"
+                alt="Cosmo, the Cosmos Candles Academy mascot"
+                className="cosmo-float relative z-10 h-auto w-full max-w-full object-contain drop-shadow-2xl"
+              />
             </div>
           )}
         </div>
@@ -156,7 +188,24 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           className="rounded-3xl border p-7 sm:p-9"
           style={{ borderColor: "rgba(255,255,255,0.08)", background: `linear-gradient(160deg, color-mix(in oklch, ${tenant.primaryColor} 8%, transparent), transparent)` }}
         >
-          <h2 className="text-center font-display text-2xl font-bold sm:text-3xl">You're not buying anything here.</h2>
+          {showCosmo && (
+            <div className="mb-5 flex justify-center">
+              <div className="relative">
+                <div
+                  className="absolute inset-0 rounded-full blur-2xl"
+                  style={{ background: `color-mix(in oklch, ${tenant.accentColor} 45%, transparent)` }}
+                  aria-hidden="true"
+                />
+                <img
+                  src="/cosmo/cosmo-avatar.png"
+                  alt="Cosmo"
+                  className="cosmo-float relative h-20 w-20 rounded-full object-cover ring-2 ring-white/10 sm:h-24 sm:w-24"
+                />
+              </div>
+            </div>
+          )}
+          <p className="mb-2 text-center text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: tenant.primaryColor }}>The honest part</p>
+          <h2 className="text-balance text-center font-display text-2xl font-bold sm:text-3xl">You're not buying anything here.</h2>
           <p className="mx-auto mt-3 max-w-xl text-center text-sm text-foreground/70">
             No course fee, no subscription. You fund your <span className="font-semibold text-foreground/90">own</span> trading account at {tenant.brokerName} — the money stays yours. We have a deal with the broker and earn there, not from you. That's why you get signals & academy for free.
           </p>
@@ -365,7 +414,17 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           {tenant.mascot === "zeko" && (
             <img src="/zeko-point.png" alt="" className="mx-auto mb-2 h-28 w-28 rounded-full object-cover object-top" />
           )}
-          <h2 className="font-display text-2xl font-bold sm:text-3xl">Ready to get started?</h2>
+          {showCosmo && (
+            <div className="relative mx-auto mb-3 h-28 w-28">
+              <div
+                className="absolute inset-0 rounded-full blur-2xl"
+                style={{ background: `color-mix(in oklch, ${tenant.accentColor} 50%, transparent)` }}
+                aria-hidden="true"
+              />
+              <img src="/cosmo/cosmo-head.png" alt="Cosmo" className="cosmo-float relative h-28 w-28 object-contain" />
+            </div>
+          )}
+          <h2 className="text-balance font-display text-2xl font-bold sm:text-3xl">Ready to get started?</h2>
           <p className="mx-auto mt-3 max-w-md text-foreground/70">
             Join {tenant.name} today. Deposit at {tenant.brokerName}, verify via Telegram, and unlock your first signals in minutes.
           </p>
