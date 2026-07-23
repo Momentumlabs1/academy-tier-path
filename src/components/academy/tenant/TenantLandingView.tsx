@@ -33,39 +33,54 @@ const TICKER = [
   { s: "GBP/JPY", p: "199.84", up: true }, { s: "SPX500", p: "5,268", up: false },
 ];
 
-// Candles evenly distributed on a perspective ellipse AROUND Cosmo's torso, so
-// they read as a single ring orbiting him at a similar height rather than a
-// scattered cloud. Angle → position on the ellipse; the ellipse's near half
-// (bottom of screen) sits IN FRONT of him, the far half (top) BEHIND him.
-// Each entry: [x%, y%, depth 0..1, up?, delay(s)].
-const RING: [number, number, number, boolean, number][] = Array.from({ length: 13 }, (_, i) => {
-  const a = (i / 13) * Math.PI * 2 - Math.PI / 2; // start at the top (behind)
-  const cx = 50, cy = 49, rx = 42, ry = 21;
-  const x = cx + rx * Math.cos(a);
-  const y = cy + ry * Math.sin(a);
-  const depth = (Math.sin(a) + 1) / 2;            // 0 = far/behind, 1 = near/front
-  const isUp = i % 3 !== 1;
-  const delay = (i % 5) * 0.45;
-  return [Number(x.toFixed(1)), Number(y.toFixed(1)), Number(depth.toFixed(3)), isUp, delay];
+// ── Orbit engine ──────────────────────────────────────────────────────────
+// Candles genuinely circle Cosmo: one shared @keyframes traces a perspective
+// ellipse (position + scale + z-index + opacity), and each candle rides it with
+// a phase offset (negative animation-delay). The z-index ramps between 6 and 30
+// across the loop so a candle passes BEHIND Cosmo (z 20) on the far arc and IN
+// FRONT on the near arc — real occlusion, real rotation. SSR-safe (no random).
+const ORBIT_DUR = 26; // seconds per revolution
+const ORBIT_N = 13;
+
+const ORBIT_KEYFRAMES = (() => {
+  const stops = 24;
+  let out = "";
+  for (let k = 0; k <= stops; k++) {
+    const pct = ((k / stops) * 100).toFixed(2);
+    const a = (k / stops) * Math.PI * 2 - Math.PI / 2; // start behind (top)
+    const left = (50 + 42 * Math.cos(a)).toFixed(2);
+    const top = (49 + 20.5 * Math.sin(a)).toFixed(2);
+    const depth = (Math.sin(a) + 1) / 2;               // 0 far/behind, 1 near/front
+    const scale = (0.58 + depth * 0.62).toFixed(3);
+    const z = depth < 0.5 ? 6 : 30;
+    const op = (0.5 + depth * 0.5).toFixed(3);
+    out += `${pct}%{left:${left}%;top:${top}%;transform:translate(-50%,-50%) translateY(var(--y,0px)) scale(calc(${scale} * var(--s,1)));z-index:${z};opacity:${op};}`;
+  }
+  return `@keyframes cosmoOrbit{${out}}`;
+})();
+
+// Per-candle: varied base size + height offset (so they're clearly NOT uniform),
+// a phase delay spreading them evenly around the ring, and an up/down colour.
+const ORBIT_ITEMS = Array.from({ length: ORBIT_N }, (_, i) => {
+  const h = 26 + ((i * 17) % 9) * 4.5;        // 26 → 62 px, varied
+  const w = Math.max(5, h * 0.16);
+  const y = (((i * 7) % 5) - 2) * 8;          // −16 → 16 px height offset
+  const s = 0.82 + ((i * 13) % 6) / 10;       // 0.82 → 1.32 size multiplier
+  const isUp = (i * 5) % 3 !== 0;
+  const delay = -((i / ORBIT_N) * ORBIT_DUR);
+  return { h, w, y, s: Number(s.toFixed(2)), isUp, delay: Number(delay.toFixed(2)) };
 });
 
-function Candle3D({ up, down, isUp, depth }: { up: string; down: string; isUp: boolean; depth: number }) {
+function CandleShape({ up, down, isUp }: { up: string; down: string; isUp: boolean }) {
   const c = isUp ? up : down;
-  const behind = depth < 0.5;
-  const h = 34 + depth * 44;                 // px — slimmer, gentler size range
-  const w = Math.max(6, h * 0.17);           // thin candles
   return (
-    <span className="block" style={{ width: w, height: h, filter: behind ? `blur(${(0.5 - depth) * 4 + 0.6}px)` : "none", opacity: 0.45 + depth * 0.55 }}>
-      <span className="relative block h-full w-full">
-        {/* wick (top + bottom) */}
-        <span className="absolute left-1/2 top-0 h-full -translate-x-1/2 rounded-full" style={{ width: Math.max(1.5, w * 0.16), background: `color-mix(in oklch, ${c} 60%, transparent)` }} />
-        {/* body with a soft top-lit gradient + glow for volume */}
-        <span className="absolute left-0 w-full rounded-[2px]" style={{
-          top: h * (isUp ? 0.3 : 0.24), height: h * 0.44,
-          background: `linear-gradient(180deg, color-mix(in oklch, ${c} 62%, white), ${c} 55%, color-mix(in oklch, ${c} 78%, black))`,
-          boxShadow: behind ? `0 0 8px -3px ${c}` : `0 0 16px -5px ${c}, inset 0 1px 0 color-mix(in oklch, ${c} 40%, white)`,
-        }} />
-      </span>
+    <span className="relative block h-full w-full">
+      <span className="absolute left-1/2 top-0 h-full w-[16%] min-w-[1.5px] -translate-x-1/2 rounded-full" style={{ background: `color-mix(in oklch, ${c} 60%, transparent)` }} />
+      <span className="absolute left-0 w-full rounded-[2px]" style={{
+        top: isUp ? "30%" : "24%", height: "44%",
+        background: `linear-gradient(180deg, color-mix(in oklch, ${c} 62%, white), ${c} 55%, color-mix(in oklch, ${c} 80%, black))`,
+        boxShadow: `0 0 14px -5px ${c}, inset 0 1px 0 color-mix(in oklch, ${c} 40%, white)`,
+      }} />
     </span>
   );
 }
@@ -108,8 +123,16 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         .spin-rev { animation: spinSlow 60s linear infinite reverse; }
         @keyframes auraPulse { 0%,100% { opacity:.55; transform:scale(1);} 50% { opacity:.85; transform:scale(1.06);} }
         .aura-pulse { animation: auraPulse 7s ease-in-out infinite; }
+        ${ORBIT_KEYFRAMES}
+        .orbit-item { position:absolute; will-change:left,top,transform; animation: cosmoOrbit ${ORBIT_DUR}s linear infinite; transition: filter .3s ease; }
+        /* hover: the whole scene reacts — Cosmo lifts & brightens, candles glow */
+        .orbit-stage { transition: transform .5s cubic-bezier(.2,.8,.2,1); }
+        .orbit-stage:hover { transform: scale(1.03); }
+        .orbit-stage:hover .cosmo-lotus { filter: brightness(1.06) drop-shadow(0 0 26px color-mix(in oklch, ${accent} 45%, transparent)); }
+        .orbit-stage:hover .orbit-item { filter: brightness(1.2) saturate(1.1); }
+        .cosmo-lotus { transition: filter .4s ease, transform .4s ease; }
         @media (prefers-reduced-motion: reduce) {
-          .cosmo-float,.cosmo-bob,.chip-float,.candle-grow,.ticker-track,.twinkle,.spin-slow,.spin-rev,.aura-pulse { animation: none !important; }
+          .cosmo-float,.cosmo-bob,.chip-float,.candle-grow,.ticker-track,.twinkle,.spin-slow,.spin-rev,.aura-pulse,.orbit-item { animation: none !important; }
         }
       `}</style>
 
@@ -197,26 +220,19 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           {heroHasMascot && (
             <div className="relative z-10 mx-auto w-full max-w-[500px]">
               {showCosmo ? (
-                <div className="relative mx-auto aspect-square w-full">
+                <div className="orbit-stage relative mx-auto aspect-square w-full">
                   {/* lotus aura — the glow he radiates */}
                   <div className="aura-pulse absolute left-1/2 top-1/2 h-[58%] w-[58%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[70px]" style={{ background:`color-mix(in oklch, ${accent} 60%, transparent)` }} aria-hidden />
                   <div className="absolute left-1/2 top-1/2 h-[38%] w-[38%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[55px]" style={{ background:`color-mix(in oklch, ${primary} 32%, transparent)` }} aria-hidden />
 
-                  {/* candles BEHIND Cosmo (depth < 0.5) */}
-                  {RING.filter(([, , d]) => d < 0.5).map(([x, y, depth, isUp, delay], i) => (
-                    <div key={`b${i}`} className="chip-float absolute z-10 -translate-x-1/2 -translate-y-1/2" style={{ left:`${x}%`, top:`${y}%`, animationDelay:`${delay}s` }}>
-                      <Candle3D up={up} down={down} isUp={isUp} depth={depth} />
-                    </div>
-                  ))}
-
-                  {/* Cosmo, meditating & floating at the centre */}
+                  {/* Cosmo, meditating & floating at the centre (candles pass in front & behind via z-index) */}
                   <img src="/cosmo/cosmo-meditate.png" alt="Cosmo meditating, the Cosmos Candles Academy guide"
-                    className="cosmo-float absolute left-1/2 top-1/2 z-20 h-[76%] w-auto -translate-x-1/2 -translate-y-1/2 object-contain drop-shadow-2xl" />
+                    className="cosmo-lotus cosmo-float absolute left-1/2 top-1/2 h-[76%] w-auto -translate-x-1/2 -translate-y-1/2 object-contain drop-shadow-2xl" style={{ zIndex: 20 }} />
 
-                  {/* candles IN FRONT of Cosmo (depth ≥ 0.5) — bigger, sharp, glowing */}
-                  {RING.filter(([, , d]) => d >= 0.5).map(([x, y, depth, isUp, delay], i) => (
-                    <div key={`f${i}`} className="chip-float absolute z-30 -translate-x-1/2 -translate-y-1/2" style={{ left:`${x}%`, top:`${y}%`, animationDelay:`${delay}s` }}>
-                      <Candle3D up={up} down={down} isUp={isUp} depth={depth} />
+                  {/* candles orbiting him — each rides the shared ellipse keyframe with a phase offset */}
+                  {ORBIT_ITEMS.map((it, i) => (
+                    <div key={i} className="orbit-item" style={{ height: it.h, width: it.w, animationDelay: `${it.delay}s`, ["--y" as string]: `${it.y}px`, ["--s" as string]: it.s }}>
+                      <CandleShape up={up} down={down} isUp={it.isUp} />
                     </div>
                   ))}
                 </div>
