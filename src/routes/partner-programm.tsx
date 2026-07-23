@@ -202,7 +202,7 @@ function PartnerProgramm() {
 
       {/* Footer */}
       <footer className="border-t border-white/6 px-4 py-6 text-center text-[11px] text-muted-foreground">
-        Cosmos Candles · Powered by <Link to="/" className="underline hover:text-foreground">Agent Trading Academy</Link> · Trading involves risk — 74–89% of retail CFD accounts lose money. Earnings depend on customer activity and are not guaranteed.
+        Cosmos Candles · Powered by <Link to="/" className="underline hover:text-foreground">Cosmos Candles Academy</Link> · Trading involves risk — 74–89% of retail CFD accounts lose money. Earnings depend on customer activity and are not guaranteed.
       </footer>
     </div>
   );

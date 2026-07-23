@@ -69,7 +69,7 @@ function useMembers() {
         tier: (r.tier as TierKey | null) ?? null,
         active: Boolean(r.active),
         telegramHandle: (r.telegram_handle as string | null) ?? null,
-        affiliate: (r.affiliate_slug as string | null) ?? null,
+        affiliate: (r.referred_by_tenant as string | null) ?? (r.affiliate_slug as string | null) ?? null,
       }));
       setRows(mapped);
       setError(null);

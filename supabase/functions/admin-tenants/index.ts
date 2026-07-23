@@ -41,8 +41,9 @@ const slugify = (s: string) =>
 
 // Slugs that would collide with real app routes — a partner may not own one.
 const RESERVED_SLUGS = new Set([
-  "admin", "partner", "login", "signals", "lessons", "tools", "tier", "unlocks",
+  "admin", "partner", "partner-programm", "login", "signals", "lessons", "tools", "tier", "unlocks",
   "notifications", "settings", "t", "api", "assets", "hegemony", "auth", "dashboard",
+  "registrieren", "willkommen",
 ]);
 
 Deno.serve(async (req) => {

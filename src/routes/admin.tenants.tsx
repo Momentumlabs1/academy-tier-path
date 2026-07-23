@@ -5,6 +5,7 @@ import { TENANTS } from "@/lib/tenants";
 import { Check, Copy, ExternalLink, Loader2, Radio, Save } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { functionUrl } from "@/integrations/supabase/functions-url";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/admin/tenants")({
   head: () => ({ meta: [{ title: "White-Label — Admin" }] }),
@@ -33,9 +34,12 @@ function AdminTenants() {
   const origin = typeof window !== "undefined" ? window.location.origin : "";
 
   const call = useCallback(async (payload: object) => {
+    // Send the admin's access token — the function now verifies it on every action.
+    const { data: session } = await supabase.auth.getSession();
+    const token = session.session?.access_token;
     const res = await fetch(FN, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: JSON.stringify(payload),
     });
     if (!res.ok) throw new Error((await res.json())?.error ?? "request failed");
