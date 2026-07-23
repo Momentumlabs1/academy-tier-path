@@ -1,0 +1,16 @@
+-- 017_members_rls_grant_fix
+--
+-- Fix: every logged-in member saw a zeroed dashboard (deposit €0, no tier,
+-- everything locked) even when their `members` row had a real deposit/tier.
+--
+-- Cause: the `members` table has a second SELECT policy, `affiliate_reads_own_members`,
+-- whose USING clause calls `owned_tenant_slugs()`. That helper is SECURITY DEFINER
+-- but EXECUTE was only granted to `postgres, service_role` — not `authenticated`.
+-- Postgres evaluates every permissive policy on a SELECT, so a normal member's
+-- read of their OWN row hit `permission denied for function owned_tenant_slugs`,
+-- the whole query errored, and the frontend fell back to the empty (€0) state.
+--
+-- Grant EXECUTE to authenticated + anon so the policy can evaluate. The function
+-- is SECURITY DEFINER and only returns the caller's own owned tenant slugs, so
+-- this exposes nothing extra.
+grant execute on function public.owned_tenant_slugs() to authenticated, anon;
