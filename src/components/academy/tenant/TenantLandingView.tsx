@@ -42,44 +42,54 @@ const TICKER = [
 const ORBIT_DUR = 26; // seconds per revolution
 const ORBIT_N = 13;
 
+// Pure-transform orbit (GPU-smooth, no layout thrash): the item is pinned at the
+// stage centre and moves via translate() in container-query units (cqw), so the
+// ring scales perfectly with the responsive stage and never jitters.
 const ORBIT_KEYFRAMES = (() => {
-  const stops = 24;
+  const stops = 30;
+  const rx = 42, ry = 21; // % of stage
   let out = "";
   for (let k = 0; k <= stops; k++) {
-    const pct = ((k / stops) * 100).toFixed(2);
+    const pct = ((k / stops) * 100).toFixed(3);
     const a = (k / stops) * Math.PI * 2 - Math.PI / 2; // start behind (top)
-    const left = (50 + 42 * Math.cos(a)).toFixed(2);
-    const top = (49 + 20.5 * Math.sin(a)).toFixed(2);
+    const x = (rx * Math.cos(a)).toFixed(3);
+    const y = (ry * Math.sin(a)).toFixed(3);
     const depth = (Math.sin(a) + 1) / 2;               // 0 far/behind, 1 near/front
-    const scale = (0.58 + depth * 0.62).toFixed(3);
-    const z = depth < 0.5 ? 6 : 30;
-    const op = (0.5 + depth * 0.5).toFixed(3);
-    out += `${pct}%{left:${left}%;top:${top}%;transform:translate(-50%,-50%) translateY(var(--y,0px)) scale(calc(${scale} * var(--s,1)));z-index:${z};opacity:${op};}`;
+    const scale = (0.56 + depth * 0.64).toFixed(4);
+    const z = depth < 0.5 ? 6 : 30;                    // crossover happens at the sides
+    const op = (0.55 + depth * 0.45).toFixed(3);
+    out += `${pct}%{transform:translate(-50%,-50%) translate(${x}cqw,${y}cqw) translateY(var(--y,0px)) scale(calc(${scale} * var(--s,1)));z-index:${z};opacity:${op};}`;
   }
   return `@keyframes cosmoOrbit{${out}}`;
 })();
 
-// Per-candle: varied base size + height offset (so they're clearly NOT uniform),
-// a phase delay spreading them evenly around the ring, and an up/down colour.
+// Per-candle: varied size, height offset, AND its own wick/body proportions so
+// every candle looks individually drawn — never a row of clones.
 const ORBIT_ITEMS = Array.from({ length: ORBIT_N }, (_, i) => {
-  const h = 26 + ((i * 17) % 9) * 4.5;        // 26 → 62 px, varied
-  const w = Math.max(5, h * 0.16);
+  const h = 30 + ((i * 17) % 9) * 4.5;        // 30 → 66 px, varied
+  const w = Math.max(6, h * 0.2);             // a touch chunkier for definition
   const y = (((i * 7) % 5) - 2) * 8;          // −16 → 16 px height offset
   const s = 0.82 + ((i * 13) % 6) / 10;       // 0.82 → 1.32 size multiplier
+  const bh = 40 + ((i * 11) % 5) * 6;         // body height 40 → 64 %
+  const bt = Math.min(80 - bh, Math.max(6, (100 - bh) / 2 + (((i * 3) % 3) - 1) * 9)); // body top → asymmetric wicks
   const isUp = (i * 5) % 3 !== 0;
   const delay = -((i / ORBIT_N) * ORBIT_DUR);
-  return { h, w, y, s: Number(s.toFixed(2)), isUp, delay: Number(delay.toFixed(2)) };
+  return { h, w, y, s: Number(s.toFixed(2)), bh, bt: Number(bt.toFixed(1)), isUp, delay: Number(delay.toFixed(2)) };
 });
 
-function CandleShape({ up, down, isUp }: { up: string; down: string; isUp: boolean }) {
+function CandleShape({ up, down, isUp, bt, bh }: { up: string; down: string; isUp: boolean; bt: number; bh: number }) {
   const c = isUp ? up : down;
+  const lit = `color-mix(in oklch, ${c} 55%, white)`;
+  const shade = `color-mix(in oklch, ${c} 82%, black)`;
   return (
     <span className="relative block h-full w-full">
-      <span className="absolute left-1/2 top-0 h-full w-[16%] min-w-[1.5px] -translate-x-1/2 rounded-full" style={{ background: `color-mix(in oklch, ${c} 60%, transparent)` }} />
-      <span className="absolute left-0 w-full rounded-[2px]" style={{
-        top: isUp ? "30%" : "24%", height: "44%",
-        background: `linear-gradient(180deg, color-mix(in oklch, ${c} 62%, white), ${c} 55%, color-mix(in oklch, ${c} 80%, black))`,
-        boxShadow: `0 0 14px -5px ${c}, inset 0 1px 0 color-mix(in oklch, ${c} 40%, white)`,
+      {/* wick — thin, rounded caps, faintly lit */}
+      <span className="absolute left-1/2 top-0 h-full -translate-x-1/2 rounded-full" style={{ width: "14%", minWidth: 1.5, background: `linear-gradient(180deg, ${lit}, color-mix(in oklch, ${c} 55%, transparent))` }} />
+      {/* body — rounded, top-lit gradient, crisp edge + colour glow */}
+      <span className="absolute left-0 w-full rounded-[3px]" style={{
+        top: `${bt}%`, height: `${bh}%`,
+        background: `linear-gradient(165deg, ${lit} 0%, ${c} 42%, ${shade} 100%)`,
+        boxShadow: `0 0 16px -4px ${c}, 0 1px 2px rgba(0,0,0,.35), inset 0 1px 0 color-mix(in oklch, ${c} 30%, white), inset 0 0 0 0.5px color-mix(in oklch, ${c} 55%, white)`,
       }} />
     </span>
   );
@@ -124,9 +134,9 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         @keyframes auraPulse { 0%,100% { opacity:.55; transform:scale(1);} 50% { opacity:.85; transform:scale(1.06);} }
         .aura-pulse { animation: auraPulse 7s ease-in-out infinite; }
         ${ORBIT_KEYFRAMES}
-        .orbit-item { position:absolute; will-change:left,top,transform; animation: cosmoOrbit ${ORBIT_DUR}s linear infinite; transition: filter .3s ease; }
+        .orbit-item { position:absolute; left:50%; top:50%; will-change:transform,opacity; backface-visibility:hidden; animation: cosmoOrbit ${ORBIT_DUR}s linear infinite; transition: filter .3s ease; }
         /* hover: the whole scene reacts — Cosmo lifts & brightens, candles glow */
-        .orbit-stage { transition: transform .5s cubic-bezier(.2,.8,.2,1); }
+        .orbit-stage { container-type: inline-size; transition: transform .5s cubic-bezier(.2,.8,.2,1); }
         .orbit-stage:hover { transform: scale(1.03); }
         .orbit-stage:hover .cosmo-lotus { filter: brightness(1.06) drop-shadow(0 0 26px color-mix(in oklch, ${accent} 45%, transparent)); }
         .orbit-stage:hover .orbit-item { filter: brightness(1.2) saturate(1.1); }
@@ -232,7 +242,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                   {/* candles orbiting him — each rides the shared ellipse keyframe with a phase offset */}
                   {ORBIT_ITEMS.map((it, i) => (
                     <div key={i} className="orbit-item" style={{ height: it.h, width: it.w, animationDelay: `${it.delay}s`, ["--y" as string]: `${it.y}px`, ["--s" as string]: it.s }}>
-                      <CandleShape up={up} down={down} isUp={it.isUp} />
+                      <CandleShape up={up} down={down} isUp={it.isUp} bt={it.bt} bh={it.bh} />
                     </div>
                   ))}
                 </div>
