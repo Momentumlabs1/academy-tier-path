@@ -21,7 +21,8 @@ export function LockedGate({
   if (!locked) return <>{children}</>;
   return (
     <div className="animate-glow relative overflow-hidden rounded-[var(--radius)]">
-      <div className="locked-veil" aria-hidden>{children}</div>
+      {/* @ts-expect-error inert is valid HTML but not yet in this React types version */}
+      <div className="locked-veil" aria-hidden inert="">{children}</div>
       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-black/25 p-4 text-center backdrop-blur-[1px]">
         <span className="flex h-11 w-11 items-center justify-center rounded-full border border-primary/30 bg-primary/15 text-primary animate-pill-pulse">
           <Lock className="h-5 w-5" />

@@ -41,6 +41,18 @@ function RegisterPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmSent, setConfirmSent] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+
+  async function forgotPassword() {
+    const mail = email.trim();
+    if (!mail) { setError("Enter your email above first, then tap “Forgot password?”."); return; }
+    setBusy(true); setError(null);
+    const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/login` : undefined;
+    const { error } = await supabase.auth.resetPasswordForEmail(mail, { redirectTo });
+    setBusy(false);
+    if (error) { setError(error.message); return; }
+    setResetSent(true);
+  }
 
   // Already signed in? Skip straight ahead — no reason to show a register form.
   useEffect(() => {
@@ -63,27 +75,50 @@ function RegisterPage() {
       password,
       options: { data: { app: "academy", referred_by_tenant: ref } },
     });
-    if (error) {
-      // Returning customer entering the same email → sign them in instead of dead-ending.
-      if (/already|registered|exists/i.test(error.message)) {
-        const signIn = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-        setBusy(false);
-        if (signIn.error) { setError("This email is already registered — please check your password."); return; }
-        navigate({ to: "/willkommen" });
+    // Existing account can surface two ways:
+    //  (a) an explicit "already registered" error (Confirm-email OFF), or
+    //  (b) Supabase enumeration protection: NO error, an obfuscated user with an
+    //      EMPTY identities array, and no session. Both mean: this email exists.
+    const looksExisting =
+      (error && /already|registered|exists/i.test(error.message)) ||
+      (!error && data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0);
+
+    if (looksExisting) {
+      // Returning customer → sign them in instead of dead-ending on a fake "confirm sent".
+      const signIn = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      setBusy(false);
+      if (signIn.error) {
+        setError("This email is already registered. Check your password, or use “Forgot password?” below.");
         return;
       }
-      setBusy(false);
-      setError(error.message);
+      const mail = signIn.data.session?.user.email?.toLowerCase();
+      navigate({ to: mail === ADMIN_EMAIL.toLowerCase() ? "/admin" : "/willkommen" });
       return;
     }
+
+    if (error) { setBusy(false); setError(error.message); return; }
     setBusy(false);
-    if (!data.session) { setConfirmSent(true); return; } // Confirm-email ON
+    if (!data.session) { setConfirmSent(true); return; } // genuinely new user, Confirm-email ON
     navigate({ to: "/willkommen" });
   }
 
   return (
     <FunnelShell brand={brand}>
-      {confirmSent ? (
+      {resetSent ? (
+        <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/[0.03] p-7 text-center shadow-2xl">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full" style={{ background: `color-mix(in oklch, ${accent} 18%, transparent)`, color: accent }}>
+            <CheckCircle2 className="h-6 w-6" />
+          </div>
+          <div className="mb-1 font-display text-2xl font-bold">Check your inbox</div>
+          <p className="text-sm text-foreground/60">
+            We&apos;ve sent a password-reset link to <span className="font-semibold text-foreground/80">{email}</span>.
+            Open it to set a new password, then sign in.
+          </p>
+          <button onClick={() => setResetSent(false)} className="mt-4 text-xs text-muted-foreground underline hover:text-foreground">
+            Back to sign up
+          </button>
+        </div>
+      ) : confirmSent ? (
         <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/[0.03] p-7 text-center shadow-2xl">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full" style={{ background: `color-mix(in oklch, ${accent} 18%, transparent)`, color: accent }}>
             <CheckCircle2 className="h-6 w-6" />
@@ -138,13 +173,19 @@ function RegisterPage() {
               Sign up for free
             </button>
 
-            <p className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
-              <ShieldCheck className="h-3.5 w-3.5" style={{ color: accent }} /> No subscription · no fees · cancel anytime
-            </p>
+            <div className="mt-4 flex items-center justify-between gap-2">
+              <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                <ShieldCheck className="h-3.5 w-3.5" style={{ color: accent }} /> No subscription · no fees
+              </p>
+              <button type="button" onClick={forgotPassword} disabled={busy}
+                className="text-[11px] font-medium text-muted-foreground underline underline-offset-2 hover:text-foreground disabled:opacity-60">
+                Forgot password?
+              </button>
+            </div>
           </form>
 
           <p className="mt-4 text-center text-xs text-muted-foreground">
-            Already a member? Just enter your email & password — you&apos;ll be signed in automatically.
+            Already a member? Enter your email &amp; password above — you&apos;ll be signed in automatically.
           </p>
         </div>
       )}

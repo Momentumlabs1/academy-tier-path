@@ -86,14 +86,16 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               >
                 Sign up free <ArrowRight className="h-4 w-4" />
               </button>
-              <a
-                href={tenant.telegramChannel}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold hover:bg-white/10 transition-colors"
-              >
-                Join Telegram
-              </a>
+              {tenant.telegramChannel && tenant.telegramChannel !== "#" && (
+                <a
+                  href={tenant.telegramChannel}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold hover:bg-white/10 transition-colors"
+                >
+                  Join Telegram
+                </a>
+              )}
             </div>
           </div>
 

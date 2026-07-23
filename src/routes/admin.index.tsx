@@ -20,19 +20,25 @@ const QUICK = [
 ] as const;
 
 function AdminOverview() {
-  const { loading, totals } = useAdminStats();
+  const { loading, totals, error } = useAdminStats();
 
   return (
     <div className="space-y-8">
       <AdminPageHeader
         title="Overview"
-        sub={`As of ${new Date().toLocaleDateString("de-DE", { day: "2-digit", month: "short", year: "numeric" })}`}
+        sub={`As of ${new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })}`}
         action={
           <Link to="/admin/structure" className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90">
             View structure <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         }
       />
+
+      {error && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+          Couldn&apos;t load live data — showing what we have. Check the connection and retry.
+        </div>
+      )}
 
       {/* KPI cards — live from Supabase; 0 until real data exists (never fake). */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">

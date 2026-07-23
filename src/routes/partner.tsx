@@ -164,10 +164,19 @@ function PartnerCard({ row }: { row: PartnerRow }) {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => {
-              if (typeof navigator !== "undefined" && navigator.clipboard) {
-                navigator.clipboard.writeText(shareUrl).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500); });
-              }
+            onClick={async () => {
+              const done = () => { setCopied(true); setTimeout(() => setCopied(false), 1500); };
+              try {
+                if (typeof navigator !== "undefined" && navigator.clipboard) {
+                  await navigator.clipboard.writeText(shareUrl); done(); return;
+                }
+              } catch { /* fall through to legacy copy */ }
+              // Fallback for insecure contexts / older browsers: select + execCommand.
+              const ta = document.createElement("textarea");
+              ta.value = shareUrl; ta.style.position = "fixed"; ta.style.opacity = "0";
+              document.body.appendChild(ta); ta.focus(); ta.select();
+              try { document.execCommand("copy"); done(); } catch { /* last resort: leave selected */ }
+              document.body.removeChild(ta);
             }}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90"
           >
@@ -316,6 +325,22 @@ function PartnerLogin({ onDone }: { onDone: () => void }) {
           {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           Sign in
         </button>
+
+        <div className="mt-4 flex items-center justify-between gap-2 text-[11px]">
+          <button
+            type="button"
+            onClick={async () => {
+              if (!email) { setError("Enter your email above first."); return; }
+              const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/partner` : undefined;
+              const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+              setError(error ? error.message : "Password-reset link sent — check your inbox.");
+            }}
+            className="font-medium text-muted-foreground underline underline-offset-2 hover:text-foreground"
+          >
+            Forgot password?
+          </button>
+          <a href="mailto:kontakt@momentumlabs.at" className="text-muted-foreground hover:text-foreground">No login yet? Contact us</a>
+        </div>
       </form>
     </div>
   );

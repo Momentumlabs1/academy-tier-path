@@ -5,7 +5,7 @@ import { adminSignOut } from "@/lib/admin-auth";
 
 const MENU = [
   { to: "/admin", label: "Overview", icon: LayoutDashboard, group: "Main" },
-  { to: "/admin/structure", label: "Struktur", icon: Network, group: "Main" },
+  { to: "/admin/structure", label: "Structure", icon: Network, group: "Main" },
   { to: "/admin/members", label: "Members", icon: Users, group: "Main" },
   { to: "/admin/deposits", label: "Deposits", icon: BarChart2, group: "Main" },
   { to: "/admin/signals", label: "Signal Relay", icon: Radio, group: "Growth" },
@@ -37,7 +37,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-[oklch(0.72_0.2_150)] text-sm font-black text-primary-foreground shadow-[var(--shadow-lime)]">A</span>
           <div>
             <div className="text-sm font-bold leading-tight">Command Center</div>
-            <div className="text-[10px] text-muted-foreground">Agent Trading · Admin</div>
+            <div className="text-[10px] text-muted-foreground">Cosmos Candles · Admin</div>
           </div>
         </div>
 
@@ -73,7 +73,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
         <div className="mt-4 border-t border-white/5 pt-4">
           <button onClick={signOut} className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-foreground/50 transition-colors hover:text-foreground/90">
-            <LogOut className="h-4 w-4" /> Abmelden
+            <LogOut className="h-4 w-4" /> Sign out
           </button>
           <div className="mt-2 flex items-center gap-2.5 rounded-xl bg-white/[0.03] px-3 py-2.5">
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-primary to-[oklch(0.7_0.2_290)] text-[11px] font-bold text-primary-foreground">M</span>
@@ -100,6 +100,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               </Link>
             );
           })}
+          <button onClick={signOut} title="Sign out" aria-label="Sign out"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-foreground/40 hover:text-foreground/70">
+            <LogOut className="h-4 w-4" />
+          </button>
         </div>
       </div>
 

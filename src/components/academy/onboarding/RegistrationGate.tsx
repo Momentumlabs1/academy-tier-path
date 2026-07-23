@@ -43,10 +43,25 @@ export function RegistrationGate({ children }: { children: React.ReactNode }) {
       // Admins bypass the customer funnel entirely.
       if (mail && mail === ADMIN_EMAIL.toLowerCase()) { if (alive) setPhase("authed"); return; }
       decide(data.session);
+    }).catch(() => {
+      // getSession hung/failed (cold start, offline, blocked token refresh):
+      // never trap the user on the spinner — on the root show the public landing,
+      // elsewhere send them to register rather than an infinite "checking".
+      if (!alive) return;
+      if (isRoot) setPhase("landing"); else { setPhase("redirecting"); navigate({ to: "/registrieren" }); }
     });
+    // Safety net: if nothing resolved within 6s, stop the infinite spinner.
+    const t = setTimeout(() => {
+      if (!alive) return;
+      setPhase((p) => {
+        if (p !== "checking") return p;
+        if (!isRoot) navigate({ to: "/registrieren" });
+        return isRoot ? "landing" : "redirecting";
+      });
+    }, 6000);
     // React to sign-out mid-session, and to a sign-in completing elsewhere.
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => decide(session));
-    return () => { alive = false; sub.subscription.unsubscribe(); };
+    return () => { alive = false; clearTimeout(t); sub.subscription.unsubscribe(); };
   }, [navigate, isRoot]);
 
   if (phase === "authed") return <>{children}</>;

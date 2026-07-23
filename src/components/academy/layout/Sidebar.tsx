@@ -1,7 +1,10 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { Bell, BookOpen, Calculator, LayoutDashboard, Radio, Settings, ShieldCheck, Trophy, Unlock } from "lucide-react";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { Bell, BookOpen, Calculator, LayoutDashboard, LogOut, Radio, Settings, ShieldCheck, Trophy, Unlock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMemberState } from "@/hooks/useMemberState";
+import { supabase } from "@/integrations/supabase/client";
+import { isAdminSession } from "@/lib/admin-auth";
 
 const MENU = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -16,6 +19,19 @@ const MENU = [
 export function Sidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const state = useMemberState();
+  const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    isAdminSession().then((v) => { if (alive) setIsAdmin(v); }).catch(() => {});
+    return () => { alive = false; };
+  }, []);
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    navigate({ to: "/", replace: true });
+  }
 
   return (
     <aside className="hidden lg:flex h-[calc(100vh-2rem)] w-[260px] shrink-0 flex-col rounded-[28px] bg-[color:var(--surface-1)] p-5 shadow-[var(--shadow-card)] sticky top-4">
@@ -24,7 +40,7 @@ export function Sidebar() {
           <span className="absolute inset-0 rounded-full bg-primary/30 blur-md" />
           <span className="relative h-5 w-5 rounded-full bg-primary" />
         </span>
-        <span className="font-display text-2xl font-bold tracking-tight">EnterTrade</span>
+        <span className="font-display text-2xl font-bold tracking-tight">Cosmos Candles</span>
       </Link>
 
       <div className="mt-8 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">Menu</div>
@@ -57,13 +73,15 @@ export function Sidebar() {
 
       <div className="mt-auto" />
 
-      {/* Admin shortcut */}
-      <Link
-        to="/admin"
-        className="mb-3 flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-muted-foreground/60 hover:bg-white/5 hover:text-muted-foreground transition-colors"
-      >
-        <ShieldCheck className="h-3.5 w-3.5" /> Admin panel
-      </Link>
+      {/* Admin shortcut — only for the platform admin, never shown to members */}
+      {isAdmin && (
+        <Link
+          to="/admin"
+          className="mb-3 flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-muted-foreground/60 hover:bg-white/5 hover:text-muted-foreground transition-colors"
+        >
+          <ShieldCheck className="h-3.5 w-3.5" /> Admin panel
+        </Link>
+      )}
 
       <div className="px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">Account</div>
       <div className="mt-3 flex items-center gap-3 rounded-2xl bg-white/5 p-3">
@@ -81,6 +99,10 @@ export function Sidebar() {
           <div className="truncate text-sm font-semibold">{state.profile.name || state.profile.email || "Your account"}</div>
           <div className="truncate text-[11px] text-muted-foreground">{state.currentTier?.name ?? "Below Foundation"} Member</div>
         </div>
+        <button onClick={signOut} aria-label="Sign out" title="Sign out"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[color:var(--surface-2)] text-foreground/60 hover:text-foreground">
+          <LogOut className="h-4 w-4" />
+        </button>
       </div>
     </aside>
   );

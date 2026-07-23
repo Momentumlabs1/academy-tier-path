@@ -313,22 +313,27 @@ export function OnboardingJourney() {
   // (invisible to React), so we re-derive off this counter.
   const [tick, setTick] = useState(0);
   const advance = () => setTick((n) => n + 1);
+  // Session fallback if localStorage writes are blocked (private mode / policy):
+  // remembers the last acknowledged amount + whether the intro video was watched,
+  // so dismissing the celebration always sticks for the session.
+  const ackSeen = useRef(0);
+  const videoAck = useRef(false);
 
   const email = state.profile.email;
   const amount = state.lifetimeDeposits;
 
   const stage: Stage = useMemo(() => {
     if (!state.loaded || !email) return "loading";
-    const seen = readSeen(email);
+    const seen = Math.max(readSeen(email), ackSeen.current);
     if (amount > seen) return "celebrate";                 // money arrived (or grew) → party (amount-aware)
-    if (amount <= 0) return readFlag(email, "video") ? "ignite" : "video";
+    if (amount <= 0) return (readFlag(email, "video") || videoAck.current) ? "ignite" : "video";
     if (amount < FOUNDATION_MIN) return "topup";           // partially funded → real-amount strip
     return "done";
   }, [state.loaded, email, amount, tick]);
 
   if (stage === "loading" || stage === "done") return null;
   if (stage === "video") {
-    return <WelcomeVideoCard accent={accent} onDone={() => { writeFlag(email, "video"); advance(); }} />;
+    return <WelcomeVideoCard accent={accent} onDone={() => { writeFlag(email, "video"); videoAck.current = true; advance(); }} />;
   }
   if (stage === "ignite") return <IgniteStrip accent={accent} />;
   if (stage === "topup") return <TopupStrip accent={accent} amount={amount} />;
@@ -338,7 +343,7 @@ export function OnboardingJourney() {
       amount={amount}
       prevAmount={readSeen(email)}
       tierName={state.currentTier?.name}
-      onClose={() => { writeSeen(email, amount); writeFlag(email, "video"); advance(); }}
+      onClose={() => { writeSeen(email, amount); writeFlag(email, "video"); ackSeen.current = amount; videoAck.current = true; advance(); }}
     />
   );
 }
