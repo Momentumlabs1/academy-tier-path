@@ -33,15 +33,23 @@ const TICKER = [
   { s: "GBP/JPY", p: "199.84", up: true }, { s: "SPX500", p: "5,268", up: false },
 ];
 
-// A deterministic up-trending candle series — SSR-safe (no random). Each entry:
-// [bottom%, height%, up?] where % is share of the field height.
-const CANDLES: [number, number, boolean][] = [
-  [8, 10, true], [12, 8, false], [10, 16, true], [20, 12, true], [26, 9, false],
-  [24, 20, true], [36, 14, true], [44, 10, false], [40, 22, true], [52, 16, true],
-  [60, 11, false], [56, 24, true], [68, 15, true], [74, 12, false], [70, 26, true],
-  [82, 18, true], [88, 10, false], [84, 22, true], [92, 20, true], [86, 14, false],
-  [90, 28, true], [96, 16, true], [88, 12, false], [94, 24, true],
+// Candles orbiting the meditating Cosmo — [top%, left%, up?, scale, delay(s)].
+const ORBIT: [number, number, boolean, number, number][] = [
+  [2, 44, true, 1.15, 0], [12, 72, false, 0.85, 0.6], [30, 90, true, 1, 1.2],
+  [56, 92, true, 0.9, 1.8], [80, 76, false, 1.05, 0.4], [90, 46, true, 1.2, 1.0],
+  [80, 16, true, 0.85, 1.5], [54, 4, false, 1, 0.9], [28, 6, true, 1.1, 2.1],
+  [12, 22, true, 0.8, 1.7],
 ];
+
+function CandleGlyph({ up, down, isUp, scale }: { up: string; down: string; isUp: boolean; scale: number }) {
+  const c = isUp ? up : down;
+  return (
+    <span className="relative block" style={{ width: 12 * scale, height: 40 * scale }}>
+      <span className="absolute left-1/2 top-0 -translate-x-1/2 rounded" style={{ width: 2, height: "100%", background: `color-mix(in oklch, ${c} 55%, transparent)` }} />
+      <span className="absolute left-0 rounded-[2px]" style={{ top: `${isUp ? 24 : 18}%`, height: "46%", width: "100%", background: c, boxShadow: `0 0 12px -1px ${c}` }} />
+    </span>
+  );
+}
 
 export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
   const navigate = useNavigate();
@@ -76,8 +84,13 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         .ticker-track { animation: tickerScroll 34s linear infinite; }
         @keyframes twinkle { 0%,100% { opacity:.15; } 50% { opacity:.8; } }
         .twinkle { animation: twinkle 4s ease-in-out infinite; }
+        @keyframes spinSlow { to { transform: rotate(360deg); } }
+        .spin-slow { animation: spinSlow 48s linear infinite; }
+        .spin-rev { animation: spinSlow 60s linear infinite reverse; }
+        @keyframes auraPulse { 0%,100% { opacity:.55; transform:scale(1);} 50% { opacity:.85; transform:scale(1.06);} }
+        .aura-pulse { animation: auraPulse 7s ease-in-out infinite; }
         @media (prefers-reduced-motion: reduce) {
-          .cosmo-float,.cosmo-bob,.chip-float,.candle-grow,.ticker-track,.twinkle { animation: none !important; transform: none !important; }
+          .cosmo-float,.cosmo-bob,.chip-float,.candle-grow,.ticker-track,.twinkle,.spin-slow,.spin-rev,.aura-pulse { animation: none !important; }
         }
       `}</style>
 
@@ -119,7 +132,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           ))}
         </div>
 
-        <div className="mx-auto grid max-w-6xl items-center gap-6 px-4 pb-4 pt-14 sm:px-8 lg:grid-cols-[1.05fr_0.95fr] lg:pt-20">
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 pb-16 pt-12 sm:px-8 lg:grid-cols-[1.02fr_0.98fr] lg:gap-14 lg:pb-24 lg:pt-16">
           {/* Left: copy */}
           <div className="relative z-10 text-center lg:text-left">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
@@ -127,12 +140,12 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               {showCosmo ? "Cosmos Candles Academy" : `Powered by Cosmos Candles`}
             </div>
 
-            <h1 className="font-display text-5xl font-black leading-[0.95] tracking-tight sm:text-6xl lg:text-7xl">
+            <h1 className="font-display text-[2.75rem] font-black leading-[0.95] tracking-tight sm:text-6xl lg:text-[4.25rem]">
               {showCosmo ? (
                 <>Learn to trade<br />the <span style={{ color: primary }}>whole cosmos.</span></>
               ) : (tenant.headline ?? tenant.tagline)}
             </h1>
-            <p className="mx-auto mt-5 max-w-xl text-base text-white/65 sm:text-lg lg:mx-0">
+            <p className="mx-auto mt-5 max-w-lg text-base text-white/65 sm:text-lg lg:mx-0">
               {showCosmo
                 ? "Live signals, a course that starts from zero and pro orderflow tools — free. Cosmo reads every candle with you, from your first trade to your first funded month."
                 : (tenant.subhead ?? tenant.description)}
@@ -159,42 +172,47 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
             </div>
           </div>
 
-          {/* Right: Cosmo standing in his candle-cosmos */}
+          {/* Right: Cosmo floating at the centre of his own cosmos, individual
+              chart candles orbiting him. (Swap cosmo-full.png for the meditating
+              cross-legged render when it's produced — same slot.) */}
           {heroHasMascot && (
-            <div className="relative z-10 mx-auto flex w-full max-w-[440px] items-end justify-center">
-              <div className="absolute bottom-4 left-1/2 h-[58%] w-[80%] -translate-x-1/2 rounded-full blur-[80px]" style={{ background: `color-mix(in oklch, ${accent} 55%, transparent)` }} aria-hidden />
+            <div className="relative z-10 mx-auto w-full max-w-[500px]">
               {showCosmo ? (
-                <>
-                  <div className="chip-float absolute -left-1 top-4 z-20 flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/50 px-2.5 py-1.5 text-[11px] font-bold shadow-xl backdrop-blur" style={{ color: up }}><TrendingUp className="h-3.5 w-3.5" /> XAU +1.4%</div>
-                  <div className="chip-float absolute right-0 top-28 z-20 flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/50 px-2.5 py-1.5 text-[11px] font-bold text-white/85 shadow-xl backdrop-blur" style={{ animationDelay:"1.3s" }}><Radio className="h-3.5 w-3.5" style={{ color: primary }} /> Signal live</div>
-                  <div className="chip-float absolute bottom-24 -left-2 z-20 flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/50 px-2.5 py-1.5 text-[11px] font-bold shadow-xl backdrop-blur" style={{ color: up, animationDelay:"2.2s" }}><CheckCircle2 className="h-3.5 w-3.5" /> TP2 hit</div>
-                  <img src="/cosmo/cosmo-full.png" alt="Cosmo, the Cosmos Candles Academy guide" className="cosmo-float relative z-10 h-auto w-full max-w-full object-contain drop-shadow-2xl" />
-                  {/* the lime coach badge — Cosmo's signature */}
-                  <div className="absolute -bottom-1 left-1/2 z-30 -translate-x-1/2">
-                    <span className="inline-flex items-center gap-1.5 rounded-full border bg-black/70 px-3 py-1 text-[11px] font-black uppercase tracking-[0.15em] backdrop-blur" style={{ borderColor: primary, color: primary, boxShadow:`0 0 24px -6px ${primary}` }}>Cosmo · your guide</span>
+                <div className="relative mx-auto aspect-square w-full">
+                  {/* lotus aura */}
+                  <div className="aura-pulse absolute left-1/2 top-1/2 h-[62%] w-[62%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[60px]" style={{ background:`color-mix(in oklch, ${accent} 60%, transparent)` }} aria-hidden />
+                  <div className="absolute left-1/2 top-1/2 h-[40%] w-[40%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[50px]" style={{ background:`color-mix(in oklch, ${primary} 34%, transparent)` }} aria-hidden />
+                  {/* orbit rings */}
+                  <div className="spin-slow absolute left-1/2 top-1/2 h-[86%] w-[86%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-dashed border-white/10" aria-hidden />
+                  <div className="spin-rev absolute left-1/2 top-1/2 h-[64%] w-[64%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/[0.06]" aria-hidden />
+
+                  {/* orbiting candles */}
+                  {ORBIT.map(([top, left, isUp, scale, delay], i) => (
+                    <div key={i} className="chip-float absolute z-20 -translate-x-1/2 -translate-y-1/2" style={{ top:`${top}%`, left:`${left}%`, animationDelay:`${delay}s` }}>
+                      <CandleGlyph up={up} down={down} isUp={isUp} scale={scale} />
+                    </div>
+                  ))}
+
+                  {/* info chips further out */}
+                  <div className="chip-float absolute left-[2%] top-[30%] z-30 flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/60 px-2.5 py-1.5 text-[11px] font-bold shadow-xl backdrop-blur" style={{ color: up }}><TrendingUp className="h-3.5 w-3.5" /> XAU +1.4%</div>
+                  <div className="chip-float absolute right-[0%] top-[54%] z-30 flex items-center gap-1.5 rounded-xl border border-white/10 bg-black/60 px-2.5 py-1.5 text-[11px] font-bold text-white/85 shadow-xl backdrop-blur" style={{ animationDelay:"1.4s" }}><Radio className="h-3.5 w-3.5" style={{ color: primary }} /> Signal live</div>
+
+                  {/* Cosmo, floating & centred */}
+                  <img src="/cosmo/cosmo-full.png" alt="Cosmo, the Cosmos Candles Academy guide"
+                    className="cosmo-float absolute left-1/2 top-1/2 z-20 h-[82%] w-auto -translate-x-1/2 -translate-y-1/2 object-contain drop-shadow-2xl" />
+
+                  <div className="absolute bottom-[2%] left-1/2 z-30 -translate-x-1/2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border bg-[#070a12]/90 px-3 py-1 text-[11px] font-black uppercase tracking-[0.15em] backdrop-blur" style={{ borderColor: primary, color: primary, boxShadow:`0 0 24px -6px ${primary}` }}>Cosmo · your guide</span>
                   </div>
-                </>
+                </div>
               ) : (
-                <div className="relative aspect-square w-full max-w-[360px] overflow-hidden rounded-full ring-4 ring-white/10 shadow-2xl">
-                  <img src="/zeko-hero.png" alt="Zeko" className="h-full w-full scale-[1.35] object-cover object-top" />
+                <div className="relative mx-auto aspect-square w-full max-w-[360px] overflow-hidden rounded-full ring-4 ring-white/10 shadow-2xl">
+                  <div className="absolute inset-2 rounded-full blur-3xl" style={{ background:`color-mix(in oklch, ${primary} 40%, transparent)` }} aria-hidden />
+                  <img src="/zeko-hero.png" alt="Zeko" className="relative h-full w-full scale-[1.35] object-cover object-top" />
                 </div>
               )}
             </div>
           )}
-        </div>
-
-        {/* candle field — the literal "Cosmos Candles" floor the whole hero rests on */}
-        <div aria-hidden className="relative mt-4 h-40 w-full sm:h-52">
-          <div className="absolute inset-0 opacity-[0.06]" style={{ backgroundImage:"linear-gradient(rgba(255,255,255,.7) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.7) 1px,transparent 1px)", backgroundSize:"52px 52px", maskImage:"linear-gradient(to top,black,transparent)" }} />
-          <div className="mx-auto flex h-full max-w-6xl items-end justify-between gap-[0.6%] px-4 sm:px-8">
-            {CANDLES.map(([bottom, height, isUp], i) => (
-              <div key={i} className="candle-grow relative flex-1" style={{ height:`${bottom}%`, animationDelay:`${i*0.03}s` }}>
-                <span className="absolute bottom-0 left-1/2 w-[2px] -translate-x-1/2 rounded" style={{ height:"100%", background:`color-mix(in oklch, ${isUp?up:down} 45%, transparent)` }} />
-                <span className="absolute left-1/2 w-full -translate-x-1/2 rounded-[2px]" style={{ bottom:`${Math.max(4, bottom-height)}%`, height:`${height}%`, background: isUp?up:down, boxShadow:`0 0 12px -2px ${isUp?up:down}` }} />
-              </div>
-            ))}
-          </div>
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#05070e] to-transparent" />
         </div>
       </section>
 
