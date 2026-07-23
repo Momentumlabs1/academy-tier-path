@@ -30,6 +30,29 @@ function greeting() {
   return "Good evening";
 }
 
+/** The member's own identity avatar — initials on a colour derived from their
+ *  name, so it feels personal. (Cosmo is the guide, never the user's face.) */
+function UserAvatar({ name, email }: { name: string; email: string }) {
+  const base = (name || email || "Trader").trim();
+  const parts = base.split(/[ @._-]+/).filter(Boolean);
+  const initials = (parts.length > 1 ? parts[0][0] + parts[1][0] : base.slice(0, 2)).toUpperCase();
+  let hash = 0;
+  for (let i = 0; i < base.length; i++) hash = (hash * 31 + base.charCodeAt(i)) >>> 0;
+  const hue = hash % 360;
+  return (
+    <div className="relative shrink-0">
+      <div className="pointer-events-none absolute inset-0 -m-1.5 rounded-full blur-xl" style={{ background: `hsl(${hue} 70% 50% / 0.35)` }} aria-hidden />
+      <div
+        className="relative flex h-14 w-14 items-center justify-center rounded-full font-display text-lg font-black text-white ring-2 ring-white/15 sm:h-16 sm:w-16 sm:text-xl"
+        style={{ background: `linear-gradient(135deg, hsl(${hue} 68% 48%), hsl(${(hue + 45) % 360} 70% 38%))` }}
+        aria-hidden
+      >
+        {initials}
+      </div>
+    </div>
+  );
+}
+
 const QUICK_ACTIONS = [
   { label: "Open Telegram", sub: "Live signals", icon: MessageSquare, to: "/signals", accent: "oklch(0.78 0.16 150)" },
   { label: "Next lesson", sub: "Continue learning", icon: BookOpen, to: "/lessons", accent: "oklch(0.9 0.2 140)" },
@@ -74,19 +97,8 @@ function Dashboard() {
         <div className="pointer-events-none absolute -bottom-12 left-8 h-40 w-40 rounded-full bg-[oklch(0.7_0.18_270)]/15 blur-3xl" />
 
         <div className="relative flex items-start gap-4 sm:gap-5">
-          {/* Cosmo — the face of the Academy, greeting you by name */}
-          <div className="relative hidden shrink-0 sm:block">
-            <div
-              className="pointer-events-none absolute inset-0 -m-2 rounded-full blur-2xl"
-              style={{ background: "radial-gradient(circle, color-mix(in oklch, #75B9F5 55%, transparent), transparent 70%)" }}
-              aria-hidden
-            />
-            <img
-              src="/cosmo/cosmo-avatar.png"
-              alt="Cosmo, your Academy guide"
-              className="cosmo-float relative h-20 w-20 max-w-full object-contain drop-shadow-xl"
-            />
-          </div>
+          {/* The member's own avatar — their identity, not the mascot. */}
+          <UserAvatar name={state.profile.name} email={state.profile.email} />
 
           <div className="min-w-0 flex-1">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -96,9 +108,17 @@ function Dashboard() {
               {(state.profile.name || state.profile.email).split(/[ @]/)[0] || "Trader"}
               <span className="ml-1.5 inline-block" aria-hidden>👋</span>
             </h1>
-            <p className="mt-1.5 max-w-[52ch] text-sm text-muted-foreground">
-              Cosmo has your next moves ready. Jump back into your lessons, signals and tools below.
-            </p>
+
+            {/* Cosmo speaks as your guide — clearly labelled, never your face. */}
+            <div className="mt-3 flex items-center gap-3 rounded-2xl border border-white/8 bg-white/[0.03] px-3 py-2 sm:max-w-[46ch]">
+              <div className="relative shrink-0">
+                <div className="pointer-events-none absolute inset-0 -m-1 rounded-full blur-lg" style={{ background: "radial-gradient(circle, color-mix(in oklch, #75B9F5 60%, transparent), transparent 70%)" }} aria-hidden />
+                <img src="/cosmo/cosmo-head.png" alt="Cosmo" className="cosmo-float relative h-9 w-9 rounded-full object-contain ring-1 ring-primary/40" />
+              </div>
+              <p className="text-sm leading-snug text-foreground/75">
+                <span className="font-semibold text-primary">Cosmo</span> has your next moves ready — jump back into your lessons, signals & tools below.
+              </p>
+            </div>
           </div>
         </div>
 
