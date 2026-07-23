@@ -24,13 +24,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import {
-  ArrowDown, ArrowRight, BookOpen, Calculator, PartyPopper, PiggyBank, PlayCircle, Radio, Send, Sparkles, X,
+  ArrowRight, BookOpen, Calculator, Loader2, PartyPopper, PiggyBank, PlayCircle, Radio, Send, Sparkles, X,
 } from "lucide-react";
 import { useMemberRefresh, useMemberState } from "@/hooks/useMemberState";
 import { usePartnerBrand, COSMO } from "@/lib/partner-brand";
 import { TIERS, tierForDeposit } from "@/lib/academy-data";
 import { PRODUCTS } from "@/lib/products";
 import { BROKER, depositUrl } from "@/lib/broker";
+import { markDepositClick, depositClickedRecently, clearDepositClick } from "@/lib/deposit-intent";
 import { formatMoney } from "@/lib/format";
 import { Card } from "@/components/academy/primitives/Card";
 import { cn } from "@/lib/utils";
@@ -52,7 +53,7 @@ const writeSeen = (email: string, amount: number) => {
   try { localStorage.setItem(k(email, "seen"), String(amount)); } catch { /* private mode */ }
 };
 
-type Stage = "loading" | "video" | "ignite" | "topup" | "celebrate" | "done";
+type Stage = "loading" | "video" | "ignite" | "verifying" | "topup" | "celebrate" | "done";
 
 /* ── deposit watcher (poll + focus) ─────────────────────────────────────────── */
 function useDepositWatcher(active: boolean) {
@@ -107,27 +108,54 @@ function WelcomeVideoCard({ accent, onDone }: { accent: string; onDone: () => vo
 }
 
 /* ── Stage 2a: €0 ignite strip ──────────────────────────────────────────────── */
-function IgniteStrip({ accent }: { accent: string }) {
+function IgniteStrip({ accent, href, onDeposit }: { accent: string; href: string; onDeposit: () => void }) {
   useDepositWatcher(true);
   return (
-    <div className="flex items-center gap-3 rounded-2xl border px-4 py-3" style={{ borderColor: `color-mix(in oklch, ${accent} 40%, transparent)`, background: `color-mix(in oklch, ${accent} 8%, transparent)` }}>
+    <div className="flex flex-col gap-3 rounded-2xl border px-4 py-3.5 sm:flex-row sm:items-center" style={{ borderColor: `color-mix(in oklch, ${accent} 40%, transparent)`, background: `color-mix(in oklch, ${accent} 8%, transparent)` }}>
       <span className="relative flex h-2.5 w-2.5 shrink-0">
         <span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-70" style={{ background: accent }} />
         <span className="relative inline-flex h-2.5 w-2.5 rounded-full" style={{ background: accent }} />
       </span>
       <p className="min-w-0 flex-1 text-sm">
         <span className="font-semibold">Next step:</span>{" "}
-        <span className="text-foreground/75">Make your first deposit of {formatMoney(FOUNDATION_MIN, "€")}+ at {BROKER.name} — see the deposit path below. The moment it lands, everything here unlocks automatically.</span>
+        <span className="text-foreground/75">Make your first deposit of {formatMoney(FOUNDATION_MIN, "€")}+ at {BROKER.name}. The moment it lands, everything here unlocks automatically.</span>
       </p>
-      <ArrowDown className="h-4 w-4 shrink-0 animate-bounce" style={{ color: accent }} />
+      <a href={href} target="_blank" rel="noopener noreferrer" onClick={onDeposit} className="shrink-0 rounded-full px-4 py-2 text-xs font-bold text-[#08111a] transition-transform hover:scale-[1.03]" style={{ background: accent }}>
+        Deposit at {BROKER.name} →
+      </a>
+    </div>
+  );
+}
+
+/* ── Stage 2a·II: "we're verifying your deposit…" — after the member clicks
+   Deposit, before the broker sync books it. The watcher flips this to the
+   celebration automatically once members.deposit > 0. ─────────────────────── */
+function VerifyingStrip({ accent, href, onDeposit }: { accent: string; href: string; onDeposit: () => void }) {
+  useDepositWatcher(true);
+  return (
+    <div className="rounded-2xl border px-4 py-3.5" style={{ borderColor: `color-mix(in oklch, ${accent} 45%, transparent)`, background: `color-mix(in oklch, ${accent} 8%, transparent)` }}>
+      <div className="flex items-center gap-3">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: `color-mix(in oklch, ${accent} 16%, transparent)`, color: accent }}>
+          <Loader2 className="h-4 w-4 animate-spin" />
+        </span>
+        <p className="min-w-0 flex-1 text-sm">
+          <span className="font-bold">Verifying your deposit…</span>{" "}
+          <span className="text-foreground/75">The moment {BROKER.name} confirms it, everything unlocks here automatically — usually within a few minutes. You'll get a confirmation email too.</span>
+        </p>
+      </div>
+      <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-white/10">
+        <div className="h-full w-1/3 animate-pulse rounded-full" style={{ background: accent }} />
+      </div>
+      <p className="mt-2 text-[11px] text-foreground/50">
+        Not deposited yet? <a href={href} target="_blank" rel="noopener noreferrer" onClick={onDeposit} className="underline hover:text-foreground">Open {BROKER.name} →</a>
+      </p>
     </div>
   );
 }
 
 /* ── Stage 2b: partial-deposit strip (real amount, progress to Foundation) ──── */
-function TopupStrip({ accent, amount }: { accent: string; amount: number }) {
+function TopupStrip({ accent, amount, href, onDeposit }: { accent: string; amount: number; href: string; onDeposit: () => void }) {
   useDepositWatcher(true);
-  const { memberId } = useMemberState();
   const missing = Math.max(0, FOUNDATION_MIN - amount);
   const pct = Math.min(100, Math.round((amount / FOUNDATION_MIN) * 100));
   return (
@@ -140,7 +168,7 @@ function TopupStrip({ accent, amount }: { accent: string; amount: number }) {
           <span className="font-bold">{formatMoney(amount, "€")} of {formatMoney(FOUNDATION_MIN, "€")}</span>{" "}
           <span className="text-foreground/75">— only <b style={{ color: accent }}>{formatMoney(missing, "€")}</b> to go until Foundation (signals, lessons & tools).</span>
         </p>
-        <a href={depositUrl(memberId)} target="_blank" rel="noopener noreferrer" className="shrink-0 rounded-full px-4 py-2 text-xs font-bold text-[#08111a] transition-transform hover:scale-[1.03]" style={{ background: accent }}>
+        <a href={href} target="_blank" rel="noopener noreferrer" onClick={onDeposit} className="shrink-0 rounded-full px-4 py-2 text-xs font-bold text-[#08111a] transition-transform hover:scale-[1.03]" style={{ background: accent }}>
           Top up at {BROKER.name} →
         </a>
       </div>
@@ -179,10 +207,9 @@ function Confetti({ accent, count = 56 }: { accent: string; count?: number }) {
 
 const KIND_ICON = { telegram: Send, lessons: BookOpen, page: Sparkles, service: Radio } as const;
 
-function CelebrationOverlay({ accent, amount, prevAmount, tierName, onClose }: {
-  accent: string; amount: number; prevAmount: number; tierName: string | undefined; onClose: () => void;
+function CelebrationOverlay({ accent, amount, href, onDeposit, prevAmount, tierName, onClose }: {
+  accent: string; amount: number; href: string; onDeposit: () => void; prevAmount: number; tierName: string | undefined; onClose: () => void;
 }) {
-  const { memberId } = useMemberState();
   const full = amount >= FOUNDATION_MIN;
   const missing = Math.max(0, FOUNDATION_MIN - amount);
   const pct = Math.min(100, Math.round((amount / FOUNDATION_MIN) * 100));
@@ -281,7 +308,7 @@ function CelebrationOverlay({ accent, amount, prevAmount, tierName, onClose }: {
               ))}
             </div>
             <div className="mt-6 flex flex-wrap gap-3">
-              <a href={depositUrl(memberId)} target="_blank" rel="noopener noreferrer" onClick={close} className="inline-flex flex-1 items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-[#08111a] transition-transform hover:scale-[1.02]" style={{ background: accent }}>
+              <a href={href} target="_blank" rel="noopener noreferrer" onClick={() => { onDeposit(); close(); }} className="inline-flex flex-1 items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-[#08111a] transition-transform hover:scale-[1.02]" style={{ background: accent }}>
                 <Sparkles className="h-4 w-4" /> Top up {formatMoney(missing, "€")} at {BROKER.name}
               </a>
               <button onClick={close} className="rounded-full border border-white/15 px-5 py-3 text-sm font-semibold text-foreground/80 hover:bg-white/5">
@@ -323,29 +350,44 @@ export function OnboardingJourney() {
 
   const email = state.profile.email;
   const amount = state.lifetimeDeposits;
+  // A partner-referred member deposits via the PARTNER's broker link (so TradeQuo
+  // attributes the client to them); master members use the default IB link.
+  const brokerUrl = brand?.brokerUrl || BROKER.url;
 
   const stage: Stage = useMemo(() => {
     if (!state.loaded || !email) return "loading";
     const seen = Math.max(readSeen(email), ackSeen.current);
     if (amount > seen) return "celebrate";                 // money arrived (or grew) → party (amount-aware)
-    if (amount <= 0) return (readFlag(email, "video") || videoAck.current) ? "ignite" : "video";
+    if (amount <= 0) {
+      const introDone = readFlag(email, "video") || videoAck.current;
+      if (!introDone) return "video";
+      // Clicked "Deposit" but nothing booked yet → show the verifying state.
+      if (depositClickedRecently(email)) return "verifying";
+      return "ignite";
+    }
     if (amount < FOUNDATION_MIN) return "topup";           // partially funded → real-amount strip
     return "done";
   }, [state.loaded, email, amount, tick]);
+
+  const href = depositUrl(state.memberId, brokerUrl);
+  const onDeposit = () => { markDepositClick(email); advance(); };
 
   if (stage === "loading" || stage === "done") return null;
   if (stage === "video") {
     return <WelcomeVideoCard accent={accent} onDone={() => { writeFlag(email, "video"); videoAck.current = true; advance(); }} />;
   }
-  if (stage === "ignite") return <IgniteStrip accent={accent} />;
-  if (stage === "topup") return <TopupStrip accent={accent} amount={amount} />;
+  if (stage === "ignite") return <IgniteStrip accent={accent} href={href} onDeposit={onDeposit} />;
+  if (stage === "verifying") return <VerifyingStrip accent={accent} href={href} onDeposit={onDeposit} />;
+  if (stage === "topup") return <TopupStrip accent={accent} amount={amount} href={href} onDeposit={onDeposit} />;
   return (
     <CelebrationOverlay
       accent={accent}
       amount={amount}
+      href={href}
+      onDeposit={onDeposit}
       prevAmount={readSeen(email)}
       tierName={state.currentTier?.name}
-      onClose={() => { writeSeen(email, amount); writeFlag(email, "video"); ackSeen.current = amount; videoAck.current = true; advance(); }}
+      onClose={() => { writeSeen(email, amount); writeFlag(email, "video"); clearDepositClick(email); ackSeen.current = amount; videoAck.current = true; advance(); }}
     />
   );
 }

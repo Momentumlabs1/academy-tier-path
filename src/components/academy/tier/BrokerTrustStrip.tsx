@@ -11,6 +11,8 @@
 import { ArrowUpRight, BadgeCheck, ShieldCheck, Star, Trophy } from "lucide-react";
 import { BROKER, depositUrl } from "@/lib/broker";
 import { useMemberState } from "@/hooks/useMemberState";
+import { usePartnerBrand } from "@/lib/partner-brand";
+import { markDepositClick } from "@/lib/deposit-intent";
 import { cn } from "@/lib/utils";
 
 const LOGO = "/brokers/tradequo.svg";
@@ -34,10 +36,12 @@ function Pills({ center = false, dim = false }: { center?: boolean; dim?: boolea
 }
 
 function DepositCta({ className }: { className?: string }) {
-  const { memberId } = useMemberState();
+  const { memberId, profile } = useMemberState();
+  const brand = usePartnerBrand();
   return (
     <a
-      href={depositUrl(memberId)}
+      href={depositUrl(memberId, brand?.brokerUrl || BROKER.url)}
+      onClick={() => markDepositClick(profile.email)}
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
