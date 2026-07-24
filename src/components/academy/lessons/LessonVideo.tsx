@@ -14,6 +14,7 @@ import { useSignedVideoUrl } from "@/hooks/useSignedVideoUrl";
 export function LessonVideo({
   youtubeId,
   videoObject,
+  poster,
   title,
   playing,
   onPlay,
@@ -22,6 +23,7 @@ export function LessonVideo({
 }: {
   youtubeId: string;
   videoObject?: string;
+  poster?: string;
   title: string;
   playing: boolean;
   onPlay: () => void;
@@ -42,7 +44,9 @@ export function LessonVideo({
     <div className="relative aspect-video w-full overflow-hidden rounded-[var(--radius)] bg-black shadow-[var(--shadow-card)]">
       {locked ? (
         <>
-          {isSupabase ? (
+          {poster ? (
+            <img src={poster} alt="" className="absolute inset-0 h-full w-full scale-105 object-cover opacity-30 blur-sm" />
+          ) : isSupabase ? (
             <div className="absolute inset-0" style={{ background: brandedPoster }} />
           ) : (
             <img src={ytThumb} alt="" className="absolute inset-0 h-full w-full scale-105 object-cover opacity-30 blur-sm" />
@@ -87,7 +91,13 @@ export function LessonVideo({
         />
       ) : (
         <button onClick={onPlay} className="group absolute inset-0 h-full w-full" aria-label={`Play: ${title}`}>
-          {isSupabase ? (
+          {poster ? (
+            <img
+              src={poster}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+          ) : isSupabase ? (
             <div className="absolute inset-0" style={{ background: brandedPoster }} />
           ) : (
             <img

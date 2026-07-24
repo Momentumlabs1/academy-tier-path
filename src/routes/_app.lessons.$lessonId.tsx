@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_app/lessons/$lessonId")({
   },
   head: ({ loaderData }) => ({
     meta: [
-      { title: `${loaderData?.lesson.title ?? "Lesson"} — Agent Trading Academy` },
+      { title: `${loaderData?.lesson.title ?? "Lesson"} — Cosmos Candles Academy` },
       { name: "description", content: loaderData?.lesson.description ?? "Lesson detail." },
     ],
   }),
@@ -57,6 +57,7 @@ function LessonDetail() {
       <LessonVideo
         youtubeId={lesson.youtubeId}
         videoObject={lesson.videoObject}
+        poster={lesson.poster}
         title={lesson.title}
         playing={playing}
         onPlay={() => setPlaying(true)}

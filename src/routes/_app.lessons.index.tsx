@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { PlayCircle, Search } from "lucide-react";
-import { LESSONS, TIERS } from "@/lib/academy-data";
+import { LESSONS, TIERS, lessonThumb } from "@/lib/academy-data";
 import { LessonGroup } from "@/components/academy/lessons/LessonGroup";
 import { useMemberState } from "@/hooks/useMemberState";
 import { useCompletedLessons } from "@/hooks/useCompletedLessons";
@@ -33,7 +33,7 @@ function ContinueHero() {
       className="group relative block overflow-hidden rounded-[var(--radius)] shadow-[var(--shadow-card)]"
     >
       <img
-        src={`https://i.ytimg.com/vi/${next.youtubeId}/maxresdefault.jpg`}
+        src={lessonThumb(next)}
         alt=""
         className="absolute inset-0 h-full w-full object-cover opacity-50 transition-transform duration-500 group-hover:scale-105"
       />

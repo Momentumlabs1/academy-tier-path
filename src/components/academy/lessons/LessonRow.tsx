@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { PillValue } from "../primitives/PillValue";
 import { TierTag } from "../primitives/TierTag";
-import { TIERS, type Lesson } from "@/lib/academy-data";
+import { TIERS, lessonThumb, type Lesson } from "@/lib/academy-data";
 import { useMemberState } from "@/hooks/useMemberState";
 import { useCompletedLessons } from "@/hooks/useCompletedLessons";
 import { CheckCircle2, Lock, PlayCircle } from "lucide-react";
@@ -26,7 +26,7 @@ export function LessonRow({ lesson }: { lesson: Lesson }) {
       {/* Video thumbnail */}
       <div className="relative hidden h-16 w-28 shrink-0 overflow-hidden rounded-xl bg-black sm:block">
         <img
-          src={`https://i.ytimg.com/vi/${lesson.youtubeId}/mqdefault.jpg`}
+          src={lessonThumb(lesson, "mq")}
           alt=""
           loading="lazy"
           className={cn("h-full w-full object-cover transition-transform duration-300 group-hover:scale-105", locked && "opacity-40 blur-[1px]")}

@@ -46,8 +46,14 @@ function SignalTutorial({ accent }: { accent: string }) {
             aria-label="Play video"
             style={{ background: `linear-gradient(160deg, ${COSMO.bgFrom}, ${COSMO.bgTo})` }}
           >
+            <img
+              src="/posters/copysignals.jpg"
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+            <span className="absolute inset-0 bg-black/25" />
             <span className="absolute inset-0 flex items-center justify-center">
-              <PlayCircle className="h-14 w-14 text-white/70 transition-transform group-hover:scale-110" />
+              <PlayCircle className="h-14 w-14 text-white/80 drop-shadow transition-transform group-hover:scale-110" />
             </span>
           </button>
         )}
