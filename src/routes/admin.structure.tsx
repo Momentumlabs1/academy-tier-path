@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { AdminPageHeader, AdminKpiCard } from "@/components/academy/admin/AdminShell";
 import { CreatePartnerForm } from "@/components/academy/admin/CreatePartnerForm";
+import { PartnerAdminAccess } from "@/components/academy/admin/PartnerAdminAccess";
 import { useAdminStats } from "@/hooks/useAdminStats";
 import { formatMoney } from "@/lib/format";
 import {
@@ -110,6 +111,7 @@ function AdminStructure() {
                         </Link>
                       </div>
                       {p.members === 0 && <div className="mt-2 text-xs text-muted-foreground">No members under this brand yet.</div>}
+                      <PartnerAdminAccess slug={p.slug} />
                     </div>
                   )}
                 </div>

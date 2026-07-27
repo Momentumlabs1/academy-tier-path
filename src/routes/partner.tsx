@@ -22,7 +22,7 @@ export const Route = createFileRoute("/partner")({
   component: PartnerPortal,
 });
 
-interface PartnerRow {
+export interface PartnerRow {
   tenant_id: string;
   slug: string;
   name: string;
@@ -125,7 +125,7 @@ function PartnerPortal() {
   );
 }
 
-function PartnerCard({ row }: { row: PartnerRow }) {
+export function PartnerCard({ row }: { row: PartnerRow }) {
   const isPercent = row.partner_rate_unit === "percent";
   const level = levelForVolume(row.partner_volume);
   const toNext = volumeToNextLevel(row.partner_volume);

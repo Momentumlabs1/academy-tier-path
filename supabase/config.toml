@@ -17,3 +17,9 @@ verify_jwt = false
 # Admin settings API — guarded by its own ADMIN_KEY header, not a Supabase JWT.
 [functions.admin-tenants]
 verify_jwt = false
+
+# Partner admin access. `accept`/`login` are called by a partner who has no
+# session yet, so this can't sit behind a Supabase JWT — the function does its
+# own admin check for the sensitive `invite` action.
+[functions.partner-admin]
+verify_jwt = false
