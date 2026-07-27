@@ -13,6 +13,7 @@
  */
 import { useEffect, useState } from "react";
 import type { TenantConfig } from "./tenants";
+import { BROKER } from "./broker";
 
 export interface PartnerBrand {
   slug: string;
@@ -73,7 +74,9 @@ export function readPartnerBrand(): PartnerBrand | null {
       primaryColor: b.primaryColor ?? COSMO.primaryColor,
       telegramChannel: b.telegramChannel ?? "#",
       brokerName: b.brokerName ?? "TradeQuo",
-      brokerUrl: b.brokerUrl ?? "https://tradequo.com",
+      // Never a bare broker homepage: a link without a referral id sends the
+      // member off unattributed (see usableBrokerUrl in broker.ts).
+      brokerUrl: b.brokerUrl ?? BROKER.url,
     };
   } catch {
     return null;
