@@ -15,11 +15,20 @@ export function markDepositClick(email: string): void {
 }
 
 export function depositClickedRecently(email: string): boolean {
-  if (!email) return false;
+  return depositClickedAt(email) > 0;
+}
+
+/**
+ * When the member clicked "Deposit" (epoch ms), or 0 if there's no live click.
+ * The verifying screen counts down from this, so a member who deposits and comes
+ * back six minutes later sees four minutes left — not a fresh ten.
+ */
+export function depositClickedAt(email: string): number {
+  if (!email) return 0;
   try {
     const v = Number(localStorage.getItem(KEY(email)) || 0);
-    return v > 0 && Date.now() - v < WINDOW_MS;
-  } catch { return false; }
+    return v > 0 && Date.now() - v < WINDOW_MS ? v : 0;
+  } catch { return 0; }
 }
 
 export function clearDepositClick(email: string): void {

@@ -31,7 +31,7 @@ import { usePartnerBrand, COSMO } from "@/lib/partner-brand";
 import { TIERS, tierForDeposit } from "@/lib/academy-data";
 import { PRODUCTS } from "@/lib/products";
 import { BROKER, depositUrl } from "@/lib/broker";
-import { markDepositClick, depositClickedRecently, clearDepositClick } from "@/lib/deposit-intent";
+import { markDepositClick, depositClickedAt, clearDepositClick } from "@/lib/deposit-intent";
 import { formatMoney } from "@/lib/format";
 import { Card } from "@/components/academy/primitives/Card";
 import { cn } from "@/lib/utils";
@@ -127,29 +127,89 @@ function IgniteStrip({ accent, href, onDeposit }: { accent: string; href: string
   );
 }
 
-/* ── Stage 2a·II: "we're verifying your deposit…" — after the member clicks
+/* ── Stage 2a·II: "we're checking your deposit…" — after the member clicks
    Deposit, before the broker sync books it. The watcher flips this to the
-   celebration automatically once members.deposit > 0. ─────────────────────── */
-function VerifyingStrip({ accent, href, onDeposit }: { accent: string; href: string; onDeposit: () => void }) {
+   celebration automatically once members.deposit > 0.
+
+   The broker database refreshes every 10 minutes, so this is a real wait and the
+   member has to be told plainly — otherwise a blank dashboard reads as "it
+   didn't work". The countdown runs from the CLICK, not from page load: someone
+   who deposits and comes back six minutes later sees four minutes left. Once the
+   window passes we stop counting and say we're still checking, rather than
+   sitting at 0:00 or implying something broke. ─────────────────────────────── */
+const VERIFY_WINDOW_MS = 10 * 60 * 1000;
+
+function VerifyingCard({ accent, href, onDeposit, since }: {
+  accent: string; href: string; onDeposit: () => void; since: number;
+}) {
   useDepositWatcher(true);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const iv = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(iv);
+  }, []);
+
+  const elapsed = since > 0 ? Math.max(0, now - since) : 0;
+  const left = Math.max(0, VERIFY_WINDOW_MS - elapsed);
+  const overdue = since > 0 && left === 0;
+  const pct = Math.min(100, Math.round((elapsed / VERIFY_WINDOW_MS) * 100));
+  const mm = Math.floor(left / 60_000);
+  const ss = Math.floor((left % 60_000) / 1000);
+
   return (
-    <div className="rounded-2xl border px-4 py-3.5" style={{ borderColor: `color-mix(in oklch, ${accent} 45%, transparent)`, background: `color-mix(in oklch, ${accent} 8%, transparent)` }}>
-      <div className="flex items-center gap-3">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl" style={{ background: `color-mix(in oklch, ${accent} 16%, transparent)`, color: accent }}>
-          <Loader2 className="h-4 w-4 animate-spin" />
-        </span>
-        <p className="min-w-0 flex-1 text-sm">
-          <span className="font-bold">Verifying your deposit…</span>{" "}
-          <span className="text-foreground/75">The moment {BROKER.name} confirms it, everything unlocks here automatically — usually within a few minutes. You'll get a confirmation email too.</span>
+    <Card variant="hero" className="relative overflow-hidden p-5 sm:p-6">
+      <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full blur-3xl" style={{ background: `color-mix(in oklch, ${accent} 20%, transparent)` }} />
+      <div className="relative">
+        <div className="flex items-start gap-3.5">
+          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl" style={{ background: `color-mix(in oklch, ${accent} 16%, transparent)`, color: accent }}>
+            <Loader2 className="h-5 w-5 animate-spin" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: accent }}>
+              Deposit in progress
+            </div>
+            <h2 className="mt-0.5 font-display text-xl font-bold leading-tight sm:text-2xl">
+              {overdue ? "Still checking with " + BROKER.name + "…" : "We're checking your deposit"}
+            </h2>
+            <p className="mt-1.5 text-sm text-foreground/70">
+              {overdue ? (
+                <>This is taking a little longer than usual. Your money is safe in your {BROKER.name} account — we're still waiting for the confirmation and will unlock everything the moment it lands.</>
+              ) : (
+                <>{BROKER.name} confirms deposits in batches, so this takes <b className="text-foreground">up to 10 minutes</b>. You don't have to wait here — everything unlocks automatically, and we'll email you as soon as it's done.</>
+              )}
+            </p>
+          </div>
+        </div>
+
+        {/* Countdown + progress */}
+        <div className="mt-5 rounded-2xl border border-white/10 bg-black/20 px-4 py-3.5">
+          <div className="flex items-baseline justify-between gap-3">
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-foreground/55">
+              {overdue ? "Checking every few seconds" : "Usually confirmed in"}
+            </span>
+            {!overdue && (
+              <span className="font-mono text-2xl font-bold tabular-nums" style={{ color: accent }}>
+                {mm}:{String(ss).padStart(2, "0")}
+              </span>
+            )}
+          </div>
+          <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-white/10">
+            <div
+              className={cn("h-full rounded-full transition-all duration-1000", overdue && "animate-pulse")}
+              style={{ width: overdue ? "100%" : `${Math.max(4, pct)}%`, background: accent }}
+            />
+          </div>
+        </div>
+
+        <p className="mt-3 text-[11px] text-foreground/50">
+          Not deposited yet?{" "}
+          <a href={href} target="_blank" rel="noopener noreferrer" onClick={onDeposit} className="underline hover:text-foreground">
+            Open {BROKER.name} →
+          </a>
         </p>
       </div>
-      <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-white/10">
-        <div className="h-full w-1/3 animate-pulse rounded-full" style={{ background: accent }} />
-      </div>
-      <p className="mt-2 text-[11px] text-foreground/50">
-        Not deposited yet? <a href={href} target="_blank" rel="noopener noreferrer" onClick={onDeposit} className="underline hover:text-foreground">Open {BROKER.name} →</a>
-      </p>
-    </div>
+    </Card>
   );
 }
 
@@ -362,7 +422,7 @@ export function OnboardingJourney() {
       const introDone = readFlag(email, "video") || videoAck.current;
       if (!introDone) return "video";
       // Clicked "Deposit" but nothing booked yet → show the verifying state.
-      if (depositClickedRecently(email)) return "verifying";
+      if (depositClickedAt(email) > 0) return "verifying";
       return "ignite";
     }
     if (amount < FOUNDATION_MIN) return "topup";           // partially funded → real-amount strip
@@ -377,7 +437,7 @@ export function OnboardingJourney() {
     return <WelcomeVideoCard accent={accent} onDone={() => { writeFlag(email, "video"); videoAck.current = true; advance(); }} />;
   }
   if (stage === "ignite") return <IgniteStrip accent={accent} href={href} onDeposit={onDeposit} />;
-  if (stage === "verifying") return <VerifyingStrip accent={accent} href={href} onDeposit={onDeposit} />;
+  if (stage === "verifying") return <VerifyingCard accent={accent} href={href} onDeposit={onDeposit} since={depositClickedAt(email)} />;
   if (stage === "topup") return <TopupStrip accent={accent} amount={amount} href={href} onDeposit={onDeposit} />;
   return (
     <CelebrationOverlay
