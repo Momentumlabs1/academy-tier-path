@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Search, Loader2, Users } from "lucide-react";
 import { AdminPageHeader } from "@/components/academy/admin/AdminShell";
+import { MemberDetailDialog } from "@/components/academy/admin/MemberDetailDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { TIERS, type TierKey } from "@/lib/academy-data";
 import { formatMoney } from "@/lib/format";
@@ -80,7 +81,7 @@ function useMembers() {
     };
   }, []);
 
-  return { loading, error, rows };
+  return { loading, error, rows, setRows };
 }
 
 const TIER_COLORS: Record<string, string> = {
@@ -104,10 +105,11 @@ function TierPill({ tier }: { tier: string | null }) {
 }
 
 function AdminMembers() {
-  const { loading, error, rows } = useMembers();
+  const { loading, error, rows, setRows } = useMembers();
   const [search, setSearch] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("joinedAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [selected, setSelected] = useState<Member | null>(null);
 
   function toggleSort(k: SortKey) {
     if (sortKey === k) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -178,11 +180,16 @@ function AdminMembers() {
               <Th label="Activity" />
               <Th label="Affiliate" />
               <Th label="Joined" k="joinedAt" />
+              <Th label="" />
             </tr>
           </thead>
           <tbody className="divide-y divide-white/5">
             {filtered.map((m: Member) => (
-              <tr key={m.id} className="group hover:bg-white/[0.03] transition-colors">
+              <tr
+                key={m.id}
+                onClick={() => setSelected(m)}
+                className="group cursor-pointer transition-colors hover:bg-white/[0.05]"
+              >
                 <td className="py-3 pl-4 pr-2">
                   <div className="flex items-center gap-2.5">
                     <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/60 to-[oklch(0.7_0.2_290)] text-[11px] font-bold text-primary-foreground">
@@ -207,6 +214,9 @@ function AdminMembers() {
                 </td>
                 <td className="py-3 pl-4 text-xs text-muted-foreground">{m.affiliate ?? "—"}</td>
                 <td className="py-3 pl-4 text-xs text-muted-foreground">{m.joinedAt || "—"}</td>
+                <td className="py-3 pl-4 pr-4 text-right text-xs text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100">
+                  Open →
+                </td>
               </tr>
             ))}
           </tbody>
@@ -230,6 +240,18 @@ function AdminMembers() {
           <div className="py-12 text-center text-sm text-muted-foreground">No members match your search.</div>
         )}
       </div>
+
+      {selected && (
+        <MemberDetailDialog
+          member={selected}
+          onClose={() => setSelected(null)}
+          onChanged={(patch) => {
+            setRows((prev) => prev.map((r) => (r.id === selected.id ? { ...r, ...patch } : r)));
+            setSelected((s) => (s ? { ...s, ...patch } : s));
+          }}
+          onDeleted={() => setRows((prev) => prev.filter((r) => r.id !== selected.id))}
+        />
+      )}
     </div>
   );
 }
