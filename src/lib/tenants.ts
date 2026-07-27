@@ -1,3 +1,4 @@
+import { BROKER } from "./broker";
 export interface TenantTierOverride {
   name: string;
   minDeposit: number;
@@ -41,7 +42,7 @@ export const TENANTS: TenantConfig[] = [
     bgFrom: "oklch(0.18 0.09 290)",
     bgTo: "oklch(0.13 0.06 290)",
     brokerName: "TradeQuo",
-    brokerUrl: "https://tradequo.com",
+    brokerUrl: BROKER.url,
     telegramChannel: "https://t.me/agent_trading_signals",
     affiliateEmail: "kontakt@momentumlabs.at",
     stats: [
@@ -67,7 +68,7 @@ export const TENANTS: TenantConfig[] = [
     bgFrom: "oklch(0.15 0.08 30)",
     bgTo: "oklch(0.11 0.04 30)",
     brokerName: "TradeQuo",
-    brokerUrl: "https://tradequo.com",
+    brokerUrl: BROKER.url,
     telegramChannel: "https://t.me/agent_trading_signals",
     affiliateEmail: "crypto@momentumlabs.at",
     stats: [
@@ -93,7 +94,7 @@ export const TENANTS: TenantConfig[] = [
     bgFrom: "oklch(0.14 0.07 240)",
     bgTo: "oklch(0.10 0.04 240)",
     brokerName: "TradeQuo",
-    brokerUrl: "https://tradequo.com",
+    brokerUrl: BROKER.url,
     telegramChannel: "https://t.me/agent_trading_signals",
     affiliateEmail: "fx@momentumlabs.at",
     stats: [
@@ -119,7 +120,7 @@ export const TENANTS: TenantConfig[] = [
     bgFrom: "oklch(0.14 0.006 150)",
     bgTo: "oklch(0.09 0.004 150)",
     brokerName: "TradeQuo",
-    brokerUrl: "https://tradequo.com",
+    brokerUrl: BROKER.url,
     telegramChannel: "https://t.me/zekoglobal",
     affiliateEmail: "zekoglobalhq@gmail.com",
     stats: [
@@ -170,7 +171,7 @@ export const COSMOS_MASTER: TenantConfig = {
   bgFrom: "oklch(0.16 0.05 260)",
   bgTo: "oklch(0.10 0.03 260)",
   brokerName: "TradeQuo",
-  brokerUrl: "https://tradequo.com",
+  brokerUrl: BROKER.url,
   telegramChannel: "https://t.me/agent_trading_signals",
   affiliateEmail: "kontakt@momentumlabs.at",
   headline: "Learn to trade — for free, with Cosmo",
@@ -219,7 +220,7 @@ export function buildTenantConfig(
     bgFrom: "oklch(0.16 0.05 260)",
     bgTo: "oklch(0.10 0.03 260)",
     brokerName: "TradeQuo",
-    brokerUrl: "https://tradequo.com",
+    brokerUrl: BROKER.url,
     telegramChannel: "#",
     affiliateEmail: "kontakt@momentumlabs.at",
     stats: [

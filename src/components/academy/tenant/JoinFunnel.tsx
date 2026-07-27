@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowRight, CheckCircle2, Mail, X } from "lucide-react";
 import type { TenantConfig } from "@/lib/tenants";
+import { usableBrokerUrl } from "@/lib/broker";
 
 const LEADS_KEY = "academy_leads";
 
@@ -44,8 +45,11 @@ export function JoinFunnel({ tenant, open, onClose }: {
     } catch { /* private mode */ }
 
     if (brokerConfigured) {
-      const sep = tenant.brokerUrl.includes("?") ? "&" : "?";
-      window.location.href = `${tenant.brokerUrl}${sep}cid=${clickId}`;
+      // usableBrokerUrl(): a partner link without a referral id would drop the
+      // visitor on the broker's homepage unattributed — fall back to master.
+      const target = usableBrokerUrl(tenant.brokerUrl);
+      const sep = target.includes("?") ? "&" : "?";
+      window.location.href = `${target}${sep}cid=${clickId}`;
     } else {
       setDone(clickId);
     }

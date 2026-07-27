@@ -36,7 +36,23 @@ export const BROKER = {
  * (e.g. a partner's own IB link from the admin).
  */
 export function depositUrl(memberId?: string, brokerUrl: string = BROKER.url): string {
-  if (!memberId) return brokerUrl;
-  const sep = brokerUrl.includes("?") ? "&" : "?";
-  return `${brokerUrl}${sep}utm_campaign=cc_${memberId}&cc_uid=${memberId}`;
+  const base = usableBrokerUrl(brokerUrl);
+  if (!memberId) return base;
+  const sep = base.includes("?") ? "&" : "?";
+  return `${base}${sep}utm_campaign=cc_${memberId}&cc_uid=${memberId}`;
+}
+
+/**
+ * Guard against un-configured partner links.
+ *
+ * Every partner in tenants.ts ships with a PLACEHOLDER brokerUrl
+ * ("https://tradequo.com") until their own IB link is entered in the admin.
+ * That placeholder carries no `referral=` id, so a member sent there lands on
+ * the broker's marketing homepage and registers under NOBODY — the deposit can
+ * never be attributed and the account never unlocks. Silently losing a paying
+ * customer is the worst possible failure here, so any link without a referral
+ * id falls back to the master IB link instead.
+ */
+export function usableBrokerUrl(brokerUrl?: string): string {
+  return brokerUrl && /[?&]referral=[^&]+/.test(brokerUrl) ? brokerUrl : BROKER.url;
 }
