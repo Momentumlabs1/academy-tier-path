@@ -5,6 +5,8 @@ import { useMemberState } from "@/hooks/useMemberState";
 import { Card } from "@/components/academy/primitives/Card";
 import { SignalOddsCard } from "@/components/academy/right-rail/SignalOddsCard";
 import { TelegramConnectCard } from "@/components/academy/signals/TelegramConnectCard";
+import { SignalTutorialCard } from "@/components/academy/signals/SignalTutorialCard";
+import { usePartnerBrand, COSMO } from "@/lib/partner-brand";
 import { PopularList } from "@/components/academy/right-rail/PopularList";
 import { ProfitWidget } from "@/components/academy/right-rail/ProfitWidget";
 import { cn } from "@/lib/utils";
@@ -22,6 +24,8 @@ export const Route = createFileRoute("/_app/signals")({
 });
 
 function SignalsPage() {
+  const brand = usePartnerBrand();
+  const accent = brand?.accentColor ?? COSMO.accentColor;
   const state = useMemberState();
   const hasAccess = !!state.currentTier;
 
@@ -70,6 +74,25 @@ function SignalsPage() {
 
       {/* Onboarding into the gated channel */}
       <TelegramConnectCard />
+
+      {/* Wie man ein Signal uebernimmt — dauerhaft hier, nicht nur einmalig in
+          der Willkommenskarte. Die war wegklickbar und merkte sich das; damit
+          war das einzige Video zur Kernmechanik fuer immer verschwunden. */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,520px)_1fr]">
+        <SignalTutorialCard accent={accent} />
+        <div className="flex flex-col justify-center gap-3">
+          <h2 className="font-display text-xl font-bold">New here? Start with this.</h2>
+          <p className="max-w-[52ch] text-sm text-muted-foreground">
+            Two minutes: read a signal, place it in your own account, and set the
+            stop-loss and targets so the trade manages itself.
+          </p>
+          <ul className="space-y-1.5 text-sm text-foreground/70">
+            <li>· Entry, stop-loss and take-profit — what each number does</li>
+            <li>· How to size the position so one loss never hurts</li>
+            <li>· What to do when a target is hit</li>
+          </ul>
+        </div>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
         <div>

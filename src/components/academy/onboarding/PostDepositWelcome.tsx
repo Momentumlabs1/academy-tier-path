@@ -13,62 +13,13 @@ import { PlayCircle, Sparkles, X, Loader2 } from "lucide-react";
 import { useMemberState } from "@/hooks/useMemberState";
 import { useSignedVideoUrl } from "@/hooks/useSignedVideoUrl";
 import { usePartnerBrand, COSMO } from "@/lib/partner-brand";
+// Der Player lebt jetzt eigenstaendig, damit er auch im Signal-Bereich
+// dauerhaft erreichbar ist — hier wird dieselbe Komponente verwendet.
+import { SignalTutorialCard as SignalTutorial } from "@/components/academy/signals/SignalTutorialCard";
 import { Card } from "@/components/academy/primitives/Card";
 
 const DISMISS_KEY = "cosmo_welcome_done";
 
-/** The one video that exists today: "copy your first signal" (signals-tutorial.mp4),
- *  streamed from the private bucket via a gated signed URL (fetched on play). */
-function SignalTutorial({ accent }: { accent: string }) {
-  const [playing, setPlaying] = useState(false);
-  const { url, loading, error, load } = useSignedVideoUrl("signals-tutorial.mp4");
-
-  useEffect(() => { if (playing) load(); }, [playing, load]);
-
-  return (
-    <div className="overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03]">
-      <div className="relative aspect-video bg-black">
-        {playing ? (
-          url ? (
-            <video src={url} controls autoPlay playsInline preload="none" className="h-full w-full" />
-          ) : error ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center text-sm text-white/70">
-              <span>{error === "locked" ? "Available after your deposit." : error}</span>
-              <button onClick={load} className="text-primary hover:underline">Try again</button>
-            </div>
-          ) : (
-            <div className="absolute inset-0 flex items-center justify-center"><Loader2 className="h-7 w-7 animate-spin text-white/60" /></div>
-          )
-        ) : (
-          <button
-            onClick={() => setPlaying(true)}
-            className="group absolute inset-0"
-            aria-label="Play video"
-            style={{ background: `linear-gradient(160deg, ${COSMO.bgFrom}, ${COSMO.bgTo})` }}
-          >
-            <img
-              src="/posters/copysignals.jpg"
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
-            <span className="absolute inset-0 bg-black/25" />
-            <span className="absolute inset-0 flex items-center justify-center">
-              <PlayCircle className="h-14 w-14 text-white/80 drop-shadow transition-transform group-hover:scale-110" />
-            </span>
-          </button>
-        )}
-        {loading && !url && !error && <span className="sr-only">Loading…</span>}
-      </div>
-      <div className="flex items-start gap-3 p-4">
-        <Sparkles className="mt-0.5 h-5 w-5 shrink-0" style={{ color: accent }} />
-        <div>
-          <div className="font-display text-sm font-bold">Copy your first signal</div>
-          <div className="mt-0.5 text-xs text-foreground/60">Entry, stop-loss, take-profit — how to mirror a signal into your account.</div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export function PostDepositWelcome() {
   const state = useMemberState();
