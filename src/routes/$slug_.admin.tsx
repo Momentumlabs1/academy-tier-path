@@ -160,13 +160,27 @@ function Gate({ slug, invite, onDone }: { slug: string; invite?: string; onDone:
     setBusy(true);
     setError(null);
 
-    const r = setup
+    let r = setup
       ? await call("accept", { slug, token: invite, password })
       : await call("login", { slug, password });
 
+    // Opening the invite mail a second time is the normal way to land here: the
+    // token was already redeemed, so `accept` refuses it. But by then a password
+    // exists — so try the password they just typed as a plain sign-in instead of
+    // dead-ending them on "this link is no longer valid".
+    if (setup && !r.session) {
+      const retry = await call("login", { slug, password });
+      if (retry.session) r = retry;
+    }
+
     if (!r.session) {
       setBusy(false);
-      setError(r.error ?? "Wrong password.");
+      setError(
+        setup
+          ? "This invite link was already used. Open " + `/${slug}/admin` +
+            " and sign in with the password you chose."
+          : r.error ?? "Wrong password.",
+      );
       return;
     }
 
