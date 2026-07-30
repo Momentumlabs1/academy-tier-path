@@ -9,7 +9,7 @@
  * section numbers, and the lime "COSMO" coach-badge motif recurring throughout.
  * Every partner inherits the same world, skinned to their colors/broker/mascot.
  */
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight, ArrowUpRight, CheckCircle2, Lock, Shield, Star,
@@ -75,6 +75,10 @@ function CandleShape({ up, down, isUp, bt, bh }: { up: string; down: string; isU
 export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
   const navigate = useNavigate();
   const goRegister = () => navigate({ to: "/registrieren" });
+
+  // Poster-Overlay fuer das Pitch-Video: weicht beim Start, kehrt am Ende zurueck.
+  const pitchRef = useRef<HTMLVideoElement>(null);
+  const [pitchPlaying, setPitchPlaying] = useState(false);
 
   const showCosmo = tenant.slug === "cosmos-candles";
   const heroHasMascot = tenant.mascot === "zeko" || showCosmo;
@@ -242,7 +246,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               ) : (
                 <div className="relative mx-auto aspect-square w-full max-w-[360px] overflow-hidden rounded-full ring-4 ring-white/10 shadow-2xl">
                   <div className="absolute inset-2 rounded-full blur-3xl" style={{ background:`color-mix(in oklch, ${primary} 40%, transparent)` }} aria-hidden />
-                  <img src="/zeko-hero.png" alt="Zeko" className="relative h-full w-full scale-[1.35] object-cover object-top" />
+                  <img src="/zeko-hero.png" alt="Zeko" className="relative h-full w-full object-cover" />
                 </div>
               )}
             </div>
@@ -277,7 +281,9 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
 
       {/* ─────────────────────── DEMO VIDEO ─────────────────────── */}
       <section className="mx-auto max-w-4xl px-4 py-10 sm:px-8">
-        <SectionHead n="01" kicker="Watch first · 60 seconds" title="See the whole thing in one minute" primary={primary} />
+        {/* Das Video laeuft 1:19 — "60 seconds" stand hier noch aus der Zeit
+            vor dem fertigen Schnitt. */}
+        <SectionHead n="01" kicker="Watch first · 80 seconds" title="See the whole thing in 80 seconds" primary={primary} />
         <div className="relative mt-8">
           {showCosmo && (
             <div className="absolute -top-12 right-2 z-20 hidden sm:block">
@@ -290,11 +296,34 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               <span className="ml-3 flex-1 truncate rounded-md bg-white/5 px-3 py-1 text-center text-[11px] text-white/40">{tenant.name.toLowerCase().replace(/\s+/g,"")}.academy — welcome</span>
             </div>
             <div className="relative aspect-video bg-black">
-              <video controls playsInline className="h-full w-full object-cover"><source src="/pitch.mp4" type="video/mp4" /></video>
-              <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-3" style={{ background:`linear-gradient(160deg, ${tenant.bgFrom}, ${tenant.bgTo})` }}>
-                <span className="flex h-16 w-16 items-center justify-center rounded-full shadow-lg" style={{ background: primary }}><PlayCircle className="h-8 w-8 text-black" /></span>
-                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">{tenant.name} × Cosmo · 60 sec</span>
-              </div>
+              {/* Der Platzhalter lag mit `pointer-events-none absolute inset-0`
+                  dauerhaft ueber dem Player — das Video war auch mit Datei nie
+                  zu sehen. Jetzt traegt das Poster diese Rolle, und der
+                  Play-Knopf verschwindet beim Start. */}
+              <video
+                ref={pitchRef}
+                controls
+                playsInline
+                preload="none"
+                poster="/pitch-poster.jpg"
+                onPlay={() => setPitchPlaying(true)}
+                onEnded={() => setPitchPlaying(false)}
+                className="h-full w-full object-cover"
+              >
+                <source src="/pitch.mp4" type="video/mp4" />
+              </video>
+              {!pitchPlaying && (
+                <button
+                  type="button"
+                  onClick={() => pitchRef.current?.play()}
+                  aria-label="Play video"
+                  className="group absolute inset-0 flex cursor-pointer items-center justify-center bg-black/25"
+                >
+                  <span className="flex h-16 w-16 items-center justify-center rounded-full shadow-lg ring-1 ring-white/20 transition-transform duration-200 group-hover:scale-105" style={{ background: primary }}>
+                    <PlayCircle className="h-8 w-8 text-black" />
+                  </span>
+                </button>
+              )}
             </div>
           </div>
         </div>
