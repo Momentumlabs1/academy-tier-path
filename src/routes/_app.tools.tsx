@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { Calculator, Scale, TrendingUp } from "lucide-react";
+import { createContext, useContext, useMemo, useState } from "react";
+import { Calculator, Scale, TrendingUp, Radio, Clock, RotateCcw } from "lucide-react";
 import { Card } from "@/components/academy/primitives/Card";
 import { MonteCarloCalc } from "@/components/academy/tools/MonteCarloCalc";
 import { formatMoney } from "@/lib/format";
@@ -16,24 +16,63 @@ export const Route = createFileRoute("/_app/tools")({
   component: ToolsPage,
 });
 
+/* ── ein Trade, alle Rechner ─────────────────────────────────────────
+   Vorher hat jeder Rechner Entry und Stop separat gehalten: dieselbe Zahl
+   dreimal eintippen, und die drei Karten widersprachen sich, sobald man
+   eine vergass. Jetzt teilen sie einen Zustand — und ein echtes Signal
+   kann ihn in einem Klick fuellen. */
+type Trade = {
+  account: number; riskPct: number; entry: number; stop: number; target: number;
+  set: (p: Partial<Omit<Trade, "set">>) => void;
+};
+const TradeCtx = createContext<Trade | null>(null);
+const useTrade = () => {
+  const t = useContext(TradeCtx);
+  if (!t) throw new Error("useTrade outside provider");
+  return t;
+};
+
 function ToolsPage() {
+  const [account, setAccount] = useState(10_000);
+  const [riskPct, setRiskPct] = useState(1);
+  const [entry, setEntry] = useState(1.085);
+  const [stop, setStop] = useState(1.081);
+  const [target, setTarget] = useState(1.097);
+  const trade: Trade = {
+    account, riskPct, entry, stop, target,
+    set: (p) => {
+      if (p.account !== undefined) setAccount(p.account);
+      if (p.riskPct !== undefined) setRiskPct(p.riskPct);
+      if (p.entry !== undefined) setEntry(p.entry);
+      if (p.stop !== undefined) setStop(p.stop);
+      if (p.target !== undefined) setTarget(p.target);
+    },
+  };
   return (
+    <TradeCtx.Provider value={trade}>
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-3xl font-bold tracking-tight lg:text-4xl">Trader Tools</h1>
         <p className="mt-1 text-muted-foreground">Size the trade, judge the odds, then see what a few hundred of them do to your account.</p>
       </div>
 
+      <SignalPicker />
+
       <div className="grid gap-4 lg:grid-cols-2">
         <PositionSizeCalc />
         <RiskRewardCalc />
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <RecoveryCalc />
+        <SessionClock />
       </div>
       <CompoundingCalc />
 
       {/* Die drei Rechner oben sagen, wie GROSS ein Trade sein darf. Dieser
           sagt, was 200 davon mit dem Konto machen — die Frage, die zaehlt. */}
       <MonteCarloCalc />
-    </div>
+      </div>
+    </TradeCtx.Provider>
   );
 }
 
@@ -94,10 +133,11 @@ function ToolHead({ icon: Icon, title, sub }: { icon: React.ElementType; title: 
 /* ── 1 · Position size ───────────────────────────────────────────── */
 
 function PositionSizeCalc() {
-  const [account, setAccount] = useState(10_000);
-  const [riskPct, setRiskPct] = useState(1);
-  const [entry, setEntry] = useState(1.085);
-  const [stop, setStop] = useState(1.081);
+  const { account, riskPct, entry, stop, set } = useTrade();
+  const setAccount = (v: number) => set({ account: v });
+  const setRiskPct = (v: number) => set({ riskPct: v });
+  const setEntry = (v: number) => set({ entry: v });
+  const setStop = (v: number) => set({ stop: v });
 
   const r = useMemo(() => {
     const riskAmount = (account * riskPct) / 100;
@@ -133,9 +173,10 @@ function PositionSizeCalc() {
 /* ── 2 · Risk : Reward ───────────────────────────────────────────── */
 
 function RiskRewardCalc() {
-  const [entry, setEntry] = useState(1.085);
-  const [stop, setStop] = useState(1.081);
-  const [target, setTarget] = useState(1.097);
+  const { entry, stop, target, set } = useTrade();
+  const setEntry = (v: number) => set({ entry: v });
+  const setStop = (v: number) => set({ stop: v });
+  const setTarget = (v: number) => set({ target: v });
 
   const r = useMemo(() => {
     const risk = Math.abs(entry - stop);
@@ -213,6 +254,157 @@ function CompoundingCalc() {
         ))}
       </div>
       {monthly > 10 && <p className="text-xs font-semibold text-amber-400">⚠ Sustained {monthly}%/month is unrealistic — the world's best funds do 2–4%.</p>}
+    </Card>
+  );
+}
+
+/* ── 4 · Instrument-Vorlagen ──────────────────────────────────────────
+   Die Voreinstellung 1.085 gilt fuer EUR/USD. Wer BTC handelt und 64.200
+   eintippt, bekommt eine Lot-Zahl, die nichts bedeutet — die Rechner
+   kennen die Groessenordnung des Instruments nicht. Diese Zeile setzt
+   Entry, Stop und Ziel auf realistische Werte des gewaehlten Marktes.  */
+
+const PRESETS = [
+  { name: "EUR / USD", entry: 1.0850, stop: 1.0810, target: 1.0970 },
+  { name: "XAU / USD", entry: 2318.40, stop: 2311.00, target: 2334.00 },
+  { name: "BTC / USDT", entry: 64200, stop: 63400, target: 65800 },
+  { name: "NAS100", entry: 20050, stop: 19910, target: 20330 },
+] as const;
+
+function SignalPicker() {
+  const { entry, set } = useTrade();
+  const active = PRESETS.find((p) => Math.abs(p.entry - entry) < p.entry * 1e-6);
+  return (
+    <Card variant="surface" className="flex flex-wrap items-center gap-3 p-4">
+      <span className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+        <Radio className="h-3.5 w-3.5 text-primary" /> Load a market
+      </span>
+      <div className="flex flex-wrap gap-2">
+        {PRESETS.map((p) => (
+          <button
+            key={p.name}
+            onClick={() => set({ entry: p.entry, stop: p.stop, target: p.target })}
+            className={cn(
+              "rounded-full px-3.5 py-1.5 font-mono text-xs font-semibold transition-colors",
+              active?.name === p.name
+                ? "bg-primary text-black"
+                : "bg-white/5 text-foreground/70 hover:bg-white/10",
+            )}
+          >
+            {p.name}
+          </button>
+        ))}
+      </div>
+      <span className="ml-auto text-[11px] text-muted-foreground">
+        Fills entry, stop and target below — every calculator on this page shares them.
+      </span>
+    </Card>
+  );
+}
+
+/* ── 5 · Was ein Verlust wirklich kostet ──────────────────────────────
+   Die unsymmetrischste Zahl im Trading und die, die am seltensten jemand
+   ausrechnet: nach −50 % braucht es +100 %, nur um wieder bei null zu sein.
+   Ein Werkzeug dafuer aendert mehr Verhalten als jeder Merksatz.        */
+
+function RecoveryCalc() {
+  const [dd, setDd] = useState(20);
+  const need = (1 / (1 - dd / 100) - 1) * 100;
+  const brutal = need >= 100;
+  return (
+    <Card variant="surface" className="space-y-4 p-6">
+      <ToolHead icon={RotateCcw} title="Cost of a drawdown"
+        sub="What you must earn back after a loss — the maths nobody runs before the trade." />
+      <label className="block">
+        <span className="flex items-baseline justify-between">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Account down by</span>
+          <span className="font-display text-sm font-bold tabular-nums">−{dd}%</span>
+        </span>
+        <input
+          type="range" min={5} max={90} step={1} value={dd}
+          onChange={(e) => setDd(Number(e.target.value))}
+          className="mt-2 h-1.5 w-full cursor-pointer appearance-none rounded-full bg-white/10 accent-primary"
+        />
+      </label>
+      <div className="grid grid-cols-2 gap-3">
+        <Result label="Needed to break even" value={`+${need.toFixed(0)}%`} tone={brutal ? "warn" : "default"} big />
+        <Result label="At 4% a month" value={`${Math.ceil(Math.log(1 / (1 - dd / 100)) / Math.log(1.04))} months`} />
+      </div>
+      <div className="flex h-3 w-full overflow-hidden rounded-full bg-white/5">
+        <div className="bg-rose-400/70" style={{ width: `${Math.min(50, dd / 2)}%` }} />
+        <div className="bg-primary" style={{ width: `${Math.min(50, need / 4)}%` }} />
+      </div>
+      <p className="text-xs text-muted-foreground">
+        {brutal
+          ? `A ${dd}% loss needs you to more than double what is left. This is why the stop-loss is not optional.`
+          : `Losing ${dd}% is not symmetric — you need +${need.toFixed(0)}%, not +${dd}%, to get back to flat.`}
+      </p>
+    </Card>
+  );
+}
+
+/* ── 6 · Wann ueberhaupt etwas passiert ───────────────────────────────
+   Signale kommen nicht gleichmaessig ueber den Tag. Die Ueberlappung
+   London/New York traegt den Grossteil des Volumens — wer das nicht weiss,
+   wartet nachts auf Bewegung, die nicht kommt.                          */
+
+const SESSIONS = [
+  { name: "Sydney", open: 21, close: 6 },
+  { name: "Tokyo", open: 0, close: 9 },
+  { name: "London", open: 7, close: 16 },
+  { name: "New York", open: 12, close: 21 },
+] as const;
+
+function SessionClock() {
+  const now = new Date();
+  const utcH = now.getUTCHours() + now.getUTCMinutes() / 60;
+  const isOpen = (s: { open: number; close: number }) =>
+    s.open < s.close ? utcH >= s.open && utcH < s.close : utcH >= s.open || utcH < s.close;
+  const openNow = SESSIONS.filter(isOpen);
+  const overlap = openNow.some((s) => s.name === "London") && openNow.some((s) => s.name === "New York");
+
+  return (
+    <Card variant="surface" className="space-y-4 p-6">
+      <ToolHead icon={Clock} title="Where the volume is"
+        sub="Signals cluster when the big desks are awake — not evenly across the day." />
+      <div className="space-y-2.5">
+        {SESSIONS.map((s) => {
+          const on = isOpen(s);
+          const left = (s.open / 24) * 100;
+          const width = (((s.close - s.open + 24) % 24) / 24) * 100;
+          return (
+            <div key={s.name}>
+              <div className="mb-1 flex items-baseline justify-between text-[11px]">
+                <span className={cn("font-semibold", on ? "text-foreground" : "text-muted-foreground")}>{s.name}</span>
+                <span className="font-mono text-muted-foreground">
+                  {String(s.open).padStart(2, "0")}–{String(s.close).padStart(2, "0")} UTC
+                </span>
+              </div>
+              <div className="relative h-2 w-full overflow-hidden rounded-full bg-white/5">
+                <div
+                  className={cn("absolute inset-y-0 rounded-full", on ? "bg-primary" : "bg-white/15")}
+                  style={{ left: `${left}%`, width: `${width}%` }}
+                />
+                {width + left > 100 && (
+                  <div className={cn("absolute inset-y-0 left-0 rounded-full", on ? "bg-primary" : "bg-white/15")}
+                       style={{ width: `${width + left - 100}%` }} />
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="relative h-px w-full bg-white/10">
+        <span className="absolute -top-1 h-2 w-2 -translate-x-1/2 rounded-full bg-amber-400"
+              style={{ left: `${(utcH / 24) * 100}%` }} />
+      </div>
+      <p className="text-xs text-muted-foreground">
+        {overlap
+          ? "London and New York are both open — this overlap carries most of the day's volume."
+          : openNow.length
+            ? `${openNow.map((s) => s.name).join(" and ")} open. The busiest window is the London–New York overlap, 12–16 UTC.`
+            : "All major sessions closed. Spreads widen and moves get thin — this is not the hour to force a trade."}
+      </p>
     </Card>
   );
 }
