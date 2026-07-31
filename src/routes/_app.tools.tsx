@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Calculator, Scale, TrendingUp } from "lucide-react";
 import { Card } from "@/components/academy/primitives/Card";
+import { MonteCarloCalc } from "@/components/academy/tools/MonteCarloCalc";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -9,7 +10,7 @@ export const Route = createFileRoute("/_app/tools")({
   head: () => ({
     meta: [
       { title: "Trader Tools — Agent Trading Academy" },
-      { name: "description", content: "Position size, risk-reward and compounding calculators." },
+      { name: "description", content: "Position size, risk-reward, compounding — and a 1,000-run Monte Carlo simulation of your edge." },
     ],
   }),
   component: ToolsPage,
@@ -20,7 +21,7 @@ function ToolsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-3xl font-bold tracking-tight lg:text-4xl">Trader Tools</h1>
-        <p className="mt-1 text-muted-foreground">The three calculations every trade starts with — live, no spreadsheet needed.</p>
+        <p className="mt-1 text-muted-foreground">Size the trade, judge the odds, then see what a few hundred of them do to your account.</p>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -28,6 +29,10 @@ function ToolsPage() {
         <RiskRewardCalc />
       </div>
       <CompoundingCalc />
+
+      {/* Die drei Rechner oben sagen, wie GROSS ein Trade sein darf. Dieser
+          sagt, was 200 davon mit dem Konto machen — die Frage, die zaehlt. */}
+      <MonteCarloCalc />
     </div>
   );
 }
