@@ -43,7 +43,7 @@ function SignalsPage() {
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <span className="font-display text-lg font-bold">Cosmos Candles · Signals</span>
+            <span className="flex items-center gap-2"><img src="/cosmos-mark.png" alt="" className="h-6 w-6 object-contain" /><span className="font-display text-lg font-bold">Signals</span></span>
             <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase",
               hasAccess ? "bg-primary/20 text-primary" : "bg-amber-400/20 text-amber-400")}>
               <span className={cn("h-1.5 w-1.5 rounded-full", hasAccess ? "bg-primary" : "bg-amber-400")} />

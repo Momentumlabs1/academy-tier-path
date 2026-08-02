@@ -53,7 +53,7 @@ function PartnerProgramm() {
       <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5 sm:px-8">
         <div className="flex items-center gap-2.5">
           <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-sm font-black text-primary-foreground">C</span>
-          <span className="font-display text-lg font-bold">Cosmos Candles</span>
+          <img src="/cosmos-logo.png" alt="Cosmos Candles" className="h-8 w-auto" />
         </div>
         <a href={applyHref} className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90">Become a partner</a>
       </header>

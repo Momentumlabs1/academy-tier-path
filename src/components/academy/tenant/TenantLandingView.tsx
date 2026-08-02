@@ -138,16 +138,15 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5 sm:px-8">
           <div className="flex items-center gap-2.5">
             {showCosmo ? (
-              <span className="relative flex h-9 w-9 items-center justify-center">
-                <span className="absolute inset-0 rounded-full blur-md" style={{ background: `color-mix(in oklch, ${accent} 45%, transparent)` }} />
-                <img src="/cosmo/cosmo-head.png" alt="" className="relative h-9 w-9 object-contain" />
-              </span>
+              <img src="/cosmos-logo.png" alt="Cosmos Candles Academy" className="h-9 w-auto" />
             ) : (
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl text-sm font-black text-black" style={{ background: primary }}>
-                {tenant.logoInitials}
-              </span>
+              <>
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl text-sm font-black text-black" style={{ background: primary }}>
+                  {tenant.logoInitials}
+                </span>
+                <span className="font-display text-lg font-bold tracking-tight">{tenant.name}</span>
+              </>
             )}
-            <span className="font-display text-lg font-bold tracking-tight">{tenant.name}</span>
           </div>
           <div className="flex items-center gap-1 sm:gap-3">
             <Link to="/login" className="hidden rounded-full px-4 py-2 text-sm font-medium text-white/70 hover:text-white sm:inline-block">Sign in</Link>

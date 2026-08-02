@@ -34,7 +34,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-screen w-[240px] shrink-0 flex-col border-r border-white/5 bg-[oklch(0.13_0.035_255)]/80 px-3 py-6 backdrop-blur lg:flex">
         <div className="flex items-center gap-2.5 px-2 pb-6">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-[oklch(0.72_0.2_150)] text-sm font-black text-primary-foreground shadow-[var(--shadow-lime)]">A</span>
+          <img src="/cosmos-mark.png" alt="" className="h-9 w-9 shrink-0 object-contain" />
           <div>
             <div className="text-sm font-bold leading-tight">Command Center</div>
             <div className="text-[10px] text-muted-foreground">Cosmos Candles · Admin</div>
