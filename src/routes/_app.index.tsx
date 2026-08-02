@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, BookOpen, Calculator, MessageSquare } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { HeroBento } from "@/components/academy/hero/HeroBento";
 import { LessonGroup } from "@/components/academy/lessons/LessonGroup";
 import { SectionTitle } from "@/components/academy/primitives/SectionTitle";
@@ -53,10 +53,42 @@ function UserAvatar({ name, email }: { name: string; email: string }) {
   );
 }
 
+/* Own glyphs for the three shortcuts. The generic message/book/calculator icons
+   read as placeholder furniture; these say what they are at a glance. */
+function TelegramGlyph({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
+      <path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71L12.6 16.3l-2.01 1.95c-.23.23-.42.42-.81.4z" />
+    </svg>
+  );
+}
+function BookGlyph({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"
+         strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+      <path d="M12 6.5C10.6 5.2 8.7 4.5 6.5 4.5H3.5v13h3c2.2 0 4.1.7 5.5 2" />
+      <path d="M12 6.5c1.4-1.3 3.3-2 5.5-2h3v13h-3c-2.2 0-4.1.7-5.5 2" />
+      <path d="M12 6.5v13" />
+      <path d="M6 8.5h3M6 11.5h3M15 8.5h3M15 11.5h3" opacity=".55" />
+    </svg>
+  );
+}
+function GaugeGlyph({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7"
+         strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+      <path d="M3.6 16.5a9 9 0 1 1 16.8 0" />
+      <path d="M12 16.5l4-4.6" />
+      <circle cx="12" cy="16.6" r="1.5" fill="currentColor" stroke="none" />
+      <path d="M5.2 12.2l1.3.5M12 5.1v1.4M18.8 12.2l-1.3.5" opacity=".55" />
+    </svg>
+  );
+}
+
 const QUICK_ACTIONS = [
-  { label: "Open Telegram", sub: "Live signals", icon: MessageSquare, to: "/signals", accent: "oklch(0.78 0.16 150)" },
-  { label: "Next lesson", sub: "Continue learning", icon: BookOpen, to: "/lessons", accent: "oklch(0.9 0.2 140)" },
-  { label: "Trader tools", sub: "Size & risk calculators", icon: Calculator, to: "/tools", accent: "oklch(0.82 0.16 80)" },
+  { label: "Open Telegram", sub: "Live signals", icon: TelegramGlyph, to: "/signals", accent: "oklch(0.72 0.15 235)" },
+  { label: "Next lesson", sub: "Continue learning", icon: BookGlyph, to: "/lessons", accent: "oklch(0.9 0.2 140)" },
+  { label: "Trader tools", sub: "Size & risk calculators", icon: GaugeGlyph, to: "/tools", accent: "oklch(0.82 0.16 80)" },
 ] as const;
 
 function Dashboard() {
@@ -131,13 +163,29 @@ function Dashboard() {
                 <Link
                   key={a.to}
                   to={a.to}
-                  className="group flex items-center gap-3 rounded-2xl bg-[color:var(--surface-2)]/60 px-4 py-3 transition-all duration-300 hover:-translate-y-0.5 hover:bg-[color:var(--surface-2)] hover:shadow-[var(--shadow-card)]"
+                  className="group relative flex items-center gap-3.5 overflow-hidden rounded-2xl border border-white/[0.06] bg-[color:var(--surface-2)]/60 px-4 py-3.5 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/[0.12] hover:bg-[color:var(--surface-2)] hover:shadow-[var(--shadow-card)]"
                 >
                   <span
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
-                    style={{ backgroundColor: `color-mix(in oklch, ${a.accent} 16%, transparent)`, color: a.accent }}
-                  >
-                    <Icon className="h-4 w-4" />
+                    className="pointer-events-none absolute -left-8 -top-10 h-24 w-24 rounded-full opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-60"
+                    style={{ background: a.accent }}
+                    aria-hidden
+                  />
+                  <span className="relative shrink-0">
+                    <span
+                      className="pointer-events-none absolute inset-0 rounded-2xl opacity-50 blur-md"
+                      style={{ background: a.accent }}
+                      aria-hidden
+                    />
+                    <span
+                      className="relative flex h-11 w-11 items-center justify-center rounded-2xl ring-1 transition-transform duration-300 group-hover:scale-105"
+                      style={{
+                        background: `linear-gradient(140deg, color-mix(in oklch, ${a.accent} 30%, transparent), color-mix(in oklch, ${a.accent} 8%, transparent))`,
+                        color: a.accent,
+                        ["--tw-ring-color" as string]: `color-mix(in oklch, ${a.accent} 30%, transparent)`,
+                      }}
+                    >
+                      <Icon className="h-5 w-5" />
+                    </span>
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-sm font-semibold leading-tight">{a.label}</span>
