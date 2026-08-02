@@ -68,7 +68,7 @@ export function TopNav() {
             />
           </span>
           <span className="flex flex-col leading-none">
-            <span className="font-display text-base font-bold tracking-tight">Cosmos Candles</span>
+            <img src="/cosmos-logo.png" alt="Cosmos Candles Academy" className="h-6 w-auto" />
           </span>
         </Link>
         {pageTitle !== "Dashboard" && (
