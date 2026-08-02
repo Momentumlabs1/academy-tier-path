@@ -27,10 +27,14 @@ import {
 } from "@/components/academy/tenant/LandingPreviews";
 
 const TICKER = [
-  { s: "XAU/USD", p: "2,318.4", up: true }, { s: "BTC/USDT", p: "64,210", up: true },
-  { s: "NAS100", p: "20,050", up: false }, { s: "EUR/USD", p: "1.0842", up: true },
-  { s: "US30", p: "39,410", up: false }, { s: "ETH/USDT", p: "3,142", up: true },
-  { s: "GBP/JPY", p: "199.84", up: true }, { s: "SPX500", p: "5,268", up: false },
+  { s: "XAU/USD",  p: "2,318.4", d: "+0.62", up: true,  sym: "Au",  tone: "oklch(0.82 0.15 85)"  },
+  { s: "BTC/USDT", p: "64,210",  d: "+1.84", up: true,  sym: "\u20BF", tone: "oklch(0.78 0.16 60)"  },
+  { s: "NAS100",   p: "20,050",  d: "-0.41", up: false, sym: "NQ",  tone: "oklch(0.72 0.13 265)" },
+  { s: "EUR/USD",  p: "1.0842",  d: "+0.18", up: true,  sym: "\u20AC",  tone: "oklch(0.74 0.14 250)" },
+  { s: "US30",     p: "39,410",  d: "-0.27", up: false, sym: "DJ",  tone: "oklch(0.72 0.13 300)" },
+  { s: "ETH/USDT", p: "3,142",   d: "+2.10", up: true,  sym: "\u039E",  tone: "oklch(0.76 0.13 285)" },
+  { s: "GBP/JPY",  p: "199.84",  d: "+0.35", up: true,  sym: "\u00A3",  tone: "oklch(0.76 0.14 20)"  },
+  { s: "SPX500",   p: "5,268",   d: "-0.12", up: false, sym: "SP",  tone: "oklch(0.74 0.13 200)" },
 ];
 
 // ── Orbit engine (pure CSS 3D — GPU only, no z-index, no per-frame repaint) ──
@@ -255,12 +259,27 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
 
       {/* ─────────────────────── TICKER ─────────────────────── */}
       <div className="relative overflow-hidden border-y border-white/[0.06] bg-white/[0.02] py-3">
-        <div className="ticker-track flex w-max gap-10 whitespace-nowrap">
+        <div className="ticker-track flex w-max items-center gap-3 whitespace-nowrap">
           {[...TICKER, ...TICKER].map((t, i) => (
-            <span key={i} className="inline-flex items-center gap-2 font-mono text-xs text-white/55">
-              <span className="font-semibold text-white/80">{t.s}</span>
-              <span className="tabular-nums">{t.p}</span>
-              <span style={{ color: t.up ? up : down }}>{t.up ? "▲" : "▼"}</span>
+            <span
+              key={i}
+              className="inline-flex items-center gap-2.5 rounded-full border border-white/[0.07] bg-white/[0.03] py-1.5 pl-1.5 pr-3.5"
+            >
+              <span
+                className="flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-black"
+                style={{ background: `color-mix(in oklch, ${t.tone} 22%, transparent)`, color: t.tone }}
+                aria-hidden
+              >
+                {t.sym}
+              </span>
+              <span className="font-mono text-[11px] font-semibold tracking-tight text-white/85">{t.s}</span>
+              <span className="font-mono text-[11px] tabular-nums text-white/55">{t.p}</span>
+              <span
+                className="font-mono text-[10px] font-semibold tabular-nums"
+                style={{ color: t.up ? up : down }}
+              >
+                {t.up ? "\u25B2" : "\u25BC"} {t.d}%
+              </span>
             </span>
           ))}
         </div>
@@ -268,11 +287,29 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
 
       {/* ─────────────────────── STATS ─────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-8">
-        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-3xl border border-white/[0.06] bg-white/[0.04] sm:grid-cols-4">
-          {tenant.stats.map((s) => (
-            <div key={s.label} className="bg-[#070a13] px-5 py-7 text-center">
-              <div className="font-display text-3xl font-black sm:text-4xl" style={{ color: primary }}>{s.value}</div>
-              <div className="mt-1 text-[11px] uppercase tracking-[0.14em] text-white/45">{s.label}</div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+          {tenant.stats.map((s, i) => (
+            <div
+              key={s.label}
+              className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-gradient-to-b from-white/[0.05] to-transparent px-5 py-7 text-center transition-transform duration-300 hover:-translate-y-0.5"
+            >
+              {/* a quiet accent bloom, brightest on the first card */}
+              <span
+                className="pointer-events-none absolute -top-12 left-1/2 h-24 w-24 -translate-x-1/2 rounded-full blur-2xl transition-opacity duration-300 group-hover:opacity-90"
+                style={{ background: primary, opacity: 0.16 - i * 0.02 }}
+                aria-hidden
+              />
+              <span
+                className="pointer-events-none absolute inset-x-6 top-0 h-px"
+                style={{ background: `linear-gradient(90deg, transparent, ${primary}, transparent)`, opacity: 0.5 }}
+                aria-hidden
+              />
+              <div className="relative font-display text-4xl font-black tabular-nums sm:text-5xl" style={{ color: primary }}>
+                {s.value}
+              </div>
+              <div className="relative mt-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/50">
+                {s.label}
+              </div>
             </div>
           ))}
         </div>
