@@ -4,15 +4,16 @@ import { Link } from "@tanstack/react-router";
 import { useSignedVideoUrl } from "@/hooks/useSignedVideoUrl";
 
 /**
- * 16:9 lesson video player. Two sources, one component:
- * - `videoObject` set → the real course recording in the private Supabase
- *   `academy-videos` bucket, played via a gated, time-limited SIGNED URL
- *   (fetched on play, `preload="none"` — never pre-loaded).
- * - otherwise → the YouTube placeholder (thumbnail before play, no network cost).
+ * 16:9 lesson video player. One source: the real course recording in the private
+ * Supabase `academy-videos` bucket, played via a gated, time-limited SIGNED URL
+ * (fetched on play, `preload="none"` — never pre-loaded).
  * Locked: a blurred/branded poster with an unlock CTA instead of the player.
+ *
+ * There is deliberately no fallback. A lesson without its own recording is not
+ * shipped at all (see LESSONS in academy-data) — playing a foreign placeholder
+ * video was worse than showing nothing.
  */
 export function LessonVideo({
-  youtubeId,
   videoObject,
   poster,
   title,
@@ -21,8 +22,7 @@ export function LessonVideo({
   locked,
   lockedTier,
 }: {
-  youtubeId: string;
-  videoObject?: string;
+  videoObject: string;
   poster?: string;
   title: string;
   playing: boolean;
@@ -30,15 +30,13 @@ export function LessonVideo({
   locked?: boolean;
   lockedTier?: string;
 }) {
-  const isSupabase = Boolean(videoObject);
   const { url, loading, error, load } = useSignedVideoUrl(videoObject);
   const brandedPoster = "radial-gradient(120% 120% at 50% 0%, oklch(0.22 0.06 260), oklch(0.1 0.03 260))";
-  const ytThumb = `https://i.ytimg.com/vi/${youtubeId}/maxresdefault.jpg`;
 
   // Request the signed URL only once the (entitled) member presses play.
   useEffect(() => {
-    if (isSupabase && playing && !locked) load();
-  }, [isSupabase, playing, locked, load]);
+    if (playing && !locked) load();
+  }, [playing, locked, load]);
 
   return (
     <div className="relative aspect-video w-full overflow-hidden rounded-[var(--radius)] bg-black shadow-[var(--shadow-card)]">
@@ -46,10 +44,8 @@ export function LessonVideo({
         <>
           {poster ? (
             <img src={poster} alt="" className="absolute inset-0 h-full w-full scale-105 object-cover opacity-30 blur-sm" />
-          ) : isSupabase ? (
-            <div className="absolute inset-0" style={{ background: brandedPoster }} />
           ) : (
-            <img src={ytThumb} alt="" className="absolute inset-0 h-full w-full scale-105 object-cover opacity-30 blur-sm" />
+            <div className="absolute inset-0" style={{ background: brandedPoster }} />
           )}
           <div className="absolute inset-0 bg-black/50" />
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
@@ -65,7 +61,7 @@ export function LessonVideo({
             </Link>
           </div>
         </>
-      ) : playing && isSupabase ? (
+      ) : playing ? (
         <div className="absolute inset-0 flex items-center justify-center bg-black">
           {url ? (
             <video src={url} controls autoPlay playsInline preload="none" className="h-full w-full">
@@ -81,14 +77,6 @@ export function LessonVideo({
           )}
           {loading && !url && !error && <span className="sr-only">Lädt…</span>}
         </div>
-      ) : playing ? (
-        <iframe
-          className="absolute inset-0 h-full w-full"
-          src={`https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&rel=0&modestbranding=1`}
-          title={title}
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-          allowFullScreen
-        />
       ) : (
         <button onClick={onPlay} className="group absolute inset-0 h-full w-full" aria-label={`Play: ${title}`}>
           {poster ? (
@@ -97,14 +85,8 @@ export function LessonVideo({
               alt=""
               className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
-          ) : isSupabase ? (
-            <div className="absolute inset-0" style={{ background: brandedPoster }} />
           ) : (
-            <img
-              src={ytThumb}
-              alt=""
-              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            />
+            <div className="absolute inset-0" style={{ background: brandedPoster }} />
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/10" />
           <div className="absolute inset-0 flex items-center justify-center">

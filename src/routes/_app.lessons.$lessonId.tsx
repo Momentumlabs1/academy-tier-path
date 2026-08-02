@@ -55,8 +55,7 @@ function LessonDetail() {
 
       {/* Video player */}
       <LessonVideo
-        youtubeId={lesson.youtubeId}
-        videoObject={lesson.videoObject}
+        videoObject={lesson.videoObject!}
         poster={lesson.poster}
         title={lesson.title}
         playing={playing}
