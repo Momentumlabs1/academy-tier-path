@@ -6,6 +6,7 @@ import { SectionTitle } from "@/components/academy/primitives/SectionTitle";
 import { DepositLadder } from "@/components/academy/tier/DepositLadder";
 import { ProgressStats } from "@/components/academy/progress/ProgressStats";
 import { Card } from "@/components/academy/primitives/Card";
+import { MemberAvatar } from "@/components/academy/primitives/MemberAvatar";
 import { LockedGate } from "@/components/academy/onboarding/LockedGate";
 import { OnboardingJourney } from "@/components/academy/onboarding/OnboardingJourney";
 import { PostDepositWelcome } from "@/components/academy/onboarding/PostDepositWelcome";
@@ -28,29 +29,6 @@ function greeting() {
   if (h < 12) return "Good morning";
   if (h < 18) return "Good afternoon";
   return "Good evening";
-}
-
-/** The member's own identity avatar — initials on a colour derived from their
- *  name, so it feels personal. (Cosmo is the guide, never the user's face.) */
-function UserAvatar({ name, email }: { name: string; email: string }) {
-  const base = (name || email || "Trader").trim();
-  const parts = base.split(/[ @._-]+/).filter(Boolean);
-  const initials = (parts.length > 1 ? parts[0][0] + parts[1][0] : base.slice(0, 2)).toUpperCase();
-  let hash = 0;
-  for (let i = 0; i < base.length; i++) hash = (hash * 31 + base.charCodeAt(i)) >>> 0;
-  const hue = hash % 360;
-  return (
-    <div className="relative shrink-0">
-      <div className="pointer-events-none absolute inset-0 -m-1.5 rounded-full blur-xl" style={{ background: `hsl(${hue} 70% 50% / 0.35)` }} aria-hidden />
-      <div
-        className="relative flex h-14 w-14 items-center justify-center rounded-full font-display text-lg font-black text-white ring-2 ring-white/15 sm:h-16 sm:w-16 sm:text-xl"
-        style={{ background: `linear-gradient(135deg, hsl(${hue} 68% 48%), hsl(${(hue + 45) % 360} 70% 38%))` }}
-        aria-hidden
-      >
-        {initials}
-      </div>
-    </div>
-  );
 }
 
 /* Own glyphs for the three shortcuts. The generic message/book/calculator icons
@@ -130,7 +108,12 @@ function Dashboard() {
 
         <div className="relative flex items-start gap-4 sm:gap-5">
           {/* The member's own avatar — their identity, not the mascot. */}
-          <UserAvatar name={state.profile.name} email={state.profile.email} />
+          <MemberAvatar
+            name={state.profile.name}
+            email={state.profile.email}
+            src={state.profile.avatarUrl}
+            size={64}
+          />
 
           <div className="min-w-0 flex-1">
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">

@@ -2,18 +2,18 @@
  * MentorChat — the floating "Cosmo" mentor widget.
  *
  * Cosmo's head IS the launcher: members recognise the mascot from the course
- * videos, so the button reads as "ask Cosmo", not "generic chatbot".
+ * videos, so the button reads as "ask Cosmo", not "generic chatbot". His face
+ * also sits beside every answer he gives, which is what makes a support reply
+ * (badged as a person) legible as a different voice.
  *
- * Cosmo is a Foundation perk. Below €100 the panel shows what he does and how to
- * unlock him instead of a chat box — the gate is enforced server-side too, so
- * this is presentation, not security.
+ * Cosmo is a Foundation perk. Below €100 the panel sells him instead of showing
+ * a chat box — the gate is enforced server-side too, so this is presentation.
  *
- * The thread is loaded from the DB on open, which is also how a human support
- * answer (role "support", written by the escalation trigger) shows up for the
- * member — right where they asked, badged as a person rather than as Cosmo.
+ * The thread loads from the DB on open, which is also how a human support answer
+ * (role "support", written by the escalation trigger) reaches the member.
  *
- * Guardrails live server-side; the UI carries the "AI assistant, not advice"
- * disclaimer so members know what this is.
+ * An empty thread offers starter questions rather than a blank box: members who
+ * don't know what to ask are the ones who never come back.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
@@ -31,9 +31,24 @@ interface Msg { role: "user" | "assistant" | "support"; content: string }
 
 const GREETING: Msg = {
   role: "assistant",
-  content:
-    "Hey, I'm Cosmo — your AI mentor. 👋 Ask me anything about the academy, the signals, the tiers or the strategy (Level 2, volume profile, risk management …). I'm an AI assistant, not personal investment advice — and if I can't answer something, I'll pass it straight to our team.",
+  content: "Hey, I'm Cosmo 👋 Ask me anything about the course, the signals or your tier. If I can't answer it, I'll pass it to our team.",
 };
+
+const STARTERS = [
+  "How do I read a signal?",
+  "What is Level 2 data?",
+  "Explain the value area",
+  "How much should I risk per trade?",
+];
+
+/** Cosmo's face beside his own messages — the anchor for "who is talking". */
+function CosmoBubbleAvatar() {
+  return (
+    <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[oklch(0.22_0.06_260)] ring-1 ring-primary/30">
+      <img src={COSMO_HEAD} alt="" className="h-5 w-5 object-contain" />
+    </span>
+  );
+}
 
 /** What members see before Foundation: what Cosmo is, and how to switch him on. */
 function UnlockPanel({ min }: { min: number }) {
@@ -78,17 +93,29 @@ export function MentorChat() {
   const [busy, setBusy] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   /** Pull the stored thread — this is how a human support answer reaches the member. */
   const loadHistory = useCallback(async () => {
     setLoadingHistory(true);
     try {
-      const { data } = await supabase
+      // The generated DB types are empty in this project, so table access goes
+      // through the same narrow cast the admin views use.
+      const client = supabase as unknown as {
+        from: (t: string) => {
+          select: (c: string) => {
+            order: (c: string, o: { ascending: boolean }) => {
+              limit: (n: number) => Promise<{ data: Msg[] | null }>;
+            };
+          };
+        };
+      };
+      const { data } = await client
         .from("mentor_messages")
         .select("role, content")
         .order("created_at", { ascending: true })
         .limit(60);
-      const rows = (data ?? []) as Msg[];
+      const rows = data ?? [];
       setMsgs(rows.length ? [GREETING, ...rows] : [GREETING]);
     } catch {
       /* keep whatever is on screen — the thread is a nicety, not critical */
@@ -105,9 +132,7 @@ export function MentorChat() {
     if (open) scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [msgs, open, busy]);
 
-  async function send(e: React.FormEvent) {
-    e.preventDefault();
-    const text = input.trim();
+  async function ask(text: string) {
     if (!text || busy) return;
     setInput("");
     setMsgs((m) => [...m, { role: "user", content: text }]);
@@ -128,8 +153,12 @@ export function MentorChat() {
       setMsgs((m) => [...m, { role: "assistant", content: err instanceof Error ? err.message : "Network error." }]);
     } finally {
       setBusy(false);
+      inputRef.current?.focus();
     }
   }
+
+  // Starters only help while the member hasn't actually started talking.
+  const showStarters = !busy && msgs.length === 1 && msgs[0] === GREETING;
 
   return (
     <>
@@ -156,17 +185,25 @@ export function MentorChat() {
 
       {/* Panel */}
       {open && (
-        <div className="fixed bottom-24 right-4 z-40 flex h-[min(560px,75vh)] w-[min(380px,calc(100vw-2rem))] flex-col overflow-hidden rounded-3xl border border-white/10 bg-[oklch(0.14_0.04_255)] shadow-2xl lg:bottom-6">
+        <div className="fixed bottom-24 right-4 z-40 flex h-[min(580px,78vh)] w-[min(390px,calc(100vw-2rem))] flex-col overflow-hidden rounded-3xl border border-white/10 bg-[oklch(0.14_0.04_255)] shadow-2xl lg:bottom-6">
           {/* Header */}
-          <div className="flex items-center gap-3 border-b border-white/10 bg-white/[0.03] px-4 py-3">
-            <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-primary/15">
+          <div className="relative flex items-center gap-3 border-b border-white/10 px-4 py-3">
+            <div
+              className="pointer-events-none absolute inset-0 opacity-70"
+              style={{ background: "linear-gradient(120deg, color-mix(in oklch, #75B9F5 12%, transparent), transparent 60%)" }}
+              aria-hidden
+            />
+            <span className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-primary/15 ring-1 ring-primary/30">
               <img src={COSMO_HEAD} alt="" className="h-7 w-7 object-contain" />
             </span>
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-bold">Cosmo</div>
+            <div className="relative min-w-0 flex-1">
+              <div className="flex items-center gap-1.5 text-sm font-bold">
+                Cosmo
+                {!locked && <span className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_6px_var(--primary)]" aria-hidden />}
+              </div>
               <div className="text-[11px] text-muted-foreground">AI mentor · not investment advice</div>
             </div>
-            <button onClick={() => setOpen(false)} aria-label="Close" className="rounded-lg p-1.5 text-muted-foreground hover:bg-white/5 hover:text-foreground">
+            <button onClick={() => setOpen(false)} aria-label="Close" className="relative rounded-lg p-1.5 text-muted-foreground hover:bg-white/5 hover:text-foreground">
               <X className="h-4 w-4" />
             </button>
           </div>
@@ -176,59 +213,93 @@ export function MentorChat() {
           ) : (
             <>
               {/* Messages */}
-              <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
+              <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-3.5 py-4">
                 {loadingHistory && (
                   <div className="flex justify-center py-2">
                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                   </div>
                 )}
+
                 {msgs.map((m, i) =>
                   m.role === "support" ? (
                     // A real person answered — make that unmistakable.
-                    <div key={i} className="flex justify-start">
-                      <div className="max-w-[85%] rounded-2xl border border-primary/30 bg-primary/[0.08] px-3.5 py-2.5">
-                        <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-primary">
-                          <Headset className="h-3 w-3" /> Support team
-                        </div>
-                        <div className="whitespace-pre-wrap text-sm text-foreground/90">{m.content}</div>
+                    <div key={i} className="flex justify-start gap-2">
+                      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary ring-1 ring-primary/40">
+                        <Headset className="h-3.5 w-3.5" />
+                      </span>
+                      <div className="max-w-[82%] rounded-2xl rounded-tl-md border border-primary/30 bg-primary/[0.08] px-3.5 py-2.5">
+                        <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-primary">Support team</div>
+                        <div className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">{m.content}</div>
+                      </div>
+                    </div>
+                  ) : m.role === "user" ? (
+                    <div key={i} className="flex justify-end">
+                      <div className="max-w-[82%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-primary px-3.5 py-2.5 text-sm leading-relaxed text-primary-foreground">
+                        {m.content}
                       </div>
                     </div>
                   ) : (
-                    <div key={i} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
-                      <div
-                        className={
-                          "max-w-[85%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-sm " +
-                          (m.role === "user"
-                            ? "bg-primary text-primary-foreground"
-                            : "border border-white/10 bg-white/[0.04] text-foreground/90")
-                        }
-                      >
+                    <div key={i} className="flex justify-start gap-2">
+                      <CosmoBubbleAvatar />
+                      <div className="max-w-[82%] whitespace-pre-wrap rounded-2xl rounded-tl-md border border-white/10 bg-white/[0.05] px-3.5 py-2.5 text-sm leading-relaxed text-foreground/90">
                         {m.content}
                       </div>
                     </div>
                   ),
                 )}
+
                 {busy && (
-                  <div className="flex justify-start">
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5 text-sm text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" />
+                  <div className="flex justify-start gap-2">
+                    <CosmoBubbleAvatar />
+                    <div className="flex items-center gap-1 rounded-2xl rounded-tl-md border border-white/10 bg-white/[0.05] px-3.5 py-3">
+                      <style>{`
+                        @keyframes cosmo-typing { 0%,60%,100% { opacity:.25; transform:translateY(0) } 30% { opacity:1; transform:translateY(-2px) } }
+                        .cosmo-dot { animation: cosmo-typing 1.2s infinite; }
+                        @media (prefers-reduced-motion: reduce) { .cosmo-dot { animation: none; opacity:.6 } }
+                      `}</style>
+                      {[0, 1, 2].map((d) => (
+                        <span
+                          key={d}
+                          className="cosmo-dot h-1.5 w-1.5 rounded-full bg-foreground/70"
+                          style={{ animationDelay: `${d * 0.16}s` }}
+                        />
+                      ))}
                     </div>
+                  </div>
+                )}
+
+                {showStarters && (
+                  <div className="flex flex-wrap gap-1.5 pl-9 pt-1">
+                    {STARTERS.map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => void ask(s)}
+                        className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-foreground/75 transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-foreground"
+                      >
+                        {s}
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
 
               {/* Input */}
-              <form onSubmit={send} className="flex items-center gap-2 border-t border-white/10 p-3">
+              <form
+                onSubmit={(e) => { e.preventDefault(); void ask(input.trim()); }}
+                className="flex items-center gap-2 border-t border-white/10 p-3"
+              >
                 <input
+                  ref={inputRef}
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask Cosmo …"
-                  className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm outline-none focus:border-primary/50"
+                  className="min-w-0 flex-1 rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5 text-sm outline-none transition-colors focus:border-primary/50"
                 />
                 <button
                   type="submit"
                   disabled={busy || !input.trim()}
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50"
+                  aria-label="Send"
+                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-40"
                 >
                   <Send className="h-4 w-4" />
                 </button>

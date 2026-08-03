@@ -23,7 +23,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface MemberState {
   memberId: string;
-  profile: { name: string; email: string; telegramHandle: string; joinedAt: string };
+  profile: { name: string; email: string; telegramHandle: string; joinedAt: string; avatarUrl: string };
   lifetimeDeposits: number;
   currentTier: Tier | undefined;
   nextTier: Tier | undefined;
@@ -45,7 +45,7 @@ export interface MemberState {
 /** Raw shape we pull from Supabase before deriving the tier maths. */
 interface MemberInput {
   memberId: string;
-  profile: { name: string; email: string; telegramHandle: string; joinedAt: string };
+  profile: { name: string; email: string; telegramHandle: string; joinedAt: string; avatarUrl: string };
   deposit: number;
   monthlyLots: number;
   activityStatus: "active" | "grace" | "inactive";
@@ -55,7 +55,7 @@ interface MemberInput {
 
 const EMPTY_INPUT: MemberInput = {
   memberId: "",
-  profile: { name: "", email: "", telegramHandle: "", joinedAt: "" },
+  profile: { name: "", email: "", telegramHandle: "", joinedAt: "", avatarUrl: "" },
   deposit: 0,
   monthlyLots: 0,
   activityStatus: "active",
@@ -122,7 +122,7 @@ async function fetchMemberInput(): Promise<MemberInput> {
   };
 
   const [{ data: member }, { data: notifRows }] = await Promise.all([
-    client.from("members").select("id, name, email, telegram_handle, deposit, monthly_lots, activity_status, joined_at").eq("auth_user_id", user.id).maybeSingle(),
+    client.from("members").select("id, name, email, telegram_handle, deposit, monthly_lots, activity_status, joined_at, avatar_url").eq("auth_user_id", user.id).maybeSingle(),
     client.from("notifications").select("id, type, title, body, link, read_at, created_at").order("created_at", { ascending: false }),
   ]);
 
@@ -146,6 +146,7 @@ async function fetchMemberInput(): Promise<MemberInput> {
       email: (member?.email as string) ?? user.email ?? "",
       telegramHandle: (member?.telegram_handle as string) ?? "",
       joinedAt: (member?.joined_at as string) ?? "",
+      avatarUrl: (member?.avatar_url as string) ?? "",
     },
     deposit: Number(member?.deposit ?? 0),
     monthlyLots: Number(member?.monthly_lots ?? 0),

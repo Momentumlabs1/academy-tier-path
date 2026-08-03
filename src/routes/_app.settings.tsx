@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { useMemberState } from "@/hooks/useMemberState";
+import { AvatarUploader } from "@/components/academy/settings/AvatarUploader";
 import { Card } from "@/components/academy/primitives/Card";
 import { formatMoney, formatDate } from "@/lib/format";
 import { TierTag } from "@/components/academy/primitives/TierTag";
@@ -19,6 +21,8 @@ function SettingsPage() {
   const tier = state.currentTier;
   const { profile } = state;
   const displayName = profile.name || profile.email || "—";
+  // Local echo so the new picture shows instantly, before the member state refetches.
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const rows = [
     { label: "Name", value: profile.name || "—" },
     { label: "Email", value: profile.email || "—" },
@@ -36,11 +40,8 @@ function SettingsPage() {
       </div>
 
       <Card variant="surface" className="micro-lift">
-        <div className="flex items-center gap-4 border-b border-white/5 p-6">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-[oklch(0.7_0.2_290)] text-lg font-bold text-primary-foreground">
-            {displayName.charAt(0).toUpperCase()}
-          </div>
-          <div>
+        <div className="border-b border-white/5 p-6">
+          <div className="mb-4">
             <div className="font-display text-lg font-bold">{displayName}</div>
             {tier ? (
               <TierTag tier={tier.key} />
@@ -48,6 +49,12 @@ function SettingsPage() {
               <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Below Foundation</span>
             )}
           </div>
+          <AvatarUploader
+            name={profile.name}
+            email={profile.email}
+            avatarUrl={avatarUrl ?? profile.avatarUrl}
+            onChange={setAvatarUrl}
+          />
         </div>
         <dl className="divide-y divide-white/5">
           {rows.map((r) => (

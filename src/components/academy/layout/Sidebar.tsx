@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Bell, BookOpen, Calculator, LayoutDashboard, LogOut, Radio, Settings, ShieldCheck, Trophy, Unlock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMemberState } from "@/hooks/useMemberState";
+import { MemberAvatar } from "@/components/academy/primitives/MemberAvatar";
 import { supabase } from "@/integrations/supabase/client";
 import { isAdminSession } from "@/lib/admin-auth";
 
@@ -81,6 +82,13 @@ export function Sidebar() {
 
       <div className="px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">Account</div>
       <div className="mt-3 flex items-center gap-3 rounded-2xl bg-white/5 p-3">
+        <MemberAvatar
+          name={state.profile.name}
+          email={state.profile.email}
+          src={state.profile.avatarUrl}
+          size={34}
+          glow={false}
+        />
         <Link
           to="/notifications"
           aria-label="Notifications"
