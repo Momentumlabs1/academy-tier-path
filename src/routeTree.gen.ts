@@ -34,6 +34,7 @@ import { Route as AdminLessonsRouteImport } from './routes/admin.lessons'
 import { Route as AdminMembersRouteImport } from './routes/admin.members'
 import { Route as AdminSignalsRouteImport } from './routes/admin.signals'
 import { Route as AdminStructureRouteImport } from './routes/admin.structure'
+import { Route as AdminSupportRouteImport } from './routes/admin.support'
 import { Route as AdminTenantsRouteImport } from './routes/admin.tenants'
 import { Route as TSlugRouteImport } from './routes/t.$slug'
 import { Route as AppLessonsIndexRouteImport } from './routes/_app.lessons.index'
@@ -163,6 +164,11 @@ const AdminStructureRoute = AdminStructureRouteImport.update({
   path: '/structure',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSupportRoute = AdminSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminTenantsRoute = AdminTenantsRouteImport.update({
   id: '/tenants',
   path: '/tenants',
@@ -208,6 +214,7 @@ export interface FileRoutesByFullPath {
   '/admin/members': typeof AdminMembersRoute
   '/admin/signals': typeof AdminSignalsRoute
   '/admin/structure': typeof AdminStructureRoute
+  '/admin/support': typeof AdminSupportRoute
   '/admin/tenants': typeof AdminTenantsRoute
   '/t/$slug': typeof TSlugRoute
   '/admin/': typeof AdminIndexRoute
@@ -235,6 +242,7 @@ export interface FileRoutesByTo {
   '/admin/members': typeof AdminMembersRoute
   '/admin/signals': typeof AdminSignalsRoute
   '/admin/structure': typeof AdminStructureRoute
+  '/admin/support': typeof AdminSupportRoute
   '/admin/tenants': typeof AdminTenantsRoute
   '/t/$slug': typeof TSlugRoute
   '/': typeof AppIndexRoute
@@ -267,6 +275,7 @@ export interface FileRoutesById {
   '/admin/members': typeof AdminMembersRoute
   '/admin/signals': typeof AdminSignalsRoute
   '/admin/structure': typeof AdminStructureRoute
+  '/admin/support': typeof AdminSupportRoute
   '/admin/tenants': typeof AdminTenantsRoute
   '/t/$slug': typeof TSlugRoute
   '/_app/': typeof AppIndexRoute
@@ -300,6 +309,7 @@ export interface FileRouteTypes {
     | '/admin/members'
     | '/admin/signals'
     | '/admin/structure'
+    | '/admin/support'
     | '/admin/tenants'
     | '/t/$slug'
     | '/admin/'
@@ -327,6 +337,7 @@ export interface FileRouteTypes {
     | '/admin/members'
     | '/admin/signals'
     | '/admin/structure'
+    | '/admin/support'
     | '/admin/tenants'
     | '/t/$slug'
     | '/'
@@ -358,6 +369,7 @@ export interface FileRouteTypes {
     | '/admin/members'
     | '/admin/signals'
     | '/admin/structure'
+    | '/admin/support'
     | '/admin/tenants'
     | '/t/$slug'
     | '/_app/'
@@ -557,6 +569,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminStructureRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/support': {
+      id: '/admin/support'
+      path: '/support'
+      fullPath: '/admin/support'
+      preLoaderRoute: typeof AdminSupportRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/tenants': {
       id: '/admin/tenants'
       path: '/tenants'
@@ -633,6 +652,7 @@ interface AdminRouteChildren {
   AdminMembersRoute: typeof AdminMembersRoute
   AdminSignalsRoute: typeof AdminSignalsRoute
   AdminStructureRoute: typeof AdminStructureRoute
+  AdminSupportRoute: typeof AdminSupportRoute
   AdminTenantsRoute: typeof AdminTenantsRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -644,6 +664,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminMembersRoute: AdminMembersRoute,
   AdminSignalsRoute: AdminSignalsRoute,
   AdminStructureRoute: AdminStructureRoute,
+  AdminSupportRoute: AdminSupportRoute,
   AdminTenantsRoute: AdminTenantsRoute,
   AdminIndexRoute: AdminIndexRoute,
 }

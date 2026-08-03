@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { BarChart2, BookOpen, FileText, LayoutDashboard, LogOut, Network, Palette, Radio, ScrollText, Users } from "lucide-react";
+import { BarChart2, BookOpen, FileText, Headset, LayoutDashboard, LogOut, Network, Palette, Radio, ScrollText, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { adminSignOut } from "@/lib/admin-auth";
 
@@ -8,6 +8,7 @@ const MENU = [
   { to: "/admin/structure", label: "Structure", icon: Network, group: "Main" },
   { to: "/admin/members", label: "Members", icon: Users, group: "Main" },
   { to: "/admin/deposits", label: "Deposits", icon: BarChart2, group: "Main" },
+  { to: "/admin/support", label: "Support", icon: Headset, group: "Main" },
   { to: "/admin/signals", label: "Signal Relay", icon: Radio, group: "Growth" },
   { to: "/admin/tenants", label: "White-Label", icon: Palette, group: "Growth" },
   { to: "/admin/lessons", label: "Content", icon: BookOpen, group: "Growth" },

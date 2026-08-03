@@ -1,26 +1,39 @@
 /**
- * mentor-chat — "Cosmo Mentor", the customer-facing Q&A bot.
+ * mentor-chat — "Cosmo", the member-facing AI mentor.
  *
- * A direct line for logged-in members to ask about the academy, the platform,
- * the tiers, and the trading concepts taught in the lessons. Runs on the Claude
- * API (Haiku 4.5 — cheap + fast) with the whole knowledge base in the SYSTEM
- * prompt and prompt-caching on it, so we don't need any RAG infra (the KB is
- * tiny and stable — long-context + caching is the right call for that shape).
+ * A direct line for funded members to ask about the academy, the platform, the
+ * tiers and the trading concepts the course teaches. Runs on the Claude API
+ * (Haiku 4.5 by default) with the whole knowledge base in the SYSTEM prompt and
+ * prompt-caching on it.
+ *
+ * Knowledge comes from the `mentor_knowledge` table — curated platform facts
+ * plus the head trader's actual lesson narration. The corpus is ~18k tokens, so
+ * long-context + caching beats RAG infra at this size, and editing a row changes
+ * what the bot knows on the next request with no redeploy. Cache reads make the
+ * marginal cost of that corpus ≈ 0.2 ct per message.
+ *
+ * Gating: Cosmo is a Foundation perk — members below MENTOR_MIN_DEPOSIT get a
+ * 403 with `locked: true` so the widget can show the upsell instead.
+ *
+ * Escalation: Claude can call the `escalate_to_human` tool for account/payout
+ * topics, complaints, or anything it isn't sure about. That opens a row in
+ * `mentor_escalations` and e-mails support; the human answer is written back
+ * into the member's thread by a DB trigger (see migration 020).
  *
  * Guardrails (EU/MiFID/ESMA — this is a real financial product):
- *   - EDUCATION ONLY. Never give personalized investment advice or "should I
- *     buy/sell X" calls. State it's an AI assistant, not a human/licensed advisor.
- *   - Escalate account / deposit / withdrawal / payout / "what should I trade"
- *     questions to human support instead of guessing.
- *   - Add the CFD risk reality when the topic is trading returns.
+ *   - EDUCATION ONLY. Never personalized investment advice or "should I buy X".
+ *   - Never guess on account / deposit / withdrawal / payout questions — escalate.
+ *   - State the CFD risk reality when the topic is returns.
  * System-prompt guardrails stop casual misuse; they are a first layer, not a
  * hard security boundary — keep that in mind before widening the bot's scope.
  *
  * Secrets: ANTHROPIC_API_KEY. Optional: MENTOR_MODEL (default claude-haiku-4-5),
- * MENTOR_DAILY_LIMIT (default 30).
+ * MENTOR_DAILY_LIMIT (default 30), MENTOR_MIN_DEPOSIT (default 100),
+ * SUPPORT_EMAIL (default kontakt@momentumlabs.at).
  *
  * POST { message: string }  (Authorization: Bearer <member access token>)
- *   -> { reply: string }  |  { error, ... }
+ *   -> { reply: string, escalated?: boolean }
+ *   -> 403 { error, locked: true, minDeposit } when below the deposit gate
  */
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -36,44 +49,75 @@ const json = (b: unknown, s = 200) =>
 
 const MODEL = Deno.env.get("MENTOR_MODEL") ?? "claude-haiku-4-5";
 const DAILY_LIMIT = Number(Deno.env.get("MENTOR_DAILY_LIMIT") ?? 30);
-const SUPPORT_EMAIL = "kontakt@momentumlabs.at";
+const MIN_DEPOSIT = Number(Deno.env.get("MENTOR_MIN_DEPOSIT") ?? 100);
+const SUPPORT_EMAIL = Deno.env.get("SUPPORT_EMAIL") ?? "kontakt@momentumlabs.at";
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 
-// ── Knowledge base (cached). Keep it factual + current; edit here to teach the bot. ──
-const KNOWLEDGE = `Du bist "Cosmo Mentor", der freundliche KI-Assistent der Trading-Academy (Cosmos Candles / Powered by Agent Trading Academy). Du bist KEIN Mensch und KEIN lizenzierter Anlageberater — sag das offen, wenn jemand danach fragt. Du hilfst Mitgliedern, die Plattform, die Ausbildung und die Trading-Konzepte zu verstehen. Antworte auf Deutsch (oder in der Sprache des Nutzers), kurz, klar und motivierend. Wenn du etwas nicht sicher weißt, sag es ehrlich und verweise an das Team.
+/** Behaviour rules. The course/platform knowledge itself lives in the DB. */
+const PERSONA = `You are "Cosmo", the AI mentor of the Cosmos Candles trading academy.
 
-## Was die Academy ist
-Eine White-Label-Trading-Ausbildung mit Live-Telegram-Signalen, strukturierten Lektionen und einer Community. Der Zugang ist kostenlos — finanziert wird über eine Einzahlung bei unserem Partner-Broker (ab 100 €). Keine Kursgebühren.
+You are NOT a human and NOT a licensed financial advisor — say so plainly whenever someone asks or assumes otherwise.
 
-## Ablauf für neue Mitglieder
-1. Über den Partner-Link registrieren (kostenloser Account).
-2. Einleitungs-Video ansehen.
-3. Bei unserem Partner-Broker ein Konto eröffnen und mindestens 100 € einzahlen.
-4. Nach verifizierter Einzahlung schaltet unser Telegram-Bot automatisch den Signal-Kanal frei (persönliche Einladung).
-5. Lektionen durcharbeiten, Signalen folgen, Tier für Tier wachsen.
+HOW TO ANSWER
+- Always answer in the language the member writes in (German members get German, English get English). The knowledge below is a mix of English and German source material — translate freely, never apologise for the source language.
+- Short, clear, concrete, encouraging. Prefer 2-6 sentences plus a list when it helps. No walls of text.
+- Teach from the academy's own material below. When a question maps to a lesson, name it ("that's lesson 9 — Level 1 vs Level 2").
+- If the knowledge base doesn't cover it, say so honestly instead of inventing an answer.
 
-## Tiers (nach verifizierter Einzahlung)
-- Foundation ab 100 €: Telegram-Signalgruppe, Foundation-Lektionen, wöchentliches Marktupdate, Community.
-- Operator ab 2.000 €: alles aus Foundation + automatisierter Telegram-Trader (Copy-Trading vom Master-Account), Operator-Lektionen, Live-Trading-Room.
-- Elite ab 50.000 €: alles aus Operator + Elite-Lounge, 1:1 mit dem Desk, Portfolio-Audit, VIP-Events.
+HARD GUARDRAILS
+- NEVER give personalized investment advice: no "should I buy/sell X", no position sizing for their account, no price predictions, no trade recommendations beyond explaining the official signals. Explain the underlying concept instead.
+- NEVER guess about a member's account, deposit, withdrawal, payout, commission, KYC or billing. Use the escalate_to_human tool.
+- When the topic is returns/profit, state the reality: trading and CFDs are high-risk, most retail accounts lose money, never risk more than you can afford to lose.
+- No guaranteed-profit promises. No invented numbers, names or dates.
 
-## Aktiv bleiben
-Man muss nicht nur einzahlen, sondern auch aktiv traden: ein kleines Monats-Lot-Minimum im rollenden 30-Tage-Fenster. Wer über längere Zeit komplett inaktiv ist, verliert (nach einer Schonfrist) den Signal-Zugang und kommt automatisch zurück, sobald wieder getradet wird. Das Minimum ist bewusst niedrig — es geht nur darum, komplett inaktive Accounts auszusortieren.
+WHEN TO HAND OVER TO A HUMAN (use the escalate_to_human tool)
+- Account, deposit, withdrawal, payout, commission, KYC, billing or technical account problems.
+- Complaints, refund requests, anything legal, or an angry member.
+- The member explicitly asks for a human.
+- Anything you genuinely cannot answer from the knowledge base.
+Call the tool instead of guessing. Tell the member briefly and warmly that you're passing it to the team — do not invent a response time.`;
 
-## Lehrplan & Strategie (Level-2 / Orderflow-Ansatz)
-- Grundlagen: Was ist Trading (Long & Short), Trading vs. Investieren, warum 90 % verlieren (kein Plan, Overtrading, Revenge-Trading, Strategie-Hopping), die Formel für Profitabilität (Wissen → Erfahrung → Disziplin → Umsetzung).
-- Mindset: die 4 zerstörerischen Emotionen (Angst, Gier, Hoffnung, Frust), was profitable Trader anders machen (System, Risikomanagement, Statistik, langfristig denken), Trading-Journal.
-- Orderflow (Kern des Edges): Retail- vs. institutionelles Geld; Level 1 (Preis/Candles/Indikatoren = nur das Ergebnis) vs. Level 2 (Orderbuch, Liquidität, Marktteilnehmer = die Ursache); Orderbuch (aktive vs. passive Orders, "Bubbles" = Markt-Ausführungen großer Kontrakte); Volume Profile (Value Area mit VAH/VAL, High Volume Nodes vs. Low Volume Nodes); Footprint-Chart & Delta (Kauf- vs. Verkaufsdruck pro Kerze) für präzises Timing.
-- Kernidee: Volume Profile sagt WO (Point of Interest), Footprint/Bubbles sagen WANN (Timing) — zusammen ergibt das datenbasierte Einstiege, die die meisten Marktteilnehmer nie sehen.
-- Risikomanagement: Kapital schützen kommt VOR Gewinn; Trading ist kalkuliertes Wahrscheinlichkeitsspiel, kein Trade ist sicher; nie einen Tag/eine Woche bewerten — Monats-/Jahresperformance zählt.
+const ESCALATE_TOOL = {
+  name: "escalate_to_human",
+  description:
+    "Hand this conversation to a human support agent. Use for account, deposit, withdrawal, payout, commission, KYC, billing or technical account issues; complaints or legal topics; an explicit request for a human; or any question you cannot answer from the knowledge base. Opens a support ticket — the member gets the human's answer in this same chat.",
+  input_schema: {
+    type: "object",
+    properties: {
+      reason: {
+        type: "string",
+        enum: ["account_or_payment", "technical", "complaint", "unknown_answer", "human_requested"],
+        description: "Why this needs a human.",
+      },
+      summary: {
+        type: "string",
+        description:
+          "One or two sentences for the support agent: what the member wants and anything already established. Write it in German.",
+      },
+    },
+    required: ["reason", "summary"],
+  },
+};
 
-## Signale & Telegram
-Signale kommen über einen privaten Telegram-Kanal (Entry, Stop-Loss, Ziele). Nach verifizierter Einzahlung sendet der Bot automatisch die persönliche Einladung. Der "Connect Telegram"-Button ist im Dashboard.
+interface AnthropicBlock { type: string; text?: string; id?: string; name?: string; input?: Record<string, unknown> }
 
-## LEITPLANKEN — sehr wichtig
-- Gib NIEMALS personalisierte Anlage-/Trading-Beratung ("Soll ich X kaufen/verkaufen?", "Wie viel soll ich investieren?", Kursprognosen, konkrete Trade-Empfehlungen außerhalb der offiziellen Signale). Erkläre stattdessen die zugrundeliegenden Konzepte und verweise auf die Signale/Lektionen.
-- Konto-, Einzahlungs-, Auszahlungs-, Provisions- und Zahlungsfragen NICHT raten — verweise ans Team unter ${SUPPORT_EMAIL} (bzw. den Support-Kanal).
-- Erwähne bei Fragen zu Rendite/Gewinn den realistischen Risikohinweis: CFD-/Trading ist hochriskant; die Mehrheit der Retail-Konten verliert Geld; nie mehr riskieren, als man verlieren kann.
-- Keine Versprechen von garantierten Gewinnen. Keine erfundenen Zahlen. Wenn du etwas nicht in dieser Wissensbasis findest, sag ehrlich, dass du es nicht sicher weißt, und verweise ans Team.`;
+async function callClaude(apiKey: string, system: unknown, messages: unknown[]) {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
+    body: JSON.stringify({ model: MODEL, max_tokens: 1024, system, tools: [ESCALATE_TOOL], messages }),
+  });
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, status: res.status, data };
+}
+
+const textOf = (blocks: AnthropicBlock[]) =>
+  blocks.filter((b) => b?.type === "text").map((b) => b.text ?? "").join("").trim();
+
+function escapeHtml(s: string) {
+  return s.replace(/[&<>"']/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] ?? c);
+}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
@@ -82,23 +126,26 @@ Deno.serve(async (req) => {
   const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
   if (!apiKey) return json({ error: "ANTHROPIC_API_KEY not set" }, 500);
 
-  // Identify the caller (must be a logged-in member).
   const auth = req.headers.get("Authorization") ?? "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
   if (!token) return json({ error: "unauthorized" }, 401);
 
-  const db = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-    { auth: { persistSession: false } },
-  );
+  const db = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!, {
+    auth: { persistSession: false },
+  });
 
   const { data: userData, error: uErr } = await db.auth.getUser(token);
   if (uErr || !userData.user) return json({ error: "unauthorized" }, 401);
 
   const { data: member } = await db
-    .from("members").select("id, name").eq("auth_user_id", userData.user.id).maybeSingle();
+    .from("members").select("id, name, email, deposit").eq("auth_user_id", userData.user.id).maybeSingle();
   if (!member) return json({ error: "Bitte zuerst registrieren." }, 403);
+
+  // ── Foundation gate: Cosmo is a perk, not a free demo. ──
+  const deposit = Number(member.deposit ?? 0);
+  if (deposit < MIN_DEPOSIT) {
+    return json({ error: `Cosmo schaltet ab ${MIN_DEPOSIT} € frei.`, locked: true, minDeposit: MIN_DEPOSIT }, 403);
+  }
 
   let body: { message?: string };
   try { body = await req.json(); } catch { return json({ error: "invalid json" }, 400); }
@@ -109,51 +156,116 @@ Deno.serve(async (req) => {
   // Daily rate limit (per member, user turns only).
   const since = new Date(); since.setUTCHours(0, 0, 0, 0);
   const { count } = await db
-    .from("mentor_messages")
-    .select("id", { count: "exact", head: true })
+    .from("mentor_messages").select("id", { count: "exact", head: true })
     .eq("member_id", member.id).eq("role", "user").gte("created_at", since.toISOString());
   if ((count ?? 0) >= DAILY_LIMIT) {
     return json({ error: `Tageslimit erreicht (${DAILY_LIMIT} Fragen). Melde dich morgen wieder oder schreib uns an ${SUPPORT_EMAIL}.` }, 429);
   }
 
-  // Load recent history for context (last ~10 turns), oldest first.
+  // ── Knowledge base from the DB, concatenated into one cached system block. ──
+  const { data: kb } = await db
+    .from("mentor_knowledge").select("title, content")
+    .eq("is_active", true).order("sort", { ascending: true }).order("slug", { ascending: true });
+  const corpus = (kb ?? []).map((d) => `## ${d.title}\n${d.content}`).join("\n\n---\n\n");
+
+  const system = [
+    { type: "text", text: PERSONA },
+    { type: "text", text: `# ACADEMY KNOWLEDGE BASE\n\n${corpus}`, cache_control: { type: "ephemeral" } },
+  ];
+
+  // History for context (last ~10 turns), oldest first. A human support reply is
+  // replayed to the model as an assistant turn so the thread stays coherent.
   const { data: histRows } = await db
-    .from("mentor_messages")
-    .select("role, content").eq("member_id", member.id)
+    .from("mentor_messages").select("role, content").eq("member_id", member.id)
     .order("created_at", { ascending: false }).limit(10);
-  const history = (histRows ?? []).reverse().map((r) => ({ role: r.role as "user" | "assistant", content: String(r.content) }));
+  const history = (histRows ?? []).reverse().map((r) => ({
+    role: r.role === "user" ? "user" as const : "assistant" as const,
+    content: r.role === "support" ? `[Support-Team]: ${r.content}` : String(r.content),
+  }));
 
-  // Call the Claude API. System prompt is cached (stable, reused across members).
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "content-type": "application/json",
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: 1024,
-      system: [{ type: "text", text: KNOWLEDGE, cache_control: { type: "ephemeral" } }],
-      messages: [...history, { role: "user", content: message }],
-    }),
-  });
+  const messages: unknown[] = [...history, { role: "user", content: message }];
 
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    console.error("[mentor-chat] anthropic error", res.status, data?.error);
-    return json({ error: "Der Mentor ist gerade nicht erreichbar. Bitte später erneut versuchen." }, 502);
+  const first = await callClaude(apiKey, system, messages);
+  if (!first.ok) {
+    console.error("[mentor-chat] anthropic error", first.status, first.data?.error);
+    return json({ error: "Cosmo ist gerade nicht erreichbar. Bitte später erneut versuchen." }, 502);
   }
-  const reply = Array.isArray(data?.content)
-    ? data.content.filter((b: { type?: string }) => b?.type === "text").map((b: { text?: string }) => b.text ?? "").join("").trim()
-    : "";
+
+  const blocks: AnthropicBlock[] = Array.isArray(first.data?.content) ? first.data.content : [];
+  const toolUse = blocks.find((b) => b?.type === "tool_use" && b?.name === "escalate_to_human");
+  let reply = textOf(blocks);
+  let escalated = false;
+
+  if (toolUse) {
+    const input = (toolUse.input ?? {}) as { reason?: string; summary?: string };
+    const reason = String(input.reason ?? "unknown_answer");
+    const summary = String(input.summary ?? message);
+
+    // Open the ticket with a small transcript snapshot for context.
+    const { data: esc } = await db.from("mentor_escalations").insert({
+      member_id: member.id,
+      question: message,
+      reason,
+      context: { summary, recent: history.slice(-6) },
+    }).select("id").maybeSingle();
+    escalated = true;
+
+    // Notify support (best-effort — a mail failure must not break the chat).
+    try {
+      const { data: sec } = await db.from("app_secrets").select("value").eq("key", "SEND_SECRET").maybeSingle();
+      const ticket = String(esc?.id ?? "").slice(0, 8);
+      await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(sec?.value ? { "x-send-secret": String(sec.value) } : {}),
+        },
+        body: JSON.stringify({
+          to: SUPPORT_EMAIL,
+          subject: `[Cosmo] Support-Anfrage von ${member.name ?? member.email ?? "Mitglied"} (${reason})`,
+          replyTo: member.email ?? undefined,
+          html:
+            `<h2>Cosmo hat eine Frage an das Team weitergeleitet</h2>` +
+            `<p><b>Mitglied:</b> ${escapeHtml(String(member.name ?? "—"))} &lt;${escapeHtml(String(member.email ?? "—"))}&gt;<br>` +
+            `<b>Einzahlung:</b> ${deposit} €<br>` +
+            `<b>Grund:</b> ${escapeHtml(reason)}<br>` +
+            `<b>Ticket:</b> ${escapeHtml(ticket)}</p>` +
+            `<p><b>Frage:</b><br>${escapeHtml(message)}</p>` +
+            `<p><b>Cosmos Zusammenfassung:</b><br>${escapeHtml(summary)}</p>` +
+            `<p>Beantworten im Admin-Bereich unter <b>/admin/support</b> — die Antwort erscheint automatisch im Chat des Mitglieds.</p>`,
+        }),
+      });
+    } catch (e) {
+      console.error("[mentor-chat] support mail failed", e);
+    }
+
+    // Let Claude phrase the hand-over itself, in the member's language.
+    const second = await callClaude(apiKey, system, [
+      ...messages,
+      { role: "assistant", content: blocks },
+      {
+        role: "user",
+        content: [{
+          type: "tool_result",
+          tool_use_id: toolUse.id,
+          content:
+            "Ticket opened. The support team has been notified by e-mail and will answer in this chat. Confirm this to the member briefly and warmly, in their language. Do not promise a specific response time.",
+        }],
+      },
+    ]);
+    if (second.ok && Array.isArray(second.data?.content)) {
+      const t = textOf(second.data.content as AnthropicBlock[]);
+      if (t) reply = t;
+    }
+    if (!reply) reply = "Das gebe ich direkt an unser Team weiter — die Antwort erscheint hier im Chat. 📩";
+  }
+
   if (!reply) return json({ error: "Keine Antwort erhalten." }, 502);
 
-  // Persist the exchange (service role — bypasses RLS).
   await db.from("mentor_messages").insert([
     { member_id: member.id, role: "user", content: message },
     { member_id: member.id, role: "assistant", content: reply },
   ]);
 
-  return json({ reply });
+  return json({ reply, escalated });
 });

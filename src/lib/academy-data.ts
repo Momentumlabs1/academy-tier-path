@@ -9,7 +9,7 @@ export interface Tier {
 export const TIERS: Tier[] = [
   { key: "foundation", name: "Foundation", minDeposit: 100,
     color: "oklch(0.78 0.16 150)",
-    perks: ["Telegram signal group access", "Foundation lessons", "Weekly market recap", "Community chat"] },
+    perks: ["Telegram signal group access", "Foundation lessons", "Cosmo — your 24/7 AI mentor", "Weekly market recap", "Community chat"] },
   { key: "operator", name: "Operator", minDeposit: 2_000,
     color: "oklch(0.7 0.18 270)",
     perks: ["All Foundation perks", "Automated Telegram trader (copy-trading from master account)", "Operator lessons", "Live trading room"] },
