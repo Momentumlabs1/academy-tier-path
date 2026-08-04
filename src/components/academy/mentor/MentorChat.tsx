@@ -162,24 +162,40 @@ export function MentorChat() {
 
   return (
     <>
-      {/* Launcher — Cosmo himself */}
+      {/* Launcher — Cosmo's head IS the button. No dark disc swallowing his face:
+          the cut-out head sits on a soft glow so he reads on any background, with
+          a small label so it's obvious he talks. */}
       {!open && (
         <button
           onClick={() => setOpen(true)}
           aria-label="Ask Cosmo"
-          className="group fixed bottom-24 right-4 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[oklch(0.22_0.06_260)] ring-2 ring-primary/60 shadow-[var(--shadow-lime)] transition-transform hover:scale-105 lg:bottom-6"
+          className="group fixed bottom-24 right-4 z-40 flex flex-col items-center gap-1 transition-transform duration-300 hover:scale-105 lg:bottom-6"
         >
-          <span
-            className="pointer-events-none absolute inset-0 rounded-full blur-lg"
-            style={{ background: "radial-gradient(circle, color-mix(in oklch, #75B9F5 45%, transparent), transparent 70%)" }}
-            aria-hidden
-          />
-          <img src={COSMO_HEAD} alt="" className="relative h-11 w-11 object-contain drop-shadow" />
-          {locked && (
-            <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[oklch(0.14_0.04_255)] ring-1 ring-white/15">
-              <Lock className="h-2.5 w-2.5 text-foreground/70" />
-            </span>
-          )}
+          <style>{`
+            @keyframes cosmoLaunchFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+            .cosmo-launch { animation: cosmoLaunchFloat 4.5s ease-in-out infinite; }
+            @media (prefers-reduced-motion: reduce) { .cosmo-launch { animation: none; } }
+          `}</style>
+          <span className="relative flex h-[68px] w-[68px] items-center justify-center">
+            <span
+              className="pointer-events-none absolute inset-0 -m-1 rounded-full blur-xl transition-opacity duration-300 group-hover:opacity-100"
+              style={{ background: "radial-gradient(circle, color-mix(in oklch, #75B9F5 60%, transparent), transparent 70%)", opacity: 0.8 }}
+              aria-hidden
+            />
+            <img
+              src={COSMO_HEAD}
+              alt=""
+              className="cosmo-launch relative h-[68px] w-[68px] object-contain drop-shadow-[0_6px_14px_rgba(0,0,0,0.55)]"
+            />
+            {locked && (
+              <span className="absolute bottom-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-[oklch(0.14_0.04_255)] ring-1 ring-white/15">
+                <Lock className="h-2.5 w-2.5 text-foreground/70" />
+              </span>
+            )}
+          </span>
+          <span className="rounded-full border border-primary/40 bg-[oklch(0.14_0.04_255)]/90 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-primary shadow-lg backdrop-blur-sm">
+            Talk with me
+          </span>
         </button>
       )}
 
@@ -193,8 +209,14 @@ export function MentorChat() {
               style={{ background: "linear-gradient(120deg, color-mix(in oklch, #75B9F5 12%, transparent), transparent 60%)" }}
               aria-hidden
             />
-            <span className="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-primary/15 ring-1 ring-primary/30">
-              <img src={COSMO_HEAD} alt="" className="h-7 w-7 object-contain" />
+            {/* Cosmo's face, not a cropped disc — glow instead of a ring. */}
+            <span className="relative flex h-11 w-11 shrink-0 items-center justify-center">
+              <span
+                className="pointer-events-none absolute inset-0 rounded-full blur-md"
+                style={{ background: "radial-gradient(circle, color-mix(in oklch, #75B9F5 55%, transparent), transparent 70%)" }}
+                aria-hidden
+              />
+              <img src={COSMO_HEAD} alt="" className="relative h-11 w-11 object-contain drop-shadow" />
             </span>
             <div className="relative min-w-0 flex-1">
               <div className="flex items-center gap-1.5 text-sm font-bold">
