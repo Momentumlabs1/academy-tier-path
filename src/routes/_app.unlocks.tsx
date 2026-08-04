@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, BookOpen, Check, Lock, Radio, Sparkles, Users } from "lucide-react";
+import heroFloor from "@/assets/hero-floor.jpg";
 import { TIERS } from "@/lib/academy-data";
 import { PRODUCTS, type ProductKind } from "@/lib/products";
 import { useMemberState } from "@/hooks/useMemberState";
@@ -40,6 +41,17 @@ function UnlocksPage() {
     <div className="space-y-8">
       {/* ── Header + progress: turns a checklist into a collection you're filling ── */}
       <div className="relative overflow-hidden rounded-[var(--radius)] border border-white/8 bg-[color:var(--surface-2)]/60 p-5 sm:p-7">
+        <img
+          src={heroFloor}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 right-0 hidden h-full w-[50%] object-cover object-right opacity-45 sm:block"
+        />
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{ background: "linear-gradient(90deg, var(--surface-2) 36%, color-mix(in oklch, var(--surface-2) 60%, transparent) 66%, transparent)" }}
+          aria-hidden
+        />
         <div
           className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full blur-3xl"
           style={{ background: `color-mix(in oklch, ${state.currentTier?.color ?? "var(--primary)"} 22%, transparent)` }}

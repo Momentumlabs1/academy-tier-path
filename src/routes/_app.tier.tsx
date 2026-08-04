@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Check, Lock, Sparkles } from "lucide-react";
+import heroMentors from "@/assets/hero-mentors.jpg";
 import { TIERS } from "@/lib/academy-data";
 import { useMemberState } from "@/hooks/useMemberState";
 import { DepositLadder } from "@/components/academy/tier/DepositLadder";
@@ -27,6 +28,17 @@ function TierPage() {
     <div className="space-y-6">
       {/* ── Status header: where you stand, in one glance ── */}
       <div className="relative overflow-hidden rounded-[var(--radius)] border border-white/8 bg-[color:var(--surface-2)]/60 p-5 sm:p-7">
+        <img
+          src={heroMentors}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 right-0 hidden h-full w-[46%] object-cover object-right opacity-50 sm:block"
+        />
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{ background: "linear-gradient(90deg, var(--surface-2) 38%, color-mix(in oklch, var(--surface-2) 62%, transparent) 68%, transparent)" }}
+          aria-hidden
+        />
         <div
           className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full blur-3xl"
           style={{ background: `color-mix(in oklch, ${state.currentTier?.color ?? "var(--primary)"} 22%, transparent)` }}

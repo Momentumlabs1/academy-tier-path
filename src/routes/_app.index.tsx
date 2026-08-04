@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
+import heroSignals from "@/assets/hero-signals.jpg";
 import { HeroBento } from "@/components/academy/hero/HeroBento";
 import { LessonGroup } from "@/components/academy/lessons/LessonGroup";
 import { SectionTitle } from "@/components/academy/primitives/SectionTitle";
@@ -109,6 +110,19 @@ function Dashboard() {
 
       {/* Greeting + action launcher — orientation only; tier/deposit/progress live in the Deposit Path card below */}
       <Card variant="hero" className="relative overflow-hidden px-5 py-6 sm:px-7 sm:py-7">
+        {/* Signature particle artwork on the right so the greeting isn't a bare
+            slab; a left-to-right scrim keeps the copy fully readable. */}
+        <img
+          src={heroSignals}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute inset-y-0 right-0 hidden h-full w-[52%] object-cover object-right opacity-55 sm:block"
+        />
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{ background: "linear-gradient(90deg, var(--surface-2) 34%, color-mix(in oklch, var(--surface-2) 60%, transparent) 66%, transparent)" }}
+          aria-hidden
+        />
         {/* Ambient glow blob */}
         <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-primary/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-12 left-8 h-40 w-40 rounded-full bg-[oklch(0.7_0.18_270)]/15 blur-3xl" />
