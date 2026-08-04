@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createContext, useContext, useMemo, useState } from "react";
 import { Calculator, Scale, TrendingUp, Radio, Clock, RotateCcw } from "lucide-react";
+import artTools from "@/assets/a-tools.jpg";
 import { Card } from "@/components/academy/primitives/Card";
+import { PageHero } from "@/components/academy/primitives/PageHero";
 import { MonteCarloCalc } from "@/components/academy/tools/MonteCarloCalc";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -51,10 +53,26 @@ function ToolsPage() {
   return (
     <TradeCtx.Provider value={trade}>
     <div className="space-y-6">
-      <div>
-        <h1 className="font-display text-3xl font-bold tracking-tight lg:text-4xl">Trader Tools</h1>
-        <p className="mt-1 text-muted-foreground">Size the trade, judge the odds, then see what a few hundred of them do to your account.</p>
-      </div>
+      <PageHero
+        eyebrow="Risk & sizing"
+        title="Trader Tools"
+        art={artTools}
+        aside={
+          <div className="sm:min-w-[11rem]">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              Risk per trade
+            </div>
+            {/* The calculators all hang off this one number, so it belongs in the
+                header rather than buried in the first card. */}
+            <div className="font-display text-4xl font-black leading-none text-primary">{riskPct}%</div>
+            <div className="mt-1 text-xs text-muted-foreground">
+              {formatMoney((account * riskPct) / 100, "€")} of {formatMoney(account, "€")}
+            </div>
+          </div>
+        }
+      >
+        Size the trade, judge the odds, then see what a few hundred of them do to your account.
+      </PageHero>
 
       <SignalPicker />
 

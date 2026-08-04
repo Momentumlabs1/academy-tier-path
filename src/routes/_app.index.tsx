@@ -117,11 +117,11 @@ function Dashboard() {
           src={artWave}
           alt=""
           aria-hidden
-          className="pointer-events-none absolute inset-y-0 right-0 hidden h-full w-[52%] object-cover object-right opacity-55 sm:block"
+          className="pointer-events-none absolute inset-y-0 right-0 hidden h-full w-[58%] object-cover object-right opacity-70 sm:block"
         />
         <div
           className="pointer-events-none absolute inset-0"
-          style={{ background: "linear-gradient(90deg, var(--surface-2) 34%, color-mix(in oklch, var(--surface-2) 60%, transparent) 66%, transparent)" }}
+          style={{ background: "linear-gradient(90deg, var(--surface-2) 32%, color-mix(in oklch, var(--surface-2) 55%, transparent) 62%, transparent)" }}
           aria-hidden
         />
         {/* Ambient glow blob */}

@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { PlayCircle, Search } from "lucide-react";
+import artLessons from "@/assets/a-lessons.jpg";
 import { LESSONS, TIERS, lessonThumb } from "@/lib/academy-data";
 import { LessonGroup } from "@/components/academy/lessons/LessonGroup";
+import { PageHero } from "@/components/academy/primitives/PageHero";
 import { useMemberState } from "@/hooks/useMemberState";
 import { useCompletedLessons } from "@/hooks/useCompletedLessons";
 import { cn } from "@/lib/utils";
@@ -57,6 +59,8 @@ function ContinueHero() {
 function LessonsPage() {
   const [q, setQ] = useState("");
   const [tier, setTier] = useState<string>("all");
+  const { stats } = useCompletedLessons();
+  const pct = stats.totalLessons > 0 ? (stats.completedCount / stats.totalLessons) * 100 : 0;
 
   const filtered = useMemo(
     () =>
@@ -81,13 +85,33 @@ function LessonsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Learn to trade</div>
-        <h1 className="font-display text-3xl font-bold tracking-tight text-balance lg:text-4xl">Lessons</h1>
-        <p className="mt-2 max-w-[65ch] text-muted-foreground">
-          {LESSONS.length} lessons across the full curriculum, from first candle to funded trader. Locked lessons open automatically as your verified deposit grows.
-        </p>
-      </div>
+      <PageHero
+        eyebrow="Learn to trade"
+        title="Lessons"
+        art={artLessons}
+        aside={
+          <div className="sm:min-w-[13rem]">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+              Your progress
+            </div>
+            <div className="font-display text-4xl font-black leading-none">
+              {stats.completedCount}
+              <span className="text-xl text-muted-foreground">/{stats.totalLessons}</span>
+            </div>
+            {/* A bar, not just a ratio: "how far along am I" should be readable
+                without doing the division in your head. */}
+            <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-white/8">
+              <div
+                className="h-full rounded-full bg-primary transition-[width] duration-700"
+                style={{ width: `${Math.max(pct, pct > 0 ? 4 : 0)}%` }}
+              />
+            </div>
+          </div>
+        }
+      >
+        {LESSONS.length} lessons across the full curriculum, from first candle to funded trader. Locked lessons
+        open automatically as your verified deposit grows.
+      </PageHero>
 
       <ContinueHero />
 

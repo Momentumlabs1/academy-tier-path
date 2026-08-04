@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { MessageSquare, Radio } from "lucide-react";
+import artSignals from "@/assets/a-signals.jpg";
 import { SIGNALS } from "@/lib/academy-data";
 import { useMemberState } from "@/hooks/useMemberState";
 import { Card } from "@/components/academy/primitives/Card";
+import { PageHero } from "@/components/academy/primitives/PageHero";
 import { SignalOddsCard } from "@/components/academy/right-rail/SignalOddsCard";
 import { TelegramConnectCard } from "@/components/academy/signals/TelegramConnectCard";
 import { SignalTutorialCard } from "@/components/academy/signals/SignalTutorialCard";
@@ -31,24 +33,38 @@ function SignalsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Live trade alerts</div>
-        <h1 className="font-display text-3xl font-bold tracking-tight text-balance lg:text-4xl">Signals</h1>
-        <p className="mt-2 max-w-[65ch] text-muted-foreground">Every signal is posted live to our private Telegram channel — entries, targets, and stops in real time. Open the channel below to get alerts the moment they drop.</p>
-      </div>
+      <PageHero
+        eyebrow="Live trade alerts"
+        title="Signals"
+        art={artSignals}
+        aside={
+          /* Access status belongs in the header: it is the one thing that decides
+             whether the rest of this page is usable to you. */
+          <div
+            className={cn(
+              "inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wide",
+              hasAccess ? "bg-primary/15 text-primary" : "bg-amber-400/15 text-amber-400",
+            )}
+          >
+            <span className={cn("h-1.5 w-1.5 rounded-full", hasAccess ? "bg-primary" : "bg-amber-400")} />
+            {hasAccess ? "Channel active" : "Locked"}
+          </div>
+        }
+      >
+        Every signal is posted live to our private Telegram channel — entries, targets, and stops in real time.
+        Open the channel below to get alerts the moment they drop.
+      </PageHero>
 
       <Card variant="hero" className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center">
         <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-primary/20 text-primary">
           <MessageSquare className="h-7 w-7" />
         </div>
+        {/* The status pill lives in the page header now, so this card is purely
+            the door into the channel — no repeated title, no repeated badge. */}
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <span className="flex items-center gap-2"><img src="/cosmos-mark.png" alt="" className="h-6 w-6 object-contain" /><span className="font-display text-lg font-bold">Signals</span></span>
-            <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase",
-              hasAccess ? "bg-primary/20 text-primary" : "bg-amber-400/20 text-amber-400")}>
-              <span className={cn("h-1.5 w-1.5 rounded-full", hasAccess ? "bg-primary" : "bg-amber-400")} />
-              {hasAccess ? "Active" : "Locked"}
-            </span>
+            <img src="/cosmos-mark.png" alt="" className="h-6 w-6 object-contain" />
+            <span className="font-display text-lg font-bold">The private signal channel</span>
           </div>
           <p className="mt-1 text-sm text-muted-foreground">
             {hasAccess

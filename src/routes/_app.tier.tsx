@@ -5,6 +5,7 @@ import { TIERS } from "@/lib/academy-data";
 import { useMemberState } from "@/hooks/useMemberState";
 import { DepositLadder } from "@/components/academy/tier/DepositLadder";
 import { BrokerTrustStrip } from "@/components/academy/tier/BrokerTrustStrip";
+import { PageHero } from "@/components/academy/primitives/PageHero";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
@@ -27,33 +28,13 @@ function TierPage() {
   return (
     <div className="space-y-6">
       {/* ── Status header: where you stand, in one glance ── */}
-      <div className="relative overflow-hidden rounded-[var(--radius)] border border-white/8 bg-[color:var(--surface-2)]/60 p-5 sm:p-7">
-        <img
-          src={artDune}
-          alt=""
-          aria-hidden
-          className="pointer-events-none absolute inset-y-0 right-0 hidden h-full w-[46%] object-cover object-right opacity-50 sm:block"
-        />
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{ background: "linear-gradient(90deg, var(--surface-2) 38%, color-mix(in oklch, var(--surface-2) 62%, transparent) 68%, transparent)" }}
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full blur-3xl"
-          style={{ background: `color-mix(in oklch, ${state.currentTier?.color ?? "var(--primary)"} 22%, transparent)` }}
-          aria-hidden
-        />
-        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-          <div className="min-w-0">
-            <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Your membership</div>
-            <h1 className="font-display text-3xl font-bold tracking-tight text-balance lg:text-4xl">Membership Tiers</h1>
-            <p className="mt-2 max-w-[58ch] text-sm text-muted-foreground">
-              Tiers unlock automatically once your deposit is verified at our partner broker — no codes, no waiting.
-            </p>
-          </div>
-
-          <div className="shrink-0 sm:text-right">
+      <PageHero
+        eyebrow="Your membership"
+        title="Membership Tiers"
+        art={artDune}
+        tint={state.currentTier?.color}
+        aside={
+          <div>
             <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Verified deposit</div>
             <div className="font-display text-4xl font-black leading-none">{formatMoney(state.lifetimeDeposits, "€")}</div>
             {state.currentTier ? (
@@ -69,15 +50,18 @@ function TierPage() {
               </div>
             )}
           </div>
-        </div>
-
-        {nextTier && (
-          <p className="relative mt-4 text-xs text-muted-foreground">
-            <span className="font-semibold text-foreground">{formatMoney(toNext, "€")}</span> more to reach{" "}
-            <span className="font-semibold" style={{ color: nextTier.color }}>{nextTier.name}</span>.
-          </p>
-        )}
-      </div>
+        }
+        footer={
+          nextTier ? (
+            <p className="text-xs text-muted-foreground">
+              <span className="font-semibold text-foreground">{formatMoney(toNext, "€")}</span> more to reach{" "}
+              <span className="font-semibold" style={{ color: nextTier.color }}>{nextTier.name}</span>.
+            </p>
+          ) : undefined
+        }
+      >
+        Tiers unlock automatically once your deposit is verified at our partner broker — no codes, no waiting.
+      </PageHero>
 
       <BrokerTrustStrip />
 

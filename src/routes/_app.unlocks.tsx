@@ -3,6 +3,7 @@ import { ArrowRight, BookOpen, Check, Lock, Radio, Sparkles, Users } from "lucid
 import artDome from "@/assets/art-dome.jpg";
 import { TIERS } from "@/lib/academy-data";
 import { PRODUCTS, type ProductKind } from "@/lib/products";
+import { PageHero } from "@/components/academy/primitives/PageHero";
 import { useMemberState } from "@/hooks/useMemberState";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -40,61 +41,44 @@ function UnlocksPage() {
   return (
     <div className="space-y-8">
       {/* ── Header + progress: turns a checklist into a collection you're filling ── */}
-      <div className="relative overflow-hidden rounded-[var(--radius)] border border-white/8 bg-[color:var(--surface-2)]/60 p-5 sm:p-7">
-        <img
-          src={artDome}
-          alt=""
-          aria-hidden
-          className="pointer-events-none absolute inset-y-0 right-0 hidden h-full w-[50%] object-cover object-right opacity-45 sm:block"
-        />
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{ background: "linear-gradient(90deg, var(--surface-2) 36%, color-mix(in oklch, var(--surface-2) 60%, transparent) 66%, transparent)" }}
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full blur-3xl"
-          style={{ background: `color-mix(in oklch, ${state.currentTier?.color ?? "var(--primary)"} 22%, transparent)` }}
-          aria-hidden
-        />
-        <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-          <div className="min-w-0">
-            <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Perks &amp; products</div>
-            <h1 className="font-display text-3xl font-bold tracking-tight text-balance lg:text-4xl">Unlocks</h1>
-            <p className="mt-2 max-w-[58ch] text-sm text-muted-foreground">
-              Every tool, room and perk you earn as you climb the deposit ladder. Reach a tier and its unlocks activate
-              instantly — no codes, no waiting.
-            </p>
-          </div>
-
-          <div className="shrink-0 sm:text-right">
+      <PageHero
+        eyebrow="Perks & products"
+        title="Unlocks"
+        art={artDome}
+        tint={state.currentTier?.color}
+        aside={
+          <div>
             <div className="font-display text-4xl font-black leading-none">
               {have}
               <span className="text-xl font-bold text-muted-foreground">/{total}</span>
             </div>
             <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">unlocked</div>
           </div>
-        </div>
-
-        <div className="relative mt-5">
-          <div className="h-2 overflow-hidden rounded-full bg-white/8">
-            <div
-              className="h-full rounded-full transition-all duration-700"
-              style={{
-                width: `${pct}%`,
-                background: `linear-gradient(90deg, ${TIERS[0].color}, ${state.currentTier?.color ?? TIERS[0].color})`,
-              }}
-            />
-          </div>
-          {nextTier && (
-            <p className="mt-2.5 text-xs text-muted-foreground">
-              <span className="font-semibold text-foreground">{formatMoney(toNext, "€")}</span> more unlocks{" "}
-              <span className="font-semibold" style={{ color: nextTier.color }}>{nextTier.name}</span>.{" "}
-              <Link to="/tier" className="text-primary hover:underline">See the ladder →</Link>
-            </p>
-          )}
-        </div>
-      </div>
+        }
+        footer={
+          <>
+            <div className="h-2 overflow-hidden rounded-full bg-white/8">
+              <div
+                className="h-full rounded-full transition-all duration-700"
+                style={{
+                  width: `${pct}%`,
+                  background: `linear-gradient(90deg, ${TIERS[0].color}, ${state.currentTier?.color ?? TIERS[0].color})`,
+                }}
+              />
+            </div>
+            {nextTier && (
+              <p className="mt-2.5 text-xs text-muted-foreground">
+                <span className="font-semibold text-foreground">{formatMoney(toNext, "€")}</span> more unlocks{" "}
+                <span className="font-semibold" style={{ color: nextTier.color }}>{nextTier.name}</span>.{" "}
+                <Link to="/tier" className="text-primary hover:underline">See the ladder →</Link>
+              </p>
+            )}
+          </>
+        }
+      >
+        Every tool, room and perk you earn as you climb the deposit ladder. Reach a tier and its unlocks activate
+        instantly — no codes, no waiting.
+      </PageHero>
 
       {/* ── One band per tier ── */}
       {TIERS.map((tier, tierIdx) => {

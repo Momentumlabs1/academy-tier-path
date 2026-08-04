@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import artSettings from "@/assets/a-settings.jpg";
 import { useMemberState } from "@/hooks/useMemberState";
 import { AvatarUploader } from "@/components/academy/settings/AvatarUploader";
 import { Card } from "@/components/academy/primitives/Card";
+import { PageHero } from "@/components/academy/primitives/PageHero";
 import { formatMoney, formatDate } from "@/lib/format";
 import { TierTag } from "@/components/academy/primitives/TierTag";
 
@@ -33,11 +35,10 @@ function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Your account</div>
-        <h1 className="font-display text-3xl font-bold tracking-tight text-balance lg:text-4xl">Settings</h1>
-        <p className="mt-2 max-w-[65ch] text-muted-foreground">Your details are synced automatically from the Cosmos Candles onboarding bot. Need a change? Message support and we'll update it for you.</p>
-      </div>
+      <PageHero eyebrow="Your account" title="Settings" art={artSettings}>
+        Your details are synced automatically from the Cosmos Candles onboarding bot. Need a change? Message
+        support and we'll update it for you.
+      </PageHero>
 
       <Card variant="surface" className="micro-lift">
         <div className="border-b border-white/5 p-6">
