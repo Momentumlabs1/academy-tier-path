@@ -4,6 +4,8 @@ Allow: /
 # Member area and admin are behind auth — no value in the index, and crawling
 # them just burns budget on redirects.
 Disallow: /admin
+Disallow: /login
+Disallow: /partner
 Disallow: /dashboard
 Disallow: /lessons
 Disallow: /signals

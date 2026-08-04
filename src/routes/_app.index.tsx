@@ -17,8 +17,15 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_app/")({
   head: () => ({
     meta: [
-      { title: "Dashboard — Cosmos Candles Academy" },
-      { name: "description", content: "Your live trading education hub." },
+      // "/" is the indexed homepage: logged-out visitors (and Google) get the
+      // public master landing here, so the marketing title has to win. Signed-in
+      // members simply see the brand name in the tab.
+      { title: "Cosmos Candles Academy — Learn to trade the whole cosmos" },
+      {
+        name: "description",
+        content:
+          "Live signals, a course that starts from zero and pro orderflow tools — free with a deposit at our partner broker.",
+      },
     ],
   }),
   component: Dashboard,
