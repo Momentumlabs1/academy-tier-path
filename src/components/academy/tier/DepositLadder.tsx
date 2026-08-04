@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 import { BrokerTrustStrip } from "./BrokerTrustStrip";
 
 const NODES = [{ key: "start", name: "Start", minDeposit: 0, color: "oklch(0.65 0.02 250)" }, ...TIERS];
+/** "an Elite member", not "a Elite member" — tier names start with a vowel half the time. */
+const article = (word: string) => (/^[aeiou]/i.test(word) ? "an" : "a");
 const scale = (a: number) => Math.log10(1 + a);
 const MIN = scale(0);
 const MAX = scale(NODES[NODES.length - 1].minDeposit);
@@ -25,7 +27,9 @@ export function DepositLadder({ compact = false }: { compact?: boolean }) {
         <div>
           <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Your Deposit Path</div>
           <h2 className={cn("font-display font-bold leading-tight", compact ? "mt-1 text-xl" : "mt-1.5 text-2xl lg:text-3xl")}>
-            {state.currentTier ? `You're a ${state.currentTier.name} member` : "Make your first deposit to begin"}
+            {state.currentTier
+              ? `You're ${article(state.currentTier.name)} ${state.currentTier.name} member`
+              : "Make your first deposit to begin"}
           </h2>
         </div>
         {state.nextTier && (
@@ -40,7 +44,10 @@ export function DepositLadder({ compact = false }: { compact?: boolean }) {
       </div>
 
       <div className={cn("relative w-full", compact ? "mt-5 h-20" : "mt-7 h-28")}>
-        <div className="absolute inset-0 flex items-center">
+        {/* The end nodes sit at 0% and 100% and their labels are centred on them,
+            so the track has to be inset — otherwise "Start / €0" and
+            "Elite / €50,000" hang over the card's padding. */}
+        <div className="absolute inset-0 flex items-center px-8 sm:px-10">
           <div className="relative h-1.5 w-full rounded-full bg-white/10">
             <div className="absolute left-0 top-0 h-full rounded-full bg-gradient-to-r from-primary/70 to-primary" style={{ width: `${userPct}%` }} />
             {NODES.map((n) => {
