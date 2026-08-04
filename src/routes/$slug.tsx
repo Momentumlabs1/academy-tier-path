@@ -24,7 +24,7 @@ export const Route = createFileRoute("/$slug")({
   },
   head: ({ loaderData }) => ({
     meta: [
-      { title: loaderData ? `${loaderData.tenant.name} — Powered by Agent Trading` : "Trading Academy" },
+      { title: loaderData ? `${loaderData.tenant.name} — Powered by Agent Trading` : "Cosmos Candles Academy" },
       { name: "description", content: loaderData?.tenant.description ?? "" },
     ],
   }),

@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_app/tools")({
   head: () => ({
     meta: [
-      { title: "Trader Tools — Agent Trading Academy" },
+      { title: "Trader Tools — Cosmos Candles Academy" },
       { name: "description", content: "Position size, risk-reward, compounding — and a 1,000-run Monte Carlo simulation of your edge." },
     ],
   }),
