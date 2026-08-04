@@ -1,0 +1,16 @@
+User-agent: *
+Allow: /
+
+# Member area and admin are behind auth — no value in the index, and crawling
+# them just burns budget on redirects.
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /lessons
+Disallow: /signals
+Disallow: /tier
+Disallow: /tools
+Disallow: /unlocks
+Disallow: /settings
+Disallow: /notifications
+
+Sitemap: https://cosmos-candles.com/sitemap.xml
