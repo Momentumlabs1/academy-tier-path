@@ -73,7 +73,8 @@ function GaugeGlyph({ className }: { className?: string }) {
 
 const QUICK_ACTIONS = [
   { label: "Open Telegram", sub: "Live signals", icon: TelegramGlyph, to: "/signals", accent: "oklch(0.72 0.15 235)" },
-  { label: "Next lesson", sub: "Continue learning", icon: BookGlyph, to: "/lessons", accent: "oklch(0.9 0.2 140)" },
+  // deliberately not green: green now reads as "market up", not "a category"
+  { label: "Next lesson", sub: "Continue learning", icon: BookGlyph, to: "/lessons", accent: "oklch(0.72 0.16 285)" },
   { label: "Trader tools", sub: "Size & risk calculators", icon: GaugeGlyph, to: "/tools", accent: "oklch(0.82 0.16 80)" },
 ] as const;
 

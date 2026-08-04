@@ -69,50 +69,65 @@
 }
 
 :root {
-  /* Mega Purple stage */
+  /* ── Cosmo's Candles stage ──────────────────────────────────────────────
+     The identity is the logo: an electric azure candle on near-black navy,
+     with silver-white type. So the app runs on deep navy surfaces and an
+     azure brand colour — not the old purple/lime pairing, which fought both
+     the logo and the mascot.
+
+     A deliberate side effect: with the brand off green, GREEN and RED are
+     free to mean only one thing again — market direction. That is what makes
+     a trading product feel like a trading product. */
   --radius: 1.25rem;
-  --background: oklch(0.27 0.18 295);
-  --foreground: oklch(0.99 0.005 295);
-  --surface-1: oklch(0.18 0.09 290);
-  --surface-2: oklch(0.14 0.05 290);
-  --surface-3: oklch(0.34 0.16 295);
+  --background: oklch(0.19 0.055 258);
+  --foreground: oklch(0.985 0.004 250);
+  --surface-1: oklch(0.155 0.042 258);
+  --surface-2: oklch(0.126 0.032 258);
+  --surface-3: oklch(0.30 0.07 256);
   --card: var(--surface-2);
-  --card-foreground: oklch(0.99 0.005 295);
+  --card-foreground: oklch(0.985 0.004 250);
   --popover: var(--surface-2);
-  --popover-foreground: oklch(0.99 0.005 295);
-  --primary: oklch(0.92 0.21 130);
-  --primary-foreground: oklch(0.18 0.05 290);
+  --popover-foreground: oklch(0.985 0.004 250);
+  /* logo azure — bright enough to carry dark text on buttons */
+  --primary: oklch(0.72 0.17 244);
+  --primary-foreground: oklch(0.15 0.04 258);
   --secondary: var(--surface-2);
-  --secondary-foreground: oklch(0.99 0.005 295);
+  --secondary-foreground: oklch(0.985 0.004 250);
   --muted: var(--surface-3);
-  --muted-foreground: oklch(0.78 0.04 295);
-  --accent: oklch(0.92 0.21 130);
-  --accent-foreground: oklch(0.18 0.05 290);
-  --destructive: oklch(0.62 0.22 25);
+  --muted-foreground: oklch(0.74 0.03 252);
+  --accent: oklch(0.72 0.17 244);
+  --accent-foreground: oklch(0.15 0.04 258);
+  /* market semantics: red = down, green = up */
+  --destructive: oklch(0.64 0.21 22);
   --destructive-foreground: oklch(0.99 0 0);
-  --success: oklch(0.92 0.21 130);
-  --success-foreground: oklch(0.18 0.05 290);
-  --border: oklch(0.4 0.14 295 / 0.4);
-  --input: oklch(0.24 0.12 290);
-  --ring: oklch(0.92 0.21 130);
-  --chart-1: oklch(0.92 0.21 130);
-  --chart-2: oklch(0.7 0.18 290);
-  --chart-3: oklch(0.65 0.18 320);
-  --chart-4: oklch(0.6 0.2 270);
-  --chart-5: oklch(0.8 0.12 200);
+  --success: oklch(0.78 0.17 150);
+  --success-foreground: oklch(0.15 0.04 258);
+  --border: oklch(0.45 0.09 256 / 0.4);
+  --input: oklch(0.22 0.05 258);
+  --ring: oklch(0.72 0.17 244);
+  --chart-1: oklch(0.72 0.17 244);
+  --chart-2: oklch(0.78 0.17 150);
+  --chart-3: oklch(0.64 0.21 22);
+  --chart-4: oklch(0.66 0.15 268);
+  --chart-5: oklch(0.82 0.12 215);
   --sidebar: var(--surface-1);
-  --sidebar-foreground: oklch(0.96 0.01 295);
-  --sidebar-primary: oklch(0.92 0.21 130);
-  --sidebar-primary-foreground: oklch(0.18 0.05 290);
-  --sidebar-accent: oklch(0.24 0.12 290);
-  --sidebar-accent-foreground: oklch(0.99 0.005 295);
-  --sidebar-border: oklch(0.3 0.12 290 / 0.5);
-  --sidebar-ring: oklch(0.92 0.21 130);
-  --gradient-card-hero: linear-gradient(135deg, oklch(0.22 0.14 295), oklch(0.12 0.06 290));
-  --gradient-stage: radial-gradient(1200px 600px at 20% -10%, oklch(0.4 0.2 295 / 0.6), transparent 60%), radial-gradient(900px 500px at 110% 10%, oklch(0.5 0.22 320 / 0.35), transparent 60%);
-  --shadow-card: 0 30px 60px -30px oklch(0.05 0.04 290 / 0.7), 0 1px 0 0 oklch(1 0 0 / 0.04) inset;
-  --shadow-lime: 0 0 0 1px oklch(0.92 0.21 130 / 0.5), 0 10px 30px -10px oklch(0.92 0.21 130 / 0.35);
-  --ring-lime: 0 0 0 3px oklch(0.92 0.21 130 / 0.25);
+  --sidebar-foreground: oklch(0.96 0.008 250);
+  --sidebar-primary: oklch(0.72 0.17 244);
+  --sidebar-primary-foreground: oklch(0.15 0.04 258);
+  --sidebar-accent: oklch(0.22 0.05 258);
+  --sidebar-accent-foreground: oklch(0.985 0.004 250);
+  --sidebar-border: oklch(0.32 0.06 258 / 0.5);
+  --sidebar-ring: oklch(0.72 0.17 244);
+  --gradient-card-hero: linear-gradient(135deg, oklch(0.21 0.07 256), oklch(0.115 0.03 258));
+  --gradient-stage: radial-gradient(1200px 600px at 20% -10%, oklch(0.42 0.14 250 / 0.5), transparent 60%), radial-gradient(900px 500px at 110% 10%, oklch(0.46 0.12 225 / 0.3), transparent 60%);
+  --shadow-card: 0 30px 60px -30px oklch(0.04 0.02 258 / 0.75), 0 1px 0 0 oklch(1 0 0 / 0.04) inset;
+  /* Brand glow. The --shadow-lime / --ring-lime names are kept because they are
+     referenced in ~50 places; they now carry the azure brand colour. Prefer the
+     --shadow-brand / --ring-brand aliases in new code. */
+  --shadow-brand: 0 0 0 1px oklch(0.72 0.17 244 / 0.5), 0 10px 30px -10px oklch(0.72 0.17 244 / 0.45);
+  --ring-brand: 0 0 0 3px oklch(0.72 0.17 244 / 0.25);
+  --shadow-lime: var(--shadow-brand);
+  --ring-lime: var(--ring-brand);
 }
 
 .dark {
