@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
-import heroSignals from "@/assets/hero-signals.jpg";
+import artWave from "@/assets/art-wave.jpg";
 import { HeroBento } from "@/components/academy/hero/HeroBento";
 import { LessonGroup } from "@/components/academy/lessons/LessonGroup";
 import { SectionTitle } from "@/components/academy/primitives/SectionTitle";
@@ -113,7 +113,7 @@ function Dashboard() {
         {/* Signature particle artwork on the right so the greeting isn't a bare
             slab; a left-to-right scrim keeps the copy fully readable. */}
         <img
-          src={heroSignals}
+          src={artWave}
           alt=""
           aria-hidden
           className="pointer-events-none absolute inset-y-0 right-0 hidden h-full w-[52%] object-cover object-right opacity-55 sm:block"

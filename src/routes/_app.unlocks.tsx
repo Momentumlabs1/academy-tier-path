@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, BookOpen, Check, Lock, Radio, Sparkles, Users } from "lucide-react";
-import heroFloor from "@/assets/hero-floor.jpg";
+import artDome from "@/assets/art-dome.jpg";
 import { TIERS } from "@/lib/academy-data";
 import { PRODUCTS, type ProductKind } from "@/lib/products";
 import { useMemberState } from "@/hooks/useMemberState";
@@ -42,7 +42,7 @@ function UnlocksPage() {
       {/* ── Header + progress: turns a checklist into a collection you're filling ── */}
       <div className="relative overflow-hidden rounded-[var(--radius)] border border-white/8 bg-[color:var(--surface-2)]/60 p-5 sm:p-7">
         <img
-          src={heroFloor}
+          src={artDome}
           alt=""
           aria-hidden
           className="pointer-events-none absolute inset-y-0 right-0 hidden h-full w-[50%] object-cover object-right opacity-45 sm:block"

@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, Check, Lock, Sparkles } from "lucide-react";
-import heroMentors from "@/assets/hero-mentors.jpg";
+import artDune from "@/assets/art-dune.jpg";
 import { TIERS } from "@/lib/academy-data";
 import { useMemberState } from "@/hooks/useMemberState";
 import { DepositLadder } from "@/components/academy/tier/DepositLadder";
@@ -29,7 +29,7 @@ function TierPage() {
       {/* ── Status header: where you stand, in one glance ── */}
       <div className="relative overflow-hidden rounded-[var(--radius)] border border-white/8 bg-[color:var(--surface-2)]/60 p-5 sm:p-7">
         <img
-          src={heroMentors}
+          src={artDune}
           alt=""
           aria-hidden
           className="pointer-events-none absolute inset-y-0 right-0 hidden h-full w-[46%] object-cover object-right opacity-50 sm:block"
