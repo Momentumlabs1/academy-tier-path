@@ -137,7 +137,7 @@ Deno.serve(async (req) => {
     // 3) Audit trail.
     await db.from("audit_log").insert({
       actor_email: ADMIN_EMAIL, action: "affiliate_created", target: slug,
-      detail: `Partner ${name} (${email}) angelegt · ${rate} ${unit}`,
+      detail: `Partner ${name} (${email}) created · ${rate} ${unit}`,
     });
 
     return json({ ok: true, tenant, portalUrl: "/partner" });

@@ -99,15 +99,29 @@ const ESCALATE_TOOL = {
   },
 };
 
+type Db = ReturnType<typeof createClient>;
+
 interface AnthropicBlock { type: string; text?: string; id?: string; name?: string; input?: Record<string, unknown> }
 
-async function callClaude(apiKey: string, system: unknown, messages: unknown[]) {
+async function callClaude(db: Db, apiKey: string, system: unknown, messages: unknown[]) {
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
     body: JSON.stringify({ model: MODEL, max_tokens: 1024, system, tools: [ESCALATE_TOOL], messages }),
   });
   const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    // Keep the real reason: request logs only show a 502, which cannot tell a bad
+    // model id from an exhausted balance from a bad key.
+    const err = (data as { error?: { type?: string; message?: string } })?.error;
+    console.error("[mentor-chat] anthropic", res.status, err?.type, err?.message);
+    await db.from("mentor_api_errors").insert({
+      status: res.status,
+      err_type: err?.type ?? null,
+      message: (err?.message ?? JSON.stringify(data)).slice(0, 800),
+      model: MODEL,
+    });
+  }
   return { ok: res.ok, status: res.status, data };
 }
 
@@ -144,7 +158,7 @@ Deno.serve(async (req) => {
   // ── Foundation gate: Cosmo is a perk, not a free demo. ──
   const deposit = Number(member.deposit ?? 0);
   if (deposit < MIN_DEPOSIT) {
-    return json({ error: `Cosmo schaltet ab ${MIN_DEPOSIT} € frei.`, locked: true, minDeposit: MIN_DEPOSIT }, 403);
+    return json({ error: `Cosmo unlocks at €${MIN_DEPOSIT}.`, locked: true, minDeposit: MIN_DEPOSIT }, 403);
   }
 
   let body: { message?: string };
@@ -159,7 +173,7 @@ Deno.serve(async (req) => {
     .from("mentor_messages").select("id", { count: "exact", head: true })
     .eq("member_id", member.id).eq("role", "user").gte("created_at", since.toISOString());
   if ((count ?? 0) >= DAILY_LIMIT) {
-    return json({ error: `Tageslimit erreicht (${DAILY_LIMIT} Fragen). Melde dich morgen wieder oder schreib uns an ${SUPPORT_EMAIL}.` }, 429);
+    return json({ error: `Daily limit reached (${DAILY_LIMIT} questions). Come back tomorrow, or write to us at ${SUPPORT_EMAIL}.` }, 429);
   }
 
   // ── Knowledge base from the DB, concatenated into one cached system block. ──
@@ -180,15 +194,22 @@ Deno.serve(async (req) => {
     .order("created_at", { ascending: false }).limit(10);
   const history = (histRows ?? []).reverse().map((r) => ({
     role: r.role === "user" ? "user" as const : "assistant" as const,
-    content: r.role === "support" ? `[Support-Team]: ${r.content}` : String(r.content),
+    content: r.role === "support" ? `[Support team]: ${r.content}` : String(r.content),
   }));
 
   const messages: unknown[] = [...history, { role: "user", content: message }];
 
-  const first = await callClaude(apiKey, system, messages);
+  const first = await callClaude(db, apiKey, system, messages);
   if (!first.ok) {
-    console.error("[mentor-chat] anthropic error", first.status, first.data?.error);
-    return json({ error: "Cosmo is unavailable right now. Please try again shortly." }, 502);
+    const t = (first.data as { error?: { type?: string } })?.error?.type ?? "";
+    const friendly = t === "authentication_error"
+      ? "Cosmo is not connected (API key). The team has been notified."
+      : t === "not_found_error"
+      ? "Cosmo is misconfigured (model). The team has been notified."
+      : first.status === 429
+      ? "Cosmo is overloaded right now. Please try again in a minute."
+      : "Cosmo is unavailable right now. Please try again shortly.";
+    return json({ error: friendly }, 502);
   }
 
   const blocks: AnthropicBlock[] = Array.isArray(first.data?.content) ? first.data.content : [];
@@ -240,7 +261,7 @@ Deno.serve(async (req) => {
     }
 
     // Let Claude phrase the hand-over itself, in the member's language.
-    const second = await callClaude(apiKey, system, [
+    const second = await callClaude(db, apiKey, system, [
       ...messages,
       { role: "assistant", content: blocks },
       {
