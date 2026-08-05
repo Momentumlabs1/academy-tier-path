@@ -39,6 +39,8 @@ const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
 
 // Slugs that would collide with real app routes — a partner may not own one.
+// registrieren/willkommen are the old German sign-up paths: they still exist as
+// redirect routes to /signup and /welcome, so they stay reserved too.
 const RESERVED_SLUGS = new Set([
   "admin", "partner", "partner-programm", "login", "signals", "lessons", "tools", "tier", "unlocks",
   "notifications", "settings", "t", "api", "assets", "hegemony", "auth", "dashboard",
