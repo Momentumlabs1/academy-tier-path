@@ -47,7 +47,11 @@ const CORS = {
 const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { ...CORS, "Content-Type": "application/json" } });
 
-const MODEL = Deno.env.get("MENTOR_MODEL") ?? "claude-haiku-4-5";
+// Pinned to the dated id on purpose: an unresolvable alias comes back as a 404
+// from the API, which surfaces as a generic "not reachable" and is painful to
+// debug. Live production has carried this pin; the repo copy had drifted back
+// to the bare alias.
+const MODEL = Deno.env.get("MENTOR_MODEL") ?? "claude-haiku-4-5-20251001";
 const DAILY_LIMIT = Number(Deno.env.get("MENTOR_DAILY_LIMIT") ?? 30);
 const MIN_DEPOSIT = Number(Deno.env.get("MENTOR_MIN_DEPOSIT") ?? 100);
 const SUPPORT_EMAIL = Deno.env.get("SUPPORT_EMAIL") ?? "kontakt@momentumlabs.at";
@@ -63,6 +67,7 @@ HOW TO ANSWER
 - Short, clear, concrete, encouraging. Prefer 2-6 sentences plus a list when it helps. No walls of text.
 - Teach from the academy's own material below. When a question maps to a lesson, name it ("that's lesson 9 — Level 1 vs Level 2").
 - If the knowledge base doesn't cover it, say so honestly instead of inventing an answer.
+- If the member just says hi or types something unclear, greet them warmly and offer 2-3 concrete things you can help with.
 
 HARD GUARDRAILS
 - NEVER give personalized investment advice: no "should I buy/sell X", no position sizing for their account, no price predictions, no trade recommendations beyond explaining the official signals. Explain the underlying concept instead.
