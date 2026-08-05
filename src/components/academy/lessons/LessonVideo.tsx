@@ -65,17 +65,17 @@ export function LessonVideo({
         <div className="absolute inset-0 flex items-center justify-center bg-black">
           {url ? (
             <video src={url} controls autoPlay playsInline preload="none" className="h-full w-full">
-              Dein Browser unterstützt kein Video.
+              Your browser does not support video.
             </video>
           ) : error ? (
             <div className="flex flex-col items-center gap-2 px-6 text-center text-sm text-white/70">
-              <span>{error === "locked" ? "Dieses Video ist für deine Stufe noch gesperrt." : error}</span>
-              <button onClick={load} className="text-primary hover:underline">Erneut versuchen</button>
+              <span>{error === "locked" ? "This video is still locked at your tier." : error}</span>
+              <button onClick={load} className="text-primary hover:underline">Try again</button>
             </div>
           ) : (
             <Loader2 className="h-8 w-8 animate-spin text-white/60" />
           )}
-          {loading && !url && !error && <span className="sr-only">Lädt…</span>}
+          {loading && !url && !error && <span className="sr-only">Loading…</span>}
         </div>
       ) : (
         <button onClick={onPlay} className="group absolute inset-0 h-full w-full" aria-label={`Play: ${title}`}>

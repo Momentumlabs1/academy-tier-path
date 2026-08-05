@@ -89,7 +89,7 @@ function AdminAudit() {
 
   return (
     <div className="space-y-5">
-      <AdminPageHeader title="Audit Log" sub={`${events.length} Einträge${filter !== "all" ? " (gefiltert)" : ""}`} />
+      <AdminPageHeader title="Audit Log" sub={`${events.length} entries${filter !== "all" ? " (filtered)" : ""}`} />
 
       {/* Filter chips */}
       <div className="flex flex-wrap gap-2">
@@ -98,7 +98,7 @@ function AdminAudit() {
           className={cn("rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
             filter === "all" ? "bg-primary text-primary-foreground" : "bg-white/5 text-muted-foreground hover:text-foreground")}
         >
-          Alle
+          All
         </button>
         {ALL_ACTIONS.map((a) => {
           const meta = ACTION_META[a];
@@ -117,7 +117,7 @@ function AdminAudit() {
 
       {error && (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-          Audit-Log konnte nicht geladen werden: {error}
+          The audit log could not be loaded: {error}
         </div>
       )}
 
@@ -131,7 +131,7 @@ function AdminAudit() {
       {/* Empty state */}
       {!loading && !error && rows.length === 0 && (
         <div className="rounded-2xl border border-dashed border-white/10 bg-[oklch(0.16_0.06_250)] py-12 text-center text-sm text-muted-foreground">
-          Noch keine Einträge im Audit-Log.
+          No entries in the audit log yet.
         </div>
       )}
 
@@ -164,7 +164,7 @@ function AdminAudit() {
             );
           })}
           {events.length === 0 && (
-            <div className="py-12 text-center text-sm text-muted-foreground">Keine Einträge für diesen Filter.</div>
+            <div className="py-12 text-center text-sm text-muted-foreground">No entries match this filter.</div>
           )}
         </div>
       )}

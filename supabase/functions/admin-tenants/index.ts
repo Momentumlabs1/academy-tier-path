@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
     const name = String(body.name ?? "").trim();
     const slug = body.slug ? slugify(String(body.slug)) : slugify(name);
     if (!email || !password || !name || !slug) return json({ error: "email, password, name required" }, 400);
-    if (RESERVED_SLUGS.has(slug)) return json({ error: `Slug „${slug}" ist reserviert — bitte einen anderen wählen.` }, 400);
+    if (RESERVED_SLUGS.has(slug)) return json({ error: `Slug "${slug}" is reserved — please pick another.` }, 400);
     const rate = Number(body.partner_rate ?? 5);
     const unit = body.partner_rate_unit === "percent" ? "percent" : "usd_per_lot";
 

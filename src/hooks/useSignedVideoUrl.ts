@@ -22,12 +22,12 @@ export function useSignedVideoUrl(object?: string) {
       const { data, error } = await supabase.functions.invoke("video-url", { body: { object } });
       const payload = data as { url?: string; error?: string } | null;
       if (error || !payload?.url) {
-        setError(payload?.error ?? error?.message ?? "Video konnte nicht geladen werden.");
+        setError(payload?.error ?? error?.message ?? "The video could not be loaded.");
       } else {
         setUrl(payload.url);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Video konnte nicht geladen werden.");
+      setError(e instanceof Error ? e.message : "The video could not be loaded.");
     } finally {
       setLoading(false);
     }

@@ -80,8 +80,8 @@ Deno.serve(async (req) => {
     await db.from("notifications").insert({
       member_id: m.id,
       type: "inactive_warning",
-      title: "Bleib aktiv, um deinen Zugang zu behalten",
-      body: `Trade in den nächsten Tagen mindestens ${activity.min_lots ?? 0.1} Lots, sonst pausiert dein Signal-Zugang automatisch.`,
+      title: "Stay active to keep your access",
+      body: `Trade at least ${activity.min_lots ?? 0.1} lots in the next few days, or your signal access pauses automatically.`,
       link: "/signals",
     });
     warned++;
@@ -116,8 +116,8 @@ Deno.serve(async (req) => {
     await db.from("notifications").insert({
       member_id: m.id,
       type: "inactive_warning",
-      title: "Signal-Zugang pausiert",
-      body: "Dein Zugang wurde wegen Inaktivität pausiert. Sobald du wieder tradest, kommst du automatisch zurück in die Kanäle.",
+      title: "Signal access paused",
+      body: "Your access was paused for inactivity. As soon as you trade again you are added back to the channels automatically.",
       link: "/signals",
     });
     await db.from("audit_log").insert({

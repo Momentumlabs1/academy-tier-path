@@ -139,7 +139,7 @@ Deno.serve(async (req) => {
 
   const { data: member } = await db
     .from("members").select("id, name, email, deposit").eq("auth_user_id", userData.user.id).maybeSingle();
-  if (!member) return json({ error: "Bitte zuerst registrieren." }, 403);
+  if (!member) return json({ error: "Please sign up first." }, 403);
 
   // ── Foundation gate: Cosmo is a perk, not a free demo. ──
   const deposit = Number(member.deposit ?? 0);
@@ -188,7 +188,7 @@ Deno.serve(async (req) => {
   const first = await callClaude(apiKey, system, messages);
   if (!first.ok) {
     console.error("[mentor-chat] anthropic error", first.status, first.data?.error);
-    return json({ error: "Cosmo ist gerade nicht erreichbar. Bitte später erneut versuchen." }, 502);
+    return json({ error: "Cosmo is unavailable right now. Please try again shortly." }, 502);
   }
 
   const blocks: AnthropicBlock[] = Array.isArray(first.data?.content) ? first.data.content : [];
@@ -257,10 +257,10 @@ Deno.serve(async (req) => {
       const t = textOf(second.data.content as AnthropicBlock[]);
       if (t) reply = t;
     }
-    if (!reply) reply = "Das gebe ich direkt an unser Team weiter — die Antwort erscheint hier im Chat. 📩";
+    if (!reply) reply = "I am passing this straight to our team — their answer will appear here in the chat. 📩";
   }
 
-  if (!reply) return json({ error: "Keine Antwort erhalten." }, 502);
+  if (!reply) return json({ error: "No answer received." }, 502);
 
   await db.from("mentor_messages").insert([
     { member_id: member.id, role: "user", content: message },

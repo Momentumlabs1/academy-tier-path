@@ -16,14 +16,14 @@ export async function isAdminSession(): Promise<boolean> {
 /** Sign in; rejects (and signs out) anything that isn't the allowed admin. */
 export async function adminSignIn(email: string, password: string): Promise<{ ok: true } | { ok: false; error: string }> {
   if (email.trim().toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
-    return { ok: false, error: "Zugriff verweigert." };
+    return { ok: false, error: "Access denied." };
   }
   const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-  if (error) return { ok: false, error: "E-Mail oder Passwort falsch." };
+  if (error) return { ok: false, error: "Wrong email or password." };
   // Belt & suspenders: verify the session really is the admin, else drop it.
   if (!(await isAdminSession())) {
     await supabase.auth.signOut();
-    return { ok: false, error: "Zugriff verweigert." };
+    return { ok: false, error: "Access denied." };
   }
   return { ok: true };
 }
