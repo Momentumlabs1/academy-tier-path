@@ -1,0 +1,222 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+html,body{margin:0;background:#000}canvas{display:block}
+</style></head><body>
+<canvas id="c"></canvas>
+<script>
+/**
+ * Particle-field renderer v4 — one medium, seven silhouettes.
+ *
+ * v3 built the shapes on a 3D surface and then projected them. That looked
+ * right in theory and failed in practice: the perspective compressed every
+ * variant into the same diagonal band, and the slab thickness smeared what
+ * little structure survived. Rings, stairs and grids were all invisible.
+ *
+ * v4 composes in screen space instead. Each variant defines a silhouette — a
+ * lit top edge — and particles fill the volume beneath it with an exponential
+ * falloff, plus a fine spray drifting above. That is exactly how the reference
+ * art reads: a bright ridge, a body that fades into black, motes lifting off.
+ * Silhouette is what survives at header size; internal texture is not.
+ *
+ * Everything that makes these siblings is shared: the same dot medium, the same
+ * additive glow on black, the same blue, the same ridge-lit falloff. Only the
+ * shape changes, and the shape is the message.
+ *
+ *   pulse    rings leaving a source            signals — a channel broadcasting
+ *   ascent   a staircase climbing right        lessons — one step at a time
+ *   lattice  a measured field with tick marks  tools   — instruments, precision
+ *   calm     one low, even swell               settings — nothing demands you
+ *   burst    a single plume from one point     inbox   — something just arrived
+ *   gate     two masses parted by a seam       unlocks — the moment it opens
+ *   horizon  a wide sweep opening right        dashboard — the whole view
+ */
+const P = new URLSearchParams(location.search);
+const W = +(P.get('w') || 1800), H = +(P.get('h') || 750);
+const VARIANT = P.get('v') || 'horizon';
+const HUE = +(P.get('hue') || 222);
+const SEED = +(P.get('seed') || 7);
+const N = +(P.get('n') || 900000);
+
+const c = document.getElementById('c');
+c.width = W; c.height = H;
+const g = c.getContext('2d');
+g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+g.globalCompositeOperation = 'lighter';
+
+let s = (SEED * 0x9e3779b9) >>> 0;
+function rnd() {
+  s = (s + 0x6D2B79F5) >>> 0;
+  let t = s;
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+const TAU = Math.PI * 2;
+function gauss() {
+  const a = Math.max(1e-6, rnd());
+  return Math.sqrt(-2 * Math.log(a)) * Math.cos(TAU * rnd());
+}
+const clamp01 = (x) => Math.min(1, Math.max(0, x));
+const smooth = (t) => t * t * (3 - 2 * t);
+const GATE_X = 0.60;     // where the two masses part
+const BURST_X = 0.62;    // where the ping originates
+
+/**
+ * Silhouette for a variant, at x ∈ [0,1] across the frame.
+ *   edge   top of the mass, as a fraction of H (0 = top of frame)
+ *   mass   how much material is stacked here, 0…1 — 0 means black
+ *   deep   how far the body reaches below the edge, in fractions of H
+ */
+function profile(x) {
+  if (VARIANT === 'ascent') {
+    // A staircase. Steps you finish one at a time, climbing to the right.
+    const STEPS = 5;
+    const p = x * STEPS, i = Math.floor(p), f = p - i;
+    // the riser is short and steep, the tread long and flat
+    const climb = (i + smooth(clamp01((f - 0.40) / 0.52))) / STEPS;
+    return {
+      edge: 0.72 - climb * 0.34,
+      // treads carry the material; the risers are nearly empty
+      mass: (0.30 + 0.70 * (1 - smooth(clamp01(Math.abs(f - 0.28) / 0.5)))) * (0.35 + 0.65 * x),
+      deep: 0.14 + 0.30 * x,
+    };
+  }
+
+  if (VARIANT === 'lattice') {
+    // A measured field: a level plane with regular tick columns standing on it.
+    const TICKS = 8;
+    const t = x * TICKS, tick = Math.exp(-Math.pow((t - Math.round(t)) / 0.22, 2));
+    const tall = 0.5 + 0.5 * Math.sin(Math.round(t) * 2.4);   // uneven tick heights
+    const base = 0.62 - x * 0.18 + Math.sin(x * 5.0) * 0.015;
+    return {
+      edge: base - tick * tall * 0.22,
+      mass: (0.34 + 0.66 * tick) * (0.34 + 0.66 * x),
+      deep: 0.12 + 0.26 * x,
+    };
+  }
+
+  if (VARIANT === 'calm') {
+    // One long, low swell. The quietest page gets the quietest picture.
+    return {
+      edge: 0.62 - x * 0.11 + Math.sin(x * 2.3 + 0.6) * 0.035,
+      mass: 0.40 + 0.42 * x,
+      deep: 0.18 + 0.26 * x,
+    };
+  }
+
+  if (VARIANT === 'burst') {
+    // The ground the ping leaves from. It stays low and wide — the plume above
+    // (drawn separately) is what carries the meaning, not a hill.
+    const tail = Math.exp(-Math.pow((x - BURST_X) / 0.46, 2));
+    return {
+      edge: 0.74 - tail * 0.12,
+      mass: 0.16 + 0.72 * tail,
+      deep: 0.10 + 0.24 * tail,
+    };
+  }
+
+  if (VARIANT === 'gate') {
+    // Two masses drawn apart. Raising the edge at the seam only made a hill —
+    // indistinguishable from 'burst'. The parting has to be a HOLE in the mass
+    // with light coming through it, so the shape is a gap, not a peak.
+    const gap = Math.abs(x - GATE_X) / 0.085;
+    const open = clamp01((gap - 0.75) / 0.9);        // 0 inside the gap, 1 outside
+    return {
+      edge: 0.70 - x * 0.15 + (1 - open) * 0.06,     // shoulders lean away
+      mass: open * (0.34 + 0.66 * x),
+      deep: 0.16 + 0.32 * x,
+    };
+  }
+
+  // 'horizon' — the wide sweep the family started from.
+  return {
+    edge: 0.74 - x * 0.32 + Math.sin(x * 3.1 + 0.5) * 0.045,
+    mass: 0.20 + 0.80 * Math.pow(x, 0.9),
+    deep: 0.14 + 0.40 * x,
+  };
+}
+
+/** Draw one particle at (px,py) sitting `t` (0…1) below the lit edge. */
+function dot(px, py, t, boost) {
+  if (px < -20 || px > W + 20 || py < -20 || py > H + 20) return;
+  const lit = 56 - t * 26;                       // ridge lit, body sinking to black
+  const hue = HUE + (1 - t) * 10;
+  const r = (0.45 + rnd() * 1.15) * (W / 1800) * (1 + (1 - t) * 0.5);
+  const a = (0.045 + 0.30 * Math.pow(1 - t, 1.9)) * boost;
+  if (a <= 0.006) return;
+  g.fillStyle = `hsla(${hue}, 95%, ${lit}%, ${Math.min(1, a)})`;
+  g.beginPath(); g.arc(px, py, r, 0, TAU); g.fill();
+  // sparkles — the field glitters from a few blown-out dots, not from being
+  // uniformly bright
+  if (t < 0.26 && rnd() < 0.028) {
+    g.fillStyle = `hsla(${hue + 8}, 72%, 88%, ${(0.10 + (1 - t) * 0.24) * boost})`;
+    g.beginPath(); g.arc(px, py, r * 1.2, 0, TAU); g.fill();
+  }
+}
+
+if (VARIANT === 'pulse') {
+  // Rings leaving a source: drawn as their own arcs rather than as a silhouette,
+  // because the whole point is that there are several of them.
+  const cx = W * 0.74, cy = H * 0.90;
+  const RINGS = 5;
+  for (let k = 0; k < N; k++) {
+    const ring = Math.floor(rnd() * RINGS);
+    const rad = (0.16 + ring * 0.21) * W;
+    const ang = Math.PI + rnd() * Math.PI;              // upper half only
+    // thickness of the ring band grows as it travels outward and weakens
+    const bandT = Math.abs(gauss()) * (0.012 + ring * 0.014) * W;
+    const px = cx + Math.cos(ang) * (rad + bandT) * 1.35;
+    const py = cy + Math.sin(ang) * (rad + bandT) * 0.62;
+    // fade with distance travelled and toward the vertical extremes of the arc
+    const spent = ring / (RINGS - 1);
+    const lateral = Math.abs(Math.cos(ang));
+    const boost = (1 - spent * 0.62) * (0.35 + 0.65 * lateral);
+    const t = clamp01(bandT / ((0.012 + ring * 0.014) * W * 2.4));
+    if (rnd() > boost) continue;
+    dot(px, py, t, 0.58);   // the rings stack heavily; without this they outshine every other header
+  }
+} else {
+  for (let k = 0; k < N; k++) {
+    const x = rnd();
+    const pr = profile(x);
+    if (rnd() > pr.mass) continue;
+
+    const px = x * W;
+    // Most points fill the body below the edge; a minority spray above it.
+    if (rnd() < 0.14) {
+      const lift = Math.pow(rnd(), 2.1) * pr.deep * 0.85;
+      dot(px, (pr.edge - lift) * H, clamp01(lift / (pr.deep * 0.85)) * 0.9 + 0.05, 0.55);
+    } else {
+      const t = Math.pow(rnd(), 0.62);                  // crowd toward the ridge
+      dot(px, (pr.edge + t * pr.deep) * H, t, 1);
+    }
+  }
+
+  if (VARIANT === 'gate') {
+    // Light coming through the parting. A narrow shaft climbing out of the gap,
+    // widening and thinning as it goes — this is the part that says "opened".
+    const M = Math.floor(N * 0.16);
+    for (let k = 0; k < M; k++) {
+      const climb = Math.pow(rnd(), 0.85);              // 0 at the gap, 1 at the top
+      const widen = 0.010 + climb * 0.055;
+      const px = (GATE_X + gauss() * widen) * W;
+      const py = (0.74 - climb * 0.66) * H;
+      dot(px, py, clamp01(climb * 0.85), 0.75 * (1 - climb * 0.55));
+    }
+  }
+
+  if (VARIANT === 'burst') {
+    // The ping itself: motes thrown up and out of one point, thinning with
+    // distance. A fan, not a dome — a dome is just a hill.
+    const M = Math.floor(N * 0.28);
+    for (let k = 0; k < M; k++) {
+      const ang = -Math.PI / 2 + gauss() * 0.62;        // mostly upward
+      const dist = Math.pow(rnd(), 0.55) * 0.62;        // crowded near the source
+      const px = (BURST_X + Math.cos(ang) * dist * 0.85) * W;
+      const py = (0.74 + Math.sin(ang) * dist * 1.30) * H;
+      dot(px, py, clamp01(dist / 0.62), 0.7 * (1 - dist / 0.75));
+    }
+  }
+}
+
+document.title = 'ready';
+</script></body></html>

@@ -3,7 +3,12 @@
 > **Read this first.** This is the single source of truth for the whole project.
 > It is written for (a) the owner and (b) the next AI coding agent (Claude Code)
 > so it can understand the full infrastructure immediately and pick up the open
-> tasks without guessing. Last updated at the end of the build session below.
+> tasks without guessing.
+>
+> **Last updated:** after the design session that re-themed the member app to the
+> logo, introduced `PageHero`, generated the per-section banners, and closed the
+> self-service-tier RLS hole. Start at §1 — especially **§1a** (you are probably
+> running in the cloud) and **§1b** (which credentials to ask for).
 
 ---
 
@@ -35,6 +40,46 @@ Telegram). We earn from the broker's per-lot IB rebate and share it with
    **`qrgvltpakkubtkeukypa`** (momentum-hq).
 5. Deploy = push to `main`. Edge functions deploy via Supabase MCP
    `deploy_edge_function`. DB changes via `apply_migration`.
+
+### 1a) You are probably running in the cloud, not on the owner's machine
+
+Sessions here usually run as **Claude Code on the web**: an ephemeral container
+with a *fresh clone* of the repo. That has consequences worth stating plainly,
+because getting them wrong wastes a whole session:
+
+- The owner **cannot see** anything you do until you `git push`. A dev server you
+  start listens on `127.0.0.1` **inside your container** — nobody can open it.
+  To show work, render a screenshot yourself (headless Chromium is available) and
+  send the image, or push and let Vercel deploy.
+- Anything not committed **is lost** when the container is reclaimed. Commit early.
+  That is why the artwork renderer lives in `tools/particle-art/` and not in a
+  scratch directory.
+- The owner's local uncommitted work is invisible to you. Do not assume the repo
+  state you see is the state on their machine.
+
+### 1b) Credentials — ask, do not hunt
+
+Nothing secret is written in this file, and nothing secret belongs in the repo.
+If a task needs one of these, **ask the owner for it directly** and keep it in the
+session only (or, better, have them put it in Vercel / Supabase secrets so no chat
+ever holds it):
+
+| Needed for | Credential | Normally lives in |
+|---|---|---|
+| Setting env vars, reading build logs, manual deploys | **Vercel token** | Vercel account settings. Usually *not needed* — Vercel is git-connected, pushing `main` deploys. |
+| Sending mail from `send-email` | **Resend API key** | Supabase Edge Function secret |
+| Server-side DB work outside MCP | **Supabase `service_role` key** | Supabase project settings |
+| Signal relay bot | **Telegram bot token** + webhook secret | Supabase Edge Function secrets |
+| Cosmo (the AI mentor) | **`ANTHROPIC_API_KEY`** | Supabase Edge Function secret |
+| Broker deposit verification | **Broker DB credentials** | VPS `.env` only — never in the repo |
+| DNS changes | **GoDaddy PAT** | GoDaddy account |
+| Cosmo poses / videos | **Hedra / Higgsfield keys** | those accounts |
+
+Two rules that matter more than convenience:
+
+- **Never commit a secret**, not even in a migration, a comment or a test fixture.
+- If the owner pastes a secret into chat, **tell them to rotate it** once the task
+  is done. Several already need rotating — see §8.
 
 ---
 
@@ -69,8 +114,39 @@ Telegram). We earn from the broker's per-lot IB rebate and share it with
   logged in. `/{slug}` and `/t/{slug}` = partner landings (`TenantLandingView`).
 - **Auth/DB:** Supabase. RLS on everything. Members see only their own rows.
 - **Deploy:** Vercel (git-connected). Push `main` → auto build+deploy.
-- **Colors:** dark theme; lime primary `#b6f04a` / `oklch(0.88 0.19 140)`; blue
-  accent `#75B9F5`; gold `#ffcf5c`.
+
+### Design system — read before touching any UI
+
+The whole theme lives in `src/styles.css` `:root` as CSS custom properties. Change
+a colour **there**, never per-component; ~50 places reference these tokens.
+
+- **Palette: deep navy + electric azure.** `--primary: oklch(0.72 0.17 244)`,
+  surfaces `oklch(0.12…0.19 · 258)`. This is the logo — an azure candle on
+  near-black navy with silver type. It replaced an earlier purple + lime theme
+  that fought both the logo and the mascot.
+- **Green and red mean market direction, nothing else.** Taking the brand off
+  green is what buys that back, and it is a large part of why the app reads as a
+  trading product. Do **not** reintroduce green as a "category" colour. (Tier
+  accents are the one carve-out: Foundation green / Operator violet / Elite gold,
+  defined in `academy-data.ts`, and they predate this rule.)
+- `--shadow-lime` / `--ring-lime` are **misnomers kept on purpose** — they carry
+  the azure brand glow and are referenced in ~50 places. Prefer the
+  `--shadow-brand` / `--ring-brand` aliases in new code.
+- **Every member page opens with `PageHero`**
+  (`src/components/academy/primitives/PageHero.tsx`): particle artwork on the
+  right, a left-to-right scrim so copy stays legible, an ambient tint, plus
+  optional `aside` (a headline number or badge) and `footer` (a progress bar)
+  slots. Use it for new pages instead of a bare `<h1>` — that is what makes the
+  app read as a product rather than a stack of documents.
+- **The header banners are generated, not stock.** Source and full rationale:
+  `tools/particle-art/README.md`. Each section has its own silhouette (rings =
+  signals, staircase = lessons, tick field = tools, parted masses = unlocks…)
+  while everything else about the treatment stays shared, so they read as one
+  family. Add a variant there for a new section rather than reusing an existing
+  banner.
+- **Public landing pages are still on the old purple/lime look.** The re-theme
+  covered the member app; `TenantLandingView` and the partner pages have not been
+  brought over yet — see §6.
 
 ### Repository map (key paths)
 ```
@@ -128,6 +204,19 @@ that belong to a **different** product sharing this project — ignore them.)
   imports trades. **Matches member ↔ broker_client by tracking token first**
   (member id carried in `utm_campaign`/`utm_uri`), email as fallback.
 - pg_net and pg_cron extensions are installed.
+- **Trigger `members_guard_standing()` (migration 024) — do not remove.** RLS can
+  scope *rows* but not *columns*, so the member-facing update policy on `members`
+  let a signed-in member set their own `deposit` and `tier` — i.e. award themselves
+  Elite. This BEFORE INSERT/UPDATE trigger pins `deposit`, `tier`, `active`,
+  `activity_status`, `monthly_lots`, `referred_by_tenant`, `auth_user_id`, `email`
+  and `joined_at` back to their old values for everyone except the platform admin
+  and server-side callers (`auth.uid()` null). If you add a protected column to
+  `members`, add it here too.
+- **Admin write policies (migration 025).** There was no admin UPDATE/DELETE policy
+  on `members` at all, so the admin member dialog had never actually written
+  anything — it failed silently. `members_admin_update` / `members_admin_delete`
+  fix that. Admin identity = `is_platform_admin()`, which reads the **email claim
+  in the JWT**; a token without that claim is not recognised as admin.
 
 ---
 
@@ -178,6 +267,24 @@ Desk pattern: ~1.2 lots/trade on €10k, ~6 trades/day → ~144 lots/mo per €1
 
 ## 6) OPEN TASKS — checklist for the next agent
 
+> **Scope note from the owner (current):** design of the Academy pages was the
+> active task. Broker switch, backend dead-ends and security work are the owner's
+> own next step — do not start them unprompted.
+
+### A0. Design — where the last session stopped
+- [x] Re-theme the member app to the logo (navy + azure), green/red freed for the market.
+- [x] Shared `PageHero` on every member page, with per-page stats in the header.
+- [x] Per-section generated banners (`tools/particle-art/`).
+- [ ] **Public landing + partner pages still use the old purple/lime theme.** They
+      are the first thing a visitor sees, so this is the biggest remaining visual
+      inconsistency. `TenantLandingView`, `partner.tsx`, `partner-programm.tsx`,
+      `registrieren.tsx`.
+- [ ] `HeroBento` tiles are still purple-accented; bring them onto the blue.
+- [ ] Consider a candle motif from the logo as a recurring element (owner liked
+      the idea, never executed).
+- [ ] `src/assets/art-ribbon.jpg` is unused and has the old rubbery look — delete
+      or regenerate.
+
 ### A. UI / assets (owner-requested, not yet done)
 - [ ] **Partner (Zeko) landing image**: the `zekoglobal` tenant mascot is wrong.
       Replace `public/zeko-hero.png` and `public/zeko-point.png` with the correct
@@ -214,6 +321,14 @@ Desk pattern: ~1.2 lots/trade on €10k, ~6 trades/day → ~144 lots/mo per €1
       Activity minimum: code uses 0.10 lot/30d; bot spec says 0.2 lot — pick one.
 - [ ] **Broker IB link in Vercel**: optionally set `VITE_BROKER_URL` env so it is
       config-driven (currently the IB link is the code default in `broker.ts`).
+- [ ] **Broker switch (owner's next project).** The plan is to move to a broker
+      with a proper API instead of the current DB-polling worker on the VPS. The
+      seam is already narrow, which is the good news: `broker-webhook` (signed
+      HMAC endpoint) and `apply_broker_rollup()` are the only two places that know
+      where deposits come from, and `src/lib/broker.ts` is the only place that
+      knows the referral URL. A new broker means a new sync source feeding the
+      same `deposit_events` / `trade_events` shape — do not let broker specifics
+      leak past `apply_broker_rollup()`.
 
 ### C. Nice-to-have
 - [ ] German version of the partner PDF (source HTML was in the ephemeral
@@ -243,11 +358,31 @@ Desk pattern: ~1.2 lots/trade on €10k, ~6 trades/day → ~144 lots/mo per €1
 
 ---
 
-## 8) Security — rotate these (were exposed in chat)
+## 8) Security
 
+### Rotate these — they were pasted into chat
 Admin password (after login), **Hedra API key**, Vercel token, Resend key,
 GoDaddy PAT, Higgsfield credentials, and the Supabase **service_role key**.
-Broker DB creds live only in the VPS `.env` (fine there).
+Broker DB creds live only in the VPS `.env` (fine there). See §1b for what each
+one is actually needed for — several are not needed day to day at all.
+
+### Closed
+- **Members could award themselves any tier.** The member update policy on
+  `members` was row-scoped but not column-scoped, so a signed-in member could set
+  their own `deposit`/`tier`. Closed by the `members_guard_standing()` trigger
+  (migration 024). Business-critical: this is the gate the entire product sells.
+- **The admin member dialog silently did nothing** — no admin write policy existed
+  on `members`. Closed by migration 025.
+
+### Rules for agents working on this repo
+- **Never run write queries against production to "verify" something.** Use a
+  transaction you roll back. A subagent in a past session ran a live UPDATE
+  setting a real member to `deposit=999999, tier='elite'` while impersonating
+  their JWT. Read-only checks and rolled-back transactions only.
+- If you spawn subagents, say this in their prompt too — they do not inherit it.
+- `is_platform_admin()` = `lower(auth.jwt() ->> 'email') = 'kontakt@momentumlabs.at'`.
+  When testing admin behaviour, the test JWT must carry the **email claim**, or you
+  will misdiagnose a working policy as broken.
 
 ---
 
@@ -261,8 +396,11 @@ Broker DB creds live only in the VPS `.env` (fine there).
   `video-engine/tim_src/` (timelines, board HTMLs, `video2_miro_stations.md`, `BUILD.md`).
 - **Word-level transcripts:** `*_words.json` (l3/l4/l5/sig/v6) in the repo.
 - **Broker worker:** `broker-sync/` (`sync.mjs`, `schema.mjs`, `README.md`).
+- **Header artwork generator:** `tools/particle-art/` (`render.html` = the source,
+  `render.mjs` = the batch script, `README.md` = variants + the two mistakes that
+  cost a session). Output = `src/assets/a-*.jpg` and `art-wave/art-dome.jpg`.
 - ⚠️ Anything that was only in the session "scratchpad" is **gone** — only
-  repo-committed files persist.
+  repo-committed files persist. If you build a tool worth keeping, commit it.
 
 ---
 
@@ -277,6 +415,15 @@ Broker DB creds live only in the VPS `.env` (fine there).
   secrets, the real value is intact (the bullets are display-only).
 - Node ≥ 20 with the `ws` package (or Node 22+) is required for the broker worker
   (supabase-js RealtimeClient needs a WebSocket).
+- **Theme colours are only in `src/styles.css`.** If a colour looks wrong, fix the
+  token, not the component.
+- **`npm start` does not exist** — the scripts are `dev`, `build`, `build:dev`,
+  `preview`, `lint`, `format`. `vite dev` needs `--host 127.0.0.1` in the cloud
+  container (plain IPv6 bind fails with `EAFNOSUPPORT`).
+- To screenshot the member app you need a session: the `_app/*` routes redirect to
+  `/registrieren` without one. Seed `localStorage` key
+  `sb-qrgvltpakkubtkeukypa-auth-token` with a session object before navigating —
+  data calls will 401 but the layout renders, which is all a design check needs.
 
 *— End of handover. Build the open tasks in section 6 in order; the core machine
 already runs and auto-verifies deposits.*
