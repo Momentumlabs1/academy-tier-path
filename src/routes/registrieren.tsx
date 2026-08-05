@@ -9,11 +9,15 @@
  *
  * Redirecting in `beforeLoad` means the router never renders anything here — the
  * visitor lands on /signup directly, with no flash of an intermediate screen.
+ *
+ * statusCode 301, not the router's default 307: the move is permanent, and only
+ * a permanent code tells a search engine to carry this URL's standing over to
+ * /signup instead of indexing them as two separate pages.
  */
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/registrieren")({
   beforeLoad: () => {
-    throw redirect({ to: "/signup", replace: true });
+    throw redirect({ to: "/signup", replace: true, statusCode: 301 });
   },
 });
