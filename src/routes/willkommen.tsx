@@ -1,36 +1,15 @@
 /**
- * /willkommen — legacy funnel step, now a pass-through.
+ * /willkommen — the old German path, kept as a permanent redirect to /welcome.
  *
- * The post-registration welcome experience moved INTO the dashboard
- * (OnboardingJourney): integrated Cosmo video → deposit ignite strip → live
- * deposit detection → celebration/unlock tour. This route only remains so old
- * links keep working; it forwards signed-in visitors to the dashboard and
- * everyone else to registration.
+ * Same reasoning as /registrieren: the page moved, the address did not have to
+ * break with it. This one was already a forwarder rather than a real screen, so
+ * a visitor arriving here now takes one router-level hop to /welcome, which then
+ * decides between the dashboard and sign-up based on the session.
  */
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
-import { Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/willkommen")({
-  head: () => ({ meta: [{ title: "Welcome — Cosmos Candles Academy" }] }),
-  component: WelcomeForward,
+  beforeLoad: () => {
+    throw redirect({ to: "/welcome", replace: true });
+  },
 });
-
-function WelcomeForward() {
-  const navigate = useNavigate();
-  useEffect(() => {
-    let alive = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (!alive) return;
-      navigate({ to: data.session ? "/" : "/registrieren", replace: true });
-    });
-    return () => { alive = false; };
-  }, [navigate]);
-
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-[oklch(0.09_0.02_255)]">
-      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-    </div>
-  );
-}

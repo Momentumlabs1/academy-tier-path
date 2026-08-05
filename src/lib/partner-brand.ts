@@ -4,7 +4,7 @@
  * ONE central Cosmo academy, skinned per referring partner. Cosmo is always the
  * star (education, welcome video, dashboard); the partner is a subtle, recurring
  * ACCENT (logo initials, accent colour, name, their Telegram) carried through the
- * whole funnel: landing → /registrieren → /willkommen → dashboard.
+ * whole funnel: landing → /signup → /welcome → dashboard.
  *
  * How it travels WITHOUT a DB fetch on every academy page: the partner landing
  * stamps a slim `cosmo_brand` cookie (JSON). Every downstream page reads it via
@@ -33,7 +33,7 @@ export interface PartnerBrand {
  * The central academy. Never re-branded per partner — this is the constant star.
  *
  * The colours come from `BRAND` rather than being written out again: this object
- * used to carry its own copy of the palette, which is why the /registrieren CTA
+ * used to carry its own copy of the palette, which is why the /signup CTA
  * stayed lime green after the rest of the funnel had moved to azure.
  */
 export const COSMO = {

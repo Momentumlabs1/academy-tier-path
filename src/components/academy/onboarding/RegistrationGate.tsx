@@ -3,10 +3,10 @@
  *
  * Public root ("/"): logged-out visitors see the branded master landing
  * (Cosmos Candles Academy) — the site can be browsed freely, register/login
- * happens only when they click "Kostenlos registrieren" or open a member area.
+ * happens only when they click "Sign up free" or open a member area.
  *
  * Protected routes (everything else under _app: /lessons, /signals, /tools, …):
- * no session → send the visitor into the funnel at /registrieren.
+ * no session → send the visitor into the funnel at /signup.
  *
  * Admins pass straight through. No overlay, no blur.
  */
@@ -36,7 +36,7 @@ export function RegistrationGate({ children }: { children: React.ReactNode }) {
       // No session: on the root, show the public landing; elsewhere, funnel in.
       if (isRoot) { setPhase("landing"); return; }
       setPhase("redirecting");
-      navigate({ to: "/registrieren" });
+      navigate({ to: "/signup" });
     };
     supabase.auth.getSession().then(({ data }) => {
       const mail = data.session?.user?.email?.toLowerCase();
@@ -48,14 +48,14 @@ export function RegistrationGate({ children }: { children: React.ReactNode }) {
       // never trap the user on the spinner — on the root show the public landing,
       // elsewhere send them to register rather than an infinite "checking".
       if (!alive) return;
-      if (isRoot) setPhase("landing"); else { setPhase("redirecting"); navigate({ to: "/registrieren" }); }
+      if (isRoot) setPhase("landing"); else { setPhase("redirecting"); navigate({ to: "/signup" }); }
     });
     // Safety net: if nothing resolved within 6s, stop the infinite spinner.
     const t = setTimeout(() => {
       if (!alive) return;
       setPhase((p) => {
         if (p !== "checking") return p;
-        if (!isRoot) navigate({ to: "/registrieren" });
+        if (!isRoot) navigate({ to: "/signup" });
         return isRoot ? "landing" : "redirecting";
       });
     }, 6000);

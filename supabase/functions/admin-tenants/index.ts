@@ -42,7 +42,7 @@ const slugify = (s: string) =>
 const RESERVED_SLUGS = new Set([
   "admin", "partner", "partner-programm", "login", "signals", "lessons", "tools", "tier", "unlocks",
   "notifications", "settings", "t", "api", "assets", "hegemony", "auth", "dashboard",
-  "registrieren", "willkommen",
+  "registrieren", "willkommen", "signup", "welcome",
 ]);
 
 Deno.serve(async (req) => {

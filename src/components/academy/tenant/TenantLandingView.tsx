@@ -78,7 +78,7 @@ function CandleShape({ up, down, isUp, bt, bh }: { up: string; down: string; isU
 
 export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
   const navigate = useNavigate();
-  const goRegister = () => navigate({ to: "/registrieren" });
+  const goRegister = () => navigate({ to: "/signup" });
 
   // Poster-Overlay fuer das Pitch-Video: weicht beim Start, kehrt am Ende zurueck.
   const pitchRef = useRef<HTMLVideoElement>(null);

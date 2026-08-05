@@ -179,7 +179,7 @@ export function getTenant(slug: string): TenantConfig | undefined {
 // The MASTER brand — Cosmos Candles Academy itself (no referring partner).
 // Rendered as the public landing on the root domain "/" for logged-out visitors,
 // so cosmos-candles.com can be browsed freely; registration happens only when a
-// visitor clicks "Kostenlos registrieren" / goes to unlock a feature.
+// visitor clicks "Sign up free" / goes to unlock a feature.
 export const COSMOS_MASTER: TenantConfig = {
   slug: "cosmos-candles",
   name: "Cosmos Candles Academy",
@@ -216,7 +216,7 @@ export const COSMOS_MASTER: TenantConfig = {
 export const RESERVED_SLUGS = new Set([
   "admin", "partner", "partner-programm", "login", "signals", "lessons", "tools", "tier", "unlocks",
   "notifications", "settings", "t", "api", "assets", "hegemony", "auth", "dashboard",
-  "registrieren", "willkommen",
+  "registrieren", "willkommen", "signup", "welcome",
 ]);
 
 // A complete, on-brand default landing built from just a slug + name, so any

@@ -1,6 +1,6 @@
 /**
  * FunnelShell — the Cosmo-branded page frame for the onboarding funnel
- * (/registrieren, /willkommen). Cosmo is the star: its wordmark leads. The
+ * (/signup, /welcome). Cosmo is the star: its wordmark leads. The
  * referring partner appears only as a subtle "empfohlen von …" accent chip in
  * the header, so the co-branding travels without ever re-skinning the academy.
  */
