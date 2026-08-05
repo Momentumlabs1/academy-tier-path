@@ -13,6 +13,7 @@
  */
 import { useEffect, useState } from "react";
 import type { TenantConfig } from "./tenants";
+import { BRAND } from "./tenants";
 import { BROKER } from "./broker";
 
 export interface PartnerBrand {
@@ -28,15 +29,21 @@ export interface PartnerBrand {
   brokerUrl: string;
 }
 
-/** The central academy. Never re-branded per partner — this is the constant star. */
+/**
+ * The central academy. Never re-branded per partner — this is the constant star.
+ *
+ * The colours come from `BRAND` rather than being written out again: this object
+ * used to carry its own copy of the palette, which is why the /registrieren CTA
+ * stayed lime green after the rest of the funnel had moved to azure.
+ */
 export const COSMO = {
   name: "Cosmo",
   fullName: "Cosmos Candles Academy",
   logoInitials: "CC",
-  primaryColor: "oklch(0.88 0.19 140)",
-  accentColor: "oklch(0.7 0.18 270)",
-  bgFrom: "oklch(0.16 0.05 260)",
-  bgTo: "oklch(0.10 0.03 260)",
+  primaryColor: BRAND.primary,
+  accentColor: BRAND.accent,
+  bgFrom: BRAND.bgFrom,
+  bgTo: BRAND.bgTo,
 } as const;
 
 const COOKIE = "cosmo_brand";

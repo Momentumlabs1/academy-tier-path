@@ -126,7 +126,7 @@ function Dashboard() {
         />
         {/* Ambient glow blob */}
         <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-primary/20 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-12 left-8 h-40 w-40 rounded-full bg-[oklch(0.7_0.18_270)]/15 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-12 left-8 h-40 w-40 rounded-full bg-[oklch(0.62_0.16_232)]/15 blur-3xl" />
 
         <div className="relative flex items-start gap-4 sm:gap-5">
           {/* The member's own avatar — their identity, not the mascot. */}

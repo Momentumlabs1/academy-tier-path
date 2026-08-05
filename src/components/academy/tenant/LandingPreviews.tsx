@@ -12,6 +12,7 @@ import {
   Trophy, Zap, Sparkles, Lock, Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BRAND } from "@/lib/tenants";
 
 const UP = "oklch(0.82 0.17 150)";
 const DOWN = "oklch(0.66 0.2 22)";
@@ -201,7 +202,7 @@ export function RewardsPreview({ primary, accent }: { primary: string; accent: s
 /* ── 6. White-label — the same academy, three partner skins ── */
 export function WhitelabelPreview({ primary }: { primary: string }) {
   const skins = [
-    { name: "Cosmos", c: "oklch(0.88 0.19 140)", a: "oklch(0.7 0.18 270)" },
+    { name: "Cosmos", c: BRAND.primary, a: BRAND.accent },
     { name: "Crypto Masters", c: "oklch(0.82 0.2 60)", a: "oklch(0.72 0.16 30)" },
     { name: "FX Elite", c: "oklch(0.75 0.18 250)", a: "oklch(0.65 0.2 200)" },
   ];

@@ -48,11 +48,10 @@ const FAQ = [
 
 function PartnerProgramm() {
   return (
-    <div className="min-h-screen bg-[oklch(0.12_0.03_260)] font-sans text-foreground [background-image:radial-gradient(1100px_600px_at_100%_-5%,oklch(0.9_0.2_150/0.06),transparent_60%)]">
+    <div className="min-h-screen bg-[oklch(0.12_0.03_260)] font-sans text-foreground [background-image:var(--gradient-page-wash)]">
       {/* Nav */}
       <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-5 sm:px-8">
         <div className="flex items-center gap-2.5">
-          <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-sm font-black text-primary-foreground">C</span>
           <img src="/cosmos-logo.png" alt="Cosmos Candles" className="h-8 w-auto" />
         </div>
         <a href={applyHref} className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90">Become a partner</a>

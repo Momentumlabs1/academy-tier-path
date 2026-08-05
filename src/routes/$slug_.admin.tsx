@@ -101,7 +101,7 @@ function PartnerAdmin() {
   if (!authed) return <Gate slug={slug} invite={invite} onDone={load} />;
 
   return (
-    <div className="min-h-screen bg-[oklch(0.11_0.03_255)] px-4 py-8 text-foreground [background-image:radial-gradient(900px_500px_at_100%_-10%,oklch(0.9_0.2_140/0.05),transparent_60%)]">
+    <div className="min-h-screen bg-[oklch(0.11_0.03_255)] px-4 py-8 text-foreground [background-image:var(--gradient-page-wash)]">
       <div className="mx-auto max-w-4xl">
         <header className="mb-8 flex items-center justify-between">
           <div>
@@ -196,7 +196,7 @@ function Gate({ slug, invite, onDone }: { slug: string; invite?: string; onDone:
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[oklch(0.11_0.03_255)] px-4 text-foreground [background-image:radial-gradient(900px_500px_at_100%_-10%,oklch(0.9_0.2_140/0.05),transparent_60%)]">
+    <div className="flex min-h-screen items-center justify-center bg-[oklch(0.11_0.03_255)] px-4 text-foreground [background-image:var(--gradient-page-wash)]">
       <form onSubmit={submit} className="w-full max-w-sm rounded-2xl border border-white/10 bg-[oklch(0.15_0.045_255)] p-7 shadow-2xl">
         <div className="mb-6">
           <div className="flex items-center gap-2 text-primary">

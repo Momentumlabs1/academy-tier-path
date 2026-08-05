@@ -31,7 +31,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-[oklch(0.11_0.03_255)] text-foreground [background-image:radial-gradient(900px_500px_at_100%_-10%,oklch(0.9_0.2_140/0.05),transparent_60%)]">
+    <div className="flex min-h-screen bg-[oklch(0.11_0.03_255)] text-foreground [background-image:var(--gradient-page-wash)]">
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-screen w-[240px] shrink-0 flex-col border-r border-white/5 bg-[oklch(0.13_0.035_255)]/80 px-3 py-6 backdrop-blur lg:flex">
         <div className="flex items-center gap-2.5 px-2 pb-6">

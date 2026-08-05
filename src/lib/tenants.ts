@@ -30,6 +30,27 @@ export interface TenantConfig {
   faq?: { q: string; a: string }[];
 }
 
+/**
+ * The Cosmos Candles house palette — the landing-page mirror of the app tokens
+ * in `src/styles.css` (`--primary`, `--surface-1`).
+ *
+ * Landings are rendered from tenant config through inline styles, so they cannot
+ * read the CSS variables. Without a shared constant the two drift: that is how
+ * the public pages ended up on the old purple/lime pairing months after the app
+ * moved to the logo's navy + electric azure.
+ *
+ * This is OUR brand only. A partner tenant overrides these with its own colours
+ * — that is the point of white-label — but anything Cosmos-owned starts here.
+ */
+export const BRAND = {
+  /** logo azure. Carries the near-black foreground at 7.9:1, so it is safe for buttons. */
+  primary: "oklch(0.72 0.17 244)",
+  /** a deeper, cooler blue for atmosphere — supports the azure without competing with Cosmo. */
+  accent: "oklch(0.62 0.16 232)",
+  bgFrom: "oklch(0.155 0.042 258)",
+  bgTo: "oklch(0.098 0.026 258)",
+} as const;
+
 export const TENANTS: TenantConfig[] = [
   {
     slug: "agent-trading",
@@ -166,10 +187,10 @@ export const COSMOS_MASTER: TenantConfig = {
   description:
     "The trading academy for ambitious retail traders. Live signals, a course that starts from zero, and orderflow tools 90% of the market never sees.",
   logoInitials: "CC",
-  primaryColor: "oklch(0.88 0.19 140)",
-  accentColor: "oklch(0.7 0.18 270)",
-  bgFrom: "oklch(0.16 0.05 260)",
-  bgTo: "oklch(0.10 0.03 260)",
+  primaryColor: BRAND.primary,
+  accentColor: BRAND.accent,
+  bgFrom: BRAND.bgFrom,
+  bgTo: BRAND.bgTo,
   brokerName: "TradeQuo",
   brokerUrl: BROKER.url,
   telegramChannel: "https://t.me/agent_trading_signals",
@@ -215,10 +236,10 @@ export function buildTenantConfig(
     description:
       "Free trade signals, a step-by-step academy and a private community. No course fees — you just fund a live account with our partner broker.",
     logoInitials: initials,
-    primaryColor: "oklch(0.82 0.17 150)",
-    accentColor: "oklch(0.7 0.18 270)",
-    bgFrom: "oklch(0.16 0.05 260)",
-    bgTo: "oklch(0.10 0.03 260)",
+    primaryColor: BRAND.primary,
+    accentColor: BRAND.accent,
+    bgFrom: BRAND.bgFrom,
+    bgTo: BRAND.bgTo,
     brokerName: "TradeQuo",
     brokerUrl: BROKER.url,
     telegramChannel: "#",

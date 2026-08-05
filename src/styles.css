@@ -120,6 +120,12 @@
   --sidebar-ring: oklch(0.72 0.17 244);
   --gradient-card-hero: linear-gradient(135deg, oklch(0.21 0.07 256), oklch(0.115 0.03 258));
   --gradient-stage: radial-gradient(1200px 600px at 20% -10%, oklch(0.42 0.14 250 / 0.5), transparent 60%), radial-gradient(900px 500px at 110% 10%, oklch(0.46 0.12 225 / 0.3), transparent 60%);
+  /* The ambient wash in the top-right corner of the standalone pages that sit
+     outside the app shell: /login, /partner, /partner-programm, /{slug}/admin.
+     It used to be the same lime radial pasted into six className strings, which
+     is exactly why those pages stayed green long after the app moved to azure.
+     One token, so the next palette change reaches all of them. */
+  --gradient-page-wash: radial-gradient(900px 500px at 100% -10%, oklch(0.72 0.17 244 / 0.07), transparent 60%), radial-gradient(600px 400px at 0% 110%, oklch(0.62 0.16 232 / 0.07), transparent 60%);
   --shadow-card: 0 30px 60px -30px oklch(0.04 0.02 258 / 0.75), 0 1px 0 0 oklch(1 0 0 / 0.04) inset;
   /* Brand glow. The --shadow-lime / --ring-lime names are kept because they are
      referenced in ~50 places; they now carry the azure brand colour. Prefer the
@@ -192,8 +198,8 @@
 }
 
 @keyframes pill-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 oklch(0.92 0.21 130 / 0.35); }
-  50%      { box-shadow: 0 0 0 8px oklch(0.92 0.21 130 / 0); }
+  0%, 100% { box-shadow: 0 0 0 0 oklch(0.72 0.17 244 / 0.35); }
+  50%      { box-shadow: 0 0 0 8px oklch(0.72 0.17 244 / 0); }
 }
 
 @keyframes stagger-in {
@@ -241,8 +247,8 @@
 /* Slow "breathing" glow — draws the eye to still-locked elements that a first
    deposit would unlock, without being loud (the funnel's gentle pull). */
 @keyframes glow-breathe {
-  0%, 100% { box-shadow: 0 0 0 0 oklch(0.92 0.21 130 / 0.0), 0 0 22px 0 oklch(0.92 0.21 130 / 0.10); }
-  50%      { box-shadow: 0 0 0 3px oklch(0.92 0.21 130 / 0.22), 0 0 40px 6px oklch(0.92 0.21 130 / 0.28); }
+  0%, 100% { box-shadow: 0 0 0 0 oklch(0.72 0.17 244 / 0.0), 0 0 22px 0 oklch(0.72 0.17 244 / 0.10); }
+  50%      { box-shadow: 0 0 0 3px oklch(0.72 0.17 244 / 0.22), 0 0 40px 6px oklch(0.72 0.17 244 / 0.28); }
 }
 .animate-glow {
   animation: glow-breathe 3.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
