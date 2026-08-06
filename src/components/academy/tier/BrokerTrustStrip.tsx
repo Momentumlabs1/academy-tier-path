@@ -9,7 +9,8 @@
  * rail (vertical mini-card for the right rail).
  */
 import { ArrowUpRight, BadgeCheck, ShieldCheck, Star, Trophy } from "lucide-react";
-import { BROKER, depositUrl } from "@/lib/broker";
+import { BROKER, BROKER_SWITCH, depositUrl } from "@/lib/broker";
+import { BrokerPausedNotice } from "@/components/academy/tier/BrokerPausedNotice";
 import { useMemberState } from "@/hooks/useMemberState";
 import { usePartnerBrand } from "@/lib/partner-brand";
 import { markDepositClick } from "@/lib/deposit-intent";
@@ -25,12 +26,17 @@ function Pills({ center = false, dim = false }: { center?: boolean; dim?: boolea
   );
   return (
     <div className={cn("flex flex-wrap gap-2", center && "justify-center")}>
+      {/* Held back while the broker is switching: these are TradeQuo's licences and
+          score, and repeating them for a broker a member cannot reach — or for the
+          incoming one — is a false claim about a regulated firm. */}
+      {BROKER_SWITCH.paused ? null : <>
       <span className={pill}><Star className="h-3.5 w-3.5 fill-[#00b67a] text-[#00b67a]" /> 4.9 Trustpilot</span>
       <span className={pill}><ShieldCheck className="h-3.5 w-3.5 text-primary" /> FSCA</span>
       <span className={pill}><ShieldCheck className="h-3.5 w-3.5 text-primary" /> CMA</span>
       <span className={pill}><ShieldCheck className="h-3.5 w-3.5 text-primary" /> FSA</span>
       <span className={pill}><Trophy className="h-3.5 w-3.5 text-[#ffcf5c]" /> Award-winning broker</span>
       <span className={pill}><BadgeCheck className="h-3.5 w-3.5 text-primary" /> Proof of Reserves</span>
+      </>}
     </div>
   );
 }
@@ -38,6 +44,8 @@ function Pills({ center = false, dim = false }: { center?: boolean; dim?: boolea
 function DepositCta({ className }: { className?: string }) {
   const { memberId, profile } = useMemberState();
   const brand = usePartnerBrand();
+  // Mid-switch: never hand a member to a broker we are leaving. See BROKER_SWITCH.
+  if (BROKER_SWITCH.paused) return <BrokerPausedNotice className={className} />;
   return (
     <a
       href={depositUrl(memberId, brand?.brokerUrl || BROKER.url)}

@@ -30,7 +30,8 @@ import { useMemberRefresh, useMemberState } from "@/hooks/useMemberState";
 import { usePartnerBrand, COSMO } from "@/lib/partner-brand";
 import { TIERS, tierForDeposit } from "@/lib/academy-data";
 import { PRODUCTS } from "@/lib/products";
-import { BROKER, depositUrl } from "@/lib/broker";
+import { BROKER, BROKER_SWITCH, depositUrl } from "@/lib/broker";
+import { BrokerPausedNotice } from "@/components/academy/tier/BrokerPausedNotice";
 import { markDepositClick, depositClickedAt, clearDepositClick } from "@/lib/deposit-intent";
 import { formatMoney } from "@/lib/format";
 import { Card } from "@/components/academy/primitives/Card";
@@ -435,6 +436,12 @@ export function OnboardingJourney() {
   if (stage === "loading" || stage === "done") return null;
   if (stage === "video") {
     return <WelcomeVideoCard accent={accent} onDone={() => { writeFlag(email, "video"); videoAck.current = true; advance(); }} />;
+  }
+  // Mid-switch: "ignite" and "topup" are the two stages that hand a member off to
+  // the broker, so they become the notice. "verifying" is left alone — that member
+  // already deposited, and the existing sync still books it. See BROKER_SWITCH.
+  if (BROKER_SWITCH.paused && (stage === "ignite" || stage === "topup")) {
+    return <BrokerPausedNotice className="mb-6" />;
   }
   if (stage === "ignite") return <IgniteStrip accent={accent} href={href} onDeposit={onDeposit} />;
   if (stage === "verifying") return <VerifyingCard accent={accent} href={href} onDeposit={onDeposit} since={depositClickedAt(email)} />;

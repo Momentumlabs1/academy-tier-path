@@ -8,6 +8,37 @@
  * The deposit URL is env-swappable so the moment our IB referral link is live
  * we set VITE_BROKER_URL in Vercel and every CTA in the app points at it.
  */
+/**
+ * The broker relationship is mid-switch: TradeQuo is being replaced by VT Markets,
+ * whose IB API credentials are not in hand yet.
+ *
+ * While this is true, nothing may send a member to a broker. Two reasons, and the
+ * second is the sharper one:
+ *
+ *  · Sending new clients to a broker we are leaving books them under an IB
+ *    relationship that is ending — their deposits may never be attributed.
+ *
+ *  · The trust strip makes specific regulatory claims (FSCA · CMA · FSA, a
+ *    Trustpilot score, proof of reserves). Those are TradeQuo's. Repeating them
+ *    next to a VT Markets sign-up, or beside a broker a member cannot actually
+ *    reach, is a false statement about a regulated firm — not a cosmetic issue.
+ *
+ * So every deposit surface reads this flag and shows the notice instead of a link,
+ * and the trust claims stay hidden until VT's own are confirmed. Registration, the
+ * academy and every free surface are deliberately untouched: the funnel keeps
+ * filling, only the hand-off pauses.
+ *
+ * To switch back on: set `paused: false`, point `url` at the new IB link, and
+ * replace `trust` with VT Markets' own verifiable claims.
+ */
+export const BROKER_SWITCH = {
+  paused: true,
+  headline: "Broker connection is being upgraded",
+  body:
+    "We're moving to a new partner broker with a direct API, which makes deposits verify " +
+    "in seconds instead of minutes. Deposits reopen shortly — everything else stays open.",
+} as const;
+
 export const BROKER = {
   name: "TradeQuo",
   // The master IB referral link — every client who registers through it is

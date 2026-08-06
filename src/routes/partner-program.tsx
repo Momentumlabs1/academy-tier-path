@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { ProductShots } from "@/components/academy/partner/ProductShots";
 import { EarningsEstimator } from "@/components/academy/partner/EarningsEstimator";
-import { BROKER } from "@/lib/broker";
+import { BROKER, BROKER_SWITCH } from "@/lib/broker";
 import { COMMISSION_LADDER } from "@/lib/commission";
 import { formatMoney } from "@/lib/format";
 
@@ -262,7 +262,7 @@ function PartnerProgramm() {
               click, customer, deposit and euro of commission is traceable in your dashboard.
             </p>
             <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
-              {BROKER.trust.map((t) => (
+              {(BROKER_SWITCH.paused ? [] : BROKER.trust).map((t) => (
                 <span key={t.label} className="text-[12px] text-muted-foreground">
                   <span aria-hidden className="mr-1.5 text-primary">{t.icon}</span>{t.label}
                 </span>

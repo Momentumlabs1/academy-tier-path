@@ -21,7 +21,7 @@ import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { writePartnerBrand } from "@/lib/partner-brand";
 import type { TenantConfig } from "@/lib/tenants";
-import { BROKER } from "@/lib/broker";
+import { BROKER, BROKER_SWITCH } from "@/lib/broker";
 import {
   SignalsPreview, BotPreview, AcademyPreview, QuizPreview, RewardsPreview, WhitelabelPreview,
 } from "@/components/academy/tenant/LandingPreviews";
@@ -381,7 +381,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                 You fund your <span className="font-semibold text-white/90">own</span> account at <span className="font-semibold text-white/90">{tenant.brokerName}</span> — a licensed, award-winning global broker. The money stays in your name and you can withdraw anytime. We earn from the broker, not from you — that's why everything here is free.
               </p>
               <div className="mt-6 grid gap-2.5 sm:grid-cols-2">
-                {BROKER.trust.map((t) => (
+                {(BROKER_SWITCH.paused ? [] : BROKER.trust).map((t) => (
                   <div key={t.label} className="flex items-center gap-2.5 rounded-xl border border-white/8 bg-white/[0.03] px-3.5 py-3">
                     <span className="text-base" style={{ color: primary }}>{t.icon}</span>
                     <span className="text-xs font-medium text-white/75">{t.label}</span>
@@ -393,7 +393,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               <div className="flex w-full max-w-[300px] items-center justify-center gap-2 rounded-2xl bg-white px-8 py-8 shadow-2xl">
                 <Building2 className="h-7 w-7 text-[#0b1220]" /><span className="font-display text-2xl font-black tracking-tight text-[#0b1220]">{tenant.brokerName}</span>
               </div>
-              <a href={BROKER.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-medium text-white/60 underline-offset-4 hover:text-white hover:underline">Visit {tenant.brokerName} <ArrowUpRight className="h-3.5 w-3.5" /></a>
+              {BROKER_SWITCH.paused ? null : <a href={BROKER.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-medium text-white/60 underline-offset-4 hover:text-white hover:underline">Visit {tenant.brokerName} <ArrowUpRight className="h-3.5 w-3.5" /></a>}
               <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2"><Wallet className="h-4 w-4" style={{ color: primary }} /><span className="text-xs font-medium text-white/75">Your money stays in your name</span></div>
             </div>
           </div>
