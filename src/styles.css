@@ -272,3 +272,33 @@
 .animate-unlock-pop {
   animation: unlock-pop 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+
+/* ── Phone type scale ──────────────────────────────────────────────────────
+   The member app was authored at desktop sizes that carried straight down to a
+   phone: section headings landed at 24px and card headings at 20px on a 375px
+   screen, so a single card filled the viewport and the dashboard ran past
+   3,000px tall. There was no overview — the complaint that started this.
+
+   Stepping the display face down one notch below `sm` fixes it in one place
+   instead of in forty components, and it only ever applies to the small
+   breakpoint, so nothing above it moves. Kept as a scale rather than as a fixed
+   size so the existing hierarchy (2xl above xl above lg) survives intact.
+
+   Anything that must stay large on a phone — the deposit figure on the tier
+   page, the estimator's headline number — carries `tabular-nums`, which is
+   excluded below. */
+@media (max-width: 639px) {
+  .font-display.text-3xl:not(.tabular-nums) { font-size: 1.5rem;   line-height: 1.15; }
+  .font-display.text-2xl:not(.tabular-nums) { font-size: 1.25rem;  line-height: 1.2;  }
+  .font-display.text-xl:not(.tabular-nums)  { font-size: 1.0625rem; line-height: 1.25; }
+  .font-display.text-lg:not(.tabular-nums)  { font-size: 1rem;     line-height: 1.3;  }
+}
+
+/* Body copy on a phone: keep 16px (below that iOS zooms form fields and the
+   text stops being comfortably readable) but drop the desktop leading. At
+   1.625 a four-line paragraph eats a third of the viewport, which is most of
+   why the dashboard read as oversized rather than the font size itself. */
+@media (max-width: 639px) {
+  .leading-relaxed { line-height: 1.45; }
+  .text-balance    { text-wrap: pretty; }
+}

@@ -169,14 +169,19 @@ export function MentorChat() {
         <button
           onClick={() => setOpen(true)}
           aria-label="Ask Cosmo"
-          className="group fixed bottom-24 right-4 z-40 flex flex-col items-center gap-1 transition-transform duration-300 hover:scale-105 lg:bottom-6"
+          /* Anchored to the bottom-right corner, clearing the mobile nav pill
+             (bottom-3 + ~68px tall) by four pixels. It used to sit at bottom-24
+             with the label stacked underneath, which on a phone put a ~90px-tall
+             block in the middle of the first card — it read as broken content
+             rather than as a launcher. */
+          className="group fixed bottom-[84px] right-3 z-40 flex flex-col items-center gap-1 transition-transform duration-300 hover:scale-105 lg:bottom-6 lg:right-4"
         >
           <style>{`
             @keyframes cosmoLaunchFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
             .cosmo-launch { animation: cosmoLaunchFloat 4.5s ease-in-out infinite; }
             @media (prefers-reduced-motion: reduce) { .cosmo-launch { animation: none; } }
           `}</style>
-          <span className="relative flex h-[68px] w-[68px] items-center justify-center">
+          <span className="relative flex h-[52px] w-[52px] items-center justify-center lg:h-[68px] lg:w-[68px]">
             <span
               className="pointer-events-none absolute inset-0 -m-1 rounded-full blur-xl transition-opacity duration-300 group-hover:opacity-100"
               style={{ background: "radial-gradient(circle, color-mix(in oklch, #75B9F5 60%, transparent), transparent 70%)", opacity: 0.8 }}
@@ -185,7 +190,7 @@ export function MentorChat() {
             <img
               src={COSMO_HEAD}
               alt=""
-              className="cosmo-launch relative h-[68px] w-[68px] object-contain drop-shadow-[0_6px_14px_rgba(0,0,0,0.55)]"
+              className="cosmo-launch relative h-[52px] w-[52px] object-contain drop-shadow-[0_6px_14px_rgba(0,0,0,0.55)] lg:h-[68px] lg:w-[68px]"
             />
             {locked && (
               <span className="absolute bottom-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-[oklch(0.14_0.04_255)] ring-1 ring-white/15">
@@ -193,7 +198,7 @@ export function MentorChat() {
               </span>
             )}
           </span>
-          <span className="rounded-full border border-primary/40 bg-[oklch(0.14_0.04_255)]/90 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-primary shadow-lg backdrop-blur-sm">
+          <span className="hidden rounded-full border border-primary/40 bg-[oklch(0.14_0.04_255)]/90 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-primary shadow-lg backdrop-blur-sm lg:block">
             Talk with me
           </span>
         </button>
