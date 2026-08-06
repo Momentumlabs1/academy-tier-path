@@ -78,6 +78,7 @@ function PartnerAdmin() {
         partner_rate: Number(r.partner_rate ?? 0),
         partner_rate_unit: String(r.partner_rate_unit ?? "usd_per_lot"),
         partner_volume: Number(r.partner_volume ?? 0),
+        partner_profile: (r.partner_profile as Record<string, string>) ?? {},
         clicks: Number(r.clicks ?? 0),
         leads: Number(r.leads ?? 0),
         members: Number(r.members ?? 0),

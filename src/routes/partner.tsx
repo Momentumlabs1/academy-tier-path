@@ -13,6 +13,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { BarChart3, Check, Copy, ExternalLink, Eye, Loader2, LogOut, MousePointerClick, TrendingUp, Users, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { PartnerProfileCard, type PartnerProfile } from "@/components/academy/partner/PartnerProfileCard";
 import { ADMIN_EMAIL } from "@/lib/admin-auth";
 import { COMMISSION_LADDER, levelForVolume, volumeToNextLevel } from "@/lib/commission";
 import { formatMoney } from "@/lib/format";
@@ -33,6 +34,7 @@ export interface PartnerRow {
   leads: number;
   members: number;
   total_deposits: number;
+  partner_profile: PartnerProfile;
 }
 
 // The academy tables/views aren't in the generated Database types, so read them
@@ -68,6 +70,7 @@ function PartnerPortal() {
         leads: Number(r.leads ?? 0),
         members: Number(r.members ?? 0),
         total_deposits: Number(r.total_deposits ?? 0),
+        partner_profile: (r.partner_profile as PartnerProfile) ?? {},
       })),
     );
   }, []);
@@ -156,8 +159,14 @@ export function PartnerCard({ row }: { row: PartnerRow }) {
         </div>
       </div>
 
-      {/* Dein teilbarer Link — genau den schickst du raus. */}
-      <div className="mb-5 flex flex-col gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 sm:flex-row sm:items-center">
+      {/* The profile form. Sits directly under the header because on day one it is
+          the only thing on this page a new partner can actually act on — every
+          figure below is still zero until their first customer funds an account,
+          and a dashboard of zeroes reads as broken rather than as new. */}
+      <PartnerProfileCard profile={row.partner_profile} />
+
+      {/* Your shareable link — this is the one you send out. */}
+      <div className="mb-5 mt-5 flex flex-col gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 sm:flex-row sm:items-center">
         <div className="min-w-0 flex-1">
           <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary/80">Your link</div>
           <div className="truncate font-mono text-sm">{shareUrl}</div>
