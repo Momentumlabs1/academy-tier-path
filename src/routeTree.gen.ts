@@ -15,6 +15,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as HegemonyRouteImport } from './routes/hegemony'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PartnerRouteImport } from './routes/partner'
+import { Route as PartnerProgramRouteImport } from './routes/partner-program'
 import { Route as PartnerProgrammRouteImport } from './routes/partner-programm'
 import { Route as RegistrierenRouteImport } from './routes/registrieren'
 import { Route as SignupRouteImport } from './routes/signup'
@@ -69,6 +70,11 @@ const LoginRoute = LoginRouteImport.update({
 const PartnerRoute = PartnerRouteImport.update({
   id: '/partner',
   path: '/partner',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartnerProgramRoute = PartnerProgramRouteImport.update({
+  id: '/partner-program',
+  path: '/partner-program',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PartnerProgrammRoute = PartnerProgrammRouteImport.update({
@@ -209,6 +215,7 @@ export interface FileRoutesByFullPath {
   '/hegemony': typeof HegemonyRoute
   '/login': typeof LoginRoute
   '/partner': typeof PartnerRoute
+  '/partner-program': typeof PartnerProgramRoute
   '/partner-programm': typeof PartnerProgrammRoute
   '/registrieren': typeof RegistrierenRoute
   '/signup': typeof SignupRoute
@@ -240,6 +247,7 @@ export interface FileRoutesByTo {
   '/hegemony': typeof HegemonyRoute
   '/login': typeof LoginRoute
   '/partner': typeof PartnerRoute
+  '/partner-program': typeof PartnerProgramRoute
   '/partner-programm': typeof PartnerProgrammRoute
   '/registrieren': typeof RegistrierenRoute
   '/signup': typeof SignupRoute
@@ -274,6 +282,7 @@ export interface FileRoutesById {
   '/hegemony': typeof HegemonyRoute
   '/login': typeof LoginRoute
   '/partner': typeof PartnerRoute
+  '/partner-program': typeof PartnerProgramRoute
   '/partner-programm': typeof PartnerProgrammRoute
   '/registrieren': typeof RegistrierenRoute
   '/signup': typeof SignupRoute
@@ -310,6 +319,7 @@ export interface FileRouteTypes {
     | '/hegemony'
     | '/login'
     | '/partner'
+    | '/partner-program'
     | '/partner-programm'
     | '/registrieren'
     | '/signup'
@@ -341,6 +351,7 @@ export interface FileRouteTypes {
     | '/hegemony'
     | '/login'
     | '/partner'
+    | '/partner-program'
     | '/partner-programm'
     | '/registrieren'
     | '/signup'
@@ -374,6 +385,7 @@ export interface FileRouteTypes {
     | '/hegemony'
     | '/login'
     | '/partner'
+    | '/partner-program'
     | '/partner-programm'
     | '/registrieren'
     | '/signup'
@@ -409,6 +421,7 @@ export interface RootRouteChildren {
   HegemonyRoute: typeof HegemonyRoute
   LoginRoute: typeof LoginRoute
   PartnerRoute: typeof PartnerRoute
+  PartnerProgramRoute: typeof PartnerProgramRoute
   PartnerProgrammRoute: typeof PartnerProgrammRoute
   RegistrierenRoute: typeof RegistrierenRoute
   SignupRoute: typeof SignupRoute
@@ -460,6 +473,13 @@ declare module '@tanstack/react-router' {
       path: '/partner'
       fullPath: '/partner'
       preLoaderRoute: typeof PartnerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/partner-program': {
+      id: '/partner-program'
+      path: '/partner-program'
+      fullPath: '/partner-program'
+      preLoaderRoute: typeof PartnerProgramRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/partner-programm': {
@@ -718,6 +738,7 @@ const rootRouteChildren: RootRouteChildren = {
   HegemonyRoute: HegemonyRoute,
   LoginRoute: LoginRoute,
   PartnerRoute: PartnerRoute,
+  PartnerProgramRoute: PartnerProgramRoute,
   PartnerProgrammRoute: PartnerProgrammRoute,
   RegistrierenRoute: RegistrierenRoute,
   SignupRoute: SignupRoute,

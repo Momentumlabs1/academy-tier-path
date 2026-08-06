@@ -562,7 +562,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                     <li key={p} className="flex items-center gap-2 text-sm text-white/80"><CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: primary }} />{p}</li>
                   ))}
                 </ul>
-                <Link to="/partner-programm" className="mt-7 inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-black text-black transition-transform hover:-translate-y-0.5" style={{ background: primary, boxShadow: `0 12px 36px -12px ${primary}` }}>Become a partner <ArrowRight className="h-4 w-4" /></Link>
+                <Link to="/partner-program" className="mt-7 inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-black text-black transition-transform hover:-translate-y-0.5" style={{ background: primary, boxShadow: `0 12px 36px -12px ${primary}` }}>Become a partner <ArrowRight className="h-4 w-4" /></Link>
               </div>
               <WhitelabelPreview primary={primary} />
             </div>

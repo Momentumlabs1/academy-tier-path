@@ -214,7 +214,7 @@ export const COSMOS_MASTER: TenantConfig = {
 // Slugs that collide with real app routes — a partner can never own one, else
 // their landing would shadow /admin, /partner, /login, etc.
 export const RESERVED_SLUGS = new Set([
-  "admin", "partner", "partner-programm", "login", "signals", "lessons", "tools", "tier", "unlocks",
+  "admin", "partner", "partner-programm", "partner-program", "login", "signals", "lessons", "tools", "tier", "unlocks",
   "notifications", "settings", "t", "api", "assets", "hegemony", "auth", "dashboard",
   "registrieren", "willkommen", "signup", "welcome",
 ]);
