@@ -23,7 +23,7 @@ const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { "Content-Type": "application/json" } });
 
 const TEMPLATE_KINDS: EmailKind[] = [
-  "doi", "welcome", "deposit_confirmed", "tier_unlocked",
+  "password_reset", "doi", "welcome", "deposit_confirmed", "tier_unlocked",
   "tier_nudge", "inactivity_warning", "new_lesson", "broadcast",
 ];
 

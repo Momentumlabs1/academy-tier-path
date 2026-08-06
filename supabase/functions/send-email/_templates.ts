@@ -92,6 +92,13 @@ export function buildEmail(input: BuildInput): { subject: string; html: string }
     shell(brand, { preheader, body, unsubUrl: input.unsubUrl });
 
   switch (input.kind) {
+    // Sent by the `password-reset` function, which mints the recovery link with
+    // the admin API and mails it from OUR domain. Supabase's own mailer would
+    // send this from noreply@mail.app.supabase.io, which reads as phishing and
+    // lands in spam — the whole reason this kind exists.
+    case "password_reset":
+      return { subject: `Reset your password — ${brand.name}`,
+        html: wrap("Set a new password — the link expires shortly.", h1("Set a new password") + p(`${hi}we got a request to reset the password for your <b>${esc(brand.name)}</b> account. Click below to choose a new one.`) + `<div style="margin:22px 0">${button(a, input.resetUrl ?? dash, "Set a new password")}</div>` + p(`<span style="color:#6b7788;font-size:13px">The link works once and expires shortly. If you didn't ask for this, ignore this e-mail — nothing changes.</span>`)) };
     case "doi":
       return {
         subject: `Please confirm your e-mail — ${brand.name}`,

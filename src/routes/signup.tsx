@@ -16,6 +16,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowRight, CheckCircle2, Loader2, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { functionUrl } from "@/integrations/supabase/functions-url";
 import { FunnelShell } from "@/components/academy/onboarding/FunnelShell";
 import { usePartnerBrand, COSMO } from "@/lib/partner-brand";
 import { ADMIN_EMAIL } from "@/lib/admin-auth";
@@ -47,8 +48,18 @@ function RegisterPage() {
     const mail = email.trim();
     if (!mail) { setError("Enter your email above first, then tap “Forgot password?”."); return; }
     setBusy(true); setError(null);
-    const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/login` : undefined;
-    const { error } = await supabase.auth.resetPasswordForEmail(mail, { redirectTo });
+    // Goes through our own `password-reset` function rather than
+    // supabase.auth.resetPasswordForEmail. That built-in path mails from
+    // noreply@mail.app.supabase.io with a stock template — it reads as phishing
+    // and lands in spam, so members reported the reset as simply broken. Ours
+    // mints the same recovery link server-side and sends it through Resend from
+    // send.cosmos-candles.com, landing on /reset-password.
+    const res = await fetch(functionUrl("password-reset"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: mail }),
+    }).catch(() => null);
+    const error = res && res.ok ? null : { message: "Could not send the reset mail. Please try again." };
     setBusy(false);
     if (error) { setError(error.message); return; }
     setResetSent(true);

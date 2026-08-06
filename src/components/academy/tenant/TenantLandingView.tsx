@@ -153,7 +153,12 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
             )}
           </div>
           <div className="flex items-center gap-1 sm:gap-3">
-            <Link to="/login" className="hidden rounded-full px-4 py-2 text-sm font-medium text-white/70 hover:text-white sm:inline-block">Sign in</Link>
+            {/* Points at /signup, not /login: /login is the admin Command Center,
+                so a returning member who tapped this used to land on a door their
+                credentials cannot open. /signup signs existing members straight in.
+                Never hidden on mobile either — that left a phone visitor with no
+                way back into their own account at all. */}
+            <Link to="/signup" className="rounded-full px-3 py-2 text-sm font-medium text-white/70 hover:text-white sm:px-4">Sign in</Link>
             <button onClick={goRegister}
               className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold text-black shadow-lg transition-transform hover:-translate-y-0.5"
               style={{ background: primary, boxShadow: `0 8px 30px -8px ${primary}` }}>

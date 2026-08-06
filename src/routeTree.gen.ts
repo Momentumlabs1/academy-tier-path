@@ -18,6 +18,7 @@ import { Route as PartnerRouteImport } from './routes/partner'
 import { Route as PartnerProgramRouteImport } from './routes/partner-program'
 import { Route as PartnerProgrammRouteImport } from './routes/partner-programm'
 import { Route as RegistrierenRouteImport } from './routes/registrieren'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as WillkommenRouteImport } from './routes/willkommen'
@@ -85,6 +86,11 @@ const PartnerProgrammRoute = PartnerProgrammRouteImport.update({
 const RegistrierenRoute = RegistrierenRouteImport.update({
   id: '/registrieren',
   path: '/registrieren',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignupRoute = SignupRouteImport.update({
@@ -218,6 +224,7 @@ export interface FileRoutesByFullPath {
   '/partner-program': typeof PartnerProgramRoute
   '/partner-programm': typeof PartnerProgrammRoute
   '/registrieren': typeof RegistrierenRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/welcome': typeof WelcomeRoute
   '/willkommen': typeof WillkommenRoute
@@ -250,6 +257,7 @@ export interface FileRoutesByTo {
   '/partner-program': typeof PartnerProgramRoute
   '/partner-programm': typeof PartnerProgrammRoute
   '/registrieren': typeof RegistrierenRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/welcome': typeof WelcomeRoute
   '/willkommen': typeof WillkommenRoute
@@ -285,6 +293,7 @@ export interface FileRoutesById {
   '/partner-program': typeof PartnerProgramRoute
   '/partner-programm': typeof PartnerProgrammRoute
   '/registrieren': typeof RegistrierenRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/welcome': typeof WelcomeRoute
   '/willkommen': typeof WillkommenRoute
@@ -322,6 +331,7 @@ export interface FileRouteTypes {
     | '/partner-program'
     | '/partner-programm'
     | '/registrieren'
+    | '/reset-password'
     | '/signup'
     | '/welcome'
     | '/willkommen'
@@ -354,6 +364,7 @@ export interface FileRouteTypes {
     | '/partner-program'
     | '/partner-programm'
     | '/registrieren'
+    | '/reset-password'
     | '/signup'
     | '/welcome'
     | '/willkommen'
@@ -388,6 +399,7 @@ export interface FileRouteTypes {
     | '/partner-program'
     | '/partner-programm'
     | '/registrieren'
+    | '/reset-password'
     | '/signup'
     | '/welcome'
     | '/willkommen'
@@ -424,6 +436,7 @@ export interface RootRouteChildren {
   PartnerProgramRoute: typeof PartnerProgramRoute
   PartnerProgrammRoute: typeof PartnerProgrammRoute
   RegistrierenRoute: typeof RegistrierenRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
   WelcomeRoute: typeof WelcomeRoute
   WillkommenRoute: typeof WillkommenRoute
@@ -494,6 +507,13 @@ declare module '@tanstack/react-router' {
       path: '/registrieren'
       fullPath: '/registrieren'
       preLoaderRoute: typeof RegistrierenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signup': {
@@ -741,6 +761,7 @@ const rootRouteChildren: RootRouteChildren = {
   PartnerProgramRoute: PartnerProgramRoute,
   PartnerProgrammRoute: PartnerProgrammRoute,
   RegistrierenRoute: RegistrierenRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
   WelcomeRoute: WelcomeRoute,
   WillkommenRoute: WillkommenRoute,
