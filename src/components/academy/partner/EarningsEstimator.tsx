@@ -65,7 +65,10 @@ export function EarningsEstimator() {
   }, [v]);
 
   /** A plausible account count for a given reach — a nudge, not a claim. */
-  const suggested = Math.max(1, Math.round(v.reach * 0.0005));
+  // Clamped to the slider's own maximum — suggesting 202 under a control that stops
+  // at 200 offers a number the reader cannot actually select.
+  const ACCOUNTS_MAX = 400;
+  const suggested = Math.min(ACCOUNTS_MAX, Math.max(1, Math.round(v.reach * 0.0005)));
 
   return (
     <div className="overflow-hidden rounded-2xl border border-white/10 bg-[oklch(0.13_0.035_258)]">
@@ -86,17 +89,18 @@ export function EarningsEstimator() {
 
           <label className="block">
             <span className="flex items-baseline justify-between gap-3">
-              <span className="text-sm font-medium text-foreground/90">Funded accounts this month</span>
+              <span className="text-sm font-medium text-foreground/90">New paying customers / month</span>
               <span className="font-mono text-sm font-semibold tabular-nums text-primary">{formatNumber(v.accounts)}</span>
             </span>
             <input
-              type="range" min={1} max={200} step={1} value={v.accounts}
+              type="range" min={1} max={ACCOUNTS_MAX} step={1} value={v.accounts}
               onChange={(e) => setV({ ...v, accounts: Number(e.target.value) })}
-              aria-label="Funded accounts this month"
+              aria-label="New paying customers per month"
               className="mt-2 h-1 w-full cursor-pointer appearance-none rounded-full bg-white/12 accent-[oklch(0.72_0.17_244)]"
             />
             <span className="mt-1.5 block text-[11px] text-muted-foreground">
-              Around {formatNumber(suggested)} is typical at your reach.{" "}
+              People from your audience who open a live account and actually fund it — only
+              those earn you anything. Around {formatNumber(suggested)} is typical at your reach.{" "}
               <button
                 type="button"
                 onClick={() => setV({ ...v, accounts: suggested })}
