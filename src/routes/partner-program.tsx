@@ -69,7 +69,7 @@ const GET = [
   {
     icon: GraduationCap,
     span: "md:col-span-2",
-    title: "The full academy, not a broker link",
+    title: "The full trading academy",
     body: "Twelve lessons from the first candle through to real orderflow — volume profile, footprint, Level 2 depth, risk and sizing. Recorded on the live terminal, not on slides.",
     img: "/partner/orderflow-lesson.jpg",
     imgAlt: "A lesson recorded on the live orderflow terminal showing volume profile and footprint data",
