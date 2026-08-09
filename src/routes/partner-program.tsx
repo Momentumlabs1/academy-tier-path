@@ -148,9 +148,9 @@ function PartnerProgramm() {
       <section className="relative isolate overflow-hidden">
         <style>{`
           @keyframes ppTwinkle { 0%,100% { opacity:.15 } 50% { opacity:.75 } }
-          @keyframes ppFloat  { 0%,100% { transform: scaleX(-1) translateY(0) } 50% { transform: scaleX(-1) translateY(-14px) } }
+          @keyframes ppFloat  { 0%,100% { transform: scaleX(-1) translate3d(0,0,0) } 50% { transform: scaleX(-1) translate3d(0,-14px,0) } }
           .pp-twinkle { animation: ppTwinkle 4s ease-in-out infinite }
-          .pp-cosmo   { animation: ppFloat 7s ease-in-out infinite; will-change: transform }
+          .pp-cosmo   { animation: ppFloat 7s ease-in-out infinite; will-change: transform; backface-visibility: hidden; transform-style: preserve-3d }
           @media (prefers-reduced-motion: reduce) {
             .pp-twinkle { animation: none }
             .pp-cosmo { animation: none; transform: scaleX(-1) }
@@ -199,11 +199,17 @@ function PartnerProgramm() {
           <div className="relative mx-auto hidden w-full max-w-[300px] lg:block">
             <div aria-hidden className="absolute left-1/2 top-1/2 h-[85%] w-[85%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[70px]"
                  style={{ background: `color-mix(in oklch, ${BRAND.primary} 38%, transparent)` }} />
-            <img
-              src="/cosmo/cosmo-point.png"
-              alt="Cosmo, the Cosmos Candles mascot, pointing at the offer"
-              className="pp-cosmo relative w-full object-contain drop-shadow-[0_24px_50px_rgba(0,0,0,0.6)]"
-            />
+            {/* The drop-shadow lives on this static wrapper, NOT on the animated
+                image. A filter attached to a moving element is re-rasterised every
+                frame, which on a 344KB PNG dropped the float to a visible stutter. */}
+            <div className="relative drop-shadow-[0_24px_50px_rgba(0,0,0,0.55)]">
+              <img
+                src="/cosmo/cosmo-point.png"
+                alt="Cosmo, the Cosmos Candles mascot, pointing at the offer"
+                width={464} height={974} decoding="async"
+                className="pp-cosmo w-full object-contain"
+              />
+            </div>
           </div>
         </div>
       </section>
@@ -214,12 +220,17 @@ function PartnerProgramm() {
           n="01" kicker="What you get" title="Everything is already built."
           lead="Not a referral link with a dashboard bolted on — the finished product, running under your brand from day one."
         />
-        <div className="grid gap-x-10 gap-y-7 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-2">
           {GET.map((f) => (
-            <div key={f.title} className="border-t border-white/10 pt-4">
-              <f.icon className="h-5 w-5 text-primary" />
-              <h3 className="mt-2.5 font-display text-lg font-bold">{f.title}</h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-foreground/65">{f.body}</p>
+            <div
+              key={f.title}
+              className="group rounded-2xl border border-white/8 bg-white/[0.025] p-5 transition-colors hover:border-primary/25 hover:bg-white/[0.045] sm:p-6"
+            >
+              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/12 text-primary ring-1 ring-primary/20 transition-transform group-hover:scale-105">
+                <f.icon className="h-[22px] w-[22px]" />
+              </span>
+              <h3 className="mt-4 font-display text-lg font-bold">{f.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-foreground/60">{f.body}</p>
             </div>
           ))}
         </div>
@@ -238,9 +249,17 @@ function PartnerProgramm() {
           {STEPS.map((s, i) => (
             <div
               key={s.title}
-              className={`flex items-start gap-4 p-4 sm:gap-6 sm:p-5 ${i > 0 ? "border-t border-white/8" : ""} ${i < 3 ? "bg-white/[0.02]" : ""}`}
+              className={`relative flex items-start gap-4 p-4 sm:gap-5 sm:p-5 ${i > 0 ? "border-t border-white/8" : ""}`}
             >
-              <span className="mt-0.5 font-mono text-[11px] tabular-nums text-primary">
+              {/* A widening bar down the left edge: the argument of this section is
+                  that the work shifts off the partner after step three, and a row
+                  of six identical lines showed none of that. */}
+              <span
+                aria-hidden
+                className="absolute left-0 top-0 h-full bg-primary/70"
+                style={{ width: `${3 + i * 2}px`, opacity: 0.25 + i * 0.13 }}
+              />
+              <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 font-mono text-[11px] font-bold tabular-nums text-primary ring-1 ring-primary/20">
                 {String(i + 1).padStart(2, "0")}
               </span>
               <div className="min-w-0 flex-1">
@@ -258,17 +277,28 @@ function PartnerProgramm() {
       {/* 03 */}
       <section id="earnings" className="mx-auto max-w-6xl px-4 pb-14 sm:px-8 sm:pb-16">
         <SectionHead
-          n="03" kicker="What it pays" title="Four questions, one number."
+          n="03" kicker="What it pays" title="Three questions, one number."
           lead="You are paid per lot your customers trade, not per deposit — so what it is worth depends on your audience, not on ours."
         />
         <EarningsEstimator />
 
-        <h3 className="mb-4 mt-10 font-display text-lg font-bold">Your rate climbs with your volume</h3>
-        <div className="grid gap-px overflow-hidden rounded-2xl border border-white/10 bg-white/8 sm:grid-cols-4">
-          {COMMISSION_LADDER.map((l) => (
-            <div key={l.level} className="bg-[oklch(0.12_0.03_258)] p-4 sm:p-5">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">Level {l.level}</div>
-              <div className="mt-2 font-display text-3xl font-bold tabular-nums leading-none text-primary">{formatMoney(l.usdPerLot)}</div>
+        <h3 className="mb-5 mt-10 font-display text-lg font-bold">Your rate climbs with your volume</h3>
+        <div className="grid gap-3 sm:grid-cols-4 sm:items-end">
+          {COMMISSION_LADDER.map((l, i) => (
+            <div key={l.level} className="rounded-2xl border border-white/10 bg-[oklch(0.12_0.03_258)] p-4 sm:p-5">
+              {/* Each step literally stands taller than the last. Four equal boxes
+                  described a staircase without ever showing one. */}
+              <div
+                aria-hidden
+                className="mb-4 hidden rounded-t-md bg-gradient-to-t from-primary/20 to-primary sm:block"
+                style={{ height: `${18 + i * 22}px` }}
+              />
+              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                Level {l.level}
+              </div>
+              <div className="mt-1.5 font-display text-3xl font-bold tabular-nums leading-none text-primary">
+                {formatMoney(l.usdPerLot)}
+              </div>
               <div className="mt-0.5 text-[11px] text-muted-foreground">per lot</div>
               <div className="mt-3 border-t border-white/8 pt-2.5 font-mono text-[11px] tabular-nums text-foreground/60">
                 {l.toVolume ? `${formatMoney(l.fromVolume, "€")} – ${formatMoney(l.toVolume, "€")}` : `${formatMoney(l.fromVolume, "€")} +`}
