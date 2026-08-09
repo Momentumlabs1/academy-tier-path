@@ -19,7 +19,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowRight, ArrowUpRight, Bot, Gauge, GraduationCap, LayoutDashboard, Radio, Send, Wallet,
 } from "lucide-react";
-import { ProductShots } from "@/components/academy/partner/ProductShots";
+import { SignalsPreview } from "@/components/academy/tenant/LandingPreviews";
 import { EarningsEstimator } from "@/components/academy/partner/EarningsEstimator";
 import { BROKER, BROKER_SWITCH } from "@/lib/broker";
 import { BRAND } from "@/lib/tenants";
@@ -39,37 +39,58 @@ export const Route = createFileRoute("/partner-program")({
 const CONTACT = "kontakt@momentumlabs.at";
 const applyHref = `mailto:${CONTACT}?subject=${encodeURIComponent("Become a partner — Cosmos Candles")}`;
 
-/** 01 — written in full sentences, because "what do I actually get" was the gap. */
+/**
+ * 01 — the six things a partner is handed.
+ *
+ * A bento rather than a six-up grid, and images inside the cards rather than in a
+ * gallery underneath. Six equally-sized text blocks gave nothing rank: every claim
+ * arrived at the same weight, and the product screenshots sat in a separate strip
+ * below where they proved nothing about any particular claim. Now the two cards
+ * that can be *shown* — the branded page and the academy — are the wide ones and
+ * carry the evidence, and the rest stay small because they are genuinely smaller
+ * points.
+ */
 const GET = [
   {
     icon: LayoutDashboard,
+    span: "md:col-span-2",
     title: "A complete website under your name",
-    body: "Your own landing page at cosmos-candles.com/yourname, carrying your name, your colours and your character. Your audience signs up there, sees your brand throughout, and never lands on ours. Hosting, updates and maintenance are on us — there is nothing for you to build or pay for.",
+    body: "Your own landing page at cosmos-candles.com/yourname — your name, your colours, your character. Your audience signs up there and never lands on ours. Hosting and maintenance are on us.",
+    img: "/partner/partner-page-zeko.jpg",
+    imgAlt: "A live partner landing page carrying the partner's own name, character and colours",
   },
   {
     icon: Radio,
-    title: "Live trade signals, delivered for you",
-    body: "Every call from our desk — instrument, entry, stop loss, take-profit levels — is pushed to a private Telegram channel that belongs to your brand. You never have to write, time or interpret a signal yourself.",
+    span: "md:col-span-1",
+    title: "Live trade signals",
+    body: "Every call from our desk — entry, stop, targets — pushed to a private channel under your brand. Nothing for you to write or time.",
+    preview: "signals" as const,
   },
   {
     icon: GraduationCap,
+    span: "md:col-span-2",
     title: "The full academy, not a broker link",
-    body: "Twelve structured lessons from the first candle through to real orderflow: volume profile, footprint charts, Level 2 depth, risk and position sizing. Plus the calculators your people need to size a trade properly. This is the part that keeps them around once the novelty of a signal wears off.",
+    body: "Twelve lessons from the first candle through to real orderflow — volume profile, footprint, Level 2 depth, risk and sizing. Recorded on the live terminal, not on slides.",
+    img: "/partner/orderflow-lesson.jpg",
+    imgAlt: "A lesson recorded on the live orderflow terminal showing volume profile and footprint data",
   },
   {
     icon: Bot,
+    span: "md:col-span-1",
     title: "Onboarding that runs without you",
-    body: "Sign-up, deposit verification, Telegram access and tier unlocks all happen automatically, usually within minutes of a deposit landing. Nobody waits on you, and you do not answer support tickets at midnight.",
+    body: "Sign-up, deposit check, Telegram access and tier unlocks all happen automatically. You do not answer support tickets at midnight.",
   },
   {
     icon: Gauge,
+    span: "md:col-span-1",
     title: "Your own dashboard",
-    body: "Clicks, sign-ups, funded accounts, volume traded, your current level and every euro of commission — live, and visible only to you. No other partner can see your numbers and you cannot see theirs.",
+    body: "Clicks, customers, volume, your level and every euro of commission — live, and visible only to you.",
   },
   {
     icon: Send,
+    span: "md:col-span-2",
     title: "A private community channel",
-    body: "Your members get a Telegram group under your brand where the desk posts, questions get answered and people stay accountable to each other. Community is what makes them keep trading, which is what makes this recur.",
+    body: "Your members get a Telegram group under your brand where the desk posts and people stay accountable to each other. Community is what makes them keep trading — which is what makes this recur.",
   },
 ];
 
@@ -220,22 +241,37 @@ function PartnerProgramm() {
           n="01" kicker="What you get" title="Everything is already built."
           lead="Not a referral link with a dashboard bolted on — the finished product, running under your brand from day one."
         />
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
           {GET.map((f) => (
             <div
               key={f.title}
-              className="group rounded-2xl border border-white/8 bg-white/[0.025] p-5 transition-colors hover:border-primary/25 hover:bg-white/[0.045] sm:p-6"
+              className={`group flex flex-col overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03] transition-colors hover:border-primary/25 ${f.span}`}
             >
-              <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/12 text-primary ring-1 ring-primary/20 transition-transform group-hover:scale-105">
-                <f.icon className="h-[22px] w-[22px]" />
-              </span>
-              <h3 className="mt-4 font-display text-lg font-bold">{f.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-foreground/60">{f.body}</p>
+              <div className="p-5 sm:p-6">
+                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/12 text-primary ring-1 ring-primary/20 transition-transform group-hover:scale-105">
+                  <f.icon className="h-[22px] w-[22px]" />
+                </span>
+                <h3 className="mt-4 font-display text-lg font-bold">{f.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-foreground/60">{f.body}</p>
+              </div>
+
+              {/* Evidence sits inside the claim it backs, cropped so the card keeps
+                  its shape rather than being dictated by the screenshot's aspect. */}
+              {f.img && (
+                <div className="mt-auto h-44 overflow-hidden border-t border-white/8 sm:h-52">
+                  <img
+                    src={f.img} alt={f.imgAlt} loading="lazy"
+                    className="h-full w-full object-cover object-left-top transition-transform duration-500 group-hover:scale-[1.03]"
+                  />
+                </div>
+              )}
+              {f.preview === "signals" && (
+                <div className="mt-auto border-t border-white/8 p-4">
+                  <SignalsPreview primary={BRAND.primary} />
+                </div>
+              )}
             </div>
           ))}
-        </div>
-        <div className="mt-10">
-          <ProductShots />
         </div>
       </section>
 
