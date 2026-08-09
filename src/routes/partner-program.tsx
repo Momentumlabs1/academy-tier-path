@@ -20,6 +20,7 @@ import {
   ArrowRight, ArrowUpRight, Bot, Gauge, GraduationCap, LayoutDashboard, Radio, Send, Wallet,
 } from "lucide-react";
 import { SignalsPreview } from "@/components/academy/tenant/LandingPreviews";
+import { PartnerApplyForm } from "@/components/academy/partner/PartnerApplyForm";
 import { EarningsEstimator } from "@/components/academy/partner/EarningsEstimator";
 import { BROKER, BROKER_SWITCH } from "@/lib/broker";
 import { BRAND } from "@/lib/tenants";
@@ -154,7 +155,7 @@ function PartnerProgramm() {
     <div className="min-h-screen bg-[oklch(0.10_0.028_258)] font-sans text-foreground">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-8 sm:py-5">
         <img src="/cosmos-logo.png" alt="Cosmos Candles" className="h-7 w-auto sm:h-8" />
-        <a href={applyHref} className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90">
+        <a href="#apply" className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90">
           Become a partner
         </a>
       </header>
@@ -200,7 +201,7 @@ function PartnerProgramm() {
               and you earn on every lot your people trade.
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
-              <a href={applyHref} className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-[var(--shadow-brand)] transition-transform hover:-translate-y-0.5 sm:px-7 sm:py-3.5">
+              <a href="#apply" className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-[var(--shadow-brand)] transition-transform hover:-translate-y-0.5 sm:px-7 sm:py-3.5">
                 Become a partner <ArrowRight className="h-4 w-4" />
               </a>
               <a href="#earnings" className="inline-flex items-center gap-2 rounded-full border border-white/12 px-6 py-3 text-sm font-semibold transition-colors hover:bg-white/5 sm:px-7 sm:py-3.5">
@@ -397,33 +398,22 @@ function PartnerProgramm() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-8 sm:pb-24">
-        <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/[0.10] to-transparent p-6 sm:p-12">
-          <div className="grid items-center gap-6 lg:grid-cols-[1.4fr_1fr] lg:gap-8">
-            <div>
-              <h2 className="font-display text-xl font-bold sm:text-3xl">Ready to start?</h2>
-              <p className="mt-2.5 max-w-lg text-sm leading-relaxed text-foreground/70 sm:text-base">
-                Send your name and where your audience is — your page can be live the same day.
-              </p>
-            </div>
-            <div className="lg:text-right">
-              <a href={applyHref} className="inline-flex items-center gap-2 rounded-full bg-primary px-7 py-3 text-sm font-bold text-primary-foreground shadow-[var(--shadow-brand)] transition-transform hover:-translate-y-0.5 sm:px-8 sm:py-3.5">
-                Become a partner <ArrowRight className="h-4 w-4" />
-              </a>
-              <p className="mt-3 text-[12px] text-muted-foreground">
-                Or directly: <a href={`mailto:${CONTACT}`} className="underline hover:text-foreground">{CONTACT}</a>
-              </p>
-            </div>
-          </div>
-        </div>
+      <section id="apply" className="mx-auto max-w-3xl scroll-mt-8 px-4 pb-20 sm:px-8 sm:pb-24">
+        <SectionHead
+          n="06" kicker="Apply" title="Tell us where to reach you."
+          lead="Three fields are all we need to get back to you. The rest helps us come to the call already knowing your setup."
+        />
+        <PartnerApplyForm />
 
         {/* A name-drop, at name-drop size. Partners are one of many, so no single
             one gets to headline the programme's own page. */}
-        <p className="mt-6 text-center text-[12px] text-muted-foreground">
+        <p className="mt-8 text-center text-[12px] text-muted-foreground">
           Already running on this system:{" "}
           <a href="/zekoglobal" target="_blank" rel="noopener" className="inline-flex items-center gap-1 font-semibold text-foreground/80 hover:text-primary hover:underline">
             Zeko Global <ArrowUpRight className="h-3 w-3" />
           </a>
+          {" · "}
+          Prefer email? <a href={applyHref} className="underline hover:text-foreground">{CONTACT}</a>
         </p>
       </section>
 
