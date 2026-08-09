@@ -22,6 +22,7 @@ import {
 import { ProductShots } from "@/components/academy/partner/ProductShots";
 import { EarningsEstimator } from "@/components/academy/partner/EarningsEstimator";
 import { BROKER, BROKER_SWITCH } from "@/lib/broker";
+import { BRAND } from "@/lib/tenants";
 import { COMMISSION_LADDER } from "@/lib/commission";
 import { formatMoney } from "@/lib/format";
 
@@ -137,30 +138,73 @@ function PartnerProgramm() {
         </a>
       </header>
 
-      <section className="mx-auto max-w-6xl px-4 pb-12 pt-6 sm:px-8 sm:pb-14 sm:pt-12">
-        <h1 className="max-w-4xl font-display text-[2rem] font-bold leading-[1.05] tracking-tight sm:text-6xl">
-          A complete trading academy —<br />
-          <span className="text-primary">under your name, built for free.</span>
-        </h1>
-        <p className="mt-4 max-w-xl leading-relaxed text-foreground/70 sm:mt-5 sm:text-lg">
-          You bring the audience. We build, run and maintain the whole product under your brand —
-          and you earn on every lot your people trade.
-        </p>
-        <div className="mt-7 flex flex-wrap items-center gap-3">
-          <a href={applyHref} className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-[var(--shadow-brand)] transition-transform hover:-translate-y-0.5 sm:px-7 sm:py-3.5">
-            Become a partner <ArrowRight className="h-4 w-4" />
-          </a>
-          <a href="#earnings" className="inline-flex items-center gap-2 rounded-full border border-white/12 px-6 py-3 text-sm font-semibold transition-colors hover:bg-white/5 sm:px-7 sm:py-3.5">
-            What would it pay?
-          </a>
-        </div>
-        <div className="mt-8 flex flex-wrap gap-x-10 gap-y-4 border-t border-white/10 pt-5 sm:mt-10 sm:gap-x-12">
-          {[["€0", "your cost"], ["$5–10", "per traded lot"], ["1 day", "to go live"]].map(([v, l]) => (
-            <div key={l}>
-              <div className="font-display text-2xl font-bold tabular-nums leading-none text-primary sm:text-3xl">{v}</div>
-              <div className="mt-1.5 text-[11px] uppercase tracking-[0.12em] text-muted-foreground">{l}</div>
-            </div>
+      {/* Hero. The page used to open on flat black with a column of text and a
+          large empty right half — correct information, no presence. Cosmo is the
+          face of the product a partner would be putting their name on, so he
+          belongs here, and the nebula treatment is lifted from the public landing
+          so the two read as one product rather than two sites. He is mirrored on
+          purpose: the artwork points right, which off the right-hand edge would
+          lead the eye away from the copy. Flipped, he points at the headline. */}
+      <section className="relative isolate overflow-hidden">
+        <style>{`
+          @keyframes ppTwinkle { 0%,100% { opacity:.15 } 50% { opacity:.75 } }
+          @keyframes ppFloat  { 0%,100% { transform: scaleX(-1) translateY(0) } 50% { transform: scaleX(-1) translateY(-14px) } }
+          .pp-twinkle { animation: ppTwinkle 4s ease-in-out infinite }
+          .pp-cosmo   { animation: ppFloat 7s ease-in-out infinite; will-change: transform }
+          @media (prefers-reduced-motion: reduce) {
+            .pp-twinkle { animation: none }
+            .pp-cosmo { animation: none; transform: scaleX(-1) }
+          }
+        `}</style>
+
+        <div aria-hidden className="absolute inset-0 -z-10">
+          <div className="absolute -top-48 left-[8%] h-[560px] w-[560px] rounded-full blur-[130px]"
+               style={{ background: `color-mix(in oklch, ${BRAND.accent} 24%, transparent)` }} />
+          <div className="absolute -top-24 right-[2%] h-[620px] w-[620px] rounded-full blur-[140px]"
+               style={{ background: `color-mix(in oklch, ${BRAND.primary} 18%, transparent)` }} />
+          {[["14%","20%"],["30%","64%"],["46%","30%"],["68%","72%"],["80%","22%"],["56%","50%"],["24%","86%"],["88%","58%"]].map(([t, l], i) => (
+            <span key={i} className="pp-twinkle absolute h-1 w-1 rounded-full bg-white"
+                  style={{ top: t, left: l, animationDelay: `${i * 0.55}s` }} />
           ))}
+        </div>
+
+        <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 pb-12 pt-6 sm:px-8 sm:pb-14 sm:pt-10 lg:grid-cols-[1.25fr_1fr] lg:gap-4">
+          <div>
+            <h1 className="max-w-3xl font-display text-[2rem] font-bold leading-[1.05] tracking-tight sm:text-[3.4rem]">
+              A complete trading academy —<br />
+              <span className="text-primary">under your name, built for free.</span>
+            </h1>
+            <p className="mt-4 max-w-xl leading-relaxed text-foreground/70 sm:mt-5 sm:text-lg">
+              You bring the audience. We build, run and maintain the whole product under your brand —
+              and you earn on every lot your people trade.
+            </p>
+            <div className="mt-7 flex flex-wrap items-center gap-3">
+              <a href={applyHref} className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-[var(--shadow-brand)] transition-transform hover:-translate-y-0.5 sm:px-7 sm:py-3.5">
+                Become a partner <ArrowRight className="h-4 w-4" />
+              </a>
+              <a href="#earnings" className="inline-flex items-center gap-2 rounded-full border border-white/12 px-6 py-3 text-sm font-semibold transition-colors hover:bg-white/5 sm:px-7 sm:py-3.5">
+                What would it pay?
+              </a>
+            </div>
+            <div className="mt-8 flex flex-wrap gap-x-10 gap-y-4 border-t border-white/10 pt-5 sm:gap-x-12">
+              {[["€0", "your cost"], ["$5–10", "per traded lot"], ["1 day", "to go live"]].map(([v, l]) => (
+                <div key={l}>
+                  <div className="font-display text-2xl font-bold tabular-nums leading-none text-primary sm:text-3xl">{v}</div>
+                  <div className="mt-1.5 text-[11px] uppercase tracking-[0.12em] text-muted-foreground">{l}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="relative mx-auto hidden w-full max-w-[300px] lg:block">
+            <div aria-hidden className="absolute left-1/2 top-1/2 h-[85%] w-[85%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[70px]"
+                 style={{ background: `color-mix(in oklch, ${BRAND.primary} 38%, transparent)` }} />
+            <img
+              src="/cosmo/cosmo-point.png"
+              alt="Cosmo, the Cosmos Candles mascot, pointing at the offer"
+              className="pp-cosmo relative w-full object-contain drop-shadow-[0_24px_50px_rgba(0,0,0,0.6)]"
+            />
+          </div>
         </div>
       </section>
 
