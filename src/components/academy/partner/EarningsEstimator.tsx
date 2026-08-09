@@ -1,74 +1,75 @@
 /**
- * EarningsEstimator — four questions, one number.
+ * EarningsEstimator — three questions, one number.
  *
- * The first version asked for a sign-up rate, a funding rate, an average deposit
- * and lots traded per account per month. All of that is real and all of it is
- * the wrong question: nobody with an audience knows their funding rate, and a
- * page that opens by demanding five assumptions reads as homework. It was too
- * deep for the moment it sits in.
+ * Earlier versions asked a creator for their funding rate, their average deposit,
+ * or how many "funded accounts" they expect. Nobody knows those about their own
+ * audience, and the last one was jargon — the label alone stopped a reader cold.
  *
- * What a creator DOES know is how many people they reach, roughly how many
- * accounts came in this month, what their niche is and where their audience
- * lives. So those are the four inputs, and the model carries the rest:
+ * So the page asks only what someone genuinely knows about their own channel:
+ * how many views they get, what they post about, and how hard they intend to push
+ * this. The model turns that into customers; the reader never has to.
  *
- *   · niche  → how actively a funded account trades (lots per month)
- *   · country→ what a funded account is typically worth (deposit size, which is
- *              what moves the partner up the staircase)
- *   · reach  → only suggests a plausible account count; it never drives the
- *              result on its own, because reach without conversion is nothing.
+ *   views × BASE × niche.pull × effort.factor  →  paying customers / month
+ *   customers × niche.lots                     →  lots traded / month
+ *   customers × AVG_DEPOSIT                    →  volume booked, which sets the rate
  *
- * The multipliers are directional, not measured, and the disclaimer says so. An
- * estimate that flatters gets found out in month one — these sit deliberately on
- * the conservative side of what the desk sees.
+ * The constants are directional, not measured, and BASE is deliberately low: at
+ * 0.01% of monthly views a 100k-view trading channel posting regularly lands
+ * around ten customers a month, which is a number a partner can actually hit. An
+ * estimate that flatters gets found out in month one and costs more trust than it
+ * won — which is also why the rate is taken from a single month's volume rather
+ * than an annualised one.
  */
 import { useMemo, useState } from "react";
 import { levelForVolume } from "@/lib/commission";
 import { formatMoney, formatNumber } from "@/lib/format";
 
-/** Lots a funded account trades per month, by what the audience is there for. */
+/**
+ * Share of monthly views that become a paying customer, before the modifiers.
+ * 0.01% — around ten customers per 100k views for a trading channel posting
+ * regularly. Deliberately on the low side.
+ */
+const BASE = 0.0001;
+
+/** What we assume a customer starts with. Shown in the result so it is not hidden. */
+const AVG_DEPOSIT = 1000;
+
+/**
+ * `pull` — how readily this audience opens a live trading account.
+ * `lots` — how actively they then trade, which is what actually pays.
+ */
 const NICHES = [
-  { key: "trading", label: "Trading & finance", lots: 14 },
-  { key: "crypto", label: "Crypto", lots: 11 },
-  { key: "betting", label: "Sports & betting", lots: 9 },
-  { key: "business", label: "Business & entrepreneurship", lots: 8 },
-  { key: "other", label: "Something else", lots: 6 },
-  { key: "lifestyle", label: "Lifestyle & motivation", lots: 5 },
+  { key: "trading", label: "Trading & finance", pull: 1.0, lots: 14 },
+  { key: "crypto", label: "Crypto", pull: 0.85, lots: 11 },
+  { key: "betting", label: "Sports & betting", pull: 0.7, lots: 9 },
+  { key: "business", label: "Business & entrepreneurship", pull: 0.6, lots: 8 },
+  { key: "other", label: "Something else", pull: 0.45, lots: 6 },
+  { key: "lifestyle", label: "Lifestyle & motivation", pull: 0.35, lots: 5 },
 ] as const;
 
-/** Typical first deposit, which is what moves you up the staircase. */
-const REGIONS = [
-  { key: "us", label: "US & Canada", deposit: 1600 },
-  { key: "nordics", label: "Nordics", deposit: 1500 },
-  { key: "dach", label: "Germany, Austria, Switzerland", deposit: 1400 },
-  { key: "uk", label: "UK & Ireland", deposit: 1300 },
-  { key: "mena", label: "Middle East", deposit: 1100 },
-  { key: "eu", label: "Rest of Europe", deposit: 900 },
-  { key: "asia", label: "Asia", deposit: 700 },
-  { key: "latam", label: "Latin America", deposit: 400 },
-  { key: "africa", label: "Africa", deposit: 300 },
+const EFFORT = [
+  { key: "light", label: "Now and then", note: "a mention, link in bio", factor: 0.4 },
+  { key: "regular", label: "Regularly", note: "part of your normal content", factor: 1.0 },
+  { key: "focus", label: "Main focus", note: "you build content around it", factor: 2.0 },
 ] as const;
 
-const DEFAULTS = { reach: 25_000, accounts: 12, niche: "trading", region: "dach" };
+const DEFAULTS = { views: 100_000, niche: "trading", effort: "regular" };
 
 export function EarningsEstimator() {
-  const [v, setV] = useState<{ reach: number; accounts: number; niche: string; region: string }>(DEFAULTS);
+  const [v, setV] = useState<{ views: number; niche: string; effort: string }>(DEFAULTS);
 
   const calc = useMemo(() => {
     const niche = NICHES.find((n) => n.key === v.niche) ?? NICHES[0];
-    const region = REGIONS.find((r) => r.key === v.region) ?? REGIONS[0];
-    // Volume booked under the partner over a year of this pace — that is what the
-    // staircase reads, so a monthly figure alone would under-state the rate.
-    const yearVolume = v.accounts * 12 * region.deposit;
-    const level = levelForVolume(yearVolume);
-    const lots = v.accounts * niche.lots;
-    return { level, lots, monthly: lots * level.usdPerLot, deposit: region.deposit };
+    const effort = EFFORT.find((e) => e.key === v.effort) ?? EFFORT[1];
+    const customers = Math.max(0, Math.round(v.views * BASE * niche.pull * effort.factor));
+    // Rated on ONE month of volume, not an annualised figure. The staircase reads
+    // volume actually booked, and a new partner starts at zero — annualising put
+    // almost every input straight onto the top rate, which both flattered the
+    // result and made the staircase below look decorative.
+    const level = levelForVolume(customers * AVG_DEPOSIT);
+    const lots = customers * niche.lots;
+    return { customers, lots, level, monthly: lots * level.usdPerLot };
   }, [v]);
-
-  /** A plausible account count for a given reach — a nudge, not a claim. */
-  // Clamped to the slider's own maximum — suggesting 202 under a control that stops
-  // at 200 offers a number the reader cannot actually select.
-  const ACCOUNTS_MAX = 400;
-  const suggested = Math.min(ACCOUNTS_MAX, Math.max(1, Math.round(v.reach * 0.0005)));
 
   return (
     <div className="overflow-hidden rounded-2xl border border-white/10 bg-[oklch(0.13_0.035_258)]">
@@ -76,43 +77,24 @@ export function EarningsEstimator() {
         <div className="space-y-6 border-b border-white/8 p-5 sm:p-7 lg:border-b-0 lg:border-r">
           <label className="block">
             <span className="flex items-baseline justify-between gap-3">
-              <span className="text-sm font-medium text-foreground/90">People you reach</span>
-              <span className="font-mono text-sm font-semibold tabular-nums text-primary">{formatNumber(v.reach)}</span>
+              <span className="text-sm font-medium text-foreground/90">Views you get per month</span>
+              <span className="font-mono text-sm font-semibold tabular-nums text-primary">
+                {formatNumber(v.views)}
+              </span>
             </span>
             <input
-              type="range" min={1000} max={500_000} step={1000} value={v.reach}
-              onChange={(e) => setV({ ...v, reach: Number(e.target.value) })}
-              aria-label="People you reach"
-              className="mt-2 h-1 w-full cursor-pointer appearance-none rounded-full bg-white/12 accent-[oklch(0.72_0.17_244)]"
-            />
-          </label>
-
-          <label className="block">
-            <span className="flex items-baseline justify-between gap-3">
-              <span className="text-sm font-medium text-foreground/90">New paying customers / month</span>
-              <span className="font-mono text-sm font-semibold tabular-nums text-primary">{formatNumber(v.accounts)}</span>
-            </span>
-            <input
-              type="range" min={1} max={ACCOUNTS_MAX} step={1} value={v.accounts}
-              onChange={(e) => setV({ ...v, accounts: Number(e.target.value) })}
-              aria-label="New paying customers per month"
+              type="range" min={5_000} max={3_000_000} step={5_000} value={v.views}
+              onChange={(e) => setV({ ...v, views: Number(e.target.value) })}
+              aria-label="Views you get per month"
               className="mt-2 h-1 w-full cursor-pointer appearance-none rounded-full bg-white/12 accent-[oklch(0.72_0.17_244)]"
             />
             <span className="mt-1.5 block text-[11px] text-muted-foreground">
-              People from your audience who open a live account and actually fund it — only
-              those earn you anything. Around {formatNumber(suggested)} is typical at your reach.{" "}
-              <button
-                type="button"
-                onClick={() => setV({ ...v, accounts: suggested })}
-                className="font-semibold text-primary underline-offset-2 hover:underline"
-              >
-                use that
-              </button>
+              Across everything you post — reels, shorts, stories, video.
             </span>
           </label>
 
           <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-foreground/90">Your niche</span>
+            <span className="mb-1.5 block text-sm font-medium text-foreground/90">What you post about</span>
             <select
               value={v.niche}
               onChange={(e) => setV({ ...v, niche: e.target.value })}
@@ -122,16 +104,30 @@ export function EarningsEstimator() {
             </select>
           </label>
 
-          <label className="block">
-            <span className="mb-1.5 block text-sm font-medium text-foreground/90">Where your audience is</span>
-            <select
-              value={v.region}
-              onChange={(e) => setV({ ...v, region: e.target.value })}
-              className="w-full rounded-xl border border-white/12 bg-[oklch(0.10_0.028_258)] px-3 py-2.5 text-sm text-foreground"
-            >
-              {REGIONS.map((r) => <option key={r.key} value={r.key}>{r.label}</option>)}
-            </select>
-          </label>
+          <div>
+            <span className="mb-2 block text-sm font-medium text-foreground/90">How hard you'll push it</span>
+            <div className="grid gap-2">
+              {EFFORT.map((e) => {
+                const on = v.effort === e.key;
+                return (
+                  <button
+                    key={e.key}
+                    type="button"
+                    onClick={() => setV({ ...v, effort: e.key })}
+                    aria-pressed={on}
+                    className={`flex items-baseline justify-between gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-colors ${
+                      on
+                        ? "border-primary/50 bg-primary/10"
+                        : "border-white/10 bg-[oklch(0.10_0.028_258)] hover:border-white/20"
+                    }`}
+                  >
+                    <span className={`text-sm font-medium ${on ? "text-primary" : ""}`}>{e.label}</span>
+                    <span className="text-[11px] text-muted-foreground">{e.note}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
 
         <div className="flex flex-col justify-between p-5 sm:p-7">
@@ -146,16 +142,20 @@ export function EarningsEstimator() {
               <span className="text-sm text-muted-foreground">/ month</span>
             </div>
             <div className="mt-2 text-sm text-foreground/60">
-              {formatMoney(Math.round(calc.monthly * 12))} a year, at level {calc.level.level} —{" "}
-              {formatMoney(calc.level.usdPerLot)} per lot
+              At level {calc.level.level} — {formatMoney(calc.level.usdPerLot)} per lot. Your rate
+              climbs as volume accumulates, so this is the starting point, not the ceiling.
             </div>
 
             <div className="mt-6 space-y-0 text-sm">
               {[
-                ["Lots traded / month", formatNumber(calc.lots)],
-                ["Typical deposit there", formatMoney(calc.deposit, "€")],
+                ["New paying customers / month", formatNumber(calc.customers)],
+                ["Lots they trade / month", formatNumber(calc.lots)],
+                ["Assumed first deposit", formatMoney(AVG_DEPOSIT, "€")],
               ].map(([k, val], i) => (
-                <div key={k} className={`flex items-baseline justify-between gap-4 py-2.5 ${i > 0 ? "border-t border-white/6" : ""}`}>
+                <div
+                  key={k}
+                  className={`flex items-baseline justify-between gap-4 py-2.5 ${i > 0 ? "border-t border-white/6" : ""}`}
+                >
                   <span className="text-muted-foreground">{k}</span>
                   <span className="font-mono tabular-nums text-foreground/90">{val}</span>
                 </div>
