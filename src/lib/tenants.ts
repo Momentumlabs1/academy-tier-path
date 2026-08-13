@@ -66,11 +66,13 @@ export const TENANTS: TenantConfig[] = [
     brokerUrl: BROKER.url,
     telegramChannel: "https://t.me/agent_trading_signals",
     affiliateEmail: "kontakt@momentumlabs.at",
+    // Only facts we can stand behind. An accuracy or win-rate figure on a
+    // leveraged product is a performance claim, and ours were typed by hand.
     stats: [
-      { label: "Active members", value: "200+" },
-      { label: "Signal accuracy", value: "74%" },
-      { label: "Avg. monthly lots", value: "0.8" },
-      { label: "Years live", value: "3+" },
+      { label: "Lessons", value: "12" },
+      { label: "Signal delivery", value: "Telegram" },
+      { label: "Get started", value: "from €100" },
+      { label: "Course fee", value: "€0" },
     ],
     features: [
       { icon: "📡", title: "Live Telegram Signals", body: "Real-time trade calls from our desk, direct to your phone." },
@@ -93,10 +95,10 @@ export const TENANTS: TenantConfig[] = [
     telegramChannel: "https://t.me/agent_trading_signals",
     affiliateEmail: "crypto@momentumlabs.at",
     stats: [
-      { label: "BTC signals sent", value: "1,400+" },
-      { label: "Win rate", value: "68%" },
-      { label: "Members trading", value: "85+" },
-      { label: "Live since", value: "2024" },
+      { label: "Focus", value: "BTC · ETH · SOL" },
+      { label: "Signal delivery", value: "Telegram" },
+      { label: "Get started", value: "from €100" },
+      { label: "Course fee", value: "€0" },
     ],
     features: [
       { icon: "₿", title: "Crypto-First Signals", body: "BTC, ETH, SOL — timed entries with clear SL/TP levels." },
@@ -146,8 +148,8 @@ export const TENANTS: TenantConfig[] = [
     affiliateEmail: "zekoglobalhq@gmail.com",
     stats: [
       { label: "Community", value: "155K+" },
-      { label: "Signal accuracy", value: "74%" },
-      { label: "Target", value: "$10k / mo" },
+      { label: "Signal delivery", value: "Telegram" },
+      { label: "Get started", value: "from €100" },
       { label: "Cost to join", value: "€0" },
     ],
     features: [
@@ -158,11 +160,11 @@ export const TENANTS: TenantConfig[] = [
     mascot: "zeko",
     headline: "Build your first $10k month — from zero.",
     subhead: "155,000 people already follow Zeko for one reason: no fluff, no gurus — just what actually moves money.",
-    testimonials: [
-      { name: "Marco R.", handle: "@marco.trades", text: "Followed the free signals for 3 weeks before I even deposited. Once I saw they were real, I went all in.", result: "+€1,240 first month" },
-      { name: "Sofia L.", handle: "@sofdoestrades", text: "The playbook finally made order flow click for me. I stopped gambling and started actually managing risk.", result: "First green month" },
-      { name: "Dennis K.", handle: "@dk_capital", text: "Signals hit my phone, I copy them in seconds. The Telegram community keeps me accountable.", result: "4 months consistent" },
-    ],
+    // Testimonials removed: the three that were here were invented — invented
+    // names, invented handles, and a "+€1,240 first month" badge — rendered
+    // under a heading asserting they were real members with real results.
+    // Reinstate only with named, consenting customers, and never with a P&L
+    // figure attached.
     faq: [
       { q: "Is it really free?", a: "Yes. You get the signals and the education for free — you only fund a live account with our partner broker (from €100). No course fees, no upsells." },
       { q: "Do I need experience?", a: "No. The playbook starts from zero and the signals tell you exactly what to do — entry, stop-loss and targets. You learn while you trade." },
@@ -200,9 +202,9 @@ export const COSMOS_MASTER: TenantConfig = {
     "Copy live signals, work through a course that starts from zero, and read the market with real Level 2 orderflow tools. No course fees, no subscription — Cosmo shows you the ropes.",
   stats: [
     { label: "Lessons", value: "12" },
-    { label: "Signal accuracy", value: "74%" },
-    { label: "Active members", value: "200+" },
-    { label: "Years live", value: "3+" },
+    { label: "Signal delivery", value: "Telegram" },
+    { label: "Get started", value: "from €100" },
+    { label: "Course fee", value: "€0" },
   ],
   features: [
     { icon: "📡", title: "Live Telegram Signals", body: "Every call from our desk lands on your phone with entry, stop-loss and targets — nothing to interpret." },
@@ -244,9 +246,12 @@ export function buildTenantConfig(
     brokerUrl: BROKER.url,
     telegramChannel: "#",
     affiliateEmail: "kontakt@momentumlabs.at",
+    // This is the default every NEW partner inherits, so anything invented here
+    // propagates to every future partner page without anyone typing it again.
+    // That is how the 74% ended up on pages nobody had reviewed.
     stats: [
       { label: "Members", value: "Growing" },
-      { label: "Signal accuracy", value: "74%" },
+      { label: "Signal delivery", value: "Telegram" },
       { label: "Get started", value: "from €100" },
       { label: "Cost", value: "€0" },
     ],

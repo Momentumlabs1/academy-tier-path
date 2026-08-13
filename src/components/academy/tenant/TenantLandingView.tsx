@@ -22,6 +22,8 @@ import { cn } from "@/lib/utils";
 import { writePartnerBrand } from "@/lib/partner-brand";
 import type { TenantConfig } from "@/lib/tenants";
 import { BROKER, BROKER_SWITCH } from "@/lib/broker";
+import { RiskWarning } from "@/components/academy/legal/RiskWarning";
+import { CommissionDisclosure } from "@/components/academy/legal/CommissionDisclosure";
 import {
   SignalsPreview, BotPreview, AcademyPreview, QuizPreview, RewardsPreview, WhitelabelPreview,
 } from "@/components/academy/tenant/LandingPreviews";
@@ -213,9 +215,15 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
             </div>
 
             <div className="mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-white/50 lg:justify-start">
-              <span className="inline-flex items-center gap-1.5"><Star className="h-3.5 w-3.5 fill-current" style={{ color: accent }} /> 4.9 broker rating</span>
-              <span className="inline-flex items-center gap-1.5"><Shield className="h-3.5 w-3.5" style={{ color: primary }} /> Regulated broker</span>
-              <span className="inline-flex items-center gap-1.5"><Zap className="h-3.5 w-3.5" style={{ color: primary }} /> 200+ members live</span>
+              {/* These three used to read "4.9 broker rating", "Regulated broker"
+                  and "200+ members live". The rating and the regulator belonged to
+                  TradeQuo, who is no longer our broker — repeating them beside a
+                  different firm's sign-up is a false claim about a licensed
+                  business, not a copy detail. The member count was not true either.
+                  What replaced them is only what the model itself guarantees. */}
+              <span className="inline-flex items-center gap-1.5"><Zap className="h-3.5 w-3.5" style={{ color: primary }} /> No course fees</span>
+              <span className="inline-flex items-center gap-1.5"><Shield className="h-3.5 w-3.5" style={{ color: primary }} /> Your money stays in your own account</span>
+              <span className="inline-flex items-center gap-1.5"><Star className="h-3.5 w-3.5 fill-current" style={{ color: accent }} /> Withdraw anytime</span>
             </div>
           </div>
 
@@ -378,8 +386,19 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               <p className="mb-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: primary }}><Building2 className="h-4 w-4" /> Our broker partner</p>
               <h2 className="font-display text-3xl font-black leading-tight sm:text-4xl">You never<br />deposit with us.</h2>
               <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/65">
-                You fund your <span className="font-semibold text-white/90">own</span> account at <span className="font-semibold text-white/90">{tenant.brokerName}</span> — a licensed, award-winning global broker. The money stays in your name and you can withdraw anytime. We earn from the broker, not from you — that's why everything here is free.
+                {/* "a licensed, award-winning global broker" was written for
+                    TradeQuo and then left attached to whatever tenant.brokerName
+                    happens to say. We are mid-switch and have verified neither
+                    licence nor award for the incoming broker — which is exactly
+                    why BROKERS[x].trust is deliberately empty in broker.ts. */}
+                You fund your <span className="font-semibold text-white/90">own</span> account at our partner broker. The money stays in your name and you can withdraw anytime. We earn from the broker, not from you — that's why everything here is free.
               </p>
+              {/* Both of these existed, were correct, and were imported by nothing.
+                  The loss warning belongs next to the deposit ask, not in a footer,
+                  and the fact that we are paid per lot has to be said to the member
+                  — not only to the partner. */}
+              <RiskWarning className="mt-5" />
+              <CommissionDisclosure className="mt-3" />
               <div className="mt-6 grid gap-2.5 sm:grid-cols-2">
                 {(BROKER_SWITCH.paused ? [] : BROKER.trust).map((t) => (
                   <div key={t.label} className="flex items-center gap-2.5 rounded-xl border border-white/8 bg-white/[0.03] px-3.5 py-3">

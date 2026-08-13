@@ -10,7 +10,7 @@ import { TelegramConnectCard } from "@/components/academy/signals/TelegramConnec
 import { SignalTutorialCard } from "@/components/academy/signals/SignalTutorialCard";
 import { usePartnerBrand, COSMO } from "@/lib/partner-brand";
 import { PopularList } from "@/components/academy/right-rail/PopularList";
-import { ProfitWidget } from "@/components/academy/right-rail/ProfitWidget";
+import { RiskWarning } from "@/components/academy/legal/RiskWarning";
 import { cn } from "@/lib/utils";
 
 const TELEGRAM_URL = "https://t.me/agent_trading_signals";
@@ -112,12 +112,28 @@ function SignalsPage() {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
         <div>
-          <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Last 10 signals</div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {SIGNALS.map((s) => (
-              <SignalOddsCard key={s.id} signal={s} dense={false} />
-            ))}
+          <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            {SIGNALS.length > 0 ? "Last 10 signals" : "Where the signals are"}
           </div>
+          {/* SIGNALS is empty by design (see academy-data.ts) — the four that used
+              to render here were invented, each with a "Trade this signal" button.
+              An honest empty state beats a fabricated feed. */}
+          {SIGNALS.length > 0 ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {SIGNALS.map((s) => (
+                <SignalOddsCard key={s.id} signal={s} dense={false} />
+              ))}
+            </div>
+          ) : (
+            <Card variant="surface" className="p-6">
+              <p className="text-sm leading-relaxed text-foreground/70">
+                Signals are sent live in your private Telegram channel — each one with entry,
+                stop-loss and take-profit. Connect Telegram above and they arrive on your phone
+                the moment the desk calls them. Nothing is posted here first.
+              </p>
+              <RiskWarning variant="compact" className="mt-4" />
+            </Card>
+          )}
         </div>
 
         <aside className="space-y-4">
@@ -126,9 +142,6 @@ function SignalsPage() {
               <Radio className="h-3.5 w-3.5" /> Popular
             </div>
             <PopularList />
-          </Card>
-          <Card variant="surface" className="p-4">
-            <ProfitWidget />
           </Card>
         </aside>
       </div>

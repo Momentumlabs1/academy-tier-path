@@ -11,6 +11,7 @@
 import { ArrowUpRight, BadgeCheck, ShieldCheck, Star, Trophy } from "lucide-react";
 import { BROKER, BROKERS, BROKER_SWITCH, depositUrl } from "@/lib/broker";
 import { BrokerPausedNotice } from "@/components/academy/tier/BrokerPausedNotice";
+import { RiskWarning } from "@/components/academy/legal/RiskWarning";
 import { useMemberState } from "@/hooks/useMemberState";
 import { usePartnerBrand } from "@/lib/partner-brand";
 import { markDepositClick } from "@/lib/deposit-intent";
@@ -28,18 +29,16 @@ function Pills({ center = false, dim = false }: { center?: boolean; dim?: boolea
   );
   return (
     <div className={cn("flex flex-wrap gap-2", center && "justify-center")}>
-      {/* Held back while the broker is switching: the old claims named the previous
-          broker's licences and
-          score, and repeating them for a broker a member cannot reach — or for the
-          incoming one — is a false claim about a regulated firm. */}
-      {BROKER_SWITCH.paused ? null : <>
-      <span className={pill}><Star className="h-3.5 w-3.5 fill-[#00b67a] text-[#00b67a]" /> 4.9 Trustpilot</span>
-      <span className={pill}><ShieldCheck className="h-3.5 w-3.5 text-primary" /> FSCA</span>
-      <span className={pill}><ShieldCheck className="h-3.5 w-3.5 text-primary" /> CMA</span>
-      <span className={pill}><ShieldCheck className="h-3.5 w-3.5 text-primary" /> FSA</span>
-      <span className={pill}><Trophy className="h-3.5 w-3.5 text-[#ffcf5c]" /> Award-winning broker</span>
-      <span className={pill}><BadgeCheck className="h-3.5 w-3.5 text-primary" /> Proof of Reserves</span>
-      </>}
+      {/* The hardcoded pills that lived here — 4.9 Trustpilot, FSCA, CMA, FSA,
+          "Award-winning broker", "Proof of Reserves" — were TRADEQUO's, and
+          TradeQuo is no longer our broker. They were merely hidden behind
+          BROKER_SWITCH.paused, which meant that unpausing would have republished
+          another firm's licences under a new broker's name. Deleted rather than
+          gated: each broker's verified claims belong in BROKERS[key].trust in
+          broker.ts, which is deliberately empty until someone confirms them. */}
+      {BROKER_SWITCH.paused ? null : BROKERS.hero.trust.map((t) => (
+        <span key={t.label} className={pill}>{t.icon} {t.label}</span>
+      ))}
     </div>
   );
 }
@@ -89,12 +88,16 @@ export function BrokerTrustStrip({ cta = true, compact = false, className }: {
             <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
               Official partner broker
             </span>
-            <img src={LOGO} alt={BROKER.name} className="h-5 w-auto" style={invertWhite} />
+            {/* LOGO is "" during the broker switch, and <img src=""> is not an
+                empty image — the browser resolves it against the page URL and
+                paints a broken-image box. Render nothing until there is a file. */}
+            {LOGO && <img src={LOGO} alt={BROKER.name} className="h-5 w-auto" style={invertWhite} />}
           </div>
           <p className="mt-3 text-sm leading-relaxed text-foreground/70">
             <span className="font-semibold text-foreground/90">Deposits go to {BROKER.name} — never to us.</span>{" "}
-            You fund your own account at a licensed, award-winning global broker, your money stays yours and withdrawable — and that verified deposit is what unlocks everything here for free.
+            You fund your own account in your own name, your money stays yours and withdrawable — and that verified deposit is what unlocks everything here for free.
           </p>
+          <RiskWarning variant="compact" className="mt-3" />
           <div className="mt-3.5"><Pills /></div>
         </div>
         {cta && <DepositCta className="shrink-0" />}
@@ -108,9 +111,9 @@ export function BrokerRailCard({ className }: { className?: string }) {
   return (
     <div className={cn("rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-center", className)}>
       <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary">Official partner broker</div>
-      <img src={LOGO} alt={BROKER.name} className="mx-auto mt-3 h-5 w-auto" style={invertWhite} />
+      {LOGO && <img src={LOGO} alt={BROKER.name} className="mx-auto mt-3 h-5 w-auto" style={invertWhite} />}
       <p className="mt-3 text-xs leading-relaxed text-foreground/60">
-        Your deposit lives in <b className="text-foreground/80">your own</b> {BROKER.name} account — licensed, award-winning, withdrawable anytime.
+        Your deposit lives in <b className="text-foreground/80">your own</b> account, in your own name, withdrawable anytime.
       </p>
       <div className="mt-3"><Pills center dim /></div>
       <DepositCta className="mt-4 w-full" />
