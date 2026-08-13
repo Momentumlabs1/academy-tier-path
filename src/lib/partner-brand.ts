@@ -80,7 +80,7 @@ export function readPartnerBrand(): PartnerBrand | null {
       accentColor: b.accentColor ?? COSMO.accentColor,
       primaryColor: b.primaryColor ?? COSMO.primaryColor,
       telegramChannel: b.telegramChannel ?? "#",
-      brokerName: b.brokerName ?? "TradeQuo",
+      brokerName: b.brokerName ?? "VT Markets",
       // Never a bare broker homepage: a link without a referral id sends the
       // member off unattributed (see usableBrokerUrl in broker.ts).
       brokerUrl: b.brokerUrl ?? BROKER.url,

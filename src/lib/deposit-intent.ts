@@ -1,6 +1,6 @@
 /**
  * deposit-intent — a tiny per-member flag set the moment a member clicks a
- * "Deposit at TradeQuo" CTA. The dashboard uses it to show a "we're verifying
+ * deposit CTA. The dashboard uses it to show a "we're verifying
  * your deposit…" state instead of the cold pre-deposit screen, until the broker
  * sync books the deposit (members.deposit > 0) and the celebration takes over.
  *

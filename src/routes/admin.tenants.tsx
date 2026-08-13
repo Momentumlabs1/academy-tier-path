@@ -201,8 +201,8 @@ function BrandCard({ row, origin, copied, onCopy, onSave }: {
             <Field label="Hero headline" value={headline} onChange={setHeadline} placeholder="Trade smarter with Max" />
             <Field label="Hero subhead" value={subhead} onChange={setSubhead} placeholder="Live signals, a full academy…" />
             <div className="grid grid-cols-2 gap-2">
-              <Field label="Broker name (shown on page)" value={brokerName} onChange={setBrokerName} placeholder="TradeQuo" />
-              <Field label="Broker link (page CTA)" value={brokerUrl} onChange={setBrokerUrl} placeholder="https://tradequo.com/…" mono />
+              <Field label="Broker name (shown on page)" value={brokerName} onChange={setBrokerName} placeholder="VT Markets" />
+              <Field label="Broker link (page CTA)" value={brokerUrl} onChange={setBrokerUrl} placeholder="https://…?partner_code=…" mono />
             </div>
             <Field label="Telegram link (page CTA)" value={tgLink} onChange={setTgLink} placeholder="https://t.me/yourchannel" mono />
           </div>

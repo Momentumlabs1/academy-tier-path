@@ -1,6 +1,6 @@
 /**
  * BrokerTrustStrip — the "official partner broker" section that sits on every
- * deposit surface. Real TradeQuo wordmark (public/brokers/tradequo.svg, tinted
+ * deposit surface. Broker wordmark (public/brokers/, tinted
  * white via CSS filter), license/trust badge pills borrowed from the broker's
  * own site, the not-to-us one-liner, and the real deposit CTA (external;
  * swaps to our IB referral link via VITE_BROKER_URL without a code change).
@@ -9,14 +9,16 @@
  * rail (vertical mini-card for the right rail).
  */
 import { ArrowUpRight, BadgeCheck, ShieldCheck, Star, Trophy } from "lucide-react";
-import { BROKER, BROKER_SWITCH, depositUrl } from "@/lib/broker";
+import { BROKER, BROKERS, BROKER_SWITCH, depositUrl } from "@/lib/broker";
 import { BrokerPausedNotice } from "@/components/academy/tier/BrokerPausedNotice";
 import { useMemberState } from "@/hooks/useMemberState";
 import { usePartnerBrand } from "@/lib/partner-brand";
 import { markDepositClick } from "@/lib/deposit-intent";
 import { cn } from "@/lib/utils";
 
-const LOGO = "/brokers/tradequo.svg";
+// No wordmark until the new broker is confirmed — showing the old one would
+// name a firm the member will never deal with.
+const LOGO = "";
 const invertWhite = { filter: "brightness(0) invert(1)" } as const;
 
 function Pills({ center = false, dim = false }: { center?: boolean; dim?: boolean }) {
@@ -26,7 +28,8 @@ function Pills({ center = false, dim = false }: { center?: boolean; dim?: boolea
   );
   return (
     <div className={cn("flex flex-wrap gap-2", center && "justify-center")}>
-      {/* Held back while the broker is switching: these are TradeQuo's licences and
+      {/* Held back while the broker is switching: the old claims named the previous
+          broker's licences and
           score, and repeating them for a broker a member cannot reach — or for the
           incoming one — is a false claim about a regulated firm. */}
       {BROKER_SWITCH.paused ? null : <>
@@ -48,7 +51,7 @@ function DepositCta({ className }: { className?: string }) {
   if (BROKER_SWITCH.paused) return <BrokerPausedNotice className={className} />;
   return (
     <a
-      href={depositUrl(memberId, brand?.brokerUrl || BROKER.url)}
+      href={depositUrl(memberId, BROKERS.vt, brand?.brokerUrl)}
       onClick={() => markDepositClick(profile.email)}
       target="_blank"
       rel="noopener noreferrer"

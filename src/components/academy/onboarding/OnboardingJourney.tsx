@@ -30,7 +30,7 @@ import { useMemberRefresh, useMemberState } from "@/hooks/useMemberState";
 import { usePartnerBrand, COSMO } from "@/lib/partner-brand";
 import { TIERS, tierForDeposit } from "@/lib/academy-data";
 import { PRODUCTS } from "@/lib/products";
-import { BROKER, BROKER_SWITCH, depositUrl } from "@/lib/broker";
+import { BROKER, BROKERS, BROKER_SWITCH, depositUrl } from "@/lib/broker";
 import { BrokerPausedNotice } from "@/components/academy/tier/BrokerPausedNotice";
 import { markDepositClick, depositClickedAt, clearDepositClick } from "@/lib/deposit-intent";
 import { formatMoney } from "@/lib/format";
@@ -79,7 +79,7 @@ function WelcomeVideoCard({ accent, onDone }: { accent: string; onDone: () => vo
         <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: COSMO.primaryColor }}>Step 1 of 2</div>
         <h2 className="font-display text-xl font-bold sm:text-2xl">Welcome! Cosmo explains how everything works — in 30 seconds</h2>
         <p className="mt-1 text-sm text-foreground/65">
-          In short: <span className="font-semibold text-foreground/85">you never pay us</span> — you fund your own account at <b>TradeQuo</b> — a licensed, award-winning broker — and that is what unlocks everything here.
+          In short: <span className="font-semibold text-foreground/85">you never pay us</span> — you fund your own account at a licensed, regulated broker — and that is what unlocks everything here.
         </p>
 
         <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-black">
@@ -411,8 +411,8 @@ export function OnboardingJourney() {
 
   const email = state.profile.email;
   const amount = state.lifetimeDeposits;
-  // A partner-referred member deposits via the PARTNER's broker link (so TradeQuo
-  // attributes the client to them); master members use the default IB link.
+  // A partner-referred member deposits via the PARTNER's broker link, so the
+  // broker attributes the client to them; master members use the default IB link.
   const brokerUrl = brand?.brokerUrl || BROKER.url;
 
   const stage: Stage = useMemo(() => {
@@ -430,7 +430,9 @@ export function OnboardingJourney() {
     return "done";
   }, [state.loaded, email, amount, tick]);
 
-  const href = depositUrl(state.memberId, brokerUrl);
+  // Third arg is the partner's own link when they have one; the broker itself
+  // decides the tracking parameter.
+  const href = depositUrl(state.memberId, BROKERS.vt, brokerUrl);
   const onDeposit = () => { markDepositClick(email); advance(); };
 
   if (stage === "loading" || stage === "done") return null;
