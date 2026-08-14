@@ -30,11 +30,48 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // ── Telegram Bot API helper (with 429 flood control) ─────────────────────────
 
+/**
+ * Config from the database, falling back to the environment.
+ *
+ * Function secrets can only be set with the CLI or the dashboard, which puts
+ * every configuration change behind a deploy and behind whoever happens to have
+ * the CLI logged in. The bot token, the source group id and the webhook secret
+ * are not code — they change when a group is renamed or a bot is rotated, and
+ * that should not require shipping.
+ *
+ * So they are read from `app_secrets` first, exactly as hero-sync and send-email
+ * already do, and from the environment second. Existing deployments that set
+ * them as secrets keep working untouched; new values can be set with one UPDATE.
+ *
+ * Cached per instance: this is called for every Telegram API call, and a database
+ * round trip per relayed message would be absurd.
+ */
+const cfgCache = new Map<string, string>();
+
+async function cfg(key: string): Promise<string> {
+  const hit = cfgCache.get(key);
+  if (hit !== undefined) return hit;
+
+  let value = Deno.env.get(key) ?? "";
+  try {
+    const db = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      { auth: { persistSession: false } },
+    );
+    const { data } = await db.from("app_secrets").select("value").eq("key", key).maybeSingle();
+    if (data?.value) value = String(data.value);
+  } catch { /* env only */ }
+
+  cfgCache.set(key, value);
+  return value;
+}
+
 async function tg<T = unknown>(
   method: string,
   payload: Record<string, unknown>,
 ): Promise<{ ok: boolean; result?: T; description?: string; error_code?: number }> {
-  const token = Deno.env.get("TELEGRAM_BOT_TOKEN")!;
+  const token = await cfg("TELEGRAM_BOT_TOKEN");
   const url = `https://api.telegram.org/bot${token}/${method}`;
 
   for (let attempt = 0; attempt <= MAX_429_RETRIES; attempt++) {
@@ -155,7 +192,7 @@ async function toEnglish(text: string): Promise<string> {
   const src = (text ?? "").trim();
   if (!src) return text;
 
-  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  const apiKey = await cfg("ANTHROPIC_API_KEY");
   if (!apiKey) return text; // not configured — relay untranslated rather than not at all
 
   try {
@@ -541,14 +578,14 @@ async function processUpdate(update: TgUpdate) {
   // Shared source check: the main channel OR any channel that isn't itself a
   // destination (channels are broadcast-only, so the only non-destination
   // channel the bot sees posts from is the main one).
-  const isSourceChat = (chatId: number, destIds: Set<number>) =>
-    chatId === Number(Deno.env.get("MAIN_CHANNEL_ID") ?? 0) || !destIds.has(chatId);
+  const isSourceChat = async (chatId: number, destIds: Set<number>) =>
+    chatId === Number(await cfg("MAIN_CHANNEL_ID") || 0) || !destIds.has(chatId);
 
   const post = update.channel_post;
   if (post) {
     const tenants = await activeTenants(db);
     const destIds = new Set(tenants.map((t) => Number(t.telegram_channel_id)));
-    if (isSourceChat(post.chat.id, destIds) && tenants.length) {
+    if ((await isSourceChat(post.chat.id, destIds)) && tenants.length) {
       if (post.media_group_id) await relayAlbum(db, post, tenants);
       else await relaySingle(db, post, tenants);
     }
@@ -560,7 +597,7 @@ async function processUpdate(update: TgUpdate) {
   if (edited) {
     const tenants = await activeTenants(db);
     const destIds = new Set(tenants.map((t) => Number(t.telegram_channel_id)));
-    if (isSourceChat(edited.chat.id, destIds) && tenants.length) {
+    if ((await isSourceChat(edited.chat.id, destIds)) && tenants.length) {
       await relayEdit(db, edited, tenants);
     }
     return;
@@ -579,7 +616,7 @@ async function processUpdate(update: TgUpdate) {
   // explicitly by MAIN_CHANNEL_ID.
   const groupMsg = update.message ?? update.edited_message;
   if (groupMsg) {
-    const mainId = Number(Deno.env.get("MAIN_CHANNEL_ID") ?? 0);
+    const mainId = Number(await cfg("MAIN_CHANNEL_ID") || 0);
     const isSource = mainId !== 0 && groupMsg.chat.id === mainId;
     const hasContent = Boolean(groupMsg.text || groupMsg.caption || groupMsg.media_group_id);
     // Skip only OUR OWN messages, not every bot's.
@@ -593,7 +630,7 @@ async function processUpdate(update: TgUpdate) {
     // What actually has to be excluded is a loop through ourselves, which is only
     // our own bot. Its id is the part of the token before the colon, so no extra
     // API call is needed to know it.
-    const selfId = Number((Deno.env.get("TELEGRAM_BOT_TOKEN") ?? "").split(":")[0] || 0);
+    const selfId = Number((await cfg("TELEGRAM_BOT_TOKEN")).split(":")[0] || 0);
     const isSelf = selfId !== 0 && groupMsg.from?.id === selfId;
     if (isSource && hasContent && !isSelf) {
       const tenants = await activeTenants(db);
@@ -614,7 +651,7 @@ async function processUpdate(update: TgUpdate) {
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return new Response("ok", { status: 200 });
 
-  const secret = Deno.env.get("TELEGRAM_WEBHOOK_SECRET");
+  const secret = await cfg("TELEGRAM_WEBHOOK_SECRET");
   if (secret && req.headers.get("x-telegram-bot-api-secret-token") !== secret) {
     return new Response(JSON.stringify({ error: "Bad secret" }), { status: 401 });
   }
