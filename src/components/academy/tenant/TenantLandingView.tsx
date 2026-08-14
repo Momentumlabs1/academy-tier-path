@@ -21,7 +21,7 @@ import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { writePartnerBrand } from "@/lib/partner-brand";
 import type { TenantConfig } from "@/lib/tenants";
-import { BROKER, BROKER_SWITCH } from "@/lib/broker";
+import { BROKER, BROKER_SWITCH, TELEGRAM_ENTRY } from "@/lib/broker";
 import { RiskWarning } from "@/components/academy/legal/RiskWarning";
 import { CommissionDisclosure } from "@/components/academy/legal/CommissionDisclosure";
 import {
@@ -412,7 +412,11 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               <div className="flex w-full max-w-[300px] items-center justify-center gap-2 rounded-2xl bg-white px-8 py-8 shadow-2xl">
                 <Building2 className="h-7 w-7 text-[#0b1220]" /><span className="font-display text-2xl font-black tracking-tight text-[#0b1220]">{tenant.brokerName}</span>
               </div>
-              {BROKER_SWITCH.paused ? null : <a href={BROKER.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-medium text-white/60 underline-offset-4 hover:text-white hover:underline">Visit {tenant.brokerName} <ArrowUpRight className="h-3.5 w-3.5" /></a>}
+              {/* No direct broker link from a public page. The broker sign-up is the step
+                  people drop out of, and a link here sends them there alone — see
+                  TELEGRAM_ENTRY in broker.ts. The route is Telegram, where a person
+                  walks them through it. */}
+              <a href={TELEGRAM_ENTRY.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-medium text-white/60 underline-offset-4 hover:text-white hover:underline">{TELEGRAM_ENTRY.label} <ArrowUpRight className="h-3.5 w-3.5" /></a>
               <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2"><Wallet className="h-4 w-4" style={{ color: primary }} /><span className="text-xs font-medium text-white/75">Your money stays in your name</span></div>
             </div>
           </div>

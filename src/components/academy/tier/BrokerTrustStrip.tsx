@@ -9,7 +9,7 @@
  * rail (vertical mini-card for the right rail).
  */
 import { ArrowUpRight, BadgeCheck, ShieldCheck, Star, Trophy } from "lucide-react";
-import { ACTIVE_BROKER, BROKER, BROKERS, BROKER_SWITCH, depositUrl } from "@/lib/broker";
+import { BROKER, BROKERS, BROKER_SWITCH, TELEGRAM_ENTRY } from "@/lib/broker";
 import { BrokerPausedNotice } from "@/components/academy/tier/BrokerPausedNotice";
 import { RiskWarning } from "@/components/academy/legal/RiskWarning";
 import { CommissionDisclosure } from "@/components/academy/legal/CommissionDisclosure";
@@ -53,9 +53,12 @@ function DepositCta({ className }: { className?: string }) {
   if (BROKER_SWITCH.paused) return <BrokerPausedNotice className={className} />;
   return (
     <a
-      /* ACTIVE_BROKER, not a hardcoded one: VT has no registration URL, so this
-         button used to point at an empty string. */
-      href={depositUrl(memberId, ACTIVE_BROKER, brand?.brokerUrl)}
+      /* TELEGRAM, not the broker. The broker's sign-up is where people drop out —
+         documents, two-factor, waiting for approval — and a direct link hands
+         exactly those people a path where nobody can help them and nobody finds
+         out they left. The broker link lives in the chat, one tap away, next to
+         someone who can answer. See TELEGRAM_ENTRY in broker.ts. */
+      href={TELEGRAM_ENTRY.url}
       onClick={() => {
         markDepositClick(profile.email);
         // Server-side too. The localStorage flag only drives this browser's
@@ -78,7 +81,7 @@ function DepositCta({ className }: { className?: string }) {
         className,
       )}
     >
-      Deposit at {BROKER.name} <ArrowUpRight className="h-4 w-4" />
+      {TELEGRAM_ENTRY.label} <ArrowUpRight className="h-4 w-4" />
     </a>
   );
 }
@@ -114,7 +117,7 @@ export function BrokerTrustStrip({ cta = true, compact = false, className }: {
           </div>
           <p className="mt-3 text-sm leading-relaxed text-foreground/70">
             <span className="font-semibold text-foreground/90">Deposits go to {BROKER.name} — never to us.</span>{" "}
-            You fund your own account in your own name, your money stays yours and withdrawable — and that verified deposit is what unlocks everything here for free.
+            You fund your own account in your own name, your money stays yours and withdrawable — and that verified deposit is what unlocks everything here for free. We walk you through it on Telegram.
           </p>
           <RiskWarning variant="compact" className="mt-3" />
           {/* The commission disclosure was only on the public landing page, which

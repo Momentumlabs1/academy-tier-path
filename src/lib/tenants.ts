@@ -1,4 +1,4 @@
-import { BROKER } from "./broker";
+import { BROKER, TELEGRAM_ENTRY } from "./broker";
 export interface TenantTierOverride {
   name: string;
   minDeposit: number;
@@ -67,7 +67,7 @@ export const TENANTS: TenantConfig[] = [
     // destination have to come from the same place or they drift apart silently.
     brokerName: BROKER.name,
     brokerUrl: BROKER.url,
-    telegramChannel: "https://t.me/agent_trading_signals",
+    telegramChannel: TELEGRAM_ENTRY.url,
     affiliateEmail: "kontakt@momentumlabs.at",
     // Only facts we can stand behind. An accuracy or win-rate figure on a
     // leveraged product is a performance claim, and ours were typed by hand.
@@ -98,7 +98,7 @@ export const TENANTS: TenantConfig[] = [
     // destination have to come from the same place or they drift apart silently.
     brokerName: BROKER.name,
     brokerUrl: BROKER.url,
-    telegramChannel: "https://t.me/agent_trading_signals",
+    telegramChannel: TELEGRAM_ENTRY.url,
     affiliateEmail: "crypto@momentumlabs.at",
     stats: [
       { label: "Focus", value: "BTC · ETH · SOL" },
@@ -127,7 +127,7 @@ export const TENANTS: TenantConfig[] = [
     // destination have to come from the same place or they drift apart silently.
     brokerName: BROKER.name,
     brokerUrl: BROKER.url,
-    telegramChannel: "https://t.me/agent_trading_signals",
+    telegramChannel: TELEGRAM_ENTRY.url,
     affiliateEmail: "fx@momentumlabs.at",
     stats: [
       { label: "FX pairs covered", value: "28" },
@@ -208,7 +208,7 @@ export const COSMOS_MASTER: TenantConfig = {
   // Same rule as the tenants: the name follows the broker we actually link to.
   brokerName: BROKER.name,
   brokerUrl: BROKER.url,
-  telegramChannel: "https://t.me/agent_trading_signals",
+  telegramChannel: TELEGRAM_ENTRY.url,
   affiliateEmail: "kontakt@momentumlabs.at",
   headline: "Learn to trade — for free, with Cosmo",
   subhead:
@@ -260,7 +260,7 @@ export function buildTenantConfig(
     // destination have to come from the same place or they drift apart silently.
     brokerName: BROKER.name,
     brokerUrl: BROKER.url,
-    telegramChannel: "#",
+    telegramChannel: TELEGRAM_ENTRY.url,
     affiliateEmail: "kontakt@momentumlabs.at",
     // This is the default every NEW partner inherits, so anything invented here
     // propagates to every future partner page without anyone typing it again.

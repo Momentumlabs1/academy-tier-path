@@ -85,6 +85,34 @@ export const BROKERS: Record<BrokerKey, BrokerConfig> = {
  * To switch on: set `paused: false`, fill VT's `url`, and put each broker's own
  * verified claims into `trust`.
  */
+/**
+ * WHERE A MEMBER IS SENT — Telegram, not the broker.
+ *
+ * The website no longer links to the broker at all. That is a funnel decision,
+ * not a technical one, and the reasoning is worth keeping because it is easy to
+ * "helpfully" add a direct button back later:
+ *
+ * The broker's own sign-up is the expensive step — identity documents,
+ * two-factor, a wait for approval. Most of the people who drop out drop out
+ * THERE, and a direct button hands exactly those people a path where nobody can
+ * help them and nobody finds out they left. Routing everyone through Telegram
+ * first costs the self-sufficient nothing (the broker link is in the chat, one
+ * tap away) and gives everyone else a person.
+ *
+ * The automatic unlock stays regardless: hero-sync reads balances every five
+ * minutes, so someone who deposits without ever opening Telegram is still
+ * unlocked. Telegram is the route; the balance check is the safety net.
+ */
+export const TELEGRAM_ENTRY = {
+  /**
+   * Replace with the public handle (t.me/cosmoscandles) once the channel has
+   * one. A `+hash` invite link works, but on a public page it reads like
+   * something forwarded to you rather than somewhere you meant to go.
+   */
+  url: "https://t.me/+3OawGEcmauAzOGI8",
+  label: "Join on Telegram",
+} as const;
+
 export const BROKER_SWITCH = {
   // OPEN. HeroFX is live and readable end to end: clients, balances and trades all
   // come back through their partnership API, and the academy unlocks off the
