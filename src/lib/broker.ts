@@ -47,7 +47,18 @@ export const BROKERS: Record<BrokerKey, BrokerConfig> = {
   hero: {
     key: "hero",
     name: "HeroFX",
-    url: "https://herofx.co/?partner_code=2248356",
+    // Straight to the registration form, NOT the marketing homepage. Two reasons,
+    // and the second is the important one:
+    //   · fewer clicks between the ad and the account;
+    //   · the homepage DROPS our tracking parameter. Every "Open Account" button
+    //     on herofx.co points at `…/auth/register?partner_code=2248356` with no
+    //     click_id, so a visitor who lands on the homepage and clicks through
+    //     arrives without the id that tells us which member they are. Hero does
+    //     also stash click_id in a cookie on .herofx.co, which is why anything
+    //     worked at all — but a cookie is not a guarantee, and testing showed two
+    //     competing click_id cookies with no defined winner. Linking straight to
+    //     the form carries the value in the URL as well.
+    url: "https://portal.herofx.co/auth/register?partner_code=2248356",
     trackingParam: "click_id",
     // Deliberately empty. Repeating a regulator's name we have not verified for
     // THIS broker is a false statement about a licensed firm, not a copy detail.
