@@ -234,6 +234,97 @@ async function toEnglish(text: string): Promise<string> {
   }
 }
 
+// ── Desk results ─────────────────────────────────────────────────────────────
+/**
+ * Pull real numbers out of the recap the desk already posts.
+ *
+ * The site used to claim "74% signal accuracy", typed by hand. This is what
+ * replaces it: the same kind of figure, except every row traces back to the
+ * Telegram message it came from.
+ *
+ * The recap looks like this, with the asset as a bare heading and each closed
+ * trade as a bullet in R:
+ *
+ *     📊 Performance Heute
+ *     NAS SELL
+ *     • +1 RR
+ *     • −0.5 RR
+ *     XAUUSD
+ *     • −1 RR
+ *     🔥 Gesamtergebnis: +5 RR
+ *
+ * TWO THINGS THIS HAS TO GET RIGHT.
+ *
+ * The MINUS SIGN. The desk writes U+2212 (−), not a hyphen. Parsing only ASCII
+ * "-" silently reads every loss as a win, which would turn a break-even week into
+ * a perfect one. Every dash variant is normalised before the number is read.
+ *
+ * The TOTAL LINE IS NOT A TRADE. "Gesamtergebnis: +5 RR" is the sum of the
+ * bullets above it; counting it as another trade both inflates the total and adds
+ * a phantom win. It is recognised and skipped, in German and English.
+ */
+interface DeskResult { asset: string | null; direction: string | null; r: number; idx: number }
+
+function parseRecap(text: string): DeskResult[] {
+  if (!/performance|recap|gesamtergebnis|total result/i.test(text)) return [];
+
+  const out: DeskResult[] = [];
+  let asset: string | null = null;
+  let direction: string | null = null;
+
+  text.split("\n").forEach((raw, idx) => {
+    // U+2212 minus, en dash, em dash → ASCII hyphen. Without this every loss
+    // parses as a gain.
+    const line = raw.replace(/[−–—]/g, "-").trim();
+    if (!line) return;
+
+    // Sum line, not a trade.
+    if (/gesamt|total|summe|overall/i.test(line)) return;
+
+    const rr = line.match(/([+-]?\d+(?:[.,]\d+)?)\s*RR?\b/i);
+    if (rr && /^[•\-*▪]/.test(line)) {
+      const r = parseFloat(rr[1].replace(",", "."));
+      if (Number.isFinite(r)) out.push({ asset, direction, r, idx });
+      return;
+    }
+
+    // An asset heading: short, no bullet, names an instrument. Everything under
+    // it belongs to it until the next heading.
+    const head = line.match(/^([A-Za-z0-9]{2,10})(?:\s+(BUY|SELL|LONG|SHORT))?\s*$/i);
+    if (head) {
+      asset = head[1].toUpperCase();
+      direction = head[2] ? head[2].toUpperCase() : null;
+    }
+  });
+
+  return out;
+}
+
+async function storeRecap(db: SupabaseClient, post: TgMessage) {
+  const text = post.text ?? post.caption ?? "";
+  const rows = parseRecap(text);
+  if (!rows.length) return;
+
+  // Dated by arrival. The desk posts "Performance Heute" at the end of its own
+  // trading day, so the message date is the trading date.
+  const tradedOn = new Date().toISOString().slice(0, 10);
+
+  const { error } = await db.from("desk_results").upsert(
+    rows.map((r) => ({
+      traded_on: tradedOn,
+      asset: r.asset,
+      direction: r.direction,
+      r_multiple: r.r,
+      source_chat_id: post.chat.id,
+      source_message_id: post.message_id,
+      line_index: r.idx,
+    })),
+    { onConflict: "source_chat_id,source_message_id,line_index" },
+  );
+  if (error) console.error("[recap] store failed:", error.message);
+  else console.log(`[recap] stored ${rows.length} results`);
+}
+
 // ── Fan-out: single post ─────────────────────────────────────────────────────
 
 /**
@@ -363,6 +454,9 @@ async function relaySingle(db: SupabaseClient, post: TgMessage, tenants: TenantR
       : await copyOne(t, post);
   }
   await logRelay(db, post.chat.id, post.message_id, rendered ?? post.text ?? post.caption ?? "[media]", delivered);
+  // Recaps carry the only real performance numbers we have. Parsed after the
+  // relay, never before: a parser bug must not be able to stop a signal going out.
+  await storeRecap(db, post);
 }
 
 // ── Fan-out: media album (multiple parts, same media_group_id) ───────────────
