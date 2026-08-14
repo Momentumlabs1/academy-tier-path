@@ -98,9 +98,11 @@ async function tg<T = unknown>(
 
 interface TgChat { id: number; title?: string; type: string }
 interface TgUser { id: number; username?: string; first_name?: string; is_bot?: boolean }
+interface TgPhoto { file_id: string; file_unique_id: string; width: number; height: number }
 interface TgMessage {
   message_id: number;
   chat: TgChat;
+  photo?: TgPhoto[];
   from?: TgUser;
   text?: string;
   caption?: string;
@@ -386,14 +388,48 @@ async function copyOne(t: TenantRow, post: TgMessage) {
 // neither can silently corrupt a price, and the desk's own numbers arrive
 // exactly as the desk wrote them.
 
+/**
+ * Keep the chart screenshots the desk posts.
+ *
+ * They used to pass straight through — copied to each channel and forgotten —
+ * so the website had nothing real to show. Telegram gives a bot no access to
+ * history, so anything posted before this shipped is gone for good; this is
+ * where the collection starts.
+ *
+ * Stored UNAPPROVED. A chart screenshot can carry an account balance, a name, or
+ * a losing week nobody meant to publish, so nothing reaches the site until a
+ * human ticks it. Silent on failure: a screenshot we fail to record must never
+ * stop a signal going out.
+ */
+async function storeMedia(db: SupabaseClient, post: TgMessage) {
+  const photos = post.photo;
+  if (!photos?.length) return;
+  // Telegram sends the same image in several sizes; the last is the largest.
+  const best = photos[photos.length - 1];
+  try {
+    await db.from("desk_media").upsert({
+      file_id: best.file_id,
+      file_unique_id: best.file_unique_id,
+      caption: post.caption ?? null,
+      width: best.width,
+      height: best.height,
+      source_chat_id: post.chat.id,
+      source_message_id: post.message_id,
+    }, { onConflict: "file_unique_id", ignoreDuplicates: true });
+  } catch (e) {
+    console.error("[media] store failed:", e);
+  }
+}
+
 async function relaySingle(db: SupabaseClient, post: TgMessage, tenants: TenantRow[]) {
   const delivered: Record<string, unknown> = {};
   for (const t of tenants) {
     delivered[t.slug] = await copyOne(t, post);
   }
   await logRelay(db, post.chat.id, post.message_id, post.text ?? post.caption ?? "[media]", delivered);
-  // Parsed AFTER the relay: a parser bug must not stop a signal going out.
+  // Both AFTER the relay: a parser or storage bug must not stop a signal.
   await storeRecap(db, post);
+  await storeMedia(db, post);
 }
 
 // ── Fan-out: media album (multiple parts, same media_group_id) ───────────────
