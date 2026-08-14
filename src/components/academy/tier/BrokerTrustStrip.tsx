@@ -9,7 +9,7 @@
  * rail (vertical mini-card for the right rail).
  */
 import { ArrowUpRight, BadgeCheck, ShieldCheck, Star, Trophy } from "lucide-react";
-import { BROKER, BROKERS, BROKER_SWITCH, depositUrl } from "@/lib/broker";
+import { ACTIVE_BROKER, BROKER, BROKERS, BROKER_SWITCH, depositUrl } from "@/lib/broker";
 import { BrokerPausedNotice } from "@/components/academy/tier/BrokerPausedNotice";
 import { RiskWarning } from "@/components/academy/legal/RiskWarning";
 import { BrokerIdentityCard } from "@/components/academy/tier/BrokerIdentityCard";
@@ -52,7 +52,9 @@ function DepositCta({ className }: { className?: string }) {
   if (BROKER_SWITCH.paused) return <BrokerPausedNotice className={className} />;
   return (
     <a
-      href={depositUrl(memberId, BROKERS.vt, brand?.brokerUrl)}
+      /* ACTIVE_BROKER, not a hardcoded one: VT has no registration URL, so this
+         button used to point at an empty string. */
+      href={depositUrl(memberId, ACTIVE_BROKER, brand?.brokerUrl)}
       onClick={() => {
         markDepositClick(profile.email);
         // Server-side too. The localStorage flag only drives this browser's

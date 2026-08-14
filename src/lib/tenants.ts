@@ -62,7 +62,10 @@ export const TENANTS: TenantConfig[] = [
     accentColor: "oklch(0.7 0.18 270)",
     bgFrom: "oklch(0.18 0.09 290)",
     bgTo: "oklch(0.13 0.06 290)",
-    brokerName: "VT Markets",
+    // Follows the broker we actually link to. Hardcoding it produced a button
+    // reading "Visit VT Markets" that opened HeroFX — the name and the
+    // destination have to come from the same place or they drift apart silently.
+    brokerName: BROKER.name,
     brokerUrl: BROKER.url,
     telegramChannel: "https://t.me/agent_trading_signals",
     affiliateEmail: "kontakt@momentumlabs.at",
@@ -90,7 +93,10 @@ export const TENANTS: TenantConfig[] = [
     accentColor: "oklch(0.72 0.16 30)",
     bgFrom: "oklch(0.15 0.08 30)",
     bgTo: "oklch(0.11 0.04 30)",
-    brokerName: "VT Markets",
+    // Follows the broker we actually link to. Hardcoding it produced a button
+    // reading "Visit VT Markets" that opened HeroFX — the name and the
+    // destination have to come from the same place or they drift apart silently.
+    brokerName: BROKER.name,
     brokerUrl: BROKER.url,
     telegramChannel: "https://t.me/agent_trading_signals",
     affiliateEmail: "crypto@momentumlabs.at",
@@ -116,7 +122,10 @@ export const TENANTS: TenantConfig[] = [
     accentColor: "oklch(0.65 0.2 200)",
     bgFrom: "oklch(0.14 0.07 240)",
     bgTo: "oklch(0.10 0.04 240)",
-    brokerName: "VT Markets",
+    // Follows the broker we actually link to. Hardcoding it produced a button
+    // reading "Visit VT Markets" that opened HeroFX — the name and the
+    // destination have to come from the same place or they drift apart silently.
+    brokerName: BROKER.name,
     brokerUrl: BROKER.url,
     telegramChannel: "https://t.me/agent_trading_signals",
     affiliateEmail: "fx@momentumlabs.at",
@@ -142,7 +151,10 @@ export const TENANTS: TenantConfig[] = [
     accentColor: "oklch(0.9 0.035 85)",
     bgFrom: "oklch(0.14 0.006 150)",
     bgTo: "oklch(0.09 0.004 150)",
-    brokerName: "VT Markets",
+    // Follows the broker we actually link to. Hardcoding it produced a button
+    // reading "Visit VT Markets" that opened HeroFX — the name and the
+    // destination have to come from the same place or they drift apart silently.
+    brokerName: BROKER.name,
     brokerUrl: BROKER.url,
     telegramChannel: "https://t.me/zekoglobal",
     affiliateEmail: "zekoglobalhq@gmail.com",
@@ -193,7 +205,8 @@ export const COSMOS_MASTER: TenantConfig = {
   accentColor: BRAND.accent,
   bgFrom: BRAND.bgFrom,
   bgTo: BRAND.bgTo,
-  brokerName: "VT Markets",
+  // Same rule as the tenants: the name follows the broker we actually link to.
+  brokerName: BROKER.name,
   brokerUrl: BROKER.url,
   telegramChannel: "https://t.me/agent_trading_signals",
   affiliateEmail: "kontakt@momentumlabs.at",
@@ -242,7 +255,10 @@ export function buildTenantConfig(
     accentColor: BRAND.accent,
     bgFrom: BRAND.bgFrom,
     bgTo: BRAND.bgTo,
-    brokerName: "VT Markets",
+    // Follows the broker we actually link to. Hardcoding it produced a button
+    // reading "Visit VT Markets" that opened HeroFX — the name and the
+    // destination have to come from the same place or they drift apart silently.
+    brokerName: BROKER.name,
     brokerUrl: BROKER.url,
     telegramChannel: "#",
     affiliateEmail: "kontakt@momentumlabs.at",

@@ -86,7 +86,11 @@ export const BROKERS: Record<BrokerKey, BrokerConfig> = {
  * verified claims into `trust`.
  */
 export const BROKER_SWITCH = {
-  paused: true,
+  // OPEN. HeroFX is live and readable end to end: clients, balances and trades all
+  // come back through their partnership API, and the academy unlocks off the
+  // balance without anyone touching it. VT Markets is still unconfigured, which is
+  // why brokerForCountry below sends everyone to Hero rather than falling back.
+  paused: false,
   headline: "Broker connection is being upgraded",
   body:
     "We're moving to a new partner broker with a direct API, which makes deposits verify " +
@@ -95,11 +99,15 @@ export const BROKER_SWITCH = {
 
 /** Default surface for copy that must name a broker before one is chosen. */
 export const BROKER = {
-  name: "our partner broker",
-  url: BROKERS.vt.url,
+  get name() { return ACTIVE_BROKER.name; },
+  get url() { return ACTIVE_BROKER.url; },
   trust: [] as { icon: string; label: string }[],
+  // "a licensed, regulated broker" stood in this sentence and is gone. Hero is a
+  // Saint Lucia company with no investment-services licence anywhere; claiming
+  // otherwise on the page that sends people to them is a false statement about a
+  // financial firm — and the first one a regulator would read.
   oneLiner:
-    "You never deposit with us. You fund your own account at a licensed, regulated broker — " +
+    "You never deposit with us. You fund your own account at our partner broker — " +
     "and that's what unlocks everything here for free.",
 } as const;
 
@@ -112,8 +120,32 @@ export const BROKER = {
  * fallback we push people toward.
  */
 export function brokerForCountry(countryCode?: string | null): BrokerConfig {
+  // VT has no registration URL yet, and a broker with no URL is not a fallback —
+  // it is a dead button. Until it is configured, everyone goes to Hero.
+  if (!BROKERS.vt.url) return BROKERS.hero;
   return (countryCode ?? "").toUpperCase() === "US" ? BROKERS.hero : BROKERS.vt;
 }
+
+/**
+ * The broker to use when no country is known — which is every client-side render,
+ * since the country header only exists at the edge.
+ *
+ * ONE place decides this. Components used to hardcode `BROKERS.vt`, which is how a
+ * deposit button ends up silently pointing at a broker that has no link at all.
+ *
+ * A NOTE ON WHERE HERO MAY BE PROMOTED. HeroFX Ltd is registered in Saint Lucia
+ * (company register 2023-00356) and holds no EU, UK or US investment-services
+ * licence — the number is a company registration, not a financial one. Their own
+ * terms state that clients act "of your own free will without solicitation from
+ * HeroFX Ltd". A broker accepting someone who arrives is not the same as us being
+ * allowed to advertise to them: marketing an unauthorised broker to retail clients
+ * inside the EU/UK is the platform's exposure, not the broker's.
+ *
+ * This constant decides where a member is SENT. It does not decide where the
+ * academy may run paid acquisition. Those are separate calls, and the second needs
+ * advice this codebase cannot give.
+ */
+export const ACTIVE_BROKER: BrokerConfig = brokerForCountry(null);
 
 /**
  * Build the registration link for a member, carrying their id as the tracking
@@ -124,7 +156,7 @@ export function brokerForCountry(countryCode?: string | null): BrokerConfig {
  */
 export function depositUrl(
   memberId?: string,
-  broker: BrokerConfig = BROKERS.vt,
+  broker: BrokerConfig = ACTIVE_BROKER,
   overrideUrl?: string,
 ): string {
   const base = usableBrokerUrl(overrideUrl, broker);
@@ -141,7 +173,7 @@ export function depositUrl(
  * never attributed, the academy never unlocks, and the loss is silent. So any
  * link without a recognisable referral marker falls back to the master link.
  */
-export function usableBrokerUrl(brokerUrl?: string, broker: BrokerConfig = BROKERS.vt): string {
+export function usableBrokerUrl(brokerUrl?: string, broker: BrokerConfig = ACTIVE_BROKER): string {
   const hasRef = brokerUrl && /[?&](referral|partner_code|ib|aff)=[^&]+/i.test(brokerUrl);
   return hasRef ? brokerUrl! : broker.url;
 }

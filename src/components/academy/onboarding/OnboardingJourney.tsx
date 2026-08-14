@@ -30,7 +30,7 @@ import { useMemberRefresh, useMemberState } from "@/hooks/useMemberState";
 import { usePartnerBrand, COSMO } from "@/lib/partner-brand";
 import { TIERS, tierForDeposit } from "@/lib/academy-data";
 import { PRODUCTS } from "@/lib/products";
-import { BROKER, BROKERS, BROKER_SWITCH, depositUrl } from "@/lib/broker";
+import { BROKER, ACTIVE_BROKER, BROKER_SWITCH, depositUrl } from "@/lib/broker";
 import { BrokerPausedNotice } from "@/components/academy/tier/BrokerPausedNotice";
 import { markDepositClick, depositClickedAt, clearDepositClick } from "@/lib/deposit-intent";
 import { formatMoney } from "@/lib/format";
@@ -432,7 +432,7 @@ export function OnboardingJourney() {
 
   // Third arg is the partner's own link when they have one; the broker itself
   // decides the tracking parameter.
-  const href = depositUrl(state.memberId, BROKERS.vt, brokerUrl);
+  const href = depositUrl(state.memberId, ACTIVE_BROKER, brokerUrl);
   const onDeposit = () => { markDepositClick(email); advance(); };
 
   if (stage === "loading" || stage === "done") return null;
