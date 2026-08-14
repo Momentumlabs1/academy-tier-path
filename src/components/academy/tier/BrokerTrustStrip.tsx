@@ -12,6 +12,8 @@ import { ArrowUpRight, BadgeCheck, ShieldCheck, Star, Trophy } from "lucide-reac
 import { BROKER, BROKERS, BROKER_SWITCH, depositUrl } from "@/lib/broker";
 import { BrokerPausedNotice } from "@/components/academy/tier/BrokerPausedNotice";
 import { RiskWarning } from "@/components/academy/legal/RiskWarning";
+import { BrokerIdentityCard } from "@/components/academy/tier/BrokerIdentityCard";
+import { supabase } from "@/integrations/supabase/client";
 import { useMemberState } from "@/hooks/useMemberState";
 import { usePartnerBrand } from "@/lib/partner-brand";
 import { markDepositClick } from "@/lib/deposit-intent";
@@ -51,7 +53,21 @@ function DepositCta({ className }: { className?: string }) {
   return (
     <a
       href={depositUrl(memberId, BROKERS.vt, brand?.brokerUrl)}
-      onClick={() => markDepositClick(profile.email)}
+      onClick={() => {
+        markDepositClick(profile.email);
+        // Server-side too. The localStorage flag only drives this browser's
+        // "verifying your deposit…" screen; it cannot tell us later WHO left for
+        // the broker and when. That record is the only way to recognise a member
+        // who registers there under a different address — and it is what finally
+        // puts a real number on the partner dashboards' click counter, which has
+        // read zero since the day it was built.
+        void (supabase as unknown as {
+          rpc: (fn: string, args: Record<string, unknown>) => Promise<unknown>;
+        }).rpc("log_broker_click", {
+          p_tenant_slug: brand?.slug ?? null,
+          p_click_id: memberId || null,
+        });
+      }}
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
@@ -71,7 +87,7 @@ export function BrokerTrustStrip({ cta = true, compact = false, className }: {
     return (
       <div className={cn("rounded-2xl border border-white/10 bg-white/[0.03] p-4", className)}>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
-          <img src={LOGO} alt={BROKER.name} className="h-4 w-auto shrink-0 opacity-90" style={invertWhite} />
+          {LOGO && <img src={LOGO} alt={BROKER.name} className="h-4 w-auto shrink-0 opacity-90" style={invertWhite} />}
           <span className="text-xs text-foreground/60">Official partner broker — your deposit goes there, never to us.</span>
           <div className="ml-auto"><Pills dim /></div>
         </div>
@@ -98,6 +114,8 @@ export function BrokerTrustStrip({ cta = true, compact = false, className }: {
             You fund your own account in your own name, your money stays yours and withdrawable — and that verified deposit is what unlocks everything here for free.
           </p>
           <RiskWarning variant="compact" className="mt-3" />
+          {/* Shown BEFORE they leave: the address the broker has to see. */}
+          <BrokerIdentityCard className="mt-3" />
           <div className="mt-3.5"><Pills /></div>
         </div>
         {cta && <DepositCta className="shrink-0" />}
