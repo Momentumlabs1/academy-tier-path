@@ -367,95 +367,32 @@ async function copyOne(t: TenantRow, post: TgMessage) {
   }
 }
 
-// ── Auto-formatter (Tim's spec) ──────────────────────────────────────────────
+// ── Why there is no auto-formatter here any more ────────────────────────────
 //
-// Tim types a shorthand in the main channel; the bot renders a clean signal
-// and relays THAT (instead of copying the shorthand). Only Gold & NAS100 get
-// auto-calculated take-profits:
-//   R = |entry − stop|;  TP1..4 = 0.5R,1R,1.5R,2R (in trade direction);
-//   TP5 = Open.  Calculated prices are rounded to the nearest 0.50.
-// Anything that isn't a recognisable Gold/NAS100 signal returns null and is
-// copied verbatim, so normal announcements are never mangled.
-
-const roundHalf = (x: number) => (Math.round(x * 2) / 2).toFixed(2);
-
-function formatSignal(raw: string): string | null {
-  const lower = raw.toLowerCase();
-
-  const dir = /\b(buy|long)\b/.test(lower) ? "BUY" : /\b(sell|short)\b/.test(lower) ? "SELL" : null;
-  if (!dir) return null;
-
-  let asset: string | null = null;
-  if (/\bgold\b|xau/.test(lower)) asset = "GOLD (XAU/USD)";
-  else if (/nas\s?100|us\s?100|nasdaq/.test(lower)) asset = "NAS100";
-  if (!asset) return null; // spec: auto-format applies to Gold & NAS100 only
-
-  // Strip asset tokens so "nas100" doesn't leak a "100" into the number scan.
-  const numStr = lower.replace(/nas\s?100|us\s?100/g, " ").replace(/gold|xau\/?usd/g, " ");
-
-  const slMatch = numStr.match(/(?:sl|stop(?:\s*loss)?)\s*[:=]?\s*(\d+(?:\.\d+)?)/);
-  if (!slMatch) return null;
-  const sl = parseFloat(slMatch[1]);
-
-  let entry: number | null = null;
-  const entryMatch = numStr.match(/(?:entry|@)\s*[:=]?\s*(\d+(?:\.\d+)?)/);
-  if (entryMatch) entry = parseFloat(entryMatch[1]);
-  if (entry == null) {
-    const nums = (numStr.match(/\d+(?:\.\d+)?/g) ?? []).map(parseFloat);
-    const idx = nums.indexOf(sl);
-    if (idx > -1) nums.splice(idx, 1);
-    entry = nums[0] ?? null;
-  }
-  if (entry == null || !isFinite(entry) || !isFinite(sl) || entry === sl) return null;
-
-  const R = Math.abs(entry - sl);
-  const sign = dir === "BUY" ? 1 : -1;
-  const tp = (m: number) => roundHalf(entry! + sign * m * R);
-
-  const arrow = dir === "BUY" ? "🟢 BUY NOW" : "🔴 SELL NOW";
-  return [
-    `${arrow} — ${asset}`,
-    ``,
-    `📍 Entry     ${entry.toFixed(2)}`,
-    `🛑 Stop      ${sl.toFixed(2)}`,
-    ``,
-    `🎯 TP1 (0.5R)   ${tp(0.5)}`,
-    `🎯 TP2 (1.0R)   ${tp(1)}`,
-    `🎯 TP3 (1.5R)   ${tp(1.5)}`,
-    `🎯 TP4 (2.0R)   ${tp(2)}`,
-    `🎯 TP5          Open`,
-  ].join("\n");
-}
-
-// Send our own formatted signal (+ brand footer inline) instead of a raw copy.
-async function sendFormatted(t: TenantRow, body: string) {
-  try {
-    const footer = footerFor(t);
-    const text = footer ? `${body}\n\n${footer}` : body;
-    const res = await tg<{ message_id: number }>("sendMessage", {
-      chat_id: t.telegram_channel_id, text, disable_web_page_preview: true,
-    });
-    if (!res.ok) throw new Error(res.description ?? "sendMessage failed");
-    return { ok: true, message_id: res.result?.message_id };
-  } catch (e) {
-    console.error(`[relay] formatted → ${t.slug} failed:`, e);
-    return { ok: false, error: String(e) };
-  }
-}
+// There used to be one: it read entry and stop out of the desk's shorthand and
+// computed TP1..TP5 as R multiples. It was removed, and the reason is worth
+// keeping so nobody rebuilds it.
+//
+// It computed values THE DESK ALREADY WRITES. Every real signal from the desk
+// arrives with TP1 through TP5 spelled out. The formatter re-derived them, which
+// means it could only ever agree with the source or be wrong about it.
+//
+// And it was wrong. The desk writes thousands with a space — "Entry : 30 135.09"
+// — which parsed as 30, failed the sanity check, and made the whole message fall
+// through as "not a signal". Every genuine signal hit that path; the only message
+// that ever formatted correctly was a hand-typed test without spaces.
+//
+// So the relay now does two things: translate, and forward. Both are needed,
+// neither can silently corrupt a price, and the desk's own numbers arrive
+// exactly as the desk wrote them.
 
 async function relaySingle(db: SupabaseClient, post: TgMessage, tenants: TenantRow[]) {
-  // A recognisable Gold/NAS100 signal is rendered clean; everything else is
-  // copied verbatim (footer sent separately, preserving original formatting).
-  const rendered = post.text ? formatSignal(post.text) : null;
   const delivered: Record<string, unknown> = {};
   for (const t of tenants) {
-    delivered[t.slug] = rendered
-      ? await sendFormatted(t, rendered)
-      : await copyOne(t, post);
+    delivered[t.slug] = await copyOne(t, post);
   }
-  await logRelay(db, post.chat.id, post.message_id, rendered ?? post.text ?? post.caption ?? "[media]", delivered);
-  // Recaps carry the only real performance numbers we have. Parsed after the
-  // relay, never before: a parser bug must not be able to stop a signal going out.
+  await logRelay(db, post.chat.id, post.message_id, post.text ?? post.caption ?? "[media]", delivered);
+  // Parsed AFTER the relay: a parser bug must not stop a signal going out.
   await storeRecap(db, post);
 }
 
@@ -532,15 +469,11 @@ async function relayEdit(db: SupabaseClient, post: TgMessage, tenants: TenantRow
   if (!delivered) return; // never relayed (or album) — nothing to edit
 
   const isCaption = post.text == null && post.caption != null;
-  // If the edited post is a recognisable signal, re-render it the same way the
-  // original relay did, so formatted copies stay formatted after an edit.
-  const rendered = post.text ? formatSignal(post.text) : null;
 
   // Translate ONCE, not per tenant: same source text, and every tenant would
   // otherwise pay for the same call — and could get slightly different wording,
-  // so the channels would drift apart. `rendered` needs none: the formatter
-  // already emits English.
-  const enText = !rendered && post.text ? await toEnglish(post.text) : null;
+  // so the channels would drift apart.
+  const enText = post.text ? await toEnglish(post.text) : null;
   const enCaption = post.caption ? await toEnglish(post.caption) : null;
 
   const results: Record<string, unknown> = {};
@@ -551,11 +484,7 @@ async function relayEdit(db: SupabaseClient, post: TgMessage, tenants: TenantRow
 
     let method: string;
     let payload: Record<string, unknown>;
-    if (rendered) {
-      const footer = footerFor(t);
-      method = "editMessageText";
-      payload = { chat_id: t.telegram_channel_id, message_id: d.message_id, text: footer ? `${rendered}\n\n${footer}` : rendered, disable_web_page_preview: true };
-    } else if (isCaption) {
+    if (isCaption) {
       method = "editMessageCaption";
       // No caption_entities: they carry byte offsets into the ORIGINAL German
       // text, and applying them to the translation would bold the wrong words —
