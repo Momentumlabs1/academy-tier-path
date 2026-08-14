@@ -582,9 +582,20 @@ async function processUpdate(update: TgUpdate) {
     const mainId = Number(Deno.env.get("MAIN_CHANNEL_ID") ?? 0);
     const isSource = mainId !== 0 && groupMsg.chat.id === mainId;
     const hasContent = Boolean(groupMsg.text || groupMsg.caption || groupMsg.media_group_id);
-    // Skip our own relays (the bot posts into groups it may also read) and
-    // service messages like joins and pins, which carry no content.
-    if (isSource && hasContent && !groupMsg.from?.is_bot) {
+    // Skip only OUR OWN messages, not every bot's.
+    //
+    // The obvious filter — ignore anything from a bot — would ignore everything.
+    // The source group is itself the far end of another relay: the desk posts in
+    // Tim's own group, his copy bot mirrors it into "Agent stick", and our system
+    // reads from there. So in the source group EVERY message has a bot as its
+    // author. Filtering on is_bot would have relayed precisely nothing, silently.
+    //
+    // What actually has to be excluded is a loop through ourselves, which is only
+    // our own bot. Its id is the part of the token before the colon, so no extra
+    // API call is needed to know it.
+    const selfId = Number((Deno.env.get("TELEGRAM_BOT_TOKEN") ?? "").split(":")[0] || 0);
+    const isSelf = selfId !== 0 && groupMsg.from?.id === selfId;
+    if (isSource && hasContent && !isSelf) {
       const tenants = await activeTenants(db);
       if (tenants.length) {
         if (update.edited_message) await relayEdit(db, groupMsg, tenants);
