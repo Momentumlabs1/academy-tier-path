@@ -60,7 +60,7 @@ async function tg<T = unknown>(
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface TgChat { id: number; title?: string; type: string }
-interface TgUser { id: number; username?: string; first_name?: string }
+interface TgUser { id: number; username?: string; first_name?: string; is_bot?: boolean }
 interface TgMessage {
   message_id: number;
   chat: TgChat;
@@ -76,6 +76,8 @@ interface TgUpdate {
   channel_post?: TgMessage;
   edited_channel_post?: TgMessage;
   message?: TgMessage;
+  /** Groups send edits here, not as edited_channel_post. */
+  edited_message?: TgMessage;
   chat_join_request?: { chat: TgChat; from: TgUser };
 }
 interface TenantRow {
@@ -108,17 +110,127 @@ function footerFor(t: TenantRow): string | null {
   return lines.length ? lines.join("\n") : null;
 }
 
+// ── Translation ──────────────────────────────────────────────────────────────
+/**
+ * The desk writes in German. Members read English — the whole platform is
+ * English — so anything relayed has to arrive in English.
+ *
+ * The auto-formatter below already rebuilds recognised Gold/NAS100 signals in
+ * English, but it only covers signals. Everything around them — "SL hit, nicht so
+ * schlimm, war ein low risk trade", "Performance Heute", "Starker Abschluss —
+ * trotz 2 SLs auf Gold insgesamt +5 RR mitgenommen" — was relayed verbatim.
+ *
+ * TWO RULES THAT MATTER MORE THAN THE TRANSLATION ITSELF:
+ *
+ *   1. NUMBERS ARE NEVER TOUCHED. Entries, stops, targets, R multiples, tickers.
+ *      A model that "helpfully" reformats 29 826.90 into 29,826.90 — or worse,
+ *      rounds it — is handing someone a wrong price to trade on. The prompt
+ *      forbids it and the check below verifies it: if the digits in the output
+ *      do not match the digits in the input, the translation is discarded.
+ *
+ *   2. FAILURE MEANS ORIGINAL, NEVER NOTHING. No key, timeout, rate limit,
+ *      refusal — every path returns the source text. A signal that arrives in
+ *      German is a small annoyance; a signal that does not arrive is a member
+ *      watching a trade they were supposed to be in.
+ */
+const TRANSLATE_MODEL = Deno.env.get("TRANSLATE_MODEL") ?? "claude-haiku-4-5";
+
+const TRANSLATE_SYSTEM = [
+  "You translate trading-desk messages into English for a trading academy.",
+  "",
+  "Rules:",
+  "- Output ONLY the translated message. No preamble, no quotes, no explanation.",
+  "- NEVER alter any number, price, ticker, symbol or R-multiple. Copy every digit",
+  "  and separator exactly as it appears, including spaces inside numbers.",
+  "- Keep all emoji, line breaks, bullet characters and layout exactly as they are.",
+  "- Keep trading terms in their standard English form (Entry, SL, TP, buy, sell, lot).",
+  "- If the message is already English, return it completely unchanged.",
+  "- Translate naturally, the way a trader would write it — not word for word.",
+].join("\n");
+
+/** Digits only, for verifying the model changed no number. */
+const digitsOf = (s: string) => (s.match(/\d/g) ?? []).join("");
+
+async function toEnglish(text: string): Promise<string> {
+  const src = (text ?? "").trim();
+  if (!src) return text;
+
+  const apiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  if (!apiKey) return text; // not configured — relay untranslated rather than not at all
+
+  try {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: TRANSLATE_MODEL,
+        max_tokens: 1024,
+        system: TRANSLATE_SYSTEM,
+        messages: [{ role: "user", content: src }],
+      }),
+    });
+    if (!res.ok) {
+      console.error("[translate] HTTP", res.status, (await res.text()).slice(0, 160));
+      return text;
+    }
+    const j = await res.json();
+    const out = (j?.content ?? [])
+      .filter((b: { type?: string }) => b?.type === "text")
+      .map((b: { text?: string }) => b.text ?? "")
+      .join("")
+      .trim();
+    if (!out) return text;
+
+    // The guard: same digits in, same digits out, or we keep the original.
+    if (digitsOf(out) !== digitsOf(src)) {
+      console.error("[translate] digits changed — keeping original");
+      return text;
+    }
+    return out;
+  } catch (e) {
+    console.error("[translate] failed:", e);
+    return text;
+  }
+}
+
 // ── Fan-out: single post ─────────────────────────────────────────────────────
 
-async function copyOne(t: TenantRow, fromChat: number, messageId: number) {
+/**
+ * Relay one message to one tenant, in English.
+ *
+ * Plain text is sent as our own message so the translation is what lands. Media
+ * still goes through copyMessage — but with the caption replaced, which is why
+ * this cannot simply forward: a forward carries the original caption and no way
+ * to change it.
+ */
+async function copyOne(t: TenantRow, post: TgMessage) {
   try {
+    const footer = footerFor(t);
+
+    if (post.text) {
+      const body = await toEnglish(post.text);
+      const res = await tg<{ message_id: number }>("sendMessage", {
+        chat_id: t.telegram_channel_id,
+        text: footer ? `${body}\n\n${footer}` : body,
+        disable_web_page_preview: true,
+      });
+      if (!res.ok) throw new Error(res.description ?? "sendMessage failed");
+      return { ok: true, message_id: res.result?.message_id };
+    }
+
+    const caption = post.caption ? await toEnglish(post.caption) : undefined;
     const copy = await tg<{ message_id: number }>("copyMessage", {
       chat_id: t.telegram_channel_id,
-      from_chat_id: fromChat,
-      message_id: messageId,
+      from_chat_id: post.chat.id,
+      message_id: post.message_id,
+      // Only sent when we have one: passing caption: undefined would strip it.
+      ...(caption !== undefined ? { caption } : {}),
     });
     if (!copy.ok) throw new Error(copy.description ?? "copyMessage failed");
-    const footer = footerFor(t);
     if (footer) await tg("sendMessage", { chat_id: t.telegram_channel_id, text: footer, disable_web_page_preview: true });
     return { ok: true, message_id: copy.result?.message_id };
   } catch (e) {
@@ -211,7 +323,7 @@ async function relaySingle(db: SupabaseClient, post: TgMessage, tenants: TenantR
   for (const t of tenants) {
     delivered[t.slug] = rendered
       ? await sendFormatted(t, rendered)
-      : await copyOne(t, post.chat.id, post.message_id);
+      : await copyOne(t, post);
   }
   await logRelay(db, post.chat.id, post.message_id, rendered ?? post.text ?? post.caption ?? "[media]", delivered);
 }
@@ -267,6 +379,13 @@ async function logRelay(db: SupabaseClient, chatId: number, messageId: number, t
 //
 // Limitation: albums are copied with copyMessages (no per-part id map), so a
 // caption edit inside an album can't be targeted — only single messages sync.
+//
+// Same call is also why ALBUM CAPTIONS ARE NOT TRANSLATED: copyMessages takes no
+// caption override, unlike copyMessage. A multi-photo post therefore arrives with
+// its original German caption. Single photos, single videos and all plain text do
+// get translated. Fixing this means sending each part individually and losing the
+// album grouping — worse for the reader than one untranslated caption, so it
+// stays as it is until someone actually posts albums with captions that matter.
 
 interface DeliveredEntry { ok?: boolean; message_id?: number }
 
@@ -285,6 +404,14 @@ async function relayEdit(db: SupabaseClient, post: TgMessage, tenants: TenantRow
   // If the edited post is a recognisable signal, re-render it the same way the
   // original relay did, so formatted copies stay formatted after an edit.
   const rendered = post.text ? formatSignal(post.text) : null;
+
+  // Translate ONCE, not per tenant: same source text, and every tenant would
+  // otherwise pay for the same call — and could get slightly different wording,
+  // so the channels would drift apart. `rendered` needs none: the formatter
+  // already emits English.
+  const enText = !rendered && post.text ? await toEnglish(post.text) : null;
+  const enCaption = post.caption ? await toEnglish(post.caption) : null;
+
   const results: Record<string, unknown> = {};
 
   for (const t of tenants) {
@@ -299,10 +426,23 @@ async function relayEdit(db: SupabaseClient, post: TgMessage, tenants: TenantRow
       payload = { chat_id: t.telegram_channel_id, message_id: d.message_id, text: footer ? `${rendered}\n\n${footer}` : rendered, disable_web_page_preview: true };
     } else if (isCaption) {
       method = "editMessageCaption";
-      payload = { chat_id: t.telegram_channel_id, message_id: d.message_id, caption: post.caption, caption_entities: post.caption_entities };
+      // No caption_entities: they carry byte offsets into the ORIGINAL German
+      // text, and applying them to the translation would bold the wrong words —
+      // or be rejected outright for pointing past the end of the string.
+      payload = { chat_id: t.telegram_channel_id, message_id: d.message_id, caption: enCaption ?? post.caption };
     } else {
+      // The footer has to be re-appended. copyOne sends body and footer as ONE
+      // message for plain text, so editing with the body alone would silently
+      // delete every partner's broker link from that post.
+      const footer = footerFor(t);
+      const body = enText ?? post.text ?? "";
       method = "editMessageText";
-      payload = { chat_id: t.telegram_channel_id, message_id: d.message_id, text: post.text, entities: post.entities };
+      payload = {
+        chat_id: t.telegram_channel_id,
+        message_id: d.message_id,
+        text: footer ? `${body}\n\n${footer}` : body,
+        disable_web_page_preview: true,
+      };
     }
 
     const res = await tg(method, payload);
@@ -426,6 +566,35 @@ async function processUpdate(update: TgUpdate) {
     return;
   }
   if (update.message?.text?.startsWith("/start")) { await handleStart(db, update.message); return; }
+
+  // A GROUP as the source. Telegram delivers channel posts as `channel_post` but
+  // group messages as `message` — so a main "channel" that is actually a group
+  // (which is what the desk runs) produced no relay at all. Nothing arrived,
+  // nothing errored.
+  //
+  // The channel path can infer its source ("any chat that is not a destination"),
+  // because a bot only sees posts in channels it was added to. That inference is
+  // unsafe for groups: the bot can sit in ordinary chats, and every message in
+  // any of them would fan out to every partner. So a group source must be named
+  // explicitly by MAIN_CHANNEL_ID.
+  const groupMsg = update.message ?? update.edited_message;
+  if (groupMsg) {
+    const mainId = Number(Deno.env.get("MAIN_CHANNEL_ID") ?? 0);
+    const isSource = mainId !== 0 && groupMsg.chat.id === mainId;
+    const hasContent = Boolean(groupMsg.text || groupMsg.caption || groupMsg.media_group_id);
+    // Skip our own relays (the bot posts into groups it may also read) and
+    // service messages like joins and pins, which carry no content.
+    if (isSource && hasContent && !groupMsg.from?.is_bot) {
+      const tenants = await activeTenants(db);
+      if (tenants.length) {
+        if (update.edited_message) await relayEdit(db, groupMsg, tenants);
+        else if (groupMsg.media_group_id) await relayAlbum(db, groupMsg, tenants);
+        else await relaySingle(db, groupMsg, tenants);
+      }
+    }
+    return;
+  }
+
   if (update.chat_join_request) { await handleJoinRequest(db, update.chat_join_request); }
 }
 
