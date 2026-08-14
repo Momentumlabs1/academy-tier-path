@@ -12,6 +12,7 @@ import { ArrowUpRight, BadgeCheck, ShieldCheck, Star, Trophy } from "lucide-reac
 import { ACTIVE_BROKER, BROKER, BROKERS, BROKER_SWITCH, depositUrl } from "@/lib/broker";
 import { BrokerPausedNotice } from "@/components/academy/tier/BrokerPausedNotice";
 import { RiskWarning } from "@/components/academy/legal/RiskWarning";
+import { CommissionDisclosure } from "@/components/academy/legal/CommissionDisclosure";
 import { BrokerIdentityCard } from "@/components/academy/tier/BrokerIdentityCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useMemberState } from "@/hooks/useMemberState";
@@ -116,6 +117,10 @@ export function BrokerTrustStrip({ cta = true, compact = false, className }: {
             You fund your own account in your own name, your money stays yours and withdrawable — and that verified deposit is what unlocks everything here for free.
           </p>
           <RiskWarning variant="compact" className="mt-3" />
+          {/* The commission disclosure was only on the public landing page, which
+              a signed-in member has no reason to revisit. It belongs where the
+              deposit is actually asked for. */}
+          <CommissionDisclosure className="mt-2" />
           {/* Shown BEFORE they leave: the address the broker has to see. */}
           <BrokerIdentityCard className="mt-3" />
           <div className="mt-3.5"><Pills /></div>
