@@ -24,6 +24,7 @@ import type { TenantConfig } from "@/lib/tenants";
 import { BROKER, BROKER_SWITCH, TELEGRAM_ENTRY } from "@/lib/broker";
 import { RiskWarning } from "@/components/academy/legal/RiskWarning";
 import { CommissionDisclosure } from "@/components/academy/legal/CommissionDisclosure";
+import { DeskResults } from "@/components/academy/tenant/DeskResults";
 import {
   SignalsPreview, BotPreview, AcademyPreview, QuizPreview, RewardsPreview, WhitelabelPreview,
 } from "@/components/academy/tenant/LandingPreviews";
@@ -473,6 +474,13 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
       </section>
 
       {/* ─────────────────────── TIERS ─────────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-8">
+        {/* Results before tiers: proof first, then what it costs. Renders
+            nothing at all when there is no data — see DeskResults. */}
+      </section>
+
+      <DeskResults primary={primary} />
+
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-8">
         <SectionHead n="04" kicker="Deposit more, unlock more" title="Member tiers" primary={primary} />
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
