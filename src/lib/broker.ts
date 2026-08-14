@@ -105,11 +105,11 @@ export const BROKERS: Record<BrokerKey, BrokerConfig> = {
  */
 export const TELEGRAM_ENTRY = {
   /**
-   * Replace with the public handle (t.me/cosmoscandles) once the channel has
-   * one. A `+hash` invite link works, but on a public page it reads like
-   * something forwarded to you rather than somewhere you meant to go.
+   * The public handle, not a `+hash` invite link. Both work, but a hash reads
+   * like something forwarded to you rather than somewhere you meant to go — and
+   * this is the first thing a visitor clicks.
    */
-  url: "https://t.me/+3OawGEcmauAzOGI8",
+  url: "https://t.me/cosmoscandles",
   label: "Join on Telegram",
 } as const;
 
