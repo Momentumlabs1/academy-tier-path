@@ -127,8 +127,10 @@ interface TenantRow {
   slug: string;
   name: string;
   telegram_channel_id: number | null;
+  telegram_info_channel_id: number | null;
   broker_affiliate_url: string | null;
   signal_footer: string | null;
+  info_footer: string | null;
 }
 
 function admin(): SupabaseClient {
@@ -142,9 +144,8 @@ function admin(): SupabaseClient {
 async function activeTenants(db: SupabaseClient): Promise<TenantRow[]> {
   const { data } = await db
     .from("tenants")
-    .select("slug, name, telegram_channel_id, broker_affiliate_url, signal_footer")
-    .eq("active", true)
-    .not("telegram_channel_id", "is", null);
+    .select("slug, name, telegram_channel_id, telegram_info_channel_id, broker_affiliate_url, signal_footer, info_footer")
+    .eq("active", true);
   return (data as TenantRow[]) ?? [];
 }
 
@@ -427,7 +428,9 @@ async function storeMedia(db: SupabaseClient, post: TgMessage) {
 
 async function relaySingle(db: SupabaseClient, post: TgMessage, tenants: TenantRow[]) {
   const delivered: Record<string, unknown> = {};
-  for (const t of tenants) {
+  // activeTenants now returns partners that may have only an INFO channel, so
+  // the signal paths filter here rather than in the query.
+  for (const t of tenants.filter((x) => x.telegram_channel_id)) {
     delivered[t.slug] = await copyOne(t, post);
   }
   await logRelay(db, post.chat.id, post.message_id, post.text ?? post.caption ?? "[media]", delivered);
@@ -457,7 +460,7 @@ async function relayAlbum(db: SupabaseClient, post: TgMessage, tenants: TenantRo
     .map((r) => Number(r.source_message_id)).sort((a, b) => a - b);
 
   const delivered: Record<string, unknown> = {};
-  for (const t of tenants) {
+  for (const t of tenants.filter((x) => x.telegram_channel_id)) {
     try {
       const copy = await tg("copyMessages", { chat_id: t.telegram_channel_id, from_chat_id: post.chat.id, message_ids: messageIds });
       if (!copy.ok) throw new Error(copy.description ?? "copyMessages failed");
@@ -518,7 +521,7 @@ async function relayEdit(db: SupabaseClient, post: TgMessage, tenants: TenantRow
 
   const results: Record<string, unknown> = {};
 
-  for (const t of tenants) {
+  for (const t of tenants.filter((x) => x.telegram_channel_id)) {
     const d = delivered[t.slug];
     if (!d?.ok || !d.message_id) { results[t.slug] = { ok: false, error: "no original copy" }; continue; }
 
@@ -634,30 +637,102 @@ async function handleJoinRequest(db: SupabaseClient, reqObj: { chat: TgChat; fro
 }
 
 /**
- * Mirror an info-channel post so the website can show it.
+ * The info channel: mirrored to the website AND fanned out to every partner.
  *
- * Deliberately dumb: text (or caption) and the post's own timestamp, upserted on
- * (chat_id, message_id) so an edit updates the same row rather than adding a
- * second copy. No translation pass — the info channel is already written in the
- * language its readers get, and a silent machine rewrite of marketing copy is
- * not something anyone asked for.
+ * This is the second half of the white-label structure. The signal relay copies
+ * the desk's calls into each partner's signal channel; this copies the content
+ * Diego writes once — market notes, education, the Cosmo posts — into each
+ * partner's own info channel, so a partner's audience sees the partner's brand
+ * instead of ours.
+ *
+ * Cosmos-Candles-Info is the SOURCE, so it is never a destination: its own
+ * tenant row leaves telegram_info_channel_id NULL and it cannot copy to itself.
+ *
+ * Translation runs here too. If Diego writes in English `toEnglish` returns the
+ * text unchanged (the prompt says so explicitly), so this costs nothing on
+ * English posts and saves the German ones.
+ *
+ * The delivery map is stored on the row so an edit in the source can update
+ * every copy — otherwise a corrected post stays wrong in every partner channel,
+ * which is exactly the failure the signal relay already learned to avoid.
  */
-async function storeInfoPost(db: ReturnType<typeof admin>, msg: TgMessage) {
-  const text = (msg.text ?? msg.caption ?? "").trim();
+async function storeInfoPost(db: SupabaseClient, msg: TgMessage, tenants: TenantRow[]) {
+  const raw = (msg.text ?? msg.caption ?? "").trim();
   const photo = msg.photo?.length ? msg.photo[msg.photo.length - 1].file_id : null;
-  if (!text && !photo) return;
+  if (!raw && !photo) return;
+
+  const body = raw ? await toEnglish(raw) : "";
+  const delivered: Record<string, unknown> = {};
+
+  for (const t of tenants.filter((x) => x.telegram_info_channel_id)) {
+    try {
+      const text = t.info_footer ? `${body}\n\n${t.info_footer}` : body;
+      if (msg.text) {
+        const res = await tg<{ message_id: number }>("sendMessage", {
+          chat_id: t.telegram_info_channel_id,
+          text,
+          disable_web_page_preview: true,
+        });
+        if (!res.ok) throw new Error(res.description ?? "sendMessage failed");
+        delivered[t.slug] = { ok: true, message_id: res.result?.message_id };
+      } else {
+        const copy = await tg<{ message_id: number }>("copyMessage", {
+          chat_id: t.telegram_info_channel_id,
+          from_chat_id: msg.chat.id,
+          message_id: msg.message_id,
+          ...(raw ? { caption: text } : {}),
+        });
+        if (!copy.ok) throw new Error(copy.description ?? "copyMessage failed");
+        delivered[t.slug] = { ok: true, message_id: copy.result?.message_id };
+      }
+    } catch (e) {
+      console.error(`[info] → ${t.slug} failed:`, e);
+      delivered[t.slug] = { ok: false, error: String(e) };
+    }
+  }
+
+  // The website copy is stored LAST and never blocks the fan-out: a member
+  // waiting on a Telegram post matters more than the dashboard rail.
   const { error } = await db.from("info_posts").upsert(
     {
       chat_id: msg.chat.id,
       message_id: msg.message_id,
-      text: text || null,
+      text: body || null,
       photo_file_id: photo,
+      delivered,
       posted_at: new Date((msg.date ?? Math.floor(Date.now() / 1000)) * 1000).toISOString(),
       updated_at: new Date().toISOString(),
     },
     { onConflict: "chat_id,message_id" },
   );
   if (error) console.error("[info_posts] upsert failed:", error.message);
+}
+
+/** An edit in the info channel → edit every copy, and the website row. */
+async function editInfoPost(db: SupabaseClient, msg: TgMessage, tenants: TenantRow[]) {
+  const { data: row } = await db
+    .from("info_posts").select("delivered")
+    .eq("chat_id", msg.chat.id).eq("message_id", msg.message_id).maybeSingle();
+
+  const raw = (msg.text ?? msg.caption ?? "").trim();
+  const body = raw ? await toEnglish(raw) : "";
+  const delivered = (row?.delivered ?? null) as Record<string, DeliveredEntry> | null;
+
+  for (const t of tenants.filter((x) => x.telegram_info_channel_id)) {
+    const d = delivered?.[t.slug];
+    if (!d?.ok || !d.message_id) continue;
+    const text = t.info_footer ? `${body}\n\n${t.info_footer}` : body;
+    const isCaption = msg.text == null && msg.caption != null;
+    await tg(isCaption ? "editMessageCaption" : "editMessageText", {
+      chat_id: t.telegram_info_channel_id,
+      message_id: d.message_id,
+      ...(isCaption ? { caption: text } : { text, disable_web_page_preview: true }),
+    });
+  }
+
+  await db.from("info_posts")
+    .update({ text: body || null, updated_at: new Date().toISOString() })
+    .eq("chat_id", msg.chat.id).eq("message_id", msg.message_id);
 }
 
 // ── Router ───────────────────────────────────────────────────────────────────
@@ -689,10 +764,13 @@ async function processUpdate(update: TgUpdate) {
   const isSourceChat = (chatId: number, destIds: Set<number>) =>
     mainChatId !== 0 ? chatId === mainChatId : !destIds.has(chatId);
 
-  // The info channel: mirrored to `info_posts` for the website, never relayed.
+  // The info channel: fanned out to partner info channels + mirrored for the
+  // website. Never relayed as a signal.
   const ownChat = update.channel_post ?? update.edited_channel_post ?? update.message ?? update.edited_message;
   if (ownChat && infoId !== 0 && ownChat.chat.id === infoId) {
-    await storeInfoPost(db, ownChat);
+    const tenants = await activeTenants(db);
+    if (update.edited_channel_post ?? update.edited_message) await editInfoPost(db, ownChat, tenants);
+    else await storeInfoPost(db, ownChat, tenants);
     return;
   }
 
@@ -703,7 +781,14 @@ async function processUpdate(update: TgUpdate) {
   // Dropped because guessing what an unknown chat is for is how the old rule
   // ended up relaying the wrong thing.
   if (ownChat && ownChat.chat.id < 0 && mainChatId !== 0 && ownChat.chat.id !== mainChatId) {
-    const dests = new Set((await activeTenants(db)).map((t) => Number(t.telegram_channel_id)));
+    // Both kinds of destination: a partner may have an info channel and no
+    // signal channel, and our own copies posted there must not be mistaken for
+    // an unknown chat.
+    const rows = await activeTenants(db);
+    const dests = new Set([
+      ...rows.map((t) => Number(t.telegram_channel_id)),
+      ...rows.map((t) => Number(t.telegram_info_channel_id)),
+    ].filter((n) => Number.isFinite(n) && n !== 0));
     if (!dests.has(ownChat.chat.id)) {
       await db.from("telegram_chats_seen").upsert(
         {
