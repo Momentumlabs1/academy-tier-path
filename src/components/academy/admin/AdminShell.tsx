@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { BarChart2, BookOpen, FileText, Headset, LayoutDashboard, LogOut, Network, Palette, Radio, ScrollText, Users , MessageSquare} from "lucide-react";
+import { BarChart2, BookOpen, FileText, Handshake, Headset, LayoutDashboard, LogOut, Network, Palette, Radio, ScrollText, Users , MessageSquare} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { adminSignOut } from "@/lib/admin-auth";
 
@@ -12,6 +12,9 @@ const MENU = [
   // The setter runs in private one-to-one chats, so without this page nobody on
   // the team can see what Cosmo is saying to prospects.
   { to: "/admin/leads", label: "Telegram leads", icon: MessageSquare, group: "Main" },
+  // Applications sat in a table with no screen: the funnel promised an answer
+  // "within a few hours" and nobody could see one had arrived.
+  { to: "/admin/partners", label: "Applications", icon: Handshake, group: "Growth" },
   { to: "/admin/signals", label: "Signal Relay", icon: Radio, group: "Growth" },
   { to: "/admin/tenants", label: "White-Label", icon: Palette, group: "Growth" },
   { to: "/admin/lessons", label: "Content", icon: BookOpen, group: "Growth" },

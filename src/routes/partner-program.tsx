@@ -13,19 +13,18 @@
  *   03  what does it pay
  *   04  why is this legitimate for the people I send
  *
+ * What is deliberately NOT here: the per-lot rates and the broker's name. Both
+ * live behind the application — see section 03.
+ *
  * Public. The partner LOGIN/dashboard lives at /partner; this is the pitch.
  */
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
-  ArrowRight, ArrowUpRight, Bot, Gauge, GraduationCap, LayoutDashboard, Radio, Send, Wallet,
+  ArrowRight, ArrowUpRight, Bot, Gauge, GraduationCap, LayoutDashboard, Lock, Radio, Send, Wallet,
 } from "lucide-react";
 import { SignalsPreview } from "@/components/academy/tenant/LandingPreviews";
 import { PartnerApplyForm } from "@/components/academy/partner/PartnerApplyForm";
-import { EarningsEstimator } from "@/components/academy/partner/EarningsEstimator";
-import { BROKER, BROKER_SWITCH } from "@/lib/broker";
 import { BRAND } from "@/lib/tenants";
-import { COMMISSION_LADDER } from "@/lib/commission";
-import { formatMoney } from "@/lib/format";
 
 export const Route = createFileRoute("/partner-program")({
   head: () => ({
@@ -115,7 +114,7 @@ const STEPS = [
   {
     title: "Your people sign up free",
     you: "nothing",
-    body: `They create an account on your page. No card, no course fee. They then fund a live trading account in their own name at ${BROKER.name} — nobody ever deposits with us.`,
+    body: "They create an account on your page. No card, no course fee. They then fund a live trading account in their own name at our partner broker — nobody ever deposits with us.",
   },
   {
     title: "Everything unlocks itself",
@@ -132,7 +131,7 @@ const STEPS = [
 const FAQ = [
   { q: "What does it cost me?", a: "Nothing. The website, the academy, the signals, the bot and the dashboard are free. You invest your reach and nothing else." },
   { q: "Do I need a licence or trading experience?", a: "No. You bring people together; the academy and the desk do the teaching and the calls. You are not giving investment advice." },
-  { q: "Can other partners see my customers?", a: "No. Each brand is a separate component — its own page, its own broker link, its own Telegram channel and its own numbers." },
+  { q: "Can other partners see my customers?", a: "No. Each brand is a separate component — its own page, its own link, its own Telegram channels and its own numbers." },
   { q: "How and when do I get paid?", a: "Per lot your customers trade, following the staircase above. Every amount is visible live in your dashboard as it accrues." },
   { q: "What happens if someone stops trading?", a: "You keep everything already earned. Commission is per lot traded, so it simply stops accruing for that customer — there is no clawback." },
 ];
@@ -209,7 +208,11 @@ function PartnerProgramm() {
               </a>
             </div>
             <div className="mt-8 flex flex-wrap gap-x-10 gap-y-4 border-t border-white/10 pt-5 sm:gap-x-12">
-              {[["€0", "your cost"], ["$5–10", "per traded lot"], ["1 day", "to go live"]].map(([v, l]) => (
+              {/* "$5–10 per traded lot" used to stand here. It is the single
+                  most valuable line on the page and it was the first thing any
+                  visitor read — including the ones who never apply. The middle
+                  stat now says what is true without pricing it. */}
+              {[["€0", "your cost"], ["Per lot", "not per signup"], ["1 day", "to go live"]].map(([v, l]) => (
                 <div key={l}>
                   <div className="font-display text-2xl font-bold tabular-nums leading-none text-primary sm:text-3xl">{v}</div>
                   <div className="mt-1.5 text-[11px] uppercase tracking-[0.12em] text-muted-foreground">{l}</div>
@@ -314,35 +317,69 @@ function PartnerProgramm() {
       {/* 03 */}
       <section id="earnings" className="mx-auto max-w-6xl px-4 pb-14 sm:px-8 sm:pb-16">
         <SectionHead
-          n="03" kicker="What it pays" title="Three questions, one number."
-          lead="You are paid per lot your customers trade, not per deposit — so what it is worth depends on your audience, not on ours."
+          n="03" kicker="What it pays" title="Paid per lot, not per signup."
+          lead="You earn on what your customers actually trade, every month they keep trading — not a one-off bounty for sending someone who never comes back."
         />
-        <EarningsEstimator />
 
-        <h3 className="mb-5 mt-10 font-display text-lg font-bold">Your rate climbs with your volume</h3>
-        <div className="grid gap-3 sm:grid-cols-4 sm:items-end">
-          {COMMISSION_LADDER.map((l, i) => (
-            <div key={l.level} className="rounded-2xl border border-white/10 bg-[oklch(0.12_0.03_258)] p-4 sm:p-5">
-              {/* Each step literally stands taller than the last. Four equal boxes
-                  described a staircase without ever showing one. */}
-              <div
-                aria-hidden
-                className="mb-4 hidden rounded-t-md bg-gradient-to-t from-primary/20 to-primary sm:block"
-                style={{ height: `${18 + i * 22}px` }}
-              />
-              <div className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                Level {l.level}
-              </div>
-              <div className="mt-1.5 font-display text-3xl font-bold tabular-nums leading-none text-primary">
-                {formatMoney(l.usdPerLot)}
-              </div>
-              <div className="mt-0.5 text-[11px] text-muted-foreground">per lot</div>
-              <div className="mt-3 border-t border-white/8 pt-2.5 font-mono text-[11px] tabular-nums text-foreground/60">
-                {l.toVolume ? `${formatMoney(l.fromVolume, "€")} – ${formatMoney(l.toVolume, "€")}` : `${formatMoney(l.fromVolume, "€")} +`}
-              </div>
-              <div className="text-[11px] text-muted-foreground">customer volume</div>
+        {/* The rate card and the estimator used to stand here in the open: four
+            levels with the exact dollars per lot, and a calculator that turned
+            an audience size into a monthly figure. That is our commercial
+            position — the number a competitor would want, and the number a
+            half-interested reader screenshots and shops around with. It is also
+            the thing that makes the conversation worth having, so it is not
+            deleted, it is moved behind the application. Same reason the broker
+            is not named on this page. */}
+        <div className="relative overflow-hidden rounded-[22px] border border-primary/25 bg-[linear-gradient(165deg,color-mix(in_oklch,var(--primary)_9%,transparent),transparent_62%)] p-6 sm:p-8">
+          <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-primary/15 blur-3xl" aria-hidden />
+          <div className="relative grid gap-8 lg:grid-cols-[1.1fr_1fr] lg:items-center">
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-primary">
+                <Lock className="h-3 w-3" /> After approval
+              </span>
+              <h3 className="mt-3 font-display text-2xl font-bold leading-tight sm:text-3xl">
+                The exact rates come with your approval.
+              </h3>
+              <p className="mt-3 text-sm leading-relaxed text-foreground/70">
+                Four volume levels, a fixed amount per lot at each, and it rises as your
+                customers trade more — the numbers themselves, the broker we clear through and
+                the full agreement are in your dashboard the moment you are approved. Not on a
+                page anyone can read.
+              </p>
+              <a href="#apply" className="mt-5 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-[var(--shadow-brand)] transition-transform hover:-translate-y-0.5">
+                Apply for access <ArrowRight className="h-4 w-4" />
+              </a>
             </div>
-          ))}
+
+            {/* The shape of the deal without the values: four rising steps, all
+                of them barred. It says "there is a ladder" and nothing else. */}
+            <div className="grid grid-cols-4 items-end gap-2.5" aria-hidden>
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                  <div
+                    className="mb-3 rounded-t-md border border-white/10"
+                    style={{
+                      height: `${20 + i * 20}px`,
+                      backgroundImage:
+                        "repeating-linear-gradient(115deg, rgba(255,255,255,0.13) 0 6px, rgba(255,255,255,0.035) 6px 12px)",
+                    }}
+                  />
+                  <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+                    Level {i + 1}
+                  </div>
+                  <div className="mt-1 flex h-6 items-center">
+                    <span
+                      className="h-3.5 w-full rounded-[5px] border border-white/10"
+                      style={{
+                        backgroundImage:
+                          "repeating-linear-gradient(115deg, rgba(255,255,255,0.13) 0 6px, rgba(255,255,255,0.035) 6px 12px)",
+                      }}
+                    />
+                  </div>
+                  <div className="mt-1 text-[10px] text-muted-foreground">per lot</div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -357,8 +394,9 @@ function PartnerProgramm() {
             <Wallet className="h-5 w-5 text-primary" />
             <h3 className="mt-2.5 font-display text-lg font-bold">The broker pays a commission on volume</h3>
             <p className="mt-1.5 text-sm leading-relaxed text-foreground/65">
-              We are an introducing broker: {BROKER.name} pays us a fixed amount per lot traded, and we
-              share it with you. We do <span className="font-semibold text-foreground">not</span> make
+              We are an introducing broker: our partner broker pays us a fixed amount per lot
+              traded, and we share it with you. (Which broker, and how much, you see once you
+              are approved — see above.) We do <span className="font-semibold text-foreground">not</span> make
               money by widening spreads, and your people are not charged a course fee. If we earned
               more by making their trading worse, the whole thing would collapse within a quarter —
               the incentive only works if they keep trading, which means it only works if they do well.
@@ -372,13 +410,6 @@ function PartnerProgramm() {
               theirs — they can withdraw it whenever they like. We never touch client funds. Every
               click, customer, deposit and euro of commission is traceable in your dashboard.
             </p>
-            <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2">
-              {(BROKER_SWITCH.paused ? [] : BROKER.trust).map((t) => (
-                <span key={t.label} className="text-[12px] text-muted-foreground">
-                  <span aria-hidden className="mr-1.5 text-primary">{t.icon}</span>{t.label}
-                </span>
-              ))}
-            </div>
           </div>
         </div>
       </section>

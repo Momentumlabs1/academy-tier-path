@@ -37,6 +37,7 @@ import { Route as AdminDepositsRouteImport } from './routes/admin.deposits'
 import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
 import { Route as AdminLessonsRouteImport } from './routes/admin.lessons'
 import { Route as AdminMembersRouteImport } from './routes/admin.members'
+import { Route as AdminPartnersRouteImport } from './routes/admin.partners'
 import { Route as AdminSignalsRouteImport } from './routes/admin.signals'
 import { Route as AdminStructureRouteImport } from './routes/admin.structure'
 import { Route as AdminSupportRouteImport } from './routes/admin.support'
@@ -184,6 +185,11 @@ const AdminMembersRoute = AdminMembersRouteImport.update({
   path: '/members',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminPartnersRoute = AdminPartnersRouteImport.update({
+  id: '/partners',
+  path: '/partners',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSignalsRoute = AdminSignalsRouteImport.update({
   id: '/signals',
   path: '/signals',
@@ -247,6 +253,7 @@ export interface FileRoutesByFullPath {
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/lessons': typeof AdminLessonsRoute
   '/admin/members': typeof AdminMembersRoute
+  '/admin/partners': typeof AdminPartnersRoute
   '/admin/signals': typeof AdminSignalsRoute
   '/admin/structure': typeof AdminStructureRoute
   '/admin/support': typeof AdminSupportRoute
@@ -280,6 +287,7 @@ export interface FileRoutesByTo {
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/lessons': typeof AdminLessonsRoute
   '/admin/members': typeof AdminMembersRoute
+  '/admin/partners': typeof AdminPartnersRoute
   '/admin/signals': typeof AdminSignalsRoute
   '/admin/structure': typeof AdminStructureRoute
   '/admin/support': typeof AdminSupportRoute
@@ -318,6 +326,7 @@ export interface FileRoutesById {
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/lessons': typeof AdminLessonsRoute
   '/admin/members': typeof AdminMembersRoute
+  '/admin/partners': typeof AdminPartnersRoute
   '/admin/signals': typeof AdminSignalsRoute
   '/admin/structure': typeof AdminStructureRoute
   '/admin/support': typeof AdminSupportRoute
@@ -357,6 +366,7 @@ export interface FileRouteTypes {
     | '/admin/leads'
     | '/admin/lessons'
     | '/admin/members'
+    | '/admin/partners'
     | '/admin/signals'
     | '/admin/structure'
     | '/admin/support'
@@ -390,6 +400,7 @@ export interface FileRouteTypes {
     | '/admin/leads'
     | '/admin/lessons'
     | '/admin/members'
+    | '/admin/partners'
     | '/admin/signals'
     | '/admin/structure'
     | '/admin/support'
@@ -427,6 +438,7 @@ export interface FileRouteTypes {
     | '/admin/leads'
     | '/admin/lessons'
     | '/admin/members'
+    | '/admin/partners'
     | '/admin/signals'
     | '/admin/structure'
     | '/admin/support'
@@ -654,6 +666,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMembersRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/partners': {
+      id: '/admin/partners'
+      path: '/partners'
+      fullPath: '/admin/partners'
+      preLoaderRoute: typeof AdminPartnersRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/signals': {
       id: '/admin/signals'
       path: '/signals'
@@ -750,6 +769,7 @@ interface AdminRouteChildren {
   AdminLeadsRoute: typeof AdminLeadsRoute
   AdminLessonsRoute: typeof AdminLessonsRoute
   AdminMembersRoute: typeof AdminMembersRoute
+  AdminPartnersRoute: typeof AdminPartnersRoute
   AdminSignalsRoute: typeof AdminSignalsRoute
   AdminStructureRoute: typeof AdminStructureRoute
   AdminSupportRoute: typeof AdminSupportRoute
@@ -763,6 +783,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminLeadsRoute: AdminLeadsRoute,
   AdminLessonsRoute: AdminLessonsRoute,
   AdminMembersRoute: AdminMembersRoute,
+  AdminPartnersRoute: AdminPartnersRoute,
   AdminSignalsRoute: AdminSignalsRoute,
   AdminStructureRoute: AdminStructureRoute,
   AdminSupportRoute: AdminSupportRoute,
