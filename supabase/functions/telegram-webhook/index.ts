@@ -7,16 +7,18 @@
  *  A relay to a handful of channels finishes in ~1s, well within Telegram's
  *  webhook timeout, and update_id dedup guards against redelivery.)
  *
- * SOURCE detection: a channel post is relayed if it comes from the configured
- * MAIN_CHANNEL_ID or from any channel that is not itself a destination
- * (channels are broadcast-only, so the only non-destination channel the bot
- * sees posts from is the main one). Works whether MAIN_CHANNEL_ID is set
- * correctly, wrong, or not at all — and never relays a destination back out.
+ * SOURCE detection: exactly one chat feeds the relay — MAIN_CHANNEL_ID. Any
+ * other chat the bot is in is recorded in `telegram_chats_seen` and ignored.
+ * (The old rule also accepted "any channel that is not a destination", which
+ * turned every chat anyone added the bot to into a signal source.) The
+ * inference survives only as a bootstrap when MAIN_CHANNEL_ID is unset.
  *
- * THREE JOBS: fan-out (copyMessage / copyMessages for albums), /start account
- * linking, and chat_join_request gating (deposit ≥ €100).
+ * FOUR JOBS: fan-out (copyMessage / copyMessages for albums), mirroring the info
+ * channel into `info_posts` for the website, /start account linking, and
+ * chat_join_request gating (deposit ≥ €100).
  *
- * Secrets: TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET, [MAIN_CHANNEL_ID].
+ * Secrets: TELEGRAM_BOT_TOKEN, TELEGRAM_WEBHOOK_SECRET, MAIN_CHANNEL_ID,
+ * [INFO_CHANNEL_ID].
  */
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -663,34 +665,65 @@ async function storeInfoPost(db: ReturnType<typeof admin>, msg: TgMessage) {
 async function processUpdate(update: TgUpdate) {
   const db = admin();
 
-  // Shared source check: the main channel OR any channel that isn't itself a
-  // destination (channels are broadcast-only, so the only non-destination
-  // channel the bot sees posts from is the main one).
-  const isSourceChat = async (chatId: number, destIds: Set<number>) =>
-    chatId === Number(await cfg("MAIN_CHANNEL_ID") || 0) || !destIds.has(chatId);
-
-  // The info and VIP channels are OURS, and neither is a signal source.
-  //
-  // `isSourceChat` treats "any channel that is not a relay destination" as the
-  // source, which was safe while the bot only sat in the desk channel. It is now
-  // an admin in the info channel too, and every marketing post there matched
-  // that rule — meaning an info post would have been relayed into every
-  // partner's signal channel as if the desk had called a trade. Name them and
-  // rule them out before the source inference ever runs.
+  const mainChatId = Number(await cfg("MAIN_CHANNEL_ID") || 0);
   const infoId = Number(await cfg("INFO_CHANNEL_ID") || 0);
-  const vipId = Number(await cfg("VIP_CHANNEL_ID") || 0);
+
+  /**
+   * Which chat is allowed to feed the relay.
+   *
+   * This used to be "MAIN_CHANNEL_ID **or any channel that is not a relay
+   * destination**". That second clause was a fallback for the case where
+   * MAIN_CHANNEL_ID was unset or wrong, and it was safe only while the bot sat
+   * in exactly one non-destination chat.
+   *
+   * It is not safe any more. The bot is being added to the info channel so the
+   * dashboard can mirror it, and under the old rule every marketing post there
+   * matched "not a destination" and would have been copied into each partner's
+   * signal channel as if the desk had called a trade. The same applies to any
+   * chat anyone ever adds this bot to.
+   *
+   * So: once MAIN_CHANNEL_ID is set — it is, and it points at the desk's
+   * supergroup — it is the ONLY source. The inference survives solely as a
+   * bootstrap for an unconfigured install.
+   */
+  const isSourceChat = (chatId: number, destIds: Set<number>) =>
+    mainChatId !== 0 ? chatId === mainChatId : !destIds.has(chatId);
+
+  // The info channel: mirrored to `info_posts` for the website, never relayed.
   const ownChat = update.channel_post ?? update.edited_channel_post ?? update.message ?? update.edited_message;
   if (ownChat && infoId !== 0 && ownChat.chat.id === infoId) {
     await storeInfoPost(db, ownChat);
     return;
   }
-  if (ownChat && vipId !== 0 && ownChat.chat.id === vipId) return;
+
+  // Anything else that is neither the source nor a destination gets RECORDED and
+  // dropped. Recorded because a channel's numeric id cannot be looked up from
+  // outside — a bot can only learn it by receiving a post — so this is how
+  // INFO_CHANNEL_ID gets discovered after someone adds the bot to a channel.
+  // Dropped because guessing what an unknown chat is for is how the old rule
+  // ended up relaying the wrong thing.
+  if (ownChat && ownChat.chat.id < 0 && mainChatId !== 0 && ownChat.chat.id !== mainChatId) {
+    const dests = new Set((await activeTenants(db)).map((t) => Number(t.telegram_channel_id)));
+    if (!dests.has(ownChat.chat.id)) {
+      await db.from("telegram_chats_seen").upsert(
+        {
+          chat_id: ownChat.chat.id,
+          title: ownChat.chat.title ?? null,
+          chat_type: ownChat.chat.type ?? null,
+          last_seen_at: new Date().toISOString(),
+        },
+        { onConflict: "chat_id" },
+      );
+      console.log("[router] ignored post from unconfigured chat", ownChat.chat.id, ownChat.chat.title ?? "");
+      return;
+    }
+  }
 
   const post = update.channel_post;
   if (post) {
     const tenants = await activeTenants(db);
     const destIds = new Set(tenants.map((t) => Number(t.telegram_channel_id)));
-    if ((await isSourceChat(post.chat.id, destIds)) && tenants.length) {
+    if (isSourceChat(post.chat.id, destIds) && tenants.length) {
       if (post.media_group_id) await relayAlbum(db, post, tenants);
       else await relaySingle(db, post, tenants);
     }
@@ -702,7 +735,7 @@ async function processUpdate(update: TgUpdate) {
   if (edited) {
     const tenants = await activeTenants(db);
     const destIds = new Set(tenants.map((t) => Number(t.telegram_channel_id)));
-    if ((await isSourceChat(edited.chat.id, destIds)) && tenants.length) {
+    if (isSourceChat(edited.chat.id, destIds) && tenants.length) {
       await relayEdit(db, edited, tenants);
     }
     return;
