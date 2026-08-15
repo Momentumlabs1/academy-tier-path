@@ -9,6 +9,10 @@ import { PageHero } from "@/components/academy/primitives/PageHero";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
+/** Same hatch the deposit ladder uses, so "locked" looks the same everywhere. */
+const HATCH =
+  "repeating-linear-gradient(115deg, rgba(255,255,255,0.13) 0 6px, rgba(255,255,255,0.035) 6px 12px)";
+
 export const Route = createFileRoute("/_app/tier")({
   head: () => ({
     meta: [
@@ -93,10 +97,12 @@ function TierPage() {
                 boxShadow: isCurrent ? `0 18px 50px -22px ${t.color}` : undefined,
               }}
             >
-              {/* tier colour bar across the top — instant identity */}
+              {/* Top bar: the tier's colour once it is yours, a barred hatch
+                  while it is not. A flat grey line read as "not styled yet"
+                  rather than "locked". */}
               <span
-                className="absolute inset-x-0 top-0 h-1"
-                style={{ background: unlocked ? t.color : "rgba(255,255,255,0.08)" }}
+                className="absolute inset-x-0 top-0 h-1.5"
+                style={unlocked ? { background: t.color } : { backgroundImage: HATCH }}
                 aria-hidden
               />
 
@@ -107,7 +113,7 @@ function TierPage() {
                     style={
                       unlocked
                         ? { background: t.color, color: "#0b1220" }
-                        : { background: "rgba(255,255,255,0.06)", color: "var(--muted-foreground)" }
+                        : { backgroundImage: HATCH, color: "rgba(255,255,255,0.6)" }
                     }
                   >
                     {unlocked ? <Check className="h-4 w-4" /> : <Lock className="h-3.5 w-3.5" />}

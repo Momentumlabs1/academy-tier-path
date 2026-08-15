@@ -7,7 +7,10 @@ export interface Product {
 }
 export const PRODUCTS: Product[] = [
   { id: "signal_group", name: "Telegram Signal Group", description: "Real-time trade calls delivered straight to Telegram.", kind: "telegram", requires: "foundation",
-    cta: { label: "Open in Telegram", href: "https://t.me/agent_trading_signals", external: true } },
+    // NOT t.me/agent_trading_signals — that is a different brand's channel that
+    // was inherited with the template and shipped here for months. Members enter
+    // through our own entry point; see TELEGRAM_ENTRY in broker.ts.
+    cta: { label: "Open in Telegram", href: "https://t.me/cosmoscandles", external: true } },
   { id: "foundation_track", name: "Foundation lessons", description: "Markets 101, candles, position sizing — the basics done right.", kind: "lessons", requires: "foundation",
     cta: { label: "Start learning", href: "/lessons" } },
   { id: "cosmo_mentor", name: "Cosmo — your AI mentor", description: "Knows the whole course by heart. Ask about Level 2, volume profile, risk — 24/7, in your language.", kind: "service", requires: "foundation" },

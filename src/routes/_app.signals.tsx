@@ -9,11 +9,14 @@ import { SignalOddsCard } from "@/components/academy/right-rail/SignalOddsCard";
 import { TelegramConnectCard } from "@/components/academy/signals/TelegramConnectCard";
 import { SignalTutorialCard } from "@/components/academy/signals/SignalTutorialCard";
 import { usePartnerBrand, COSMO } from "@/lib/partner-brand";
-import { PopularList } from "@/components/academy/right-rail/PopularList";
+import { SignalTeaserRail } from "@/components/academy/right-rail/SignalTeaserRail";
 import { RiskWarning } from "@/components/academy/legal/RiskWarning";
+import { TELEGRAM_ENTRY } from "@/lib/broker";
 import { cn } from "@/lib/utils";
 
-const TELEGRAM_URL = "https://t.me/agent_trading_signals";
+// One source for the entry point. The literal that used to sit here pointed at
+// a different brand's channel, inherited with the template.
+const TELEGRAM_URL = TELEGRAM_ENTRY.url;
 
 export const Route = createFileRoute("/_app/signals")({
   head: () => ({
@@ -30,6 +33,9 @@ function SignalsPage() {
   const accent = brand?.accentColor ?? COSMO.accentColor;
   const state = useMemberState();
   const hasAccess = !!state.currentTier;
+  // Locked until the first deposit clears — and while the member state is still
+  // loading, so the feed never flashes open and then shuts.
+  const signalsLocked = !state.loaded || !hasAccess;
 
   return (
     <div className="space-y-6">
@@ -136,13 +142,12 @@ function SignalsPage() {
           )}
         </div>
 
+        {/* Was "Popular — Scalping / Breakouts / Mean Reversion": a ranking of
+            three strategies by nothing at all, on the one page where a member
+            comes looking for what the desk actually called. Replaced with the
+            real feed, redacted server-side for anyone who has not deposited. */}
         <aside className="space-y-4">
-          <Card variant="surface" className="p-4">
-            <div className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              <Radio className="h-3.5 w-3.5" /> Popular
-            </div>
-            <PopularList />
-          </Card>
+          <SignalTeaserRail locked={signalsLocked} />
         </aside>
       </div>
     </div>

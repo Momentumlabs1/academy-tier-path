@@ -113,12 +113,12 @@ export interface Signal {
  * so instead of faking a feed.
  */
 export const SIGNALS: Signal[] = [];
-export interface PopularItem { id: string; rank: number; label: string; category: string; symbol: string; tileTone: "blue" | "lime" | "magenta" | "violet"; }
-export const POPULAR: PopularItem[] = [
-  { id: "p1", rank: 1, label: "Scalping", category: "Top Strategy", symbol: "S", tileTone: "blue" },
-  { id: "p2", rank: 2, label: "Breakouts", category: "Trending", symbol: "B", tileTone: "lime" },
-  { id: "p3", rank: 3, label: "Mean Reversion", category: "Strategy", symbol: "M", tileTone: "magenta" },
-];
+/* POPULAR was removed with the component that rendered it.
+   It held three hand-written rankings — "1. Scalping (Top Strategy)",
+   "2. Breakouts (Trending)", "3. Mean Reversion" — presented on the dashboard
+   and the signals page as if something had measured them. Nothing had: no
+   member ever picked a strategy anywhere in this app, so there was nothing to
+   rank. The rail now shows the desk's real calls instead. */
 // PROFIT_THIS_MONTH (1452.23) and PROFIT_TRADERS were removed, along with the
 // ProfitWidget that rendered them. A hardcoded constant was displayed under the
 // label "Profit", behind a gate reading "Community profit unlocks at Foundation"

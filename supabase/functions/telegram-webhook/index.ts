@@ -102,6 +102,8 @@ interface TgPhoto { file_id: string; file_unique_id: string; width: number; heig
 interface TgMessage {
   message_id: number;
   chat: TgChat;
+  /** Unix seconds; Telegram sends it on every message. */
+  date?: number;
   photo?: TgPhoto[];
   from?: TgUser;
   text?: string;
@@ -629,6 +631,33 @@ async function handleJoinRequest(db: SupabaseClient, reqObj: { chat: TgChat; fro
   }
 }
 
+/**
+ * Mirror an info-channel post so the website can show it.
+ *
+ * Deliberately dumb: text (or caption) and the post's own timestamp, upserted on
+ * (chat_id, message_id) so an edit updates the same row rather than adding a
+ * second copy. No translation pass — the info channel is already written in the
+ * language its readers get, and a silent machine rewrite of marketing copy is
+ * not something anyone asked for.
+ */
+async function storeInfoPost(db: ReturnType<typeof admin>, msg: TgMessage) {
+  const text = (msg.text ?? msg.caption ?? "").trim();
+  const photo = msg.photo?.length ? msg.photo[msg.photo.length - 1].file_id : null;
+  if (!text && !photo) return;
+  const { error } = await db.from("info_posts").upsert(
+    {
+      chat_id: msg.chat.id,
+      message_id: msg.message_id,
+      text: text || null,
+      photo_file_id: photo,
+      posted_at: new Date((msg.date ?? Math.floor(Date.now() / 1000)) * 1000).toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "chat_id,message_id" },
+  );
+  if (error) console.error("[info_posts] upsert failed:", error.message);
+}
+
 // ── Router ───────────────────────────────────────────────────────────────────
 
 async function processUpdate(update: TgUpdate) {
@@ -639,6 +668,23 @@ async function processUpdate(update: TgUpdate) {
   // channel the bot sees posts from is the main one).
   const isSourceChat = async (chatId: number, destIds: Set<number>) =>
     chatId === Number(await cfg("MAIN_CHANNEL_ID") || 0) || !destIds.has(chatId);
+
+  // The info and VIP channels are OURS, and neither is a signal source.
+  //
+  // `isSourceChat` treats "any channel that is not a relay destination" as the
+  // source, which was safe while the bot only sat in the desk channel. It is now
+  // an admin in the info channel too, and every marketing post there matched
+  // that rule — meaning an info post would have been relayed into every
+  // partner's signal channel as if the desk had called a trade. Name them and
+  // rule them out before the source inference ever runs.
+  const infoId = Number(await cfg("INFO_CHANNEL_ID") || 0);
+  const vipId = Number(await cfg("VIP_CHANNEL_ID") || 0);
+  const ownChat = update.channel_post ?? update.edited_channel_post ?? update.message ?? update.edited_message;
+  if (ownChat && infoId !== 0 && ownChat.chat.id === infoId) {
+    await storeInfoPost(db, ownChat);
+    return;
+  }
+  if (ownChat && vipId !== 0 && ownChat.chat.id === vipId) return;
 
   const post = update.channel_post;
   if (post) {

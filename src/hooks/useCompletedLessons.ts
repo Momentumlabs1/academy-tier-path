@@ -29,15 +29,13 @@ export interface LessonProgressStats {
 }
 
 export function useCompletedLessons() {
-  // Seed with lessons that have completed: true in the static data on first load
-  const [completedIds, setCompletedIds] = useState<Set<string>>(() => {
-    const stored = readStorage();
-    if (stored.size > 0) return stored;
-    // default seeds from static data
-    const defaults = new Set(LESSONS.filter((l) => l.completed).map((l) => l.id));
-    writeStorage(defaults);
-    return defaults;
-  });
+  // NO SEEDING. This used to pre-fill the set from `completed: true` in the
+  // static lesson data, which is a leftover from the design mock — so a member
+  // who had just signed up, deposited nothing and watched nothing was greeted
+  // with "2 of 5 lessons" and a filled progress bar. Fake progress is worse than
+  // no progress: it is the first number a new member sees, and it is wrong.
+  // Everyone starts at zero and earns the bar.
+  const [completedIds, setCompletedIds] = useState<Set<string>>(() => readStorage());
 
   const toggle = useCallback((lessonId: string) => {
     setCompletedIds((prev) => {
@@ -61,7 +59,9 @@ export function useCompletedLessons() {
     completedIds,
     totalLessons: LESSONS.length,
     completedCount: completedIds.size,
-    completionPct: Math.round((completedIds.size / LESSONS.length) * 100),
+    // Guard the divide: LESSONS is filtered down to lessons that have a
+    // recording, so it can legitimately be empty and 0/0 renders as "NaN%".
+    completionPct: LESSONS.length ? Math.round((completedIds.size / LESSONS.length) * 100) : 0,
     totalXp: LESSONS.reduce((s, l) => s + l.durationMin * 10, 0),
     earnedXp: LESSONS.filter((l) => completedIds.has(l.id)).reduce((s, l) => s + l.durationMin * 10, 0),
   };

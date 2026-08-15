@@ -73,7 +73,7 @@ function h1(t: string) { return `<h1 style="margin:0 0 10px;font-size:22px;font-
 function p(t: string) { return `<p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#b7c1cf">${t}</p>`; }
 
 export type EmailKind =
-  | "doi" | "welcome" | "deposit_confirmed" | "tier_unlocked"
+  | "password_reset" | "doi" | "welcome" | "deposit_confirmed" | "tier_unlocked"
   | "tier_nudge" | "inactivity_warning" | "new_lesson" | "broadcast";
 
 export interface BuildInput {
@@ -81,6 +81,7 @@ export interface BuildInput {
   brand?: Partial<Brand>;
   firstName?: string;
   confirmUrl?: string;
+  resetUrl?: string;
   dashboardUrl?: string;
   unsubUrl?: string;
   // per-kind extras

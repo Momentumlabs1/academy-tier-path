@@ -4,6 +4,9 @@ import { Calculator, Scale, TrendingUp, Radio, Clock, RotateCcw } from "lucide-r
 import artTools from "@/assets/a-tools.jpg";
 import { Card } from "@/components/academy/primitives/Card";
 import { PageHero } from "@/components/academy/primitives/PageHero";
+import { LockedGate } from "@/components/academy/onboarding/LockedGate";
+import { useMemberState } from "@/hooks/useMemberState";
+import { TIERS } from "@/lib/academy-data";
 import { MonteCarloCalc } from "@/components/academy/tools/MonteCarloCalc";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -35,6 +38,10 @@ const useTrade = () => {
 };
 
 function ToolsPage() {
+  const member = useMemberState();
+  // Treated as locked while the member state loads, so the tools never appear
+  // usable for a frame and then close.
+  const toolsLocked = !member.loaded || member.lifetimeDeposits < TIERS[0].minDeposit;
   const [account, setAccount] = useState(10_000);
   const [riskPct, setRiskPct] = useState(1);
   const [entry, setEntry] = useState(1.085);
@@ -74,21 +81,29 @@ function ToolsPage() {
         Size the trade, judge the odds, then see what a few hundred of them do to your account.
       </PageHero>
 
-      <SignalPicker />
+      {/* The whole toolbox is member content and was shipping wide open: a
+          visitor who had deposited nothing could size positions, run the Monte
+          Carlo and never see a reason to fund an account. It stays VISIBLE —
+          that is the pitch — but inert until the deposit clears. */}
+      <LockedGate locked={toolsLocked} label="Trader tools unlock with your first deposit (€100)">
+        <div className="space-y-6">
+          <SignalPicker />
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <PositionSizeCalc />
-        <RiskRewardCalc />
-      </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <RecoveryCalc />
-        <SessionClock />
-      </div>
-      <CompoundingCalc />
+          <div className="grid gap-4 lg:grid-cols-2">
+            <PositionSizeCalc />
+            <RiskRewardCalc />
+          </div>
+          <div className="grid gap-4 lg:grid-cols-2">
+            <RecoveryCalc />
+            <SessionClock />
+          </div>
+          <CompoundingCalc />
 
-      {/* Die drei Rechner oben sagen, wie GROSS ein Trade sein darf. Dieser
-          sagt, was 200 davon mit dem Konto machen — die Frage, die zaehlt. */}
-      <MonteCarloCalc />
+          {/* Die drei Rechner oben sagen, wie GROSS ein Trade sein darf. Dieser
+              sagt, was 200 davon mit dem Konto machen — die Frage, die zaehlt. */}
+          <MonteCarloCalc />
+        </div>
+      </LockedGate>
       </div>
     </TradeCtx.Provider>
   );

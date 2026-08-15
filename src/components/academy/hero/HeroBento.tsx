@@ -14,7 +14,9 @@ const ITEMS = [
     cta: "Start learning",
     span: "col-span-2 lg:col-span-2 lg:row-span-2",
     titleClass: "font-display text-2xl sm:text-3xl lg:text-4xl font-bold leading-[1.1]",
-    minH: "min-h-[220px] sm:min-h-[260px]",
+    // Taller than it was: this is the block that shows what the deposit buys,
+    // and at 220px it sat lower than the stat tiles above it.
+    minH: "min-h-[300px] sm:min-h-[340px]",
   },
   {
     title: "Daily Signals",
@@ -24,7 +26,7 @@ const ITEMS = [
     cta: "Open channel",
     span: "",
     titleClass: "font-display text-xl font-bold",
-    minH: "min-h-[150px]",
+    minH: "min-h-[190px]",
   },
   {
     title: "Mentor Network",
@@ -34,7 +36,7 @@ const ITEMS = [
     cta: "Unlock Elite",
     span: "",
     titleClass: "font-display text-xl font-bold",
-    minH: "min-h-[150px]",
+    minH: "min-h-[190px]",
   },
 ];
 

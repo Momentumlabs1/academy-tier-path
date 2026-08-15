@@ -86,6 +86,16 @@ function DepositCta({ className }: { className?: string }) {
   );
 }
 
+/**
+ * The full card: three steps, in order, and nothing else above the fold.
+ *
+ * What was here before was a paragraph explaining custody, then the risk
+ * warning, then the commission disclosure, then the e-mail card, then the trust
+ * pills — five blocks of prose stacked on the one surface whose only job is to
+ * get someone from "I want in" to "I deposited". Nobody reads five blocks. The
+ * steps now carry the message, the disclosures stay (they are required, and
+ * they are the reason this page is honest) but sit underneath where they belong.
+ */
 export function BrokerTrustStrip({ cta = true, compact = false, className }: {
   cta?: boolean; compact?: boolean; className?: string;
 }) {
@@ -102,35 +112,61 @@ export function BrokerTrustStrip({ cta = true, compact = false, className }: {
   }
 
   return (
-    <div className={cn("relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6", className)}>
-      <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/10 blur-3xl" />
-      <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
-              Official partner broker
-            </span>
-            {/* LOGO is "" during the broker switch, and <img src=""> is not an
-                empty image — the browser resolves it against the page URL and
-                paints a broken-image box. Render nothing until there is a file. */}
-            {LOGO && <img src={LOGO} alt={BROKER.name} className="h-5 w-auto" style={invertWhite} />}
-          </div>
-          <p className="mt-3 text-sm leading-relaxed text-foreground/70">
-            <span className="font-semibold text-foreground/90">Deposits go to {BROKER.name} — never to us.</span>{" "}
-            You fund your own account in your own name, your money stays yours and withdrawable — and that verified deposit is what unlocks everything here for free. We walk you through it on Telegram.
-          </p>
-          <RiskWarning variant="compact" className="mt-3" />
-          {/* The commission disclosure was only on the public landing page, which
-              a signed-in member has no reason to revisit. It belongs where the
-              deposit is actually asked for. */}
-          <CommissionDisclosure className="mt-2" />
-          {/* Shown BEFORE they leave: the address the broker has to see. */}
-          <BrokerIdentityCard className="mt-3" />
-          <div className="mt-3.5"><Pills /></div>
+    <div className={cn("relative overflow-hidden rounded-[22px] border border-white/10 bg-white/[0.03] p-5 sm:p-6", className)}>
+      <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/10 blur-3xl" aria-hidden />
+
+      <div className="relative flex flex-wrap items-center gap-3">
+        <span className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-primary">
+          Unlock your membership
+        </span>
+        {/* LOGO is "" during the broker switch, and <img src=""> is not an empty
+            image — the browser resolves it against the page URL and paints a
+            broken-image box. Render nothing until there is a file. */}
+        {LOGO && <img src={LOGO} alt={BROKER.name} className="h-5 w-auto" style={invertWhite} />}
+      </div>
+
+      <h3 className="relative mt-3 font-display text-xl font-bold leading-tight sm:text-2xl">
+        Three steps. No subscription, no card.
+      </h3>
+
+      <ol className="relative mt-5 grid gap-3 sm:grid-cols-3">
+        <Step n={1} title="Join us on Telegram" body="We send you the broker link and walk you through the account opening." />
+        <Step n={2} title={`Deposit €100+ at ${BROKER.name}`} body="Your own account, in your own name. The money stays yours and withdrawable." />
+        <Step n={3} title="Everything unlocks" body="The broker confirms the deposit and your access opens automatically — no codes." />
+      </ol>
+
+      {cta && (
+        <div className="relative mt-5 flex flex-wrap items-center gap-3">
+          <DepositCta />
+          <span className="text-xs text-muted-foreground">Takes about 10 minutes.</span>
         </div>
-        {cta && <DepositCta className="shrink-0" />}
+      )}
+
+      {/* Shown BEFORE they leave: the address the broker has to see. */}
+      <BrokerIdentityCard className="relative mt-5" />
+
+      <div className="relative mt-4"><Pills /></div>
+
+      {/* Required, and kept — but at the foot of the card, not in the middle of
+          the instructions. */}
+      <div className="relative mt-4 border-t border-white/8 pt-4">
+        <RiskWarning variant="compact" />
+        <CommissionDisclosure className="mt-2" />
       </div>
     </div>
+  );
+}
+
+/** One numbered step. Deliberately short: a step nobody finishes reading is not a step. */
+function Step({ n, title, body }: { n: number; title: string; body: string }) {
+  return (
+    <li className="rounded-2xl border border-white/8 bg-white/[0.03] p-4">
+      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-[13px] font-black text-primary-foreground">
+        {n}
+      </span>
+      <div className="mt-2.5 text-sm font-bold leading-snug">{title}</div>
+      <p className="mt-1 text-[12px] leading-relaxed text-muted-foreground">{body}</p>
+    </li>
   );
 }
 
