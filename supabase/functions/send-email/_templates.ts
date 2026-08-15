@@ -17,6 +17,10 @@ export interface Brand {
 const DEFAULT_BRAND: Brand = {
   name: "Cosmos Candles Academy",
   accent: "#75B9F5",
+  // Hosted, not inlined: a base64 logo blows up every message and Gmail clips
+  // mails over 102 kB. This is a downscaled copy of the site wordmark so the
+  // header is not a 500 kB download on mobile data.
+  logoUrl: "https://cosmos-candles.com/email-logo.png",
   supportEmail: "kontakt@momentumlabs.at",
 };
 
@@ -29,26 +33,35 @@ const esc = (s: string) =>
 /** Shared responsive shell. `body` is trusted HTML built below; user text is escaped by callers. */
 function shell(brand: Brand, opts: { preheader: string; body: string; unsubUrl?: string }) {
   const b = { ...DEFAULT_BRAND, ...brand };
+  // Images are blocked by default in most clients, so the logo carries alt text
+  // that reads as the brand name rather than "image".
   const logo = b.logoUrl
-    ? `<img src="${b.logoUrl}" alt="${esc(b.name)}" height="34" style="height:34px;display:block">`
-    : `<span style="font-weight:800;font-size:18px;color:#f2ede4">${esc(b.name)}</span>`;
+    ? `<img src="${b.logoUrl}" alt="${esc(b.name)}" width="150" height="72"
+         style="width:150px;height:auto;display:block;border:0;outline:none;text-decoration:none">`
+    : `<span style="font-weight:800;font-size:18px;color:#f2ede4;letter-spacing:.02em">${esc(b.name)}</span>`;
   return `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="color-scheme" content="dark"></head>
-<body style="margin:0;background:#080b11;color:#e9edf3;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+<meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark">
+<title>${esc(b.name)}</title></head>
+<body style="margin:0;padding:0;background:#070a10;color:#e9edf3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased">
 <span style="display:none!important;opacity:0;color:transparent;height:0;width:0;overflow:hidden">${esc(opts.preheader)}</span>
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#080b11;padding:28px 12px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#070a10;padding:32px 12px">
 <tr><td align="center">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#0f1620;border:1px solid #1c2636;border-radius:18px;overflow:hidden">
-    <tr><td style="padding:22px 28px;border-bottom:1px solid #1c2636">${logo}</td></tr>
-    <tr><td style="padding:28px">${opts.body}</td></tr>
-    <tr><td style="padding:18px 28px;border-top:1px solid #1c2636;color:#6b7788;font-size:11px;line-height:1.6">
-      Trading involves risk — 74–89% of retail CFD accounts lose money.<br>
-      ${b.supportEmail ? `Questions? <a href="mailto:${b.supportEmail}" style="color:#8fa2b8">${b.supportEmail}</a> · ` : ""}
-      ${opts.unsubUrl ? `<a href="${opts.unsubUrl}" style="color:#8fa2b8">Unsubscribe</a>` : ""}
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;background:#0d141e;border:1px solid #1b2534;border-radius:20px;overflow:hidden">
+    <!-- accent hairline: the one flash of brand colour that survives image blocking -->
+    <tr><td style="height:3px;line-height:3px;font-size:0;background:${b.accent}">&nbsp;</td></tr>
+    <tr><td align="center" style="padding:26px 28px 22px">${logo}</td></tr>
+    <tr><td style="padding:0 32px 32px">${opts.body}</td></tr>
+    <tr><td style="padding:20px 32px;border-top:1px solid #1b2534;background:#0a101a;color:#6b7788;font-size:11px;line-height:1.7">
+      <div style="color:#8fa2b8;font-weight:700;font-size:12px;margin-bottom:6px">${esc(b.name)}</div>
+      Trading involves risk — 74–89% of retail CFD accounts lose money when trading CFDs.
+      Past performance does not predict future results.<br>
+      ${b.supportEmail ? `<a href="mailto:${b.supportEmail}" style="color:#8fa2b8;text-decoration:underline">${b.supportEmail}</a>` : ""}
+      ${b.supportEmail && opts.unsubUrl ? ` &nbsp;·&nbsp; ` : ""}
+      ${opts.unsubUrl ? `<a href="${opts.unsubUrl}" style="color:#8fa2b8;text-decoration:underline">Unsubscribe</a>` : ""}
     </td></tr>
   </table>
-  <div style="color:#3f4a5a;font-size:11px;margin-top:14px">© ${esc(b.name)}</div>
+  <div style="color:#3f4a5a;font-size:11px;margin-top:16px">© ${esc(b.name)}</div>
 </td></tr></table></body></html>`;
 }
 
