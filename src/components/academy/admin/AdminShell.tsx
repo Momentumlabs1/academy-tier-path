@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { BarChart2, BookOpen, FileText, Headset, LayoutDashboard, LogOut, Network, Palette, Radio, ScrollText, Users } from "lucide-react";
+import { BarChart2, BookOpen, FileText, Headset, LayoutDashboard, LogOut, Network, Palette, Radio, ScrollText, Users , MessageSquare} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { adminSignOut } from "@/lib/admin-auth";
 
@@ -9,6 +9,9 @@ const MENU = [
   { to: "/admin/members", label: "Members", icon: Users, group: "Main" },
   { to: "/admin/deposits", label: "Deposits", icon: BarChart2, group: "Main" },
   { to: "/admin/support", label: "Support", icon: Headset, group: "Main" },
+  // The setter runs in private one-to-one chats, so without this page nobody on
+  // the team can see what Cosmo is saying to prospects.
+  { to: "/admin/leads", label: "Telegram leads", icon: MessageSquare, group: "Main" },
   { to: "/admin/signals", label: "Signal Relay", icon: Radio, group: "Growth" },
   { to: "/admin/tenants", label: "White-Label", icon: Palette, group: "Growth" },
   { to: "/admin/lessons", label: "Content", icon: BookOpen, group: "Growth" },

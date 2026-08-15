@@ -34,6 +34,7 @@ import { Route as AppUnlocksRouteImport } from './routes/_app.unlocks'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAuditRouteImport } from './routes/admin.audit'
 import { Route as AdminDepositsRouteImport } from './routes/admin.deposits'
+import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
 import { Route as AdminLessonsRouteImport } from './routes/admin.lessons'
 import { Route as AdminMembersRouteImport } from './routes/admin.members'
 import { Route as AdminSignalsRouteImport } from './routes/admin.signals'
@@ -168,6 +169,11 @@ const AdminDepositsRoute = AdminDepositsRouteImport.update({
   path: '/deposits',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminLeadsRoute = AdminLeadsRouteImport.update({
+  id: '/leads',
+  path: '/leads',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminLessonsRoute = AdminLessonsRouteImport.update({
   id: '/lessons',
   path: '/lessons',
@@ -238,6 +244,7 @@ export interface FileRoutesByFullPath {
   '/unlocks': typeof AppUnlocksRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/deposits': typeof AdminDepositsRoute
+  '/admin/leads': typeof AdminLeadsRoute
   '/admin/lessons': typeof AdminLessonsRoute
   '/admin/members': typeof AdminMembersRoute
   '/admin/signals': typeof AdminSignalsRoute
@@ -270,6 +277,7 @@ export interface FileRoutesByTo {
   '/unlocks': typeof AppUnlocksRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/deposits': typeof AdminDepositsRoute
+  '/admin/leads': typeof AdminLeadsRoute
   '/admin/lessons': typeof AdminLessonsRoute
   '/admin/members': typeof AdminMembersRoute
   '/admin/signals': typeof AdminSignalsRoute
@@ -307,6 +315,7 @@ export interface FileRoutesById {
   '/_app/unlocks': typeof AppUnlocksRoute
   '/admin/audit': typeof AdminAuditRoute
   '/admin/deposits': typeof AdminDepositsRoute
+  '/admin/leads': typeof AdminLeadsRoute
   '/admin/lessons': typeof AdminLessonsRoute
   '/admin/members': typeof AdminMembersRoute
   '/admin/signals': typeof AdminSignalsRoute
@@ -345,6 +354,7 @@ export interface FileRouteTypes {
     | '/unlocks'
     | '/admin/audit'
     | '/admin/deposits'
+    | '/admin/leads'
     | '/admin/lessons'
     | '/admin/members'
     | '/admin/signals'
@@ -377,6 +387,7 @@ export interface FileRouteTypes {
     | '/unlocks'
     | '/admin/audit'
     | '/admin/deposits'
+    | '/admin/leads'
     | '/admin/lessons'
     | '/admin/members'
     | '/admin/signals'
@@ -413,6 +424,7 @@ export interface FileRouteTypes {
     | '/_app/unlocks'
     | '/admin/audit'
     | '/admin/deposits'
+    | '/admin/leads'
     | '/admin/lessons'
     | '/admin/members'
     | '/admin/signals'
@@ -621,6 +633,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDepositsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/leads': {
+      id: '/admin/leads'
+      path: '/leads'
+      fullPath: '/admin/leads'
+      preLoaderRoute: typeof AdminLeadsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/lessons': {
       id: '/admin/lessons'
       path: '/lessons'
@@ -728,6 +747,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 interface AdminRouteChildren {
   AdminAuditRoute: typeof AdminAuditRoute
   AdminDepositsRoute: typeof AdminDepositsRoute
+  AdminLeadsRoute: typeof AdminLeadsRoute
   AdminLessonsRoute: typeof AdminLessonsRoute
   AdminMembersRoute: typeof AdminMembersRoute
   AdminSignalsRoute: typeof AdminSignalsRoute
@@ -740,6 +760,7 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAuditRoute: AdminAuditRoute,
   AdminDepositsRoute: AdminDepositsRoute,
+  AdminLeadsRoute: AdminLeadsRoute,
   AdminLessonsRoute: AdminLessonsRoute,
   AdminMembersRoute: AdminMembersRoute,
   AdminSignalsRoute: AdminSignalsRoute,
