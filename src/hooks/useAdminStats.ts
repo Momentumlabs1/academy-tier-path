@@ -33,6 +33,32 @@ const BRAND = Object.fromEntries(TENANTS.map((t) => [t.slug, t]));
 
 const EMPTY_TOTALS = { partners: 0, members: 0, leads: 0, clicks: 0, deposits: 0 };
 
+/**
+ * A head-only count. Returns null on any failure so a broken count falls back
+ * to whatever the view said rather than rendering a confident zero.
+ */
+async function counter(
+  table: string,
+  refine?: (q: CountQuery) => CountQuery,
+): Promise<number | null> {
+  try {
+    const client = supabase as unknown as {
+      from: (t: string) => { select: (c: string, o: { count: "exact"; head: true }) => CountQuery };
+    };
+    let q = client.from(table).select("*", { count: "exact", head: true });
+    if (refine) q = refine(q);
+    const { count, error } = await q;
+    return error ? null : Number(count ?? 0);
+  } catch {
+    return null;
+  }
+}
+
+interface CountQuery extends PromiseLike<{ count: number | null; error: { message: string } | null }> {
+  eq: (col: string, val: unknown) => CountQuery;
+  not: (col: string, op: string, val: unknown) => CountQuery;
+}
+
 export function useAdminStats(): AdminStats {
   const [state, setState] = useState<AdminStats>({
     loading: true,
@@ -76,7 +102,36 @@ export function useAdminStats(): AdminStats {
         }),
         { ...EMPTY_TOTALS },
       );
-      setState({ loading: false, error: null, partners, totals });
+
+      /* TWO NUMBERS THE VIEW CANNOT ANSWER, AND BOTH WERE WRONG ON SCREEN.
+       *
+       * LEADS. affiliate_dashboard counts the `leads` table, which is the old
+       * web-form path and has never had a row in it. Every actual lead arrives
+       * through the Telegram setter into `setter_leads`. The overview therefore
+       * read "Total leads 0" while /admin/leads listed a live conversation on
+       * the very next click — the one number on the page that says whether the
+       * funnel is working at all.
+       *
+       * PARTNER BRANDS. The view has a row per tenant regardless of state, so
+       * the count included three demo brands that are deactivated and carry no
+       * channel. "5 partner brands" for a business with two is the kind of
+       * number you later plan against.
+       */
+      const [leadCount, brandCount] = await Promise.all([
+        counter("setter_leads"),
+        counter("tenants", (q) => q.eq("active", true).not("telegram_channel_id", "is", null)),
+      ]);
+
+      setState({
+        loading: false,
+        error: null,
+        partners,
+        totals: {
+          ...totals,
+          leads: leadCount ?? totals.leads,
+          partners: brandCount ?? totals.partners,
+        },
+      });
     })();
     return () => {
       alive = false;
