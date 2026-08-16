@@ -91,7 +91,14 @@ function AdminStructure() {
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-semibold">{p.name}</div>
-                      <div className="truncate text-[11px] text-muted-foreground">cosmos-candles.com/{p.slug}</div>
+                      {/* Cosmos IS the domain — it is the master brand, not a
+                          partner sitting on a path under it. Rendering
+                          cosmos-candles.com/cosmos-candles read as a sub-page of
+                          itself, which is exactly the hierarchy this tree is
+                          supposed to show. Partners keep their path. */}
+                      <div className="truncate text-[11px] text-muted-foreground">
+                        cosmos-candles.com{p.slug === "cosmos-candles" ? "" : `/${p.slug}`}
+                      </div>
                     </div>
                     <div className="hidden items-center gap-4 pr-2 text-right sm:flex">
                       <div><div className="text-sm font-bold tabular-nums">{p.members}</div><div className="text-[10px] text-muted-foreground">Members</div></div>
