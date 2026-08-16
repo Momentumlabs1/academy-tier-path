@@ -15,11 +15,20 @@ export interface CommissionLevel {
   usdPerLot: number;
 }
 
+/**
+ * ONE RATE, both brokers: 6 USD per lot at HeroFX and at VT Markets.
+ *
+ * This was a four-step ladder (5 / 6 / 8 / 10 by volume) invented while the
+ * broker terms were still unknown. The real deal is flat, so the ladder was
+ * describing a payout nobody had agreed to — and it was on the public partner
+ * page, which made it a promise.
+ *
+ * Kept as an array rather than a single number because volumeToNextLevel and
+ * the portal already read it, and a one-entry ladder answers "no next level"
+ * correctly. If tiered rates are ever actually negotiated, they go back here.
+ */
 export const COMMISSION_LADDER: CommissionLevel[] = [
-  { level: 1, fromVolume: 0,       toVolume: 25_000,  usdPerLot: 5 },
-  { level: 2, fromVolume: 25_000,  toVolume: 50_000,  usdPerLot: 6 },
-  { level: 3, fromVolume: 50_000,  toVolume: 100_000, usdPerLot: 8 },
-  { level: 4, fromVolume: 100_000, toVolume: null,    usdPerLot: 10 },
+  { level: 1, fromVolume: 0, toVolume: null, usdPerLot: 6 },
 ];
 
 export const MASTER_IB_USD_PER_LOT = 15;
