@@ -17,7 +17,7 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ExternalLink, Loader2, Mail, Phone } from "lucide-react";
+import { Check, ExternalLink, Loader2, Mail, Phone, ShieldCheck } from "lucide-react";
 import { AdminPageHeader } from "@/components/academy/admin/AdminShell";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -48,6 +48,76 @@ const STATUS: Record<string, { label: string; tone: string }> = {
   rejected: { label: "Declined",  tone: "text-red-400 bg-red-400/10 border-red-400/25" },
 };
 const NEXT: Record<string, string> = { new: "contacted", contacted: "approved", approved: "new", rejected: "new" };
+
+interface IbClaim { id: string; tenant_slug: string; broker: string; ib_account: string; status: string; created_at: string }
+
+/**
+ * Pending IB claims — the only gate between a partner typing an account number
+ * and that number being credited with real volume.
+ *
+ * A partner cannot write to tenant_ib_accounts (they could claim someone else's
+ * account and nothing afterwards would detect it). They file a claim; this
+ * confirms it through approve_ib_claim, which is the only path into the paying
+ * table. Confirm against the broker's own records — not because the partner is
+ * suspect, but because a typo here silently pays the wrong brand.
+ */
+function IbClaims() {
+  const [rows, setRows] = useState<IbClaim[] | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  const client = () => supabase as unknown as {
+    from: (t: string) => { select: (c: string) => { eq: (c: string, v: string) => Promise<{ data: IbClaim[] | null }> } };
+    rpc: (fn: string, args: Record<string, unknown>) => Promise<{ error: { message: string } | null }>;
+  };
+
+  useEffect(() => {
+    client().from("tenant_ib_claims").select("id, tenant_slug, broker, ib_account, status, created_at")
+      .eq("status", "pending")
+      .then(({ data }) => setRows(data ?? []));
+  }, []);
+
+  async function approve(id: string) {
+    setBusy(id); setErr(null);
+    const { error } = await client().rpc("approve_ib_claim", { p_claim_id: id });
+    setBusy(null);
+    if (error) { setErr(error.message); return; }
+    setRows((prev) => (prev ?? []).filter((r) => r.id !== id));
+  }
+
+  if (!rows || rows.length === 0) return null;
+
+  return (
+    <div className="mt-6 rounded-2xl border border-amber-300/25 bg-amber-300/[0.05] p-5">
+      <div className="flex items-center gap-2">
+        <ShieldCheck className="h-4 w-4 text-amber-300" />
+        <h3 className="font-display text-base font-bold">Broker accounts waiting for confirmation</h3>
+      </div>
+      <p className="mt-1.5 text-[12px] text-muted-foreground">
+        Check each number against the broker's records before confirming — it decides where the
+        commission goes.
+      </p>
+      {err && <p className="mt-3 text-sm text-destructive">{err}</p>}
+      <div className="mt-4 space-y-2">
+        {rows.map((r) => (
+          <div key={r.id} className="flex flex-wrap items-center gap-3 rounded-xl bg-white/[0.04] p-3">
+            <span className="text-sm font-semibold">{r.tenant_slug}</span>
+            <span className="rounded-full border border-white/12 px-2 py-0.5 text-[10px] font-bold uppercase">{r.broker}</span>
+            <span className="font-mono text-[13px] text-foreground/85">{r.ib_account}</span>
+            <button
+              onClick={() => approve(r.id)}
+              disabled={busy === r.id}
+              className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-[12px] font-bold text-primary-foreground disabled:opacity-50"
+            >
+              {busy === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+              Confirm
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 const db = () => supabase as unknown as {
   from: (t: string) => {
@@ -97,6 +167,8 @@ export function AdminPartners() {
           {error}
         </p>
       )}
+
+      <IbClaims />
 
       {rows === null ? (
         <div className="mt-8 flex items-center gap-2 text-sm text-muted-foreground">

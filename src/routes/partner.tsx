@@ -14,6 +14,7 @@ import { useCallback, useEffect, useState } from "react";
 import { BarChart3, Check, Copy, ExternalLink, Eye, Loader2, LogOut, MousePointerClick, TrendingUp, Users, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PartnerProfileCard, type PartnerProfile } from "@/components/academy/partner/PartnerProfileCard";
+import { PartnerIbSetup } from "@/components/academy/partner/PartnerIbSetup";
 import { ADMIN_EMAIL } from "@/lib/admin-auth";
 import { COMMISSION_LADDER, levelForVolume, volumeToNextLevel } from "@/lib/commission";
 import { formatMoney } from "@/lib/format";
@@ -164,6 +165,10 @@ export function PartnerCard({ row }: { row: PartnerRow }) {
           figure below is still zero until their first customer funds an account,
           and a dashboard of zeroes reads as broken rather than as new. */}
       <PartnerProfileCard profile={row.partner_profile} />
+
+      {/* Without this the dashboard above counts nothing: commission is credited
+          by IB account, and no partner had a way to tell us theirs. */}
+      <PartnerIbSetup slug={row.slug} />
 
       {/* Your shareable link — this is the one you send out. */}
       <div className="mb-5 mt-5 flex flex-col gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 sm:flex-row sm:items-center">
