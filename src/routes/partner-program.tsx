@@ -153,9 +153,11 @@ function PartnerProgramm() {
   return (
     <div className="min-h-screen bg-[oklch(0.10_0.028_258)] font-sans text-foreground">
       <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-8 sm:py-5">
-        <img src="/cosmos-logo.png" alt="Cosmos Candles" className="h-7 w-auto sm:h-8" />
-        <a href="#apply" className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90">
-          Become a partner
+        <img src="/cosmos-logo.png" alt="Cosmos Candles" className="h-9 w-auto sm:h-10" />
+        {/* Auf 375px nahm dieser Button fast die halbe Kopfzeile und drueckte das
+            Logo an den Rand. Kuerzer und schmaler auf dem Handy, voll ab sm. */}
+        <a href="#apply" className="shrink-0 rounded-full bg-primary px-3.5 py-2 text-[13px] font-semibold text-primary-foreground transition-opacity hover:opacity-90 sm:px-4 sm:text-sm">
+          <span className="sm:hidden">Apply</span><span className="hidden sm:inline">Become a partner</span>
         </a>
       </header>
 
@@ -340,44 +342,29 @@ function PartnerProgramm() {
                 The exact rates come with your approval.
               </h3>
               <p className="mt-3 text-sm leading-relaxed text-foreground/70">
-                Four volume levels, a fixed amount per lot at each, and it rises as your
-                customers trade more — the numbers themselves, the broker we clear through and
-                the full agreement are in your dashboard the moment you are approved. Not on a
-                page anyone can read.
+                A fixed amount per lot, the same at both brokers, paid every month your
+                customers keep trading. The number itself, the broker we clear through and the
+                full agreement are in your dashboard the moment you are approved — not on a page
+                anyone can read.
               </p>
               <a href="#apply" className="mt-5 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-[var(--shadow-brand)] transition-transform hover:-translate-y-0.5">
                 Apply for access <ArrowRight className="h-4 w-4" />
               </a>
             </div>
 
-            {/* The shape of the deal without the values: four rising steps, all
-                of them barred. It says "there is a ladder" and nothing else. */}
-            <div className="grid grid-cols-4 items-end gap-2.5" aria-hidden>
-              {[0, 1, 2, 3].map((i) => (
-                <div key={i} className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
-                  <div
-                    className="mb-3 rounded-t-md border border-white/10"
-                    style={{
-                      height: `${20 + i * 20}px`,
-                      backgroundImage:
-                        "repeating-linear-gradient(115deg, rgba(255,255,255,0.13) 0 6px, rgba(255,255,255,0.035) 6px 12px)",
-                    }}
-                  />
-                  <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
-                    Level {i + 1}
-                  </div>
-                  <div className="mt-1 flex h-6 items-center">
-                    <span
-                      className="h-3.5 w-full rounded-[5px] border border-white/10"
-                      style={{
-                        backgroundImage:
-                          "repeating-linear-gradient(115deg, rgba(255,255,255,0.13) 0 6px, rgba(255,255,255,0.035) 6px 12px)",
-                      }}
-                    />
-                  </div>
-                  <div className="mt-1 text-[10px] text-muted-foreground">per lot</div>
-                </div>
-              ))}
+            {/* The value, barred. This was four rising steps — a staircase for a
+                tiered rate that no longer exists, and on a 375px screen the
+                fourth column ran off the edge because the grid had no
+                breakpoint. One tile says the same thing, honestly, at any
+                width. */}
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-center">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                Your rate
+              </div>
+              <div className="mx-auto mt-3 flex h-12 w-full max-w-[220px] items-center justify-center rounded-xl border border-white/10"
+                   style={{ backgroundImage: "repeating-linear-gradient(115deg, rgba(255,255,255,0.13) 0 6px, rgba(255,255,255,0.035) 6px 12px)" }}
+                   aria-label="locked" />
+              <div className="mt-3 text-[12px] text-muted-foreground">per traded lot · visible after approval</div>
             </div>
           </div>
         </div>
