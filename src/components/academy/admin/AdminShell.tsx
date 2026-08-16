@@ -14,9 +14,12 @@ const MENU = [
   { to: "/admin/leads", label: "Telegram leads", icon: MessageSquare, group: "Main" },
   // Applications sat in a table with no screen: the funnel promised an answer
   // "within a few hours" and nobody could see one had arrived.
-  { to: "/admin/partners", label: "Applications", icon: Handshake, group: "Growth" },
+  // Labelled "Applications" at first, which is what it contains but not what
+  // anyone looks for: the search in your head is "partner". A correct label
+  // nobody scans past is a broken label.
+  { to: "/admin/partners", label: "Partner applications", icon: Handshake, group: "Growth" },
   { to: "/admin/signals", label: "Signal Relay", icon: Radio, group: "Growth" },
-  { to: "/admin/tenants", label: "White-Label", icon: Palette, group: "Growth" },
+  { to: "/admin/tenants", label: "Partner brands", icon: Palette, group: "Growth" },
   { to: "/admin/lessons", label: "Content", icon: BookOpen, group: "Growth" },
   { to: "/admin/audit", label: "Audit Log", icon: ScrollText, group: "System" },
 ] as const;
