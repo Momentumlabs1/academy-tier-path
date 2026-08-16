@@ -71,7 +71,7 @@ export function JoinFunnel({ tenant, open, onClose }: {
           <div>
             <h2 className="font-display text-xl font-bold">Get free access</h2>
             <p className="mt-1 text-sm text-foreground/60">
-              Signals & education are free — unlocked by your deposit at {tenant.brokerName}.
+              Signals and the full academy, free. We set it up with you on Telegram.
             </p>
           </div>
           <button onClick={onClose} aria-label="Close" className="rounded-lg p-1.5 text-foreground/50 hover:bg-white/10 hover:text-foreground">
@@ -92,7 +92,7 @@ export function JoinFunnel({ tenant, open, onClose }: {
           <form onSubmit={submit} className="mt-5">
             {/* the 3 steps, compact */}
             <ol className="mb-4 grid grid-cols-3 gap-2 text-center text-[10px] font-semibold uppercase tracking-wide text-foreground/50">
-              {["Your email", `Deposit at ${tenant.brokerName}`, "Join Telegram"].map((s, i) => (
+              {["Your email", "Join Telegram", "Get access"].map((s, i) => (
                 <li key={s} className="rounded-xl bg-white/5 px-2 py-2">
                   <span className="mb-1 block font-display text-sm font-black" style={{ color: tenant.primaryColor }}>{i + 1}</span>
                   {s}
@@ -121,11 +121,11 @@ export function JoinFunnel({ tenant, open, onClose }: {
               className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-white shadow-lg transition-transform hover:-translate-y-0.5"
               style={{ background: tenant.primaryColor }}
             >
-              Continue to {tenant.brokerName} <ArrowRight className="h-4 w-4" />
+              Continue <ArrowRight className="h-4 w-4" />
             </button>
 
             <p className="mt-3 text-center text-[11px] text-foreground/40">
-              Already deposited?{" "}
+              Already a member?{" "}
               <Link to="/signals" className="underline hover:text-foreground/70">Connect your Telegram →</Link>
             </p>
           </form>

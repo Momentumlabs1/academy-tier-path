@@ -385,14 +385,14 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           <div className="grid gap-10 p-8 sm:p-12 lg:grid-cols-[1fr_0.85fr] lg:items-center">
             <div>
               <p className="mb-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: primary }}><Building2 className="h-4 w-4" /> Our broker partner</p>
-              <h2 className="font-display text-3xl font-black leading-tight sm:text-4xl">You never<br />deposit with us.</h2>
+              <h2 className="font-display text-3xl font-black leading-tight sm:text-4xl">Your money<br />stays your money.</h2>
               <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/65">
                 {/* "a licensed, award-winning global broker" was written for
                     TradeQuo and then left attached to whatever tenant.brokerName
                     happens to say. We are mid-switch and have verified neither
                     licence nor award for the incoming broker — which is exactly
                     why BROKERS[x].trust is deliberately empty in broker.ts. */}
-                You fund your <span className="font-semibold text-white/90">own</span> account at our partner broker. The money stays in your name and you can withdraw anytime. We earn from the broker, not from you — that's why everything here is free.
+                Your trading account is opened in your <span className="font-semibold text-white/90">own</span> name. The money stays in your name and you can withdraw it anytime. We earn from the broker, not from you — that's why everything here is free.
               </p>
               {/* Both of these existed, were correct, and were imported by nothing.
                   The loss warning belongs next to the deposit ask, not in a footer,
@@ -424,8 +424,8 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         </div>
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
           {[
-            { icon: Lock, title: "Unlock for free", body: "Sign up, deposit — and all signals, lessons & trader tools open up." },
-            { icon: Wallet, title: "Your money stays yours", body: "The deposit sits in your own broker account. You can withdraw anytime." },
+            { icon: Lock, title: "Free to use", body: "No subscription and no course fee. Signals, lessons and the trader tools are included." },
+            { icon: Wallet, title: "Your money stays yours", body: "It sits in an account in your own name. You can withdraw it anytime." },
             { icon: BadgeCheck, title: "We earn from the broker", body: "The broker pays us — not you. A fair, transparent partnership." },
           ].map((c) => (
             <div key={c.title} className="rounded-2xl border border-white/8 bg-white/[0.03] p-5"><c.icon className="mb-3 h-5 w-5" style={{ color: primary }} /><div className="font-display text-base font-bold">{c.title}</div><p className="mt-1.5 text-sm text-white/60">{c.body}</p></div>
@@ -482,7 +482,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
       <DeskResults primary={primary} />
 
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-8">
-        <SectionHead n="04" kicker="Deposit more, unlock more" title="Member tiers" primary={primary} />
+        <SectionHead n="04" kicker="How far you can go" title="Member tiers" primary={primary} />
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           {TIERS.map((t, idx) => (
             <div key={t.key} className="relative flex flex-col rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6"
@@ -490,7 +490,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               {idx === 1 && <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-[10px] font-bold uppercase text-black" style={{ background: primary }}>Most popular</span>}
               <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: t.color }} /><span className="font-display text-lg font-bold">{t.name}</span></div>
               <div className="mt-3 font-display text-4xl font-black">{formatMoney(t.minDeposit, "€")}<span className="text-base font-normal text-white/40">+</span></div>
-              <div className="mb-4 text-[11px] uppercase tracking-[0.14em] text-white/45">verified deposit</div>
+              <div className="mb-4 text-[11px] uppercase tracking-[0.14em] text-white/45">verified account</div>
               <ul className="flex flex-1 flex-col gap-2">
                 {t.perks.map((perk) => <li key={perk} className="flex items-start gap-2 text-sm text-white/80"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" style={{ color: t.color }} />{perk}</li>)}
               </ul>
@@ -533,8 +533,8 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         </div>
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           {[
-            { step: "01", icon: GraduationCap, title: "Sign up & fund your account", body: `Create your free account and deposit €100 or more at ${tenant.brokerName}.` },
-            { step: "02", icon: Radio, title: "Connect Telegram", body: "Connect your Telegram — our bot verifies your deposit automatically and sends your personal invite." },
+            { step: "01", icon: GraduationCap, title: "Create your free account", body: "Takes a minute. No card, no subscription, nothing to cancel." },
+            { step: "02", icon: Radio, title: "Connect Telegram", body: "We walk you through the setup in the chat and send your personal invite." },
             { step: "03", icon: LineChart, title: "Trade with confidence", body: "Follow the signals, work through the lessons, and level up tier by tier." },
           ].map((s) => (
             <div key={s.step} className="rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6">
@@ -572,7 +572,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           )}
           {tenant.mascot === "zeko" && <img src="/zeko-point.png" alt="" className="mx-auto mb-2 h-28 w-28 rounded-full object-cover object-top" />}
           <h2 className="font-display text-3xl font-black sm:text-5xl">Your first candle<br />starts today.</h2>
-          <p className="mx-auto mt-4 max-w-md text-white/65">Join {tenant.name}. Deposit at {tenant.brokerName}, verify via Telegram, and unlock your first signals in minutes.</p>
+          <p className="mx-auto mt-4 max-w-md text-white/65">Join {tenant.name}, connect Telegram, and we take it from there.</p>
           <div className="mt-7 flex justify-center">
             <button onClick={goRegister} className="inline-flex items-center gap-2 rounded-full px-9 py-4 text-sm font-black text-black transition-transform hover:-translate-y-0.5" style={{ background: primary, boxShadow:`0 14px 40px -12px ${primary}` }}>Start free — €0 <ArrowRight className="h-4 w-4" /></button>
           </div>

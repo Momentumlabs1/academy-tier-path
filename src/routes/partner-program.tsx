@@ -114,7 +114,7 @@ const STEPS = [
   {
     title: "Your people sign up free",
     you: "nothing",
-    body: "They create an account on your page. No card, no course fee. They then fund a live trading account in their own name at our partner broker — nobody ever deposits with us.",
+    body: "They create an account on your page. No card, no course fee. Their trading account is opened in their own name and stays theirs.",
   },
   {
     title: "Everything unlocks itself",
@@ -379,23 +379,21 @@ function PartnerProgramm() {
         <div className="grid gap-8 lg:grid-cols-2">
           <div className="border-t border-white/10 pt-4">
             <Wallet className="h-5 w-5 text-primary" />
-            <h3 className="mt-2.5 font-display text-lg font-bold">The broker pays a commission on volume</h3>
+            <h3 className="mt-2.5 font-display text-lg font-bold">You earn on volume, not on signups</h3>
             <p className="mt-1.5 text-sm leading-relaxed text-foreground/65">
-              We are an introducing broker: our partner broker pays us a fixed amount per lot
-              traded, and we share it with you. (Which broker, and how much, you see once you
-              are approved — see above.) We do <span className="font-semibold text-foreground">not</span> make
-              money by widening spreads, and your people are not charged a course fee. If we earned
-              more by making their trading worse, the whole thing would collapse within a quarter —
-              the incentive only works if they keep trading, which means it only works if they do well.
+              A fixed amount per lot traded, shared with you every month your people keep trading.
+              Nobody pays a course fee, and we do <span className="font-semibold text-foreground">not</span> earn
+              more when someone trades badly — if we did, the whole thing would collapse within a
+              quarter. It only works if they stay, which means it only works if they do well.
             </p>
           </div>
           <div className="border-t border-white/10 pt-4">
             <Gauge className="h-5 w-5 text-primary" />
-            <h3 className="mt-2.5 font-display text-lg font-bold">Nobody deposits with us</h3>
+            <h3 className="mt-2.5 font-display text-lg font-bold">The money is never ours to hold</h3>
             <p className="mt-1.5 text-sm leading-relaxed text-foreground/65">
-              Your members fund an account in their own name, at a licensed broker, and the money stays
-              theirs — they can withdraw it whenever they like. We never touch client funds. Every
-              click, customer, deposit and euro of commission is traceable in your dashboard.
+              Your members' funds sit in accounts in their own name and can be withdrawn whenever
+              they like. We never touch them. What you see instead is the reporting: every click,
+              every customer and every euro you have earned, in your dashboard.
             </p>
           </div>
         </div>
