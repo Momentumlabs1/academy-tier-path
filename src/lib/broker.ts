@@ -67,7 +67,15 @@ export const BROKERS: Record<BrokerKey, BrokerConfig> = {
   vt: {
     key: "vt",
     name: "VT Markets",
-    url: ((import.meta.env as Record<string, unknown>).VITE_BROKER_URL as string) || "",
+    // Path-style referral, not a query parameter: the code aAaRH40s IS the last
+    // path segment. That matters twice below — usableBrokerUrl has to recognise
+    // it as "carries a referral", and depositUrl appends click_id with ?, not &.
+    // Hardcoded like Hero's, with an env override for staging; it was read from
+    // VITE_BROKER_URL only, which meant an empty string in every build where
+    // nobody had set it — and an empty URL silently pinned everyone to Hero.
+    url:
+      ((import.meta.env as Record<string, unknown>).VITE_BROKER_URL as string) ||
+      "https://vtm.pro/la5-com/global/aAaRH40s",
     // VT's portal captured every parameter we threw at it into a `deeplink`
     // object — click_id, sub_id, utm_campaign and more. Whether any of it reaches
     // the client record and comes back through their IB API is unconfirmed, and
@@ -202,6 +210,14 @@ export function depositUrl(
  * link without a recognisable referral marker falls back to the master link.
  */
 export function usableBrokerUrl(brokerUrl?: string, broker: BrokerConfig = ACTIVE_BROKER): string {
-  const hasRef = brokerUrl && /[?&](referral|partner_code|ib|aff)=[^&]+/i.test(brokerUrl);
+  // Two shapes of referral marker, because the two brokers use different ones:
+  // Hero puts it in the query (?partner_code=…), VT puts it in the path
+  // (/global/aAaRH40s). Checking only for the query form rejected every valid
+  // VT link as "unconfigured" and fell back to the master — silently reassigning
+  // a partner's customer to us.
+  const hasRef =
+    !!brokerUrl &&
+    (/[?&](referral|partner_code|ib|aff)=[^&]+/i.test(brokerUrl) ||
+      /vtm\.pro\/[^?#]+\/[A-Za-z0-9]{6,}/.test(brokerUrl));
   return hasRef ? brokerUrl! : broker.url;
 }

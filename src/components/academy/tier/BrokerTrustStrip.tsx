@@ -9,7 +9,8 @@
  * rail (vertical mini-card for the right rail).
  */
 import { ArrowUpRight, BadgeCheck, ShieldCheck, Star, Trophy } from "lucide-react";
-import { BROKER, BROKERS, BROKER_SWITCH, TELEGRAM_ENTRY } from "@/lib/broker";
+import { BROKER, BROKERS, BROKER_SWITCH, TELEGRAM_ENTRY, brokerForCountry } from "@/lib/broker";
+import { useVisitorCountry } from "@/hooks/useVisitorCountry";
 import { BrokerPausedNotice } from "@/components/academy/tier/BrokerPausedNotice";
 import { RiskWarning } from "@/components/academy/legal/RiskWarning";
 import { CommissionDisclosure } from "@/components/academy/legal/CommissionDisclosure";
@@ -49,6 +50,12 @@ function Pills({ center = false, dim = false }: { center?: boolean; dim?: boolea
 function DepositCta({ className }: { className?: string }) {
   const { memberId, profile } = useMemberState();
   const brand = usePartnerBrand();
+  // Which broker this visitor is actually routed to. Not used for the href —
+  // the CTA goes to Telegram — but it IS the decision, and it has to be written
+  // down at the moment it is made. Reconstructing it later from a country and a
+  // rule that may since have changed is guesswork.
+  const country = useVisitorCountry();
+  const routedBroker = brokerForCountry(country);
   // Mid-switch: never hand a member to a broker we are leaving. See BROKER_SWITCH.
   if (BROKER_SWITCH.paused) return <BrokerPausedNotice className={className} />;
   return (
@@ -72,6 +79,8 @@ function DepositCta({ className }: { className?: string }) {
         }).rpc("log_broker_click", {
           p_tenant_slug: brand?.slug ?? null,
           p_click_id: memberId || null,
+          p_country: country,
+          p_broker: routedBroker.key,
         });
       }}
       target="_blank"
