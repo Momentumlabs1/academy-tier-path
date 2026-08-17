@@ -1,0 +1,17 @@
+[Unit]
+Description=Cosmos signal reader (user account, MTProto)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/cosmos-reader
+EnvironmentFile=/opt/cosmos-reader/.env
+ExecStart=/opt/cosmos-reader/.venv/bin/python /opt/cosmos-reader/reader.py
+Restart=always
+RestartSec=15
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

@@ -13,6 +13,13 @@
  * turned every chat anyone added the bot to into a signal source.) The
  * inference survives only as a bootstrap when MAIN_CHANNEL_ID is unset.
  *
+ * WHO DELIVERS THE SOURCE MESSAGES: Telegram never hands a bot the messages of
+ * another bot, and the desk's calls arrive in the source group via Tim's copy
+ * bot. A user-account reader (cosmos-reader on the IONOS box) reads that group
+ * over MTProto and POSTs each message here in Telegram's own update shape. It
+ * cannot mint a Bot-API file_id, so media arrives flagged with `has_media` and
+ * is relayed with copyMessage, which needs only a chat id and a message id.
+ *
  * FOUR JOBS: fan-out (copyMessage / copyMessages for albums), mirroring the info
  * channel into `info_posts` for the website, /start account linking, and
  * chat_join_request gating (deposit ≥ €100).
@@ -111,6 +118,15 @@ interface TgMessage {
   text?: string;
   caption?: string;
   media_group_id?: string;
+  /**
+   * Set ONLY by cosmos-reader: the message carries a photo/video/document.
+   * The reader cannot produce a Bot-API `file_id` — Telethon's file references
+   * are a different format — so it cannot fill `photo` above. It does not need
+   * to: media is relayed with copyMessage, which takes just a chat id and a
+   * message id. This flag is what tells the router the message HAS content when
+   * there is no text and no caption at all.
+   */
+  has_media?: boolean;
   entities?: unknown[];
   caption_entities?: unknown[];
 }
@@ -368,7 +384,7 @@ async function storeRecap(db: SupabaseClient, post: TgMessage) {
  */
 async function copyOne(t: TenantRow, post: TgMessage) {
   try {
-    // Nur unter echten Calls, nicht unter jedem Wortwechsel im Desk.
+    // Only under real calls, not under every exchange in the desk.
     const footer = isTradeSignal(post.text ?? post.caption ?? "") ? footerFor(t) : null;
 
     if (post.text) {
@@ -433,6 +449,10 @@ async function copyOne(t: TenantRow, post: TgMessage) {
  */
 async function storeMedia(db: SupabaseClient, post: TgMessage) {
   const photos = post.photo;
+  // ⚠️ Media delivered by cosmos-reader arrives with `has_media` but WITHOUT a
+  // `photo` array, because a user-account reader has no Bot-API file_id to put
+  // there. Such posts are relayed to the members but are NOT collected here —
+  // an empty gallery beats a row whose file_id the website cannot load.
   if (!photos?.length) return;
   // Telegram sends the same image in several sizes; the last is the largest.
   const best = photos[photos.length - 1];
@@ -489,7 +509,9 @@ async function relayAlbum(db: SupabaseClient, post: TgMessage, tenants: TenantRo
     try {
       const copy = await tg("copyMessages", { chat_id: t.telegram_channel_id, from_chat_id: post.chat.id, message_ids: messageIds });
       if (!copy.ok) throw new Error(copy.description ?? "copyMessages failed");
-      const footer = footerFor(t);
+      // Same rule as copyOne: the link belongs under calls, not under a chart
+      // the desk posted to show what happened.
+      const footer = isTradeSignal(post.caption ?? "") ? footerFor(t) : null;
       if (footer) await tg("sendMessage", { chat_id: t.telegram_channel_id, text: footer, disable_web_page_preview: true });
       delivered[t.slug] = { ok: true, count: messageIds.length };
     } catch (e) {
@@ -544,6 +566,10 @@ async function relayEdit(db: SupabaseClient, post: TgMessage, tenants: TenantRow
   const enText = post.text ? await toEnglish(post.text) : null;
   const enCaption = post.caption ? await toEnglish(post.caption) : null;
 
+  // Decided once from the SOURCE text: an edit must not add a footer to a
+  // message that never had one, nor drop one that did.
+  const wantsFooter = isTradeSignal(post.text ?? post.caption ?? "");
+
   const results: Record<string, unknown> = {};
 
   for (const t of tenants.filter((x) => x.telegram_channel_id)) {
@@ -562,7 +588,7 @@ async function relayEdit(db: SupabaseClient, post: TgMessage, tenants: TenantRow
       // The footer has to be re-appended. copyOne sends body and footer as ONE
       // message for plain text, so editing with the body alone would silently
       // delete every partner's broker link from that post.
-      const footer = footerFor(t);
+      const footer = wantsFooter ? footerFor(t) : null;
       const body = enText ?? post.text ?? "";
       method = "editMessageText";
       payload = {
@@ -866,7 +892,9 @@ async function processUpdate(update: TgUpdate) {
   if (groupMsg) {
     const mainId = Number(await cfg("MAIN_CHANNEL_ID") || 0);
     const isSource = mainId !== 0 && groupMsg.chat.id === mainId;
-    const hasContent = Boolean(groupMsg.text || groupMsg.caption || groupMsg.media_group_id);
+    // has_media carries the caption-less chart screenshots: without it a photo
+    // posted without a word was counted as empty and dropped.
+    const hasContent = Boolean(groupMsg.text || groupMsg.caption || groupMsg.media_group_id || groupMsg.has_media);
     // Skip only OUR OWN messages, not every bot's.
     //
     // The obvious filter — ignore anything from a bot — would ignore everything.
