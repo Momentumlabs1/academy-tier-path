@@ -25,7 +25,6 @@ export function ZekoMascot({ className }: { className?: string }) {
         <ellipse cx="200" cy="182" rx="60" ry="63" fill="#f6f1e7" />
         <circle cx="181" cy="186" r="6.5" fill="#2a2622" stroke="none" />
         <circle cx="219" cy="186" r="6.5" fill="#2a2622" stroke="none" />
-        <path d="M186 206 q14 12 28 0" fill="none" strokeWidth="5" />
         <path d="M244 120 q54 -6 62 20 q-30 14 -66 4 Z" fill="#33322f" />
         <path d="M132 150 q0 -78 68 -78 q68 0 68 78 q-68 22 -136 0 Z" fill="#33322f" />
         <rect x="188" y="128" width="24" height="16" rx="4" fill="#4a4844" strokeWidth="5" />

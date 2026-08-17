@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { writePartnerBrand } from "@/lib/partner-brand";
 import type { TenantConfig } from "@/lib/tenants";
 import { BROKER, BROKER_SWITCH, TELEGRAM_ENTRY } from "@/lib/broker";
+import { ZekoMascot } from "./ZekoMascot";
 import { RiskWarning } from "@/components/academy/legal/RiskWarning";
 import { CommissionDisclosure } from "@/components/academy/legal/CommissionDisclosure";
 import { DeskResults } from "@/components/academy/tenant/DeskResults";
@@ -263,7 +264,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               ) : (
                 <div className="relative mx-auto aspect-square w-full max-w-[360px] overflow-hidden rounded-full ring-4 ring-white/10 shadow-2xl">
                   <div className="absolute inset-2 rounded-full blur-3xl" style={{ background:`color-mix(in oklch, ${primary} 40%, transparent)` }} aria-hidden />
-                  <img src="/zeko-hero.png" alt="Zeko" className="relative h-full w-full object-cover" />
+                  <div className="relative h-full w-full"><ZekoMascot className="h-full w-full" /></div>
                 </div>
               )}
             </div>
@@ -426,15 +427,6 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
             </div>
           </div>
         </div>
-        <div className="mt-4 grid gap-4 sm:grid-cols-3">
-          {[
-            { icon: Lock, title: "Free to use", body: "No subscription and no course fee. Signals, lessons and the trader tools are included." },
-            { icon: Wallet, title: "Your money stays yours", body: "It sits in an account in your own name. You can withdraw it anytime." },
-            { icon: BadgeCheck, title: "We earn from the broker", body: "The broker pays us — not you. A fair, transparent partnership." },
-          ].map((c) => (
-            <div key={c.title} className="rounded-2xl border border-white/8 bg-white/[0.03] p-5"><c.icon className="mb-3 h-5 w-5" style={{ color: primary }} /><div className="font-display text-base font-bold">{c.title}</div><p className="mt-1.5 text-sm text-white/60">{c.body}</p></div>
-          ))}
-        </div>
       </section>
 
       {/* ─────────────────── CAPABILITIES SHOWCASE ─────────────────── */}
@@ -574,7 +566,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               <img src="/cosmo/cosmo-head.png" alt="Cosmo" className="cosmo-float relative h-28 w-28 object-contain" />
             </div>
           )}
-          {tenant.mascot === "zeko" && <img src="/zeko-point.png" alt="" className="mx-auto mb-2 h-28 w-28 rounded-full object-cover object-top" />}
+          {tenant.mascot === "zeko" && <ZekoMascot className="mx-auto mb-2 h-28 w-28" />}
           <h2 className="font-display text-3xl font-black sm:text-5xl">Your first candle<br />starts today.</h2>
           <p className="mx-auto mt-4 max-w-md text-white/65">Join {tenant.name}, connect Telegram, and we take it from there.</p>
           <div className="mt-7 flex justify-center">
