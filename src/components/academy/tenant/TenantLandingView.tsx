@@ -22,7 +22,6 @@ import { cn } from "@/lib/utils";
 import { writePartnerBrand } from "@/lib/partner-brand";
 import type { TenantConfig } from "@/lib/tenants";
 import { BROKER, BROKER_SWITCH, TELEGRAM_ENTRY } from "@/lib/broker";
-import { ZekoMascot } from "./ZekoMascot";
 import { RiskWarning } from "@/components/academy/legal/RiskWarning";
 import { CommissionDisclosure } from "@/components/academy/legal/CommissionDisclosure";
 import { DeskResults } from "@/components/academy/tenant/DeskResults";
@@ -264,7 +263,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               ) : (
                 <div className="relative mx-auto aspect-square w-full max-w-[360px] overflow-hidden rounded-full ring-4 ring-white/10 shadow-2xl">
                   <div className="absolute inset-2 rounded-full blur-3xl" style={{ background:`color-mix(in oklch, ${primary} 40%, transparent)` }} aria-hidden />
-                  <div className="relative h-full w-full"><ZekoMascot className="h-full w-full" /></div>
+                  <img src="/zeko-hero.png" alt="Zeko" className="relative h-full w-full object-cover" />
                 </div>
               )}
             </div>
@@ -542,7 +541,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               <img src="/cosmo/cosmo-head.png" alt="Cosmo" className="cosmo-float relative h-28 w-28 object-contain" />
             </div>
           )}
-          {tenant.mascot === "zeko" && <ZekoMascot className="mx-auto mb-2 h-28 w-28" />}
+          {tenant.mascot === "zeko" && <img src="/zeko-point.png" alt="" className="mx-auto mb-2 h-28 w-28 rounded-full object-cover" />}
           <h2 className="font-display text-3xl font-black sm:text-5xl">Your first candle<br />starts today.</h2>
           <p className="mx-auto mt-4 max-w-md text-white/65">Join {tenant.name}, connect Telegram, and we take it from there.</p>
           <div className="mt-7 flex justify-center">
