@@ -300,35 +300,11 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         </div>
       </div>
 
-      {/* ─────────────────────── STATS ─────────────────────── */}
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-8">
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-          {tenant.stats.map((s, i) => (
-            <div
-              key={s.label}
-              className="group relative overflow-hidden rounded-2xl border border-white/[0.07] bg-gradient-to-b from-white/[0.05] to-transparent px-5 py-7 text-center transition-transform duration-300 hover:-translate-y-0.5"
-            >
-              {/* a quiet accent bloom, brightest on the first card */}
-              <span
-                className="pointer-events-none absolute -top-12 left-1/2 h-24 w-24 -translate-x-1/2 rounded-full blur-2xl transition-opacity duration-300 group-hover:opacity-90"
-                style={{ background: primary, opacity: 0.16 - i * 0.02 }}
-                aria-hidden
-              />
-              <span
-                className="pointer-events-none absolute inset-x-6 top-0 h-px"
-                style={{ background: `linear-gradient(90deg, transparent, ${primary}, transparent)`, opacity: 0.5 }}
-                aria-hidden
-              />
-              <div className="relative font-display text-4xl font-black tabular-nums sm:text-5xl" style={{ color: primary }}>
-                {s.value}
-              </div>
-              <div className="relative mt-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/50">
-                {s.label}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* Der STATS-Banner ist raus. Vier Kacheln — 155K+ COMMUNITY, TELEGRAM,
+          FROM €100, €0 — direkt unter dem Hero, bevor irgendetwas erklaert war.
+          Zwei davon waren Behauptungen, die niemand nachprueft, eine nannte
+          einen Betrag vor dem Gespraech, und alle vier standen zwischen dem
+          Besucher und dem, wofuer er gekommen ist. */}
 
       {/* ─────────────────────── DEMO VIDEO ─────────────────────── */}
       <section className="mx-auto max-w-4xl px-4 py-10 sm:px-8">
