@@ -154,6 +154,30 @@ function footerFor(t: TenantRow): string | null {
   return lines.length ? lines.join("\n") : null;
 }
 
+/**
+ * Is this actually a trade call, or is it desk chatter?
+ *
+ * The footer — "Trade this signal with our partner broker" plus the referral
+ * link — used to go under EVERY relayed message. The desk talks in that group:
+ * "That's bold, pipettes pulled exactly at BE", "I think one or the other is
+ * still in it". Each of those arrived in the partner channels with a broker
+ * link stapled underneath, which reads as spam and devalues the link for the
+ * messages where it belongs.
+ *
+ * A call names a direction AND carries a price marker (entry, stop or target).
+ * Requiring both keeps "I'm long here" out and lets the desk's actual format —
+ * "🔴 NAS SELL / Entry : 30 170.06 / SL : 30 195.06" — through. A recap counts
+ * too: it is the result of the calls and the one other message where the link
+ * makes sense.
+ */
+function isTradeSignal(text: string): boolean {
+  const t = (text ?? "").toUpperCase();
+  const hasSide = /\b(BUY|SELL|LONG|SHORT)\b/.test(t);
+  const hasLevel = /\b(ENTRY|SL|TP\s*\d|TAKE[\s-]?PROFIT|STOP)\b/.test(t);
+  const isRecap = /(PERFORMANCE|GESAMTERGEBNIS|TOTAL RESULT|RECAP)/.test(t);
+  return (hasSide && hasLevel) || isRecap;
+}
+
 // ── Translation ──────────────────────────────────────────────────────────────
 /**
  * The desk writes in German. Members read English — the whole platform is
@@ -344,7 +368,8 @@ async function storeRecap(db: SupabaseClient, post: TgMessage) {
  */
 async function copyOne(t: TenantRow, post: TgMessage) {
   try {
-    const footer = footerFor(t);
+    // Nur unter echten Calls, nicht unter jedem Wortwechsel im Desk.
+    const footer = isTradeSignal(post.text ?? post.caption ?? "") ? footerFor(t) : null;
 
     if (post.text) {
       const body = await toEnglish(post.text);

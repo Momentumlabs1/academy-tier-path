@@ -271,40 +271,6 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         </div>
       </section>
 
-      {/* ─────────────────────── TICKER ─────────────────────── */}
-      <div className="relative overflow-hidden border-y border-white/[0.06] bg-white/[0.02] py-3">
-        <div className="ticker-track flex w-max items-center gap-3 whitespace-nowrap">
-          {[...TICKER, ...TICKER].map((t, i) => (
-            <span
-              key={i}
-              className="inline-flex items-center gap-2.5 rounded-full border border-white/[0.07] bg-white/[0.03] py-1.5 pl-1.5 pr-3.5"
-            >
-              <span
-                className="flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-black"
-                style={{ background: `color-mix(in oklch, ${t.tone} 22%, transparent)`, color: t.tone }}
-                aria-hidden
-              >
-                {t.sym}
-              </span>
-              <span className="font-mono text-[11px] font-semibold tracking-tight text-white/85">{t.s}</span>
-              <span className="font-mono text-[11px] tabular-nums text-white/55">{t.p}</span>
-              <span
-                className="font-mono text-[10px] font-semibold tabular-nums"
-                style={{ color: t.up ? up : down }}
-              >
-                {t.up ? "\u25B2" : "\u25BC"} {t.d}%
-              </span>
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* Der STATS-Banner ist raus. Vier Kacheln — 155K+ COMMUNITY, TELEGRAM,
-          FROM €100, €0 — direkt unter dem Hero, bevor irgendetwas erklaert war.
-          Zwei davon waren Behauptungen, die niemand nachprueft, eine nannte
-          einen Betrag vor dem Gespraech, und alle vier standen zwischen dem
-          Besucher und dem, wofuer er gekommen ist. */}
-
       {/* ─────────────────────── DEMO VIDEO ─────────────────────── */}
       <section className="mx-auto max-w-4xl px-4 pb-10 pt-4 sm:px-8 sm:py-10">
         {/* Das Video laeuft 1:19 — "60 seconds" stand hier noch aus der Zeit
@@ -354,6 +320,41 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           </div>
         </div>
       </section>
+
+      {/* ─────────────────────── TICKER ─────────────────────── */}
+      <div className="relative overflow-hidden border-y border-white/[0.06] bg-white/[0.02] py-3">
+        <div className="ticker-track flex w-max items-center gap-3 whitespace-nowrap">
+          {[...TICKER, ...TICKER].map((t, i) => (
+            <span
+              key={i}
+              className="inline-flex items-center gap-2.5 rounded-full border border-white/[0.07] bg-white/[0.03] py-1.5 pl-1.5 pr-3.5"
+            >
+              <span
+                className="flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-black"
+                style={{ background: `color-mix(in oklch, ${t.tone} 22%, transparent)`, color: t.tone }}
+                aria-hidden
+              >
+                {t.sym}
+              </span>
+              <span className="font-mono text-[11px] font-semibold tracking-tight text-white/85">{t.s}</span>
+              <span className="font-mono text-[11px] tabular-nums text-white/55">{t.p}</span>
+              <span
+                className="font-mono text-[10px] font-semibold tabular-nums"
+                style={{ color: t.up ? up : down }}
+              >
+                {t.up ? "\u25B2" : "\u25BC"} {t.d}%
+              </span>
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Der STATS-Banner ist raus. Vier Kacheln — 155K+ COMMUNITY, TELEGRAM,
+          FROM €100, €0 — direkt unter dem Hero, bevor irgendetwas erklaert war.
+          Zwei davon waren Behauptungen, die niemand nachprueft, eine nannte
+          einen Betrag vor dem Gespraech, und alle vier standen zwischen dem
+          Besucher und dem, wofuer er gekommen ist. */}
+
 
       {/* ─────────────────────── BROKER BAND ─────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-8">
