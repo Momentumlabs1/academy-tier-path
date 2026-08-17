@@ -384,7 +384,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         <div className="overflow-hidden rounded-[2rem] border border-white/10" style={{ background:`radial-gradient(120% 120% at 0% 0%, color-mix(in oklch, ${primary} 12%, transparent), transparent 55%)` }}>
           <div className="grid gap-10 p-8 sm:p-12 lg:grid-cols-[1fr_0.85fr] lg:items-center">
             <div>
-              <p className="mb-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: primary }}><Building2 className="h-4 w-4" /> Our broker partner</p>
+              <p className="mb-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: primary }}><Building2 className="h-4 w-4" /> How the money works</p>
               <h2 className="font-display text-3xl font-black leading-tight sm:text-4xl">Your money<br />stays your money.</h2>
               <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/65">
                 {/* "a licensed, award-winning global broker" was written for
@@ -410,8 +410,12 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               </div>
             </div>
             <div className="flex flex-col items-center gap-4">
-              <div className="flex w-full max-w-[300px] items-center justify-center gap-2 rounded-2xl bg-white px-8 py-8 shadow-2xl">
-                <Building2 className="h-7 w-7 text-[#0b1220]" /><span className="font-display text-2xl font-black tracking-tight text-[#0b1220]">{tenant.brokerName}</span>
+              {/* Hier stand der Brokername in einem weissen Kasten, in 24px Black.
+                  Die lauteste Stelle der Sektion war damit genau die Information,
+                  die oeffentlich nicht mehr auftauchen soll. */}
+              <div className="flex w-full max-w-[300px] flex-col items-center gap-2 rounded-2xl border border-white/10 bg-white/[0.04] px-8 py-8">
+                <Wallet className="h-7 w-7" style={{ color: primary }} />
+                <span className="text-center text-sm font-semibold text-white/80">Your own account, in your own name</span>
               </div>
               {/* No direct broker link from a public page. The broker sign-up is the step
                   people drop out of, and a link here sends them there alone — see
