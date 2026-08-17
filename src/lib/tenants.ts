@@ -144,8 +144,8 @@ export const TENANTS: TenantConfig[] = [
   {
     slug: "zekoglobal",
     name: "Zeko Global",
-    tagline: "Build your first $10k month — from zero.",
-    description: "Learn what the wealthy actually do with money. Real trade signals, a step-by-step playbook, and a community of 155K+ — no fluff, no gurus.",
+    tagline: "Trading, erklärt von jemandem, der es selbst macht.",
+    description: "Live-Signale, ein Kurs von null an und Werkzeuge, die Profis benutzen. Kein Hype, keine Gurus.",
     logoInitials: "Z",
     primaryColor: "oklch(0.76 0.06 158)",
     accentColor: "oklch(0.9 0.035 85)",
@@ -158,20 +158,19 @@ export const TENANTS: TenantConfig[] = [
     brokerUrl: BROKER.url,
     telegramChannel: "https://t.me/zekoglobal",
     affiliateEmail: "zekoglobalhq@gmail.com",
-    stats: [
-      { label: "Community", value: "155K+" },
-      { label: "Signal delivery", value: "Telegram" },
-      { label: "Get started", value: "from €100" },
-      { label: "Cost to join", value: "€0" },
-    ],
+    // Leer: "155K+" hat niemand geprueft, "from €100" nannte einen Betrag vor
+    // dem Gespraech, das ihn erklaeren soll. Die Kacheln standen zwischen dem
+    // Besucher und dem, wofuer er gekommen ist.
+    stats: [],
     features: [
       { icon: "📡", title: "Live Wealth Signals", body: "Real-time trade calls straight to your phone — copy the desk, not the hype." },
-      { icon: "🔑", title: "The Wealth Playbook", body: "What wealthy people actually do with money — a clear path from zero to your first $10k month." },
-      { icon: "💸", title: "Free to Join", body: "Fund with our partner broker and unlock every signal and lesson for free." },
+      { icon: "🔑", title: "The Playbook", body: "A step-by-step path from your first candle to a repeatable process." },
+      { icon: "💸", title: "Free to Join", body: "No subscription and no course fee. Every signal and lesson is included." },
     ],
     mascot: "zeko",
-    headline: "Build your first $10k month — from zero.",
-    subhead: "155,000 people already follow Zeko for one reason: no fluff, no gurus — just what actually moves money.",
+    headline: "Learn to trade — without the hype."
+,
+    subhead: "Every call the desk makes, a course that starts at zero, and someone to ask when you are stuck.",
     // Testimonials removed: the three that were here were invented — invented
     // names, invented handles, and a "+€1,240 first month" badge — rendered
     // under a heading asserting they were real members with real results.

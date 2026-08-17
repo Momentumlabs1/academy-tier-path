@@ -203,13 +203,13 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
 
             <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
               <button onClick={goRegister}
-                className="group inline-flex items-center gap-2 rounded-full px-7 py-4 text-sm font-black text-black transition-transform hover:-translate-y-0.5"
+                className="group inline-flex items-center gap-2 rounded-full px-5 py-3 text-[13px] font-black text-black transition-transform hover:-translate-y-0.5"
                 style={{ background: primary, boxShadow: `0 14px 40px -12px ${primary}` }}>
                 Start free — €0 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </button>
               {tenant.telegramChannel && tenant.telegramChannel !== "#" && (
                 <a href={tenant.telegramChannel} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-7 py-4 text-sm font-semibold hover:bg-white/10">
+                  className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-3 text-[13px] font-semibold hover:bg-white/10 sm:px-6">
                   Watch the signals <ArrowUpRight className="h-4 w-4" />
                 </a>
               )}
@@ -261,7 +261,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                   </div>
                 </div>
               ) : (
-                <div className="relative mx-auto aspect-square w-full max-w-[360px] overflow-hidden rounded-full ring-4 ring-white/10 shadow-2xl">
+                <div className="relative mx-auto aspect-square w-full max-w-[150px] overflow-hidden rounded-full ring-4 ring-white/10 sm:max-w-[280px] lg:max-w-[360px] shadow-2xl">
                   <div className="absolute inset-2 rounded-full blur-3xl" style={{ background:`color-mix(in oklch, ${primary} 40%, transparent)` }} aria-hidden />
                   <img src="/zeko-hero.png" alt="Zeko" className="relative h-full w-full object-cover" />
                 </div>
@@ -306,7 +306,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           Besucher und dem, wofuer er gekommen ist. */}
 
       {/* ─────────────────────── DEMO VIDEO ─────────────────────── */}
-      <section className="mx-auto max-w-4xl px-4 py-10 sm:px-8">
+      <section className="mx-auto max-w-4xl px-4 pb-10 pt-4 sm:px-8 sm:py-10">
         {/* Das Video laeuft 1:19 — "60 seconds" stand hier noch aus der Zeit
             vor dem fertigen Schnitt. */}
         <SectionHead n="01" kicker="Watch first · 80 seconds" title="See the whole thing in 80 seconds" primary={primary} />
