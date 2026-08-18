@@ -15,6 +15,7 @@ import { BarChart3, Check, Copy, ExternalLink, Eye, Loader2, LogOut, MousePointe
 import { supabase } from "@/integrations/supabase/client";
 import { PartnerProfileCard, type PartnerProfile } from "@/components/academy/partner/PartnerProfileCard";
 import { PartnerIbSetup } from "@/components/academy/partner/PartnerIbSetup";
+import { PartnerOnboarding } from "@/components/academy/partner/PartnerOnboarding";
 import { ADMIN_EMAIL } from "@/lib/admin-auth";
 import { COMMISSION_LADDER, levelForVolume, volumeToNextLevel } from "@/lib/commission";
 import { formatMoney } from "@/lib/format";
@@ -164,6 +165,10 @@ export function PartnerCard({ row }: { row: PartnerRow }) {
           the only thing on this page a new partner can actually act on — every
           figure below is still zero until their first customer funds an account,
           and a dashboard of zeroes reads as broken rather than as new. */}
+      {/* Ganz oben: ein frisch freigegebener Partner sieht sonst nur Nullen und
+          weiss nicht, ob etwas kaputt ist oder ob er noch etwas tun muss. */}
+      <PartnerOnboarding slug={row.slug} name={row.name} />
+
       <PartnerProfileCard profile={row.partner_profile} />
 
       {/* Without this the dashboard above counts nothing: commission is credited
