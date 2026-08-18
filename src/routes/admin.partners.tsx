@@ -17,7 +17,8 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Check, ExternalLink, Loader2, Mail, Phone, ShieldCheck } from "lucide-react";
+import { Check, ExternalLink, Loader2, Mail, Phone, ShieldCheck, UserPlus } from "lucide-react";
+import { functionUrl } from "@/integrations/supabase/functions-url";
 import { AdminPageHeader } from "@/components/academy/admin/AdminShell";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -131,6 +132,8 @@ const db = () => supabase as unknown as {
 export function AdminPartners() {
   const [rows, setRows] = useState<Application[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [approving, setApproving] = useState<string | null>(null);
 
   useEffect(() => {
     db().from("partner_applications")
@@ -145,6 +148,37 @@ export function AdminPartners() {
   /* Optimistic: the status is a note-to-self, not a transaction. Waiting on a
      round trip to see your own click land is the kind of lag that makes people
      click twice. */
+  /**
+   * Freigeben ist kein Etikett, sondern ein Vorgang: Login anlegen, Marke
+   * anlegen, Bewerbung schliessen, Mail schicken. Vorher hat der Klick nur ein
+   * Wort in der Datenbank geaendert und der Bewerber hat auf eine Nachricht
+   * gewartet, die niemand geschickt hat.
+   */
+  async function approve(row: Application) {
+    if (!confirm(`${row.name || row.email} freigeben?\n\nLegt Login und Marke an und schickt die Einladung an ${row.email}.`)) return;
+    setApproving(row.id); setError(null);
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const res = await fetch(functionUrl("partner-approve"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${sess.session?.access_token ?? ""}`,
+        },
+        body: JSON.stringify({ application_id: row.id }),
+      });
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok) { setError(String(out.error ?? `HTTP ${res.status}`)); return; }
+      setRows((prev) => prev?.map((r) => (r.id === row.id ? { ...r, status: "approved" } : r)) ?? prev);
+      setNotice(`${row.name || row.email} ist freigegeben — Marke "${out.slug}" angelegt.` +
+        (out.mailed ? " E-Mail ist raus." : " ACHTUNG: E-Mail konnte nicht gesendet werden."));
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setApproving(null);
+    }
+  }
+
   async function cycle(row: Application) {
     const next = NEXT[row.status ?? "new"] ?? "contacted";
     setRows((prev) => prev?.map((r) => (r.id === row.id ? { ...r, status: next } : r)) ?? prev);
@@ -161,6 +195,12 @@ export function AdminPartners() {
         title="Partner applications"
         sub="Everyone who finished the funnel on /partner-program. They are waiting on an email from you."
       />
+
+      {notice && (
+        <p className="mt-4 rounded-xl border border-emerald-400/30 bg-emerald-400/10 p-3 text-sm text-emerald-300">
+          {notice}
+        </p>
+      )}
 
       {error && (
         <p className="mt-4 rounded-xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
@@ -195,6 +235,16 @@ export function AdminPartners() {
                     {st.label}
                   </button>
                   <span className="ml-auto text-[11px] text-muted-foreground">{time(r.created_at)}</span>
+                  {r.status !== "approved" && (
+                    <button
+                      onClick={() => approve(r)}
+                      disabled={approving === r.id}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-[12px] font-bold text-primary-foreground transition-transform hover:-translate-y-0.5 disabled:opacity-50"
+                    >
+                      {approving === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />}
+                      Freigeben
+                    </button>
+                  )}
                 </div>
 
                 <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1.5 text-[13px]">
