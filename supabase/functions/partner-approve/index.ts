@@ -91,21 +91,45 @@ Deno.serve(async (req) => {
   if (!app) return json({ error: "application not found" }, 404);
   if (!app.email) return json({ error: "application has no email" }, 400);
 
-  // ── 1. Login: einladen, nicht selbst ein Passwort setzen ───────────────────
-  // inviteUserByEmail legt den Nutzer an UND schickt die Einladung, bei der er
-  // sein Passwort selbst vergibt. Wir erzeugen also nie eins und sehen keins.
+  // ── 1. Login anlegen — OHNE Supabases Mailer ──────────────────────────────
+  //
+  // inviteUserByEmail waere der naheliegende Weg, verschickt die Einladung aber
+  // ueber Supabases eingebauten Mailer, und der ist hart limitiert: nach ein
+  // paar Mails im selben Zeitfenster antwortet er "email rate limit exceeded"
+  // und die Freigabe scheitert komplett. Beim Testen ist genau das passiert,
+  // nachdem am selben Tag ein paar Passwort-Resets rausgingen.
+  //
+  // Also: Nutzer still anlegen, den Einladungslink selbst erzeugen und ueber
+  // unseren eigenen Versand schicken — derselbe Weg, den password-reset schon
+  // geht, und aus demselben Grund.
   let userId: string | null = null;
-  const invite = await db.auth.admin.inviteUserByEmail(app.email, {
-    redirectTo: `${SITE_URL}/partner`,
+  const created = await db.auth.admin.createUser({
+    email: app.email,
+    email_confirm: true,          // kein Bestaetigungsmail von Supabase
   });
-  if (invite.data?.user?.id) {
-    userId = invite.data.user.id;
+  if (created.data?.user?.id) {
+    userId = created.data.user.id;
   } else {
     // Schon registriert (z. B. bereits Mitglied) → vorhandenen Nutzer suchen.
     const { data: list } = await db.auth.admin.listUsers({ page: 1, perPage: 200 });
     const found = list?.users?.find((u) => (u.email ?? "").toLowerCase() === app.email.toLowerCase());
     userId = found?.id ?? null;
-    if (!userId) return json({ error: `could not create login: ${invite.error?.message}` }, 502);
+    if (!userId) return json({ error: `could not create login: ${created.error?.message}` }, 502);
+  }
+
+  // Link, ueber den er sein Passwort selbst setzt. Wir erzeugen nie eins und
+  // sehen keins.
+  let inviteUrl = `${SITE_URL}/login`;
+  try {
+    const link = await db.auth.admin.generateLink({
+      type: "recovery",
+      email: app.email,
+      options: { redirectTo: `${SITE_URL}/partner` },
+    });
+    const action = (link.data?.properties as { action_link?: string } | undefined)?.action_link;
+    if (action) inviteUrl = action;
+  } catch (e) {
+    console.error("[partner-approve] generateLink failed:", e);
   }
 
   // ── 2. Marke ──────────────────────────────────────────────────────────────
@@ -162,6 +186,7 @@ Deno.serve(async (req) => {
         to: app.email,
         firstName: (app.name || "").split(" ")[0],
         dashboardUrl: `${SITE_URL}/partner`,
+        resetUrl: inviteUrl,
       }),
     });
     mailed = res.ok;

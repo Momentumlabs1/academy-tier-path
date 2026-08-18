@@ -16,11 +16,17 @@
  * WHO DELIVERS THE SOURCE MESSAGES: Telegram never hands a bot the messages of
  * another bot, and the desk's calls arrive in the source group via Tim's copy
  * bot. A user-account reader (cosmos-reader on the IONOS box) reads that group
- * over MTProto and POSTs each message here in Telegram's own update shape. It
- * cannot mint a Bot-API file_id, so media arrives flagged with `has_media` and
- * is relayed with copyMessage, which needs only a chat id and a message id.
+ * over MTProto and POSTs each message here in Telegram's own update shape.
  *
- * FOUR JOBS: fan-out (copyMessage / copyMessages for albums), mirroring the info
+ * That same rule is why media cannot be copied. copyMessage needs nothing but a
+ * chat id and a message id, yet it fails on every desk photo with "message to
+ * copy not found": the message was never delivered to our bot, so for the Bot
+ * API it does not exist, and no amount of admin rights changes that. The reader
+ * therefore downloads the file and ships the bytes in `media_b64`; this function
+ * uploads them ONCE and fans the returned file_id out to the rest.
+ *
+ * FOUR JOBS: fan-out (upload/sendPhoto for reader media, copyMessage for
+ * anything Telegram did deliver, copyMessages for albums), mirroring the info
  * channel into `info_posts` for the website, /start account linking, and
  * chat_join_request gating (deposit ≥ €100).
  *
@@ -522,8 +528,8 @@ async function storeMedia(db: SupabaseClient, post: TgMessage) {
   const photos = post.photo;
   // ⚠️ Media delivered by cosmos-reader arrives with `has_media` but WITHOUT a
   // `photo` array, because a user-account reader has no Bot-API file_id to put
-  // there. Such posts are relayed to the members but are NOT collected here —
-  // an empty gallery beats a row whose file_id the website cannot load.
+  // there. Those posts are handled by relayMedia, which stores the file_id it
+  // gets back from the upload — this path only sees media Telegram delivered.
   if (!photos?.length) return;
   // Telegram sends the same image in several sizes; the last is the largest.
   const best = photos[photos.length - 1];

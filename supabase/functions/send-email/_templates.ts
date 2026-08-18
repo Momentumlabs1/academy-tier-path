@@ -125,8 +125,8 @@ export function buildEmail(input: BuildInput): { subject: string; html: string }
           h1("Du bist dabei" + (input.firstName ? `, ${esc(input.firstName)}` : "") + ".") +
           p("Wir haben deine Bewerbung gelesen und dich ins Partnerprogramm aufgenommen. Dein Zugang ist eingerichtet.") +
           p("Im Partnerbereich steht, was jetzt passiert — was wir übernehmen, und die zwei Dinge, die wir von dir brauchen.") +
-          `<div style="margin:22px 0">${button(a, dash, "Zum Partnerbereich")}</div>` +
-          p(`<span style="color:#6b7788;font-size:13px">Du hast parallel eine Einladung bekommen, in der du dein Passwort setzt. Danach kommst du über den Knopf oben jederzeit rein.</span>`)),
+          `<div style="margin:22px 0">${button(a, input.resetUrl ?? dash, "Zugang einrichten")}</div>` +
+          p(`<span style="color:#6b7788;font-size:13px">Über den Knopf setzt du einmalig dein Passwort. Danach erreichst du deinen Bereich jederzeit unter ${esc(dash)}.</span>`)),
       };
 
     case "doi":
