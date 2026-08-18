@@ -17,21 +17,31 @@ der gelesenen Nachricht ein Telegram-Update und schickt es an den bestehenden
 Webhook. Uebersetzung mit Ziffernpruefung, Footer je Partner, Fan-out,
 signal_relays und Recap laufen unveraendert dort weiter.
 
-MEDIEN (17.08.2026)
-Bis 20:30 ging NUR Text raus: ein Foto ohne Text wurde verworfen, ein Foto mit
-Text kam als reine Textnachricht an — die Chart-Screenshots des Desks haben die
+MEDIEN — und warum es zweimal umgebaut wurde (18.08.2026)
+Bis 17.08. ging NUR Text raus: ein Foto ohne Text wurde verworfen, ein Foto mit
+Text kam als reine Textnachricht an. Die Chart-Screenshots des Desks haben die
 Partnerkanaele nie erreicht.
 
-Eine Bot-API-`file_id` kann dieser Leser nicht liefern; Telethons Datei-Referenzen
-sind ein anderes Format. Er braucht sie aber auch nicht: der Relay kopiert Medien
-mit `copyMessage`, und das kennt nur Chat-Id und Nachrichten-Id. Deshalb wird bei
-Medien `caption` statt `text` gesetzt (daran unterscheidet der Router die Wege)
-plus das Feld `has_media`. Alben tragen `media_group_id` und laufen im Relay
-ueber `copyMessages`.
+Erster Versuch: `caption` + `has_media` schicken und den Relay mit `copyMessage`
+kopieren lassen, das nur Chat- und Nachrichten-Id braucht. Das ist GESCHEITERT,
+und der Fehler ist grundsaetzlich:
 
-⚠️ Folge davon: `desk_media` (die Screenshot-Galerie der Website) bleibt bei
-Medien aus diesem Leser leer, weil dafuer eine echte Bot-API-file_id noetig
-waere. Lieber leer als eine Zeile mit einer Id, die die Website nicht laden kann.
+    Bad Request: message to copy not found
+
+Ein Bot kann keine Nachricht kopieren, die Telegram ihm nie zugestellt hat — und
+zugestellt wird ihm nichts, was von einem anderen Bot kommt. Genau daran ist auch
+der Relay ohne diesen Leser gescheitert. Admin-Rechte aendern daran nichts.
+
+Der Weg, der funktioniert: dieses Nutzerkonto SIEHT die Datei und darf sie
+herunterladen. Es laedt sie also runter und schickt die Bytes base64-kodiert mit.
+Der Webhook schiebt sie EINMAL zu Telegram hoch, bekommt eine echte Bot-API-
+`file_id` zurueck und verteilt damit an alle weiteren Kanaele — ein Upload, egal
+wie viele Partner. Dieselbe `file_id` fuellt auch `desk_media` fuer die
+Website-Galerie.
+
+Alben: jedes Teil geht als einzelnes Foto raus. Ein Album zusammenzuhalten
+braeuchte `sendMediaGroup` mit mehreren Uploads in einem Aufruf; das Desk postet
+Einzelcharts, also ist das die Komplexitaet nicht wert.
 
 KEIN asyncio.run() HIER.
 Der Client wird beim Import erzeugt, also ausserhalb jeder Event-Loop. Mit
@@ -40,6 +50,7 @@ Python 3.9 stirbt dann beim ersten Update mit "got Future attached to a
 different loop" — noch bevor die Nummernabfrage verarbeitet ist. Telethons
 eigener Einstieg benutzt die Loop, an der der Client bereits haengt.
 """
+import base64
 import logging
 import os
 import time
@@ -58,6 +69,12 @@ HOOK = os.environ["WEBHOOK_URL"]
 SECRET = os.environ["TELEGRAM_WEBHOOK_SECRET"]
 SESSION = os.environ.get("SESSION_PATH", "/opt/cosmos-reader/reader.session")
 
+# Obergrenze fuer den Upload-Weg. Base64 blaeht um ein Drittel auf, und der
+# Webhook muss das als eine JSON-Anfrage schlucken. Ein Handy-Screenshot liegt
+# bei 100–500 KB, also ist das reichlich; was darueber liegt (ein Video) geht
+# lieber als Text durch als gar nicht.
+MEDIA_MAX_BYTES = int(os.environ.get("MEDIA_MAX_BYTES", 3_500_000))
+
 client = TelegramClient(SESSION, API_ID, API_HASH)
 
 
@@ -74,6 +91,28 @@ def has_real_media(msg) -> bool:
     """
     media = getattr(msg, "media", None)
     return media is not None and not isinstance(media, MessageMediaWebPage)
+
+
+async def download(msg):
+    """Die Datei als Bytes holen. Gibt (bytes, mime) zurueck oder None."""
+    try:
+        size = getattr(getattr(msg, "file", None), "size", None)
+        if size and size > MEDIA_MAX_BYTES:
+            log.warning("Medium zu gross (%s Bytes, id=%s)", size, msg.id)
+            return None
+        raw = await msg.client.download_media(msg, file=bytes)
+        if not raw:
+            return None
+        if len(raw) > MEDIA_MAX_BYTES:
+            log.warning("Medium zu gross nach Download (%s Bytes, id=%s)", len(raw), msg.id)
+            return None
+        mime = getattr(getattr(msg, "file", None), "mime_type", None) or "image/jpeg"
+        return raw, mime
+    except Exception as e:
+        # Nie den Leser mitnehmen: ohne Bild ist die Nachricht immer noch besser
+        # als keine Nachricht.
+        log.error("Download fehlgeschlagen (id=%s): %s", msg.id, e)
+        return None
 
 
 async def forward(msg, edited: bool):
@@ -98,15 +137,33 @@ async def forward(msg, edited: bool):
         body["has_media"] = True
         if text:
             body["caption"] = text
-        if getattr(msg, "grouped_id", None):
-            body["media_group_id"] = str(msg.grouped_id)
+
+        blob = await download(msg)
+        if blob is None:
+            # Kein Bild dabei, aber Text vorhanden -> als Text weiterschicken,
+            # statt eine leere Medien-Nachricht zu erzeugen.
+            if not text.strip():
+                log.warning("verworfen: Medium nicht ladbar und kein Text (id=%s)", msg.id)
+                return
+            log.warning("Medium nicht ladbar, gehe als Text (id=%s)", msg.id)
+            body.pop("has_media", None)
+            body.pop("caption", None)
+            body["text"] = text
+        else:
+            raw, mime = blob
+            body["media_b64"] = base64.b64encode(raw).decode()
+            body["media_mime"] = mime
     else:
         body["text"] = text
 
     key = "edited_message" if edited else "message"
     payload = {"update_id": update_id(msg.id), key: body}
 
-    kind = "MEDIUM" if media else "TEXT"
+    kind = "TEXT"
+    if "media_b64" in body:
+        kind = "MEDIUM %dKB" % (len(body["media_b64"]) * 3 // 4096)
+    elif media:
+        kind = "MEDIUM(ohne Datei)"
     try:
         async with httpx.AsyncClient(timeout=60) as h:
             r = await h.post(HOOK, json=payload,

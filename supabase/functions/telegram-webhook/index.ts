@@ -103,6 +103,65 @@ async function tg<T = unknown>(
   return { ok: false, description: "429 retries exhausted" };
 }
 
+// ── Uploading a file the reader downloaded for us ───────────────────────────
+
+/** Which Bot API method takes this kind of file, and under which field name. */
+function methodFor(mime: string): { method: string; field: string } {
+  if (mime.startsWith("video/")) return { method: "sendVideo", field: "video" };
+  if (mime.startsWith("image/")) return { method: "sendPhoto", field: "photo" };
+  return { method: "sendDocument", field: "document" };
+}
+
+/** The file_id Telegram hands back, whatever kind of file it was. */
+function fileIdOf(result: Record<string, unknown> | undefined): string | null {
+  if (!result) return null;
+  const photo = result.photo as { file_id: string }[] | undefined;
+  if (photo?.length) return photo[photo.length - 1].file_id;
+  for (const key of ["video", "document", "animation"]) {
+    const obj = result[key] as { file_id?: string } | undefined;
+    if (obj?.file_id) return obj.file_id;
+  }
+  return null;
+}
+
+/**
+ * Upload the bytes ONCE. Every further channel is sent the returned file_id
+ * instead, so a photo crosses the wire a single time no matter how many
+ * partners there are — and the file_id is what `desk_media` needs anyway.
+ */
+async function uploadMedia(
+  chatId: number, b64: string, mime: string, caption?: string,
+): Promise<{ ok: boolean; message_id?: number; file_id?: string; error?: string }> {
+  const token = await cfg("TELEGRAM_BOT_TOKEN");
+  const { method, field } = methodFor(mime);
+
+  let bin: Uint8Array;
+  try {
+    const raw = atob(b64);
+    bin = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) bin[i] = raw.charCodeAt(i);
+  } catch {
+    return { ok: false, error: "media_b64 is not valid base64" };
+  }
+
+  const ext = mime.includes("png") ? "png" : mime.includes("webp") ? "webp"
+            : mime.startsWith("video/") ? "mp4" : "jpg";
+  const form = new FormData();
+  form.append("chat_id", String(chatId));
+  if (caption) form.append("caption", caption);
+  form.append(field, new Blob([bin], { type: mime }), `desk.${ext}`);
+
+  const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, { method: "POST", body: form });
+  const json = await res.json();
+  if (!json?.ok) return { ok: false, error: json?.description ?? `${method} failed` };
+
+  return {
+    ok: true,
+    message_id: json.result?.message_id,
+    file_id: fileIdOf(json.result) ?? undefined,
+  };
+}
+
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface TgChat { id: number; title?: string; type: string }
@@ -120,13 +179,25 @@ interface TgMessage {
   media_group_id?: string;
   /**
    * Set ONLY by cosmos-reader: the message carries a photo/video/document.
-   * The reader cannot produce a Bot-API `file_id` — Telethon's file references
-   * are a different format — so it cannot fill `photo` above. It does not need
-   * to: media is relayed with copyMessage, which takes just a chat id and a
-   * message id. This flag is what tells the router the message HAS content when
-   * there is no text and no caption at all.
+   * `photo` above stays empty because Telethon's file references are not
+   * Bot-API file_ids. This flag is what tells the router the message HAS content
+   * when there is no text and no caption at all — a chart posted without a word
+   * used to count as empty and be dropped. The file itself rides in `media_b64`.
    */
   has_media?: boolean;
+  /**
+   * The file itself, base64, also only ever set by cosmos-reader.
+   *
+   * The first attempt at reader media used copyMessage, which needs no file at
+   * all — just a chat id and a message id. It failed on every single photo with
+   * "Bad Request: message to copy not found", and the reason is not fixable with
+   * permissions: Telegram never delivered the message to our bot, because it
+   * came from another bot, so as far as the Bot API is concerned that message
+   * does not exist for us. The user account CAN see the file, so it downloads it
+   * and ships the bytes here.
+   */
+  media_b64?: string;
+  media_mime?: string;
   entities?: unknown[];
   caption_entities?: unknown[];
 }
@@ -471,7 +542,74 @@ async function storeMedia(db: SupabaseClient, post: TgMessage) {
   }
 }
 
+/**
+ * Media from the reader: one upload, then the file_id for everyone else.
+ *
+ * The caption carries the footer too — a separate footer message under a chart
+ * would be a second notification for one post.
+ */
+async function relayMedia(db: SupabaseClient, post: TgMessage, tenants: TenantRow[]) {
+  const chans = tenants.filter((t) => t.telegram_channel_id);
+  const body = post.caption ? await toEnglish(post.caption) : "";
+  const wantsFooter = isTradeSignal(post.caption ?? "");
+  const mime = post.media_mime ?? "image/jpeg";
+
+  const delivered: Record<string, unknown> = {};
+  let fileId: string | null = null;
+
+  for (const t of chans) {
+    const footer = wantsFooter ? footerFor(t) : null;
+    // Telegram caps a caption at 1024 characters; body + footer stays well under.
+    const caption = [body, footer].filter(Boolean).join("\n\n") || undefined;
+
+    if (!fileId) {
+      const up = await uploadMedia(Number(t.telegram_channel_id), post.media_b64!, mime, caption);
+      if (up.ok && up.file_id) fileId = up.file_id;
+      delivered[t.slug] = up.ok
+        ? { ok: true, message_id: up.message_id }
+        : { ok: false, error: up.error };
+      if (!up.ok) console.error(`[media] upload → ${t.slug} failed:`, up.error);
+      continue;
+    }
+
+    const { method, field } = methodFor(mime);
+    const res = await tg<{ message_id: number }>(method, {
+      chat_id: t.telegram_channel_id,
+      [field]: fileId,
+      ...(caption ? { caption } : {}),
+    });
+    delivered[t.slug] = res.ok
+      ? { ok: true, message_id: res.result?.message_id }
+      : { ok: false, error: res.description };
+    if (!res.ok) console.error(`[media] → ${t.slug} failed:`, res.description);
+  }
+
+  await logRelay(db, post.chat.id, post.message_id, post.caption ?? "[media]", delivered);
+
+  // Now there IS a real file_id, so the website gallery can finally be fed.
+  if (fileId) {
+    try {
+      await db.from("desk_media").upsert({
+        file_id: fileId,
+        // `file_unique_id` carries a UNIQUE index and is what makes this upsert
+        // idempotent, but Telegram only returns one for a file it already knew.
+        // The source post identifies this image exactly as well, so it stands in
+        // — without it every redelivery would add another gallery row.
+        file_unique_id: `src:${post.chat.id}:${post.message_id}`,
+        caption: post.caption ?? null,
+        source_chat_id: post.chat.id,
+        source_message_id: post.message_id,
+      }, { onConflict: "file_unique_id", ignoreDuplicates: true });
+    } catch (e) {
+      console.error("[media] store failed:", e);
+    }
+  }
+}
+
 async function relaySingle(db: SupabaseClient, post: TgMessage, tenants: TenantRow[]) {
+  // The reader shipped the file with the update — that path uploads instead of copying.
+  if (post.media_b64) return relayMedia(db, post, tenants);
+
   const delivered: Record<string, unknown> = {};
   // activeTenants now returns partners that may have only an INFO channel, so
   // the signal paths filter here rather than in the query.

@@ -73,7 +73,7 @@ function h1(t: string) { return `<h1 style="margin:0 0 10px;font-size:22px;font-
 function p(t: string) { return `<p style="margin:0 0 14px;font-size:15px;line-height:1.65;color:#b7c1cf">${t}</p>`; }
 
 export type EmailKind =
-  | "password_reset" | "doi" | "welcome" | "deposit_confirmed" | "tier_unlocked"
+  | "password_reset" | "partner_approved" | "doi" | "welcome" | "deposit_confirmed" | "tier_unlocked"
   | "tier_nudge" | "inactivity_warning" | "new_lesson" | "broadcast";
 
 export interface BuildInput {
@@ -113,6 +113,22 @@ export function buildEmail(input: BuildInput): { subject: string; html: string }
     case "password_reset":
       return { subject: `Reset your password — ${brand.name}`,
         html: wrap("Set a new password — the link expires shortly.", h1("Set a new password") + p(`${hi}we got a request to reset the password for your <b>${esc(brand.name)}</b> account. Click below to choose a new one.`) + `<div style="margin:22px 0">${button(a, input.resetUrl ?? dash, "Set a new password")}</div>` + p(`<span style="color:#6b7788;font-size:13px">The link works once and expires shortly. If you didn't ask for this, ignore this e-mail — nothing changes.</span>`)) };
+    /**
+     * Aufnahme ins Partnerprogramm. Bewusst KURZ: die naechsten Schritte stehen
+     * im Partnerbereich, nicht hier. Eine Mail, die den ganzen Ablauf erklaert,
+     * wird nicht gelesen und ist am naechsten Tag veraltet — die Seite nicht.
+     */
+    case "partner_approved":
+      return {
+        subject: `Aufgenommen — dein Zugang zum ${brand.name} Partnerprogramm`,
+        html: wrap("Deine Bewerbung ist angenommen — hier geht es weiter.",
+          h1("Du bist dabei" + (input.firstName ? `, ${esc(input.firstName)}` : "") + ".") +
+          p("Wir haben deine Bewerbung gelesen und dich ins Partnerprogramm aufgenommen. Dein Zugang ist eingerichtet.") +
+          p("Im Partnerbereich steht, was jetzt passiert — was wir übernehmen, und die zwei Dinge, die wir von dir brauchen.") +
+          `<div style="margin:22px 0">${button(a, dash, "Zum Partnerbereich")}</div>` +
+          p(`<span style="color:#6b7788;font-size:13px">Du hast parallel eine Einladung bekommen, in der du dein Passwort setzt. Danach kommst du über den Knopf oben jederzeit rein.</span>`)),
+      };
+
     case "doi":
       return {
         subject: `Please confirm your e-mail — ${brand.name}`,
