@@ -48,7 +48,7 @@ interface Step {
 const STEPS: Step[] = [
   {
     title: "Who are you?",
-    sub: "Takes about a minute. No obligation, and nothing is published anywhere.",
+    sub: "About a minute. Nothing is published anywhere.",
     fields: [
       { key: "name", label: "Your name", placeholder: "", required: true },
       { key: "email", label: "Email", placeholder: "you@example.com", type: "email", required: true,
@@ -233,7 +233,7 @@ export function PartnerApplyForm() {
 
       <p className="mt-4 flex items-start gap-2 text-[12px] leading-relaxed text-muted-foreground">
         <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-        <span>Your details go to us and nowhere else. No newsletter, no third party, and you can ask us to delete them at any time.</span>
+        <span>Your details go to us and nowhere else — no newsletter, no third party, deleted on request.</span>
       </p>
     </form>
   );

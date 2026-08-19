@@ -19,6 +19,8 @@ interface TenantRow {
   name: string;
   active: boolean;
   telegram_channel_id: number | null;
+  telegram_info_channel_id: number | null;
+  info_footer: string | null;
   broker_affiliate_url: string | null;
   signal_footer: string | null;
   config: Record<string, unknown> | null;
@@ -113,6 +115,11 @@ function BrandCard({ row, origin, copied, onCopy, onSave }: {
   const isStatic = Boolean(brand);        // static brands ignore DB `config` on the page
   const cfg = (row.config ?? {}) as Record<string, string>;
   const [chan, setChan] = useState(row.telegram_channel_id?.toString() ?? "");
+  // Der Infokanal kam mit dem Info-Fan-out dazu und fehlte hier — er musste
+  // bisher per SQL gesetzt werden, was bei jedem neuen Partner ein Handgriff
+  // ausserhalb des Admins war.
+  const [infoChan, setInfoChan] = useState(row.telegram_info_channel_id?.toString() ?? "");
+  const [infoFooter, setInfoFooter] = useState(row.info_footer ?? "");
   const [broker, setBroker] = useState(row.broker_affiliate_url ?? "");
   const [footer, setFooter] = useState(row.signal_footer ?? "");
   const [active, setActive] = useState(row.active);
@@ -131,6 +138,8 @@ function BrandCard({ row, origin, copied, onCopy, onSave }: {
 
   const dirty =
     chan !== (row.telegram_channel_id?.toString() ?? "") ||
+    infoChan !== (row.telegram_info_channel_id?.toString() ?? "") ||
+    infoFooter !== (row.info_footer ?? "") ||
     broker !== (row.broker_affiliate_url ?? "") ||
     footer !== (row.signal_footer ?? "") ||
     active !== row.active ||
@@ -155,7 +164,8 @@ function BrandCard({ row, origin, copied, onCopy, onSave }: {
       set("logoInitials", logoInitials); set("telegramChannel", tgLink);
       set("brokerName", brokerName); set("brokerUrl", brokerUrl);
       await onSave({
-        telegram_channel_id: chan, broker_affiliate_url: broker, signal_footer: footer, active,
+        telegram_channel_id: chan, telegram_info_channel_id: infoChan,
+        broker_affiliate_url: broker, signal_footer: footer, info_footer: infoFooter, active,
         name: name.trim() || row.name, config: nextCfg,
       });
       setSaved(true); setTimeout(() => setSaved(false), 1800);
@@ -182,6 +192,8 @@ function BrandCard({ row, origin, copied, onCopy, onSave }: {
         <div className="text-[10px] font-bold uppercase tracking-[0.16em] text-primary">Relay & broker</div>
         <Field label="Telegram channel ID" value={chan} onChange={setChan} placeholder="-1001234567890" mono />
         <Field label="Broker affiliate link (bot/attribution)" value={broker} onChange={setBroker} placeholder="https://broker.com/ref?a=…" mono />
+        <Field label="Telegram info channel ID" value={infoChan} onChange={setInfoChan} placeholder="-1001234567890" />
+        <Field label="Info footer (optional)" value={infoFooter} onChange={setInfoFooter} placeholder="Zusatz unter jedem gespiegelten Infopost" />
         <Field label="Signal footer (optional)" value={footer} onChange={setFooter} placeholder="📈 Trade with our partner broker…" />
 
         {/* ── Landing page — we build the partner's page here at integration ── */}

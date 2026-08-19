@@ -16,8 +16,28 @@
  * What is deliberately NOT here: the per-lot rates and the broker's name. Both
  * live behind the application — see section 03.
  *
+ * REBUILT 18.08.2026, because it read as one unbroken column of prose.
+ *
+ * Two things were wrong and they compounded each other. Every section carried a
+ * lead paragraph ABOVE the content and every card carried two or three sentences
+ * below its heading, so the page ran to roughly nine hundred words of body copy
+ * for what is a six-point offer. And every section sat at the same width on the
+ * same background behind the same ruled header, so nothing marked where one
+ * ended and the next began — the eye had only the text to go on, and the text
+ * never stopped.
+ *
+ * The fixes are deliberately blunt:
+ *   · ONE LINE PER CLAIM. A card gets a heading and a single sentence. If a
+ *     point needs a paragraph it is not a card, it is a section.
+ *   · NO LEAD PARAGRAPHS. The section title carries the argument; anything that
+ *     was explaining the title has been cut or folded into the items.
+ *   · BANDS. Alternating full-width surfaces (`Band`) separate the sections, so
+ *     the boundary is structural rather than typographic. That is what makes it
+ *     scan as six components instead of one document.
+ *
  * Public. The partner LOGIN/dashboard lives at /partner; this is the pitch.
  */
+import type { ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowRight, ArrowUpRight, Bot, Gauge, GraduationCap, LayoutDashboard, Lock, Radio, Send, Wallet,
@@ -42,20 +62,19 @@ const applyHref = `mailto:${CONTACT}?subject=${encodeURIComponent("Become a part
 /**
  * 01 — the six things a partner is handed.
  *
- * A bento rather than a six-up grid, and images inside the cards rather than in a
- * gallery underneath. Six equally-sized text blocks gave nothing rank: every claim
- * arrived at the same weight, and the product screenshots sat in a separate strip
- * below where they proved nothing about any particular claim. Now the two cards
- * that can be *shown* — the branded page and the academy — are the wide ones and
- * carry the evidence, and the rest stay small because they are genuinely smaller
- * points.
+ * A bento rather than a six-up grid: the two cards that can be *shown* — the
+ * branded page and the academy — are wide and carry the evidence inside the
+ * claim they back, and the rest stay small because they are smaller points.
+ *
+ * One sentence each. These used to run to three, which is how six cards turned
+ * into a page of prose.
  */
 const GET = [
   {
     icon: LayoutDashboard,
     span: "md:col-span-2",
-    title: "A complete website under your name",
-    body: "Your own landing page at cosmos-candles.com/yourname — your name, your colours, your character. Your audience signs up there and never lands on ours. Hosting and maintenance are on us.",
+    title: "A website under your name",
+    body: "Your page, your colours, your character — hosting and upkeep on us.",
     img: "/partner/partner-page-zeko.jpg",
     imgAlt: "A live partner landing page carrying the partner's own name, character and colours",
   },
@@ -63,88 +82,101 @@ const GET = [
     icon: Radio,
     span: "md:col-span-1",
     title: "Live trade signals",
-    body: "Every call from our desk — entry, stop, targets — pushed to a private channel under your brand. Nothing for you to write or time.",
+    body: "Every call from our desk, in a channel under your brand.",
     preview: "signals" as const,
   },
   {
     icon: GraduationCap,
     span: "md:col-span-2",
     title: "The full trading academy",
-    body: "Twelve lessons from the first candle through to real orderflow — volume profile, footprint, Level 2 depth, risk and sizing. Recorded on the live terminal, not on slides.",
+    body: "Twelve lessons, first candle to real orderflow — recorded on the live terminal.",
     img: "/partner/orderflow-lesson.jpg",
     imgAlt: "A lesson recorded on the live orderflow terminal showing volume profile and footprint data",
   },
   {
     icon: Bot,
     span: "md:col-span-1",
-    title: "Onboarding that runs without you",
-    body: "Sign-up, deposit check, Telegram access and tier unlocks all happen automatically. You do not answer support tickets at midnight.",
+    title: "Onboarding without you",
+    body: "Sign-up, deposit check and access, all automatic.",
   },
   {
     icon: Gauge,
     span: "md:col-span-1",
     title: "Your own dashboard",
-    body: "Clicks, customers, volume, your level and every euro of commission — live, and visible only to you.",
+    body: "Clicks, customers, volume and commission — live, and only yours.",
   },
   {
     icon: Send,
     span: "md:col-span-2",
     title: "A private community channel",
-    body: "Your members get a Telegram group under your brand where the desk posts and people stay accountable to each other. Community is what makes them keep trading — which is what makes this recur.",
+    body: "A Telegram group under your brand, where members stay accountable to each other.",
   },
 ];
 
-/** 02 — the sequence, with the partner's own effort called out honestly. */
+/**
+ * 02 — the sequence, with the partner's own effort called out honestly.
+ *
+ * The effort column IS the argument, so it is a chip on every row and the row
+ * text is short enough that the chip is never the thing you read last.
+ */
 const STEPS = [
-  {
-    title: "You get in touch",
-    you: "5 minutes",
-    body: "Send a short message with your name, your channel and roughly how big your audience is. That is the whole application.",
-  },
-  {
-    title: "We build your page",
-    you: "one call",
-    body: "We take your name, colours and character and set your brand up. You review it once and say go. Usually live the same day.",
-  },
-  {
-    title: "You share your link",
-    you: "ongoing",
-    body: "One link, in your bio or a post. This is the only recurring work on your side — everything after it is automatic.",
-  },
-  {
-    title: "Your people sign up free",
-    you: "nothing",
-    body: "They create an account on your page. No card, no course fee. Their trading account is opened in their own name and stays theirs.",
-  },
-  {
-    title: "Everything unlocks itself",
-    you: "nothing",
-    body: "The deposit is verified automatically, the academy opens, Telegram access is granted and their tier applies. You are not in the loop.",
-  },
-  {
-    title: "You get paid, every month",
-    you: "nothing",
-    body: "Commission on every lot they trade — recurring, not a one-off, for as long as they keep trading. Tracked live in your dashboard.",
-  },
+  { title: "You get in touch", you: "5 minutes", body: "Your name, your channel, roughly how big your audience is." },
+  { title: "We build your page", you: "one call", body: "Your brand set up, reviewed once by you. Usually live the same day." },
+  { title: "You share your link", you: "ongoing", body: "One link in your bio. The only recurring work on your side." },
+  { title: "Your people sign up free", you: "nothing", body: "No card, no course fee. Their trading account stays theirs." },
+  { title: "Everything unlocks itself", you: "nothing", body: "Deposit verified, academy opened, Telegram granted." },
+  { title: "You get paid, every month", you: "nothing", body: "Per lot traded, for as long as they keep trading." },
 ];
 
 const FAQ = [
   { q: "What does it cost me?", a: "Nothing. The website, the academy, the signals, the bot and the dashboard are free. You invest your reach and nothing else." },
   { q: "Do I need a licence or trading experience?", a: "No. You bring people together; the academy and the desk do the teaching and the calls. You are not giving investment advice." },
-  { q: "Can other partners see my customers?", a: "No. Each brand is a separate component — its own page, its own link, its own Telegram channels and its own numbers." },
-  { q: "How and when do I get paid?", a: "Per lot your customers trade, following the staircase above. Every amount is visible live in your dashboard as it accrues." },
+  { q: "Can other partners see my customers?", a: "No. Each brand is separate — its own page, its own link, its own Telegram channels and its own numbers." },
+  { q: "How and when do I get paid?", a: "Per lot your customers trade, paid monthly. Every amount is visible live in your dashboard as it accrues." },
   { q: "What happens if someone stops trading?", a: "You keep everything already earned. Commission is per lot traded, so it simply stops accruing for that customer — there is no clawback." },
 ];
 
-function SectionHead({ n, kicker, title, lead }: { n: string; kicker: string; title: string; lead?: string }) {
+/**
+ * A full-width surface change between sections.
+ *
+ * This is the load-bearing piece of the rebuild. Every section used to be an
+ * identical `max-w-6xl` block on the same background, so the only boundary
+ * between "what you get" and "how it runs" was a heading — and after four of
+ * them the eye stops registering headings. Alternating the ground gives the page
+ * an actual structure, and it means the section header no longer has to work as
+ * a divider, which is why it lost its rule.
+ */
+function Band({ tone = "base", id, children }: { tone?: "base" | "raised"; id?: string; children: ReactNode }) {
   return (
-    <div className="mb-8">
-      <div className="flex items-center gap-4 border-b border-white/10 pb-3">
-        <span className="font-mono text-[11px] tabular-nums text-primary">{n}</span>
+    <section
+      id={id}
+      className={
+        "scroll-mt-8 px-4 py-16 sm:px-8 sm:py-24 " +
+        (tone === "raised" ? "border-y border-white/[0.07] bg-white/[0.022]" : "")
+      }
+    >
+      <div className="mx-auto max-w-6xl">{children}</div>
+    </section>
+  );
+}
+
+/**
+ * Number, kicker, title — and nothing else.
+ *
+ * The `lead` paragraph this used to take was the single biggest source of text
+ * on the page: six of them, each restating the title in three more lines.
+ */
+function SectionHead({ n, kicker, title }: { n: string; kicker: string; title: string }) {
+  return (
+    <div className="mb-10 sm:mb-12">
+      <div className="flex items-center gap-3">
+        <span className="font-mono text-[11px] font-bold tabular-nums text-primary">{n}</span>
+        <span className="h-px w-6 bg-primary/40" aria-hidden />
         <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{kicker}</span>
       </div>
-      <h2 className="mt-5 max-w-3xl font-display text-2xl font-bold leading-tight tracking-tight sm:text-[2rem]">{title}</h2>
-      {lead && <p className="mt-3 max-w-2xl text-sm leading-relaxed text-foreground/70 sm:text-base">{lead}</p>}
+      <h2 className="mt-4 max-w-3xl font-display text-[1.75rem] font-bold leading-[1.1] tracking-tight sm:text-[2.25rem]">
+        {title}
+      </h2>
     </div>
   );
 }
@@ -161,13 +193,12 @@ function PartnerProgramm() {
         </a>
       </header>
 
-      {/* Hero. The page used to open on flat black with a column of text and a
-          large empty right half — correct information, no presence. Cosmo is the
-          face of the product a partner would be putting their name on, so he
-          belongs here, and the nebula treatment is lifted from the public landing
-          so the two read as one product rather than two sites. He is mirrored on
-          purpose: the artwork points right, which off the right-hand edge would
-          lead the eye away from the copy. Flipped, he points at the headline. */}
+      {/* Hero. Cosmo is the face of the product a partner would be putting their
+          name on, so he belongs here, and the nebula treatment is lifted from the
+          public landing so the two read as one product rather than two sites. He
+          is mirrored on purpose: the artwork points right, which off the
+          right-hand edge would lead the eye away from the copy. Flipped, he
+          points at the headline. */}
       <section className="relative isolate overflow-hidden">
         <style>{`
           @keyframes ppTwinkle { 0%,100% { opacity:.15 } 50% { opacity:.75 } }
@@ -191,15 +222,14 @@ function PartnerProgramm() {
           ))}
         </div>
 
-        <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 pb-12 pt-6 sm:px-8 sm:pb-14 sm:pt-10 lg:grid-cols-[1.25fr_1fr] lg:gap-4">
+        <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 pb-14 pt-6 sm:px-8 sm:pb-20 sm:pt-10 lg:grid-cols-[1.25fr_1fr] lg:gap-4">
           <div>
             <h1 className="max-w-3xl font-display text-[2rem] font-bold leading-[1.05] tracking-tight sm:text-[3.4rem]">
               A complete trading academy —<br />
               <span className="text-primary">under your name, built for free.</span>
             </h1>
-            <p className="mt-4 max-w-xl leading-relaxed text-foreground/70 sm:mt-5 sm:text-lg">
-              You bring the audience. We build, run and maintain the whole product under your brand —
-              and you earn on every lot your people trade.
+            <p className="mt-4 max-w-lg leading-relaxed text-foreground/70 sm:mt-5 sm:text-lg">
+              You bring the audience. We build and run the whole product under your brand — you earn on every lot your people trade.
             </p>
             <div className="mt-7 flex flex-wrap items-center gap-3">
               <a href="#apply" className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-[var(--shadow-brand)] transition-transform hover:-translate-y-0.5 sm:px-7 sm:py-3.5">
@@ -242,29 +272,26 @@ function PartnerProgramm() {
       </section>
 
       {/* 01 */}
-      <section className="mx-auto max-w-6xl px-4 pb-14 sm:px-8 sm:pb-16">
-        <SectionHead
-          n="01" kicker="What you get" title="Everything is already built."
-          lead="Not a referral link with a dashboard bolted on — the finished product, running under your brand from day one."
-        />
-        <div className="grid gap-4 md:grid-cols-3">
+      <Band tone="raised">
+        <SectionHead n="01" kicker="What you get" title="Everything is already built." />
+        <div className="grid gap-3 sm:gap-4 md:grid-cols-3">
           {GET.map((f) => (
             <div
               key={f.title}
               className={`group flex flex-col overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03] transition-colors hover:border-primary/25 ${f.span}`}
             >
-              <div className="p-5 sm:p-6">
-                <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-primary/12 text-primary ring-1 ring-primary/20 transition-transform group-hover:scale-105">
-                  <f.icon className="h-[22px] w-[22px]" />
+              <div className="p-4 sm:p-6">
+                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 text-primary ring-1 ring-primary/20 transition-transform group-hover:scale-105 sm:h-11 sm:w-11">
+                  <f.icon className="h-5 w-5 sm:h-[22px] sm:w-[22px]" />
                 </span>
-                <h3 className="mt-4 font-display text-lg font-bold">{f.title}</h3>
+                <h3 className="mt-4 font-display text-lg font-bold leading-snug">{f.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-foreground/60">{f.body}</p>
               </div>
 
               {/* Evidence sits inside the claim it backs, cropped so the card keeps
                   its shape rather than being dictated by the screenshot's aspect. */}
               {f.img && (
-                <div className="mt-auto h-44 overflow-hidden border-t border-white/8 sm:h-52">
+                <div className="mt-auto h-36 overflow-hidden border-t border-white/8 sm:h-52">
                   <img
                     src={f.img} alt={f.imgAlt} loading="lazy"
                     className="h-full w-full object-cover object-left-top transition-transform duration-500 group-hover:scale-[1.03]"
@@ -279,19 +306,16 @@ function PartnerProgramm() {
             </div>
           ))}
         </div>
-      </section>
+      </Band>
 
       {/* 02 */}
-      <section className="mx-auto max-w-6xl px-4 pb-14 sm:px-8 sm:pb-16">
-        <SectionHead
-          n="02" kicker="How it runs" title="Six steps. Three of them cost you minutes."
-          lead="The column on the right is your own effort at each stage — that is the whole proposition, so it is worth being precise about it."
-        />
-        <div className="overflow-hidden rounded-2xl border border-white/10">
+      <Band>
+        <SectionHead n="02" kicker="How it runs" title="Six steps. Three of them cost you minutes." />
+        <ol className="overflow-hidden rounded-2xl border border-white/10">
           {STEPS.map((s, i) => (
-            <div
+            <li
               key={s.title}
-              className={`relative flex items-start gap-4 p-4 sm:gap-5 sm:p-5 ${i > 0 ? "border-t border-white/8" : ""}`}
+              className={`relative flex items-center gap-4 p-4 sm:gap-5 sm:p-5 ${i > 0 ? "border-t border-white/8" : ""}`}
             >
               {/* A widening bar down the left edge: the argument of this section is
                   that the work shifts off the partner after step three, and a row
@@ -301,27 +325,33 @@ function PartnerProgramm() {
                 className="absolute left-0 top-0 h-full bg-primary/70"
                 style={{ width: `${3 + i * 2}px`, opacity: 0.25 + i * 0.13 }}
               />
-              <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 font-mono text-[11px] font-bold tabular-nums text-primary ring-1 ring-primary/20">
+              <span className="ml-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 font-mono text-[11px] font-bold tabular-nums text-primary ring-1 ring-primary/20">
                 {String(i + 1).padStart(2, "0")}
               </span>
               <div className="min-w-0 flex-1">
-                <h3 className="font-display text-base font-bold sm:text-lg">{s.title}</h3>
-                <p className="mt-1 text-sm leading-relaxed text-foreground/65">{s.body}</p>
+                <h3 className="font-display text-base font-bold leading-snug sm:text-lg">{s.title}</h3>
+                <p className="mt-0.5 text-sm leading-relaxed text-foreground/60">{s.body}</p>
               </div>
-              <span className="shrink-0 rounded-full border border-white/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+              {/* "nothing" is the payoff of the whole section, so it stops looking
+                  like the other chips the moment it becomes true. */}
+              <span
+                className={
+                  "shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] " +
+                  (s.you === "nothing"
+                    ? "bg-primary/12 text-primary ring-1 ring-primary/25"
+                    : "border border-white/10 text-muted-foreground")
+                }
+              >
                 {s.you}
               </span>
-            </div>
+            </li>
           ))}
-        </div>
-      </section>
+        </ol>
+      </Band>
 
       {/* 03 */}
-      <section id="earnings" className="mx-auto max-w-6xl px-4 pb-14 sm:px-8 sm:pb-16">
-        <SectionHead
-          n="03" kicker="What it pays" title="Paid per lot, not per signup."
-          lead="You earn on what your customers actually trade, every month they keep trading — not a one-off bounty for sending someone who never comes back."
-        />
+      <Band tone="raised" id="earnings">
+        <SectionHead n="03" kicker="What it pays" title="Paid per lot, not per signup." />
 
         {/* The rate card and the estimator used to stand here in the open: four
             levels with the exact dollars per lot, and a calculator that turned
@@ -341,11 +371,8 @@ function PartnerProgramm() {
               <h3 className="mt-3 font-display text-2xl font-bold leading-tight sm:text-3xl">
                 The exact rates come with your approval.
               </h3>
-              <p className="mt-3 text-sm leading-relaxed text-foreground/70">
-                A fixed amount per lot, the same at both brokers, paid every month your
-                customers keep trading. The number itself, the broker we clear through and the
-                full agreement are in your dashboard the moment you are approved — not on a page
-                anyone can read.
+              <p className="mt-3 max-w-md text-sm leading-relaxed text-foreground/70">
+                A fixed amount per lot, the same at both brokers, paid every month your customers keep trading.
               </p>
               <a href="#apply" className="mt-5 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-[var(--shadow-brand)] transition-transform hover:-translate-y-0.5">
                 Apply for access <ArrowRight className="h-4 w-4" />
@@ -368,70 +395,71 @@ function PartnerProgramm() {
             </div>
           </div>
         </div>
-      </section>
+      </Band>
 
-      {/* 04 */}
-      <section className="mx-auto max-w-6xl px-4 pb-14 sm:px-8 sm:pb-16">
-        <SectionHead
-          n="04" kicker="Why this is legitimate" title="Where the money actually comes from."
-          lead="Worth reading before you put your name on it, because the answer is the reason this stays fair for the people you send."
-        />
-        <div className="grid gap-8 lg:grid-cols-2">
-          <div className="border-t border-white/10 pt-4">
-            <Wallet className="h-5 w-5 text-primary" />
-            <h3 className="mt-2.5 font-display text-lg font-bold">You earn on volume, not on signups</h3>
-            <p className="mt-1.5 text-sm leading-relaxed text-foreground/65">
-              A fixed amount per lot traded, shared with you every month your people keep trading.
-              Nobody pays a course fee, and we do <span className="font-semibold text-foreground">not</span> earn
-              more when someone trades badly — if we did, the whole thing would collapse within a
-              quarter. It only works if they stay, which means it only works if they do well.
-            </p>
-          </div>
-          <div className="border-t border-white/10 pt-4">
-            <Gauge className="h-5 w-5 text-primary" />
-            <h3 className="mt-2.5 font-display text-lg font-bold">The money is never ours to hold</h3>
-            <p className="mt-1.5 text-sm leading-relaxed text-foreground/65">
-              Your members' funds sit in accounts in their own name and can be withdrawn whenever
-              they like. We never touch them. What you see instead is the reporting: every click,
-              every customer and every euro you have earned, in your dashboard.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-3xl px-4 pb-14 sm:px-8 sm:pb-16">
-        <SectionHead n="05" kicker="Questions" title="The ones everybody asks." />
-        <div>
-          {FAQ.map((f) => (
-            <details key={f.q} className="group border-t border-white/10 py-4 last:border-b">
-              <summary className="flex cursor-pointer items-center justify-between gap-4 text-sm font-semibold marker:content-['']">
-                {f.q}
-                <span className="text-lg font-normal text-muted-foreground transition-transform group-open:rotate-45">+</span>
-              </summary>
-              <p className="mt-2.5 text-sm leading-relaxed text-foreground/70">{f.a}</p>
-            </details>
+      {/* 04 — two claims, one line each. This was two paragraphs of prose under a
+          lead paragraph, which is a lot of reading to reach "we don't hold your
+          members' money". */}
+      <Band>
+        <SectionHead n="04" kicker="Why this is legitimate" title="Where the money actually comes from." />
+        <div className="grid gap-4 lg:grid-cols-2">
+          {[
+            {
+              icon: Wallet,
+              title: "You earn on volume, not on signups",
+              body: "A fixed amount per lot traded. Nobody pays a course fee, and we earn nothing extra when someone trades badly — it only works if they stay.",
+            },
+            {
+              icon: Gauge,
+              title: "The money is never ours to hold",
+              body: "Your members' funds sit in accounts in their own name and can be withdrawn any time. We never touch them.",
+            },
+          ].map((c) => (
+            <div key={c.title} className="rounded-2xl border border-white/8 bg-white/[0.03] p-5 sm:p-6">
+              <c.icon className="h-5 w-5 text-primary" />
+              <h3 className="mt-3 font-display text-lg font-bold leading-snug">{c.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-foreground/60">{c.body}</p>
+            </div>
           ))}
         </div>
-      </section>
+      </Band>
 
-      <section id="apply" className="mx-auto max-w-3xl scroll-mt-8 px-4 pb-20 sm:px-8 sm:pb-24">
-        <SectionHead
-          n="06" kicker="Apply" title="Tell us where to reach you."
-          lead="Three fields are all we need to get back to you. The rest helps us come to the call already knowing your setup."
-        />
-        <PartnerApplyForm />
+      {/* 05 */}
+      <Band tone="raised">
+        <div className="mx-auto max-w-3xl">
+          <SectionHead n="05" kicker="Questions" title="The ones everybody asks." />
+          <div>
+            {FAQ.map((f) => (
+              <details key={f.q} className="group border-t border-white/10 py-4 last:border-b">
+                <summary className="flex cursor-pointer items-center justify-between gap-4 text-sm font-semibold marker:content-['']">
+                  {f.q}
+                  <span className="text-lg font-normal text-muted-foreground transition-transform group-open:rotate-45">+</span>
+                </summary>
+                <p className="mt-2.5 text-sm leading-relaxed text-foreground/70">{f.a}</p>
+              </details>
+            ))}
+          </div>
+        </div>
+      </Band>
 
-        {/* A name-drop, at name-drop size. Partners are one of many, so no single
-            one gets to headline the programme's own page. */}
-        <p className="mt-8 text-center text-[12px] text-muted-foreground">
-          Already running on this system:{" "}
-          <a href="/zekoglobal" target="_blank" rel="noopener" className="inline-flex items-center gap-1 font-semibold text-foreground/80 hover:text-primary hover:underline">
-            Zeko Global <ArrowUpRight className="h-3 w-3" />
-          </a>
-          {" · "}
-          Prefer email? <a href={applyHref} className="underline hover:text-foreground">{CONTACT}</a>
-        </p>
-      </section>
+      {/* 06 */}
+      <Band id="apply">
+        <div className="mx-auto max-w-3xl">
+          <SectionHead n="06" kicker="Apply" title="Tell us where to reach you." />
+          <PartnerApplyForm />
+
+          {/* A name-drop, at name-drop size. Partners are one of many, so no single
+              one gets to headline the programme's own page. */}
+          <p className="mt-8 text-center text-[12px] text-muted-foreground">
+            Already running on this system:{" "}
+            <a href="/zekoglobal" target="_blank" rel="noopener" className="inline-flex items-center gap-1 font-semibold text-foreground/80 hover:text-primary hover:underline">
+              Zeko Global <ArrowUpRight className="h-3 w-3" />
+            </a>
+            {" · "}
+            Prefer email? <a href={applyHref} className="underline hover:text-foreground">{CONTACT}</a>
+          </p>
+        </div>
+      </Band>
 
       <footer className="border-t border-white/8 px-4 py-6 text-center text-[11px] leading-relaxed text-muted-foreground">
         Cosmos Candles · Powered by <Link to="/" className="underline hover:text-foreground">Cosmos Candles Academy</Link> · Trading involves risk — 74–89% of retail CFD accounts lose money. Earnings depend on customer activity and are not guaranteed.

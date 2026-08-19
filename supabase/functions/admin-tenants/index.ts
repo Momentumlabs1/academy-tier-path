@@ -33,7 +33,11 @@ const CORS = {
 const json = (b: unknown, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { ...CORS, "Content-Type": "application/json" } });
 
-const FIELDS = ["slug", "name", "active", "telegram_channel_id", "broker_affiliate_url", "signal_footer", "config"];
+// telegram_info_channel_id + info_footer kamen mit dem Info-Fan-out dazu und
+// fehlten hier: der Admin konnte sie weder lesen noch speichern, sie mussten
+// per SQL gesetzt werden.
+const FIELDS = ["slug", "name", "active", "telegram_channel_id", "telegram_info_channel_id",
+  "broker_affiliate_url", "signal_footer", "info_footer", "config"];
 
 const slugify = (s: string) =>
   s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
@@ -84,15 +88,21 @@ Deno.serve(async (req) => {
   if (body.action === "update") {
     if (!(await assertAdmin())) return json({ error: "unauthorized" }, 401);
     if (!body.slug || !body.patch) return json({ error: "slug and patch required" }, 400);
-    const allowed = ["telegram_channel_id", "broker_affiliate_url", "signal_footer", "active", "name", "config"];
+    const allowed = ["telegram_channel_id", "telegram_info_channel_id",
+      "broker_affiliate_url", "signal_footer", "info_footer", "active", "name", "config"];
     const patch: Record<string, unknown> = {};
     for (const k of allowed) if (k in body.patch) patch[k] = body.patch[k];
     if ("config" in patch && (typeof patch.config !== "object" || patch.config === null)) delete patch.config;
     if ("name" in patch && !String(patch.name ?? "").trim()) delete patch.name;
-    if (patch.telegram_channel_id === "" || patch.telegram_channel_id == null) patch.telegram_channel_id = null;
-    else patch.telegram_channel_id = Number(patch.telegram_channel_id);
-    if (patch.broker_affiliate_url === "") patch.broker_affiliate_url = null;
-    if (patch.signal_footer === "") patch.signal_footer = null;
+    // Leeres Feld heisst "nicht gesetzt", nicht 0 — Number("") waere 0 und wuerde
+    // einen Kanal mit der Id 0 eintragen.
+    for (const k of ["telegram_channel_id", "telegram_info_channel_id"]) {
+      if (!(k in patch)) continue;
+      patch[k] = patch[k] === "" || patch[k] == null ? null : Number(patch[k]);
+    }
+    for (const k of ["broker_affiliate_url", "signal_footer", "info_footer"]) {
+      if (k in patch && patch[k] === "") patch[k] = null;
+    }
 
     const { data, error } = await db.from("tenants").update(patch).eq("slug", body.slug).select(FIELDS.join(","));
     if (error) return json({ error: error.message }, 500);
