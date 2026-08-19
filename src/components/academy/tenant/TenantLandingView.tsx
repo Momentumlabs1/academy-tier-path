@@ -101,6 +101,23 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
   const up = "oklch(0.82 0.17 150)";
   const down = "oklch(0.66 0.2 22)";
 
+  /* Ein Knopf-Look fuer die ganze Seite. Vorher war jeder Knopf eine flache
+     Flaeche in Markenfarbe mit einem weichen Schlagschatten darunter — auf dem
+     Handy, wo sie fast die ganze Breite einnehmen, sah das aus wie ein
+     unveraendertes Framework-Standardteil. Der leichte Verlauf und die helle
+     Innenkante geben der Flaeche eine Oberflaeche; der Schatten wird dafuer
+     kleiner, damit der Knopf nicht schwebt. */
+  /* Nach dem Mount die echte Adresse, davor die des Hauptauftritts — sonst
+     weicht der servergerenderte Text vom ersten Client-Render ab. */
+  const [siteHost, setSiteHost] = useState("cosmos-candles.com");
+  useEffect(() => { setSiteHost(window.location.host.replace(/^www\./, "")); }, []);
+
+  const cta = {
+    background: `linear-gradient(180deg, color-mix(in oklch, ${primary} 86%, white), ${primary})`,
+    boxShadow: `0 8px 22px -12px ${primary}, inset 0 1px 0 rgba(255,255,255,0.45)`,
+    color: "#000",
+  } as const;
+
   return (
     <div className="relative min-h-screen overflow-clip bg-[#05070e] font-sans text-white">
       <style>{`
@@ -164,7 +181,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
             <Link to="/signup" className="rounded-full px-3 py-2 text-sm font-medium text-white/70 hover:text-white sm:px-4">Sign in</Link>
             <button onClick={goRegister}
               className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold text-black shadow-lg transition-transform hover:-translate-y-0.5"
-              style={{ background: primary, boxShadow: `0 8px 30px -8px ${primary}` }}>
+              style={cta}>
               Sign up free <ArrowRight className="h-3.5 w-3.5" />
             </button>
           </div>
@@ -182,10 +199,10 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           ))}
         </div>
 
-        <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 pb-16 pt-12 sm:px-8 lg:grid-cols-[1.02fr_0.98fr] lg:gap-14 lg:pb-24 lg:pt-16">
+        <div className="mx-auto grid max-w-6xl items-center gap-6 px-4 pb-8 pt-6 sm:gap-10 sm:pb-16 sm:px-8 sm:pt-12 lg:grid-cols-[1.02fr_0.98fr] lg:gap-14 lg:pb-24 lg:pt-16">
           {/* Left: copy */}
           <div className="relative z-10 text-center lg:text-left">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 sm:mb-6 bg-white/[0.04] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
               <span className="relative flex h-1.5 w-1.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-70" style={{ background: primary }} /><span className="relative inline-flex h-1.5 w-1.5 rounded-full" style={{ background: primary }} /></span>
               {showCosmo ? "Cosmos Candles Academy" : `Powered by Cosmos Candles`}
             </div>
@@ -195,27 +212,27 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                 <>Learn to trade<br />the <span style={{ color: primary }}>whole cosmos.</span></>
               ) : (tenant.headline ?? tenant.tagline)}
             </h1>
-            <p className="mx-auto mt-5 max-w-lg text-base text-white/65 sm:text-lg lg:mx-0">
+            <p className="mx-auto mt-4 max-w-lg text-[15px] text-white/65 sm:mt-5 sm:text-lg lg:mx-0">
               {showCosmo
-                ? "Live signals, a course that starts from zero and pro orderflow tools — free. Cosmo reads every candle with you, from your first trade to your first funded month."
+                ? "Live signals, a course from zero, and pro orderflow tools. Free — Cosmo reads every candle with you."
                 : (tenant.subhead ?? tenant.description)}
             </p>
 
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+            <div className="mt-6 flex flex-col items-stretch gap-2.5 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-3 lg:justify-start">
               <button onClick={goRegister}
-                className="group inline-flex items-center gap-2 rounded-full px-5 py-3 text-[13px] font-black text-black transition-transform hover:-translate-y-0.5"
-                style={{ background: primary, boxShadow: `0 14px 40px -12px ${primary}` }}>
+                className="group inline-flex items-center justify-center gap-2 rounded-full px-5 py-3.5 text-[13px] font-black text-black transition-transform hover:-translate-y-0.5 sm:py-3"
+                style={cta}>
                 Start free — €0 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </button>
               {tenant.telegramChannel && tenant.telegramChannel !== "#" && (
                 <a href={tenant.telegramChannel} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-3 text-[13px] font-semibold hover:bg-white/10 sm:px-6">
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-3.5 text-[13px] font-semibold hover:bg-white/10 sm:px-6 sm:py-3">
                   Watch the signals <ArrowUpRight className="h-4 w-4" />
                 </a>
               )}
             </div>
 
-            <div className="mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-white/50 lg:justify-start">
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-[11px] text-white/50 sm:mt-7 sm:gap-x-6 sm:text-xs lg:justify-start">
               {/* These three used to read "4.9 broker rating", "Regulated broker"
                   and "200+ members live". The rating and the regulator belonged to
                   TradeQuo, who is no longer our broker — repeating them beside a
@@ -223,7 +240,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                   business, not a copy detail. The member count was not true either.
                   What replaced them is only what the model itself guarantees. */}
               <span className="inline-flex items-center gap-1.5"><Zap className="h-3.5 w-3.5" style={{ color: primary }} /> No course fees</span>
-              <span className="inline-flex items-center gap-1.5"><Shield className="h-3.5 w-3.5" style={{ color: primary }} /> Your money stays in your own account</span>
+              <span className="inline-flex items-center gap-1.5"><Shield className="h-3.5 w-3.5" style={{ color: primary }} /> Your money stays yours</span>
               <span className="inline-flex items-center gap-1.5"><Star className="h-3.5 w-3.5 fill-current" style={{ color: accent }} /> Withdraw anytime</span>
             </div>
           </div>
@@ -232,7 +249,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               chart candles orbiting him. (Swap cosmo-full.png for the meditating
               cross-legged render when it's produced — same slot.) */}
           {heroHasMascot && (
-            <div className="relative z-10 mx-auto w-full max-w-[500px]" style={{ containerType: "inline-size" }}>
+            <div className="relative z-10 mx-auto w-full max-w-[200px] sm:max-w-[420px] lg:max-w-[500px]" style={{ containerType: "inline-size" }}>
               {showCosmo ? (
                 <div className="orbit-stage relative mx-auto aspect-square w-full">
                   {/* lotus aura — the glow he radiates */}
@@ -275,7 +292,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
       <section className="mx-auto max-w-4xl px-4 pb-10 pt-4 sm:px-8 sm:py-10">
         {/* Das Video laeuft 1:19 — "60 seconds" stand hier noch aus der Zeit
             vor dem fertigen Schnitt. */}
-        <SectionHead n="01" kicker="Watch first · 80 seconds" title="See the whole thing in 80 seconds" primary={primary} />
+        <SectionHead n="01" kicker="Watch first" title="The whole thing in 80 seconds" primary={primary} />
         <div className="relative mt-8">
           {showCosmo && (
             <div className="absolute -top-12 right-2 z-20 hidden sm:block">
@@ -285,7 +302,12 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0c0f17] shadow-2xl">
             <div className="flex items-center gap-1.5 border-b border-white/8 px-4 py-2.5">
               <span className="h-3 w-3 rounded-full bg-[#ff5f57]" /><span className="h-3 w-3 rounded-full bg-[#febc2e]" /><span className="h-3 w-3 rounded-full bg-[#28c840]" />
-              <span className="ml-3 flex-1 truncate rounded-md bg-white/5 px-3 py-1 text-center text-[11px] text-white/40">{tenant.name.toLowerCase().replace(/\s+/g,"")}.academy — welcome</span>
+              {/* Die Adresszeile setzte sich aus dem Markennamen plus ".academy"
+                  zusammen und zeigte damit auf einer echten Seite eine frei
+                  erfundene Domain — cosmoscandlesacademy.academy gibt es nicht.
+                  Jetzt steht dort die Adresse, unter der die Seite wirklich
+                  laeuft; vor der Hydration die des Hauptauftritts. */}
+              <span className="ml-3 flex-1 truncate rounded-md bg-white/5 px-3 py-1 text-center text-[11px] text-white/40">{siteHost} — welcome</span>
             </div>
             <div className="relative aspect-video bg-black">
               {/* Der Platzhalter lag mit `pointer-events-none absolute inset-0`
@@ -356,8 +378,131 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           Besucher und dem, wofuer er gekommen ist. */}
 
 
+      {/* ─────────────────── CAPABILITIES SHOWCASE ─────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-8 sm:py-16">
+        <div className="mx-auto max-w-2xl text-center">
+          <SectionHead n="02" kicker="Everything included · free" title="Not a course. A whole trading operating system." primary={primary} center
+            sub="Signals, auto-trader, academy, quizzes, tiers. Everything below is the real product — not screenshots." />
+        </div>
+
+        <div className="mt-10 space-y-12 sm:mt-14 sm:space-y-24">
+          <Showcase primary={primary} icon={Radio} tag="Live signals"
+            title="Every call from the desk — on your phone in seconds"
+            body="Entry, stop-loss and targets, pushed the moment the desk fires. Nothing to interpret, no hindsight, no screenshots — just the trade."
+            points={["Real-time Telegram delivery", "Entry · SL · multiple targets", "Win/loss tracked openly"]}
+            preview={<SignalsPreview primary={primary} />} />
+
+          <Showcase primary={primary} reversed icon={Bot} tag="Auto-Trader"
+            title="Copy the master account — hands-off"
+            body="Mirror the desk's trades automatically into your own broker account. Position sizing scales to your balance; you stay in control and can switch it off anytime."
+            points={["One-tap copy of the master desk", "Risk scaled to your account", "Full transparency on every position"]}
+            preview={<BotPreview primary={primary} />} />
+
+          <Showcase primary={primary} icon={GraduationCap} tag="The Academy"
+            title="From your first candle to a funded month"
+            body="Twelve structured lessons with video, built to take you from zero to a repeatable edge. Progress is tracked and every lesson pays XP."
+            points={["12 video lessons, zero to pro", "Progress + completion tracking", "Orderflow tools most traders never see"]}
+            preview={<AcademyPreview primary={primary} accent={accent} />} />
+
+          <Showcase primary={primary} reversed icon={Sparkles} tag="Live quizzes"
+            title="Learn it, then prove it — and get paid XP"
+            body="Short quizzes lock in each lesson. Answer right, bank XP, climb the ladder. It turns passive watching into skills that stick."
+            points={["Quiz after every lesson", "Instant XP on correct answers", "Reinforces the exact rules that matter"]}
+            preview={<QuizPreview primary={primary} />} />
+
+          <Showcase primary={primary} icon={Trophy} tag="Earn & level up"
+            title="Every action earns — every level unlocks"
+            body="XP, streaks and levels turn progress into momentum. Verified deposits and completed lessons push you up the tiers, each one unlocking more of the platform."
+            points={["XP, streaks & levels", "Tier ladder tied to real progress", "Unlock the live room, auto-trader & more"]}
+            preview={<RewardsPreview primary={primary} accent={accent} />} />
+        </div>
+      </section>
+
+      {/* ───────────────── BEWEIS: echte Ergebnisse ─────────────────
+          Zahlen vor Preisen. Rendert nichts, wenn keine Daten da sind. */}
+      <DeskResults primary={primary} />
+
+      {/* ─────────────────────── HOW IT WORKS ─────────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-8 sm:py-16">
+        <div className="flex flex-col items-center gap-4 text-center">
+          {showCosmo && (
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full blur-xl" style={{ background:`color-mix(in oklch, ${accent} 40%, transparent)` }} />
+              <img src="/cosmo/cosmo-avatar.png" alt="Cosmo" className="cosmo-float relative h-16 w-16 rounded-full object-cover ring-2 ring-white/10" />
+            </div>
+          )}
+          <SectionHead n="03" kicker="Three steps" title="How it works" primary={primary} center />
+        </div>
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          {[
+            { step: "01", icon: GraduationCap, title: "Create your free account", body: "Takes a minute. No card, no subscription, nothing to cancel." },
+            { step: "02", icon: Radio, title: "Connect Telegram", body: "We walk you through the setup in the chat and send your personal invite." },
+            { step: "03", icon: LineChart, title: "Trade with confidence", body: "Follow the signals, work through the lessons, and level up tier by tier." },
+          ].map((s) => (
+            <div key={s.step} className="rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6">
+              <div className="mb-3 flex items-center justify-between"><span className="font-display text-5xl font-black opacity-10">{s.step}</span><s.icon className="h-6 w-6" style={{ color: primary }} /></div>
+              <h3 className="font-display text-base font-bold">{s.title}</h3><p className="mt-2 text-sm text-white/65">{s.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-8 sm:py-16">
+        <SectionHead n="04" kicker="How far you can go" title="Member tiers" primary={primary} />
+        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+          {TIERS.map((t, idx) => (
+            <div key={t.key} className="relative flex flex-col rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6"
+              style={idx === 1 ? { borderColor:`color-mix(in oklch, ${primary} 45%, transparent)`, background:`linear-gradient(180deg, color-mix(in oklch, ${primary} 8%, transparent), transparent)` } : {}}>
+              {idx === 1 && <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-[10px] font-bold uppercase text-black" style={{ background: primary }}>Most popular</span>}
+              <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: t.color }} /><span className="font-display text-lg font-bold">{t.name}</span></div>
+              <div className="mt-3 font-display text-4xl font-black">{formatMoney(t.minDeposit, "€")}<span className="text-base font-normal text-white/40">+</span></div>
+              <div className="mb-4 text-[11px] uppercase tracking-[0.14em] text-white/45">verified account</div>
+              <ul className="flex flex-1 flex-col gap-2">
+                {t.perks.map((perk) => <li key={perk} className="flex items-start gap-2 text-sm text-white/80"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" style={{ color: t.color }} />{perk}</li>)}
+              </ul>
+              <button onClick={goRegister} className="mt-6 inline-flex items-center justify-center gap-2 rounded-full py-3 text-sm font-bold transition-opacity hover:opacity-90"
+                style={idx === 1 ? cta : { background: "rgba(255,255,255,0.08)", color: "white" }}>Get started <ArrowRight className="h-4 w-4" /></button>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ─────────────────────── TESTIMONIALS ─────────────────────── */}
+      {tenant.testimonials && tenant.testimonials.length > 0 && (
+        <section className="mx-auto max-w-6xl px-4 py-12 sm:px-8 sm:py-16">
+          <SectionHead n="05" kicker="Proof" title="Real members, real results" primary={primary} />
+          <div className="mt-8 grid gap-4 sm:grid-cols-3">
+            {tenant.testimonials.map((t) => (
+              <div key={t.handle} className="flex flex-col rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6">
+                <div className="mb-3 flex gap-0.5">{Array.from({ length: 5 }).map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-current" style={{ color: accent }} />)}</div>
+                <p className="flex-1 text-sm text-white/80">"{t.text}"</p>
+                <div className="mt-4 flex items-center justify-between">
+                  <div><div className="text-sm font-bold">{t.name}</div><div className="text-[11px] text-white/45">{t.handle}</div></div>
+                  <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background:`color-mix(in oklch, ${primary} 16%, transparent)`, color: primary }}>{t.result}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ─────────────────────── FAQ ─────────────────────── */}
+      {tenant.faq && tenant.faq.length > 0 && (
+        <section className="mx-auto max-w-3xl px-4 py-12 sm:px-8 sm:py-16">
+          <SectionHead n="06" kicker="Questions" title="Good to know" primary={primary} />
+          <div className="mt-8 space-y-3">
+            {tenant.faq.map((f) => (
+              <details key={f.q} className="group rounded-2xl border border-white/[0.07] bg-white/[0.04] px-5 py-4">
+                <summary className="flex cursor-pointer items-center justify-between text-sm font-semibold marker:content-['']">{f.q}<span className="ml-4 text-lg text-white/40 transition-transform group-open:rotate-45">+</span></summary>
+                <p className="mt-3 text-sm text-white/65">{f.a}</p>
+              </details>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* ─────────────────────── BROKER BAND ─────────────────────── */}
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-8">
+      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-8 sm:py-16">
         <div className="overflow-hidden rounded-[2rem] border border-white/10" style={{ background:`radial-gradient(120% 120% at 0% 0%, color-mix(in oklch, ${primary} 12%, transparent), transparent 55%)` }}>
           <div className="grid gap-10 p-8 sm:p-12 lg:grid-cols-[1fr_0.85fr] lg:items-center">
             <div>
@@ -399,141 +544,13 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                   TELEGRAM_ENTRY in broker.ts. The route is Telegram, where a person
                   walks them through it. */}
               <a href={TELEGRAM_ENTRY.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-medium text-white/60 underline-offset-4 hover:text-white hover:underline">{TELEGRAM_ENTRY.label} <ArrowUpRight className="h-3.5 w-3.5" /></a>
-              <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2"><Wallet className="h-4 w-4" style={{ color: primary }} /><span className="text-xs font-medium text-white/75">Your money stays in your name</span></div>
             </div>
           </div>
         </div>
       </section>
-
-      {/* ─────────────────── CAPABILITIES SHOWCASE ─────────────────── */}
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <SectionHead n="02" kicker="Everything included · free" title="Not a course. A whole trading operating system." primary={primary} center
-            sub="Live signals, an auto-trader, a full academy, quizzes that pay XP, a rewards ladder — and a white-label engine partners run under their own brand. Here's the real thing, not screenshots." />
-        </div>
-
-        <div className="mt-14 space-y-16 sm:space-y-24">
-          <Showcase primary={primary} icon={Radio} tag="Live signals"
-            title="Every call from the desk — on your phone in seconds"
-            body="Entry, stop-loss and targets, pushed the moment the desk fires. Nothing to interpret, no hindsight, no screenshots — just the trade."
-            points={["Real-time Telegram delivery", "Entry · SL · multiple targets", "Win/loss tracked openly"]}
-            preview={<SignalsPreview primary={primary} />} />
-
-          <Showcase primary={primary} reversed icon={Bot} tag="Auto-Trader"
-            title="Copy the master account — hands-off"
-            body="Mirror the desk's trades automatically into your own broker account. Position sizing scales to your balance; you stay in control and can switch it off anytime."
-            points={["One-tap copy of the master desk", "Risk scaled to your account", "Full transparency on every position"]}
-            preview={<BotPreview primary={primary} />} />
-
-          <Showcase primary={primary} icon={GraduationCap} tag="The Academy"
-            title="From your first candle to a funded month"
-            body="Twelve structured lessons with video, built to take you from zero to a repeatable edge. Progress is tracked and every lesson pays XP."
-            points={["12 video lessons, zero to pro", "Progress + completion tracking", "Orderflow tools most traders never see"]}
-            preview={<AcademyPreview primary={primary} accent={accent} />} />
-
-          <Showcase primary={primary} reversed icon={Sparkles} tag="Live quizzes"
-            title="Learn it, then prove it — and get paid XP"
-            body="Short quizzes lock in each lesson. Answer right, bank XP, climb the ladder. It turns passive watching into skills that stick."
-            points={["Quiz after every lesson", "Instant XP on correct answers", "Reinforces the exact rules that matter"]}
-            preview={<QuizPreview primary={primary} />} />
-
-          <Showcase primary={primary} icon={Trophy} tag="Earn & level up"
-            title="Every action earns — every level unlocks"
-            body="XP, streaks and levels turn progress into momentum. Verified deposits and completed lessons push you up the tiers, each one unlocking more of the platform."
-            points={["XP, streaks & levels", "Tier ladder tied to real progress", "Unlock the live room, auto-trader & more"]}
-            preview={<RewardsPreview primary={primary} accent={accent} />} />
-        </div>
-      </section>
-
-      {/* ─────────────────────── TIERS ─────────────────────── */}
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-8">
-        {/* Results before tiers: proof first, then what it costs. Renders
-            nothing at all when there is no data — see DeskResults. */}
-      </section>
-
-      <DeskResults primary={primary} />
-
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-8">
-        <SectionHead n="04" kicker="How far you can go" title="Member tiers" primary={primary} />
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
-          {TIERS.map((t, idx) => (
-            <div key={t.key} className="relative flex flex-col rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6"
-              style={idx === 1 ? { borderColor:`color-mix(in oklch, ${primary} 45%, transparent)`, background:`linear-gradient(180deg, color-mix(in oklch, ${primary} 8%, transparent), transparent)` } : {}}>
-              {idx === 1 && <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-[10px] font-bold uppercase text-black" style={{ background: primary }}>Most popular</span>}
-              <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: t.color }} /><span className="font-display text-lg font-bold">{t.name}</span></div>
-              <div className="mt-3 font-display text-4xl font-black">{formatMoney(t.minDeposit, "€")}<span className="text-base font-normal text-white/40">+</span></div>
-              <div className="mb-4 text-[11px] uppercase tracking-[0.14em] text-white/45">verified account</div>
-              <ul className="flex flex-1 flex-col gap-2">
-                {t.perks.map((perk) => <li key={perk} className="flex items-start gap-2 text-sm text-white/80"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" style={{ color: t.color }} />{perk}</li>)}
-              </ul>
-              <button onClick={goRegister} className="mt-6 inline-flex items-center justify-center gap-2 rounded-full py-3 text-sm font-bold transition-opacity hover:opacity-90"
-                style={idx === 1 ? { background: primary, color: "black" } : { background: "rgba(255,255,255,0.08)", color: "white" }}>Get started <ArrowRight className="h-4 w-4" /></button>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ─────────────────────── TESTIMONIALS ─────────────────────── */}
-      {tenant.testimonials && tenant.testimonials.length > 0 && (
-        <section className="mx-auto max-w-6xl px-4 py-16 sm:px-8">
-          <SectionHead n="05" kicker="Proof" title="Real members, real results" primary={primary} />
-          <div className="mt-8 grid gap-4 sm:grid-cols-3">
-            {tenant.testimonials.map((t) => (
-              <div key={t.handle} className="flex flex-col rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6">
-                <div className="mb-3 flex gap-0.5">{Array.from({ length: 5 }).map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-current" style={{ color: accent }} />)}</div>
-                <p className="flex-1 text-sm text-white/80">"{t.text}"</p>
-                <div className="mt-4 flex items-center justify-between">
-                  <div><div className="text-sm font-bold">{t.name}</div><div className="text-[11px] text-white/45">{t.handle}</div></div>
-                  <span className="rounded-full px-2.5 py-1 text-[11px] font-bold" style={{ background:`color-mix(in oklch, ${primary} 16%, transparent)`, color: primary }}>{t.result}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* ─────────────────────── HOW IT WORKS ─────────────────────── */}
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-8">
-        <div className="flex flex-col items-center gap-4 text-center">
-          {showCosmo && (
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full blur-xl" style={{ background:`color-mix(in oklch, ${accent} 40%, transparent)` }} />
-              <img src="/cosmo/cosmo-avatar.png" alt="Cosmo" className="cosmo-float relative h-16 w-16 rounded-full object-cover ring-2 ring-white/10" />
-            </div>
-          )}
-          <SectionHead n="06" kicker="Three steps" title="How it works" primary={primary} center />
-        </div>
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
-          {[
-            { step: "01", icon: GraduationCap, title: "Create your free account", body: "Takes a minute. No card, no subscription, nothing to cancel." },
-            { step: "02", icon: Radio, title: "Connect Telegram", body: "We walk you through the setup in the chat and send your personal invite." },
-            { step: "03", icon: LineChart, title: "Trade with confidence", body: "Follow the signals, work through the lessons, and level up tier by tier." },
-          ].map((s) => (
-            <div key={s.step} className="rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6">
-              <div className="mb-3 flex items-center justify-between"><span className="font-display text-5xl font-black opacity-10">{s.step}</span><s.icon className="h-6 w-6" style={{ color: primary }} /></div>
-              <h3 className="font-display text-base font-bold">{s.title}</h3><p className="mt-2 text-sm text-white/65">{s.body}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* ─────────────────────── FAQ ─────────────────────── */}
-      {tenant.faq && tenant.faq.length > 0 && (
-        <section className="mx-auto max-w-3xl px-4 py-16 sm:px-8">
-          <SectionHead n="07" kicker="Questions" title="Good to know" primary={primary} />
-          <div className="mt-8 space-y-3">
-            {tenant.faq.map((f) => (
-              <details key={f.q} className="group rounded-2xl border border-white/[0.07] bg-white/[0.04] px-5 py-4">
-                <summary className="flex cursor-pointer items-center justify-between text-sm font-semibold marker:content-['']">{f.q}<span className="ml-4 text-lg text-white/40 transition-transform group-open:rotate-45">+</span></summary>
-                <p className="mt-3 text-sm text-white/65">{f.a}</p>
-              </details>
-            ))}
-          </div>
-        </section>
-      )}
 
       {/* ─────────────────────── FINAL CTA ─────────────────────── */}
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-8">
+      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-8 sm:py-16">
         <div className="relative overflow-hidden rounded-[2rem] border p-10 text-center sm:p-16"
           style={{ borderColor:`color-mix(in oklch, ${primary} 22%, transparent)`, background:`radial-gradient(120% 140% at 50% 0%, color-mix(in oklch, ${primary} 16%, transparent), color-mix(in oklch, ${accent} 8%, transparent) 60%, transparent)` }}>
           {showCosmo && (
@@ -546,7 +563,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           <h2 className="font-display text-3xl font-black sm:text-5xl">Your first candle<br />starts today.</h2>
           <p className="mx-auto mt-4 max-w-md text-white/65">Join {tenant.name}, connect Telegram, and we take it from there.</p>
           <div className="mt-7 flex justify-center">
-            <button onClick={goRegister} className="inline-flex items-center gap-2 rounded-full px-9 py-4 text-sm font-black text-black transition-transform hover:-translate-y-0.5" style={{ background: primary, boxShadow:`0 14px 40px -12px ${primary}` }}>Start free — €0 <ArrowRight className="h-4 w-4" /></button>
+            <button onClick={goRegister} className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-[13px] font-black text-black transition-transform hover:-translate-y-0.5" style={cta}>Start free — €0 <ArrowRight className="h-4 w-4" /></button>
           </div>
           <p className="mt-4 text-[11px] text-white/45">Questions? <a href={`mailto:${tenant.affiliateEmail}`} className="underline hover:text-white">{tenant.affiliateEmail}</a></p>
         </div>
@@ -570,7 +587,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                     <li key={p} className="flex items-center gap-2 text-sm text-white/80"><CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: primary }} />{p}</li>
                   ))}
                 </ul>
-                <Link to="/partner-program" className="mt-7 inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-sm font-black text-black transition-transform hover:-translate-y-0.5" style={{ background: primary, boxShadow: `0 12px 36px -12px ${primary}` }}>Become a partner <ArrowRight className="h-4 w-4" /></Link>
+                <Link to="/partner-program" className="mt-7 inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-[13px] font-black text-black transition-transform hover:-translate-y-0.5" style={cta}>Become a partner <ArrowRight className="h-4 w-4" /></Link>
               </div>
               <WhitelabelPreview primary={primary} />
             </div>

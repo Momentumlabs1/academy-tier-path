@@ -124,6 +124,12 @@ async def forward(msg, edited: bool):
         return
 
     body = {
+        # Der Webhook verwirft jede Nachricht aus der Quellgruppe, die dieses
+        # Feld NICHT traegt. Grund: Telegram stellt einem Bot zwar keine
+        # Bot-Nachrichten zu, MENSCHEN-Nachrichten aber sehr wohl — die kamen
+        # dadurch zweimal in den Kanaelen an, einmal direkt und einmal ueber
+        # diesen Leser. Der Leser sieht ohnehin beides, also ist er der Weg.
+        "via_reader": True,
         "message_id": msg.id,
         "date": int(msg.date.timestamp()),
         "chat": {"id": SOURCE, "type": "supergroup",

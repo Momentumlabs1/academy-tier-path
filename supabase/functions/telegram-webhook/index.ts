@@ -7,23 +7,28 @@
  *  A relay to a handful of channels finishes in ~1s, well within Telegram's
  *  webhook timeout, and update_id dedup guards against redelivery.)
  *
- * SOURCE detection: exactly one chat feeds the relay — MAIN_CHANNEL_ID. Any
- * other chat the bot is in is recorded in `telegram_chats_seen` and ignored.
- * (The old rule also accepted "any channel that is not a destination", which
- * turned every chat anyone added the bot to into a signal source.) The
- * inference survives only as a bootstrap when MAIN_CHANNEL_ID is unset.
+ * SOURCE detection: exactly one chat feeds the relay — MAIN_CHANNEL_ID — and
+ * within it exactly one courier, cosmos-reader. Any other chat the bot is in is
+ * recorded in `telegram_chats_seen` and ignored.
  *
  * WHO DELIVERS THE SOURCE MESSAGES: Telegram never hands a bot the messages of
  * another bot, and the desk's calls arrive in the source group via Tim's copy
  * bot. A user-account reader (cosmos-reader on the IONOS box) reads that group
- * over MTProto and POSTs each message here in Telegram's own update shape.
+ * over MTProto and POSTs each message here in Telegram's own update shape,
+ * stamped `via_reader`.
  *
- * That same rule is why media cannot be copied. copyMessage needs nothing but a
- * chat id and a message id, yet it fails on every desk photo with "message to
- * copy not found": the message was never delivered to our bot, so for the Bot
- * API it does not exist, and no amount of admin rights changes that. The reader
- * therefore downloads the file and ships the bytes in `media_b64`; this function
- * uploads them ONCE and fans the returned file_id out to the rest.
+ * That stamp is required, because the rule above is one-directional: Telegram
+ * withholds BOT messages from a bot but delivers HUMAN ones normally. Anything a
+ * person posted in the source group therefore arrived twice — once straight from
+ * Telegram, once from the reader — and was relayed twice. update_id dedup cannot
+ * catch that; they are genuinely different updates.
+ *
+ * The same asymmetry is why media cannot be copied. copyMessage needs nothing
+ * but a chat id and a message id, yet it fails on every desk photo with "message
+ * to copy not found": that message was never delivered to our bot, so for the
+ * Bot API it does not exist, and no amount of admin rights changes that. The
+ * reader downloads the file instead and ships the bytes in `media_b64`; this
+ * function uploads them ONCE and fans the returned file_id out to the rest.
  *
  * FOUR JOBS: fan-out (upload/sendPhoto for reader media, copyMessage for
  * anything Telegram did deliver, copyMessages for albums), mirroring the info
@@ -204,6 +209,18 @@ interface TgMessage {
    */
   media_b64?: string;
   media_mime?: string;
+  /**
+   * Stamped by cosmos-reader on everything it forwards, and the ONLY thing the
+   * router accepts from the source group.
+   *
+   * Telegram withholds a bot's messages from another bot, which is why the
+   * reader exists — but it delivers HUMAN messages to our bot perfectly well.
+   * So anything a person posted in the source group arrived twice: once
+   * straight from Telegram, once from the reader, and both were relayed. It
+   * only showed up when someone posted a photo by hand and it landed in the
+   * partner channels twice.
+   */
+  via_reader?: boolean;
   entities?: unknown[];
   caption_entities?: unknown[];
 }
@@ -1052,6 +1069,22 @@ async function processUpdate(update: TgUpdate) {
     // API call is needed to know it.
     const selfId = Number((await cfg("TELEGRAM_BOT_TOKEN")).split(":")[0] || 0);
     const isSelf = selfId !== 0 && groupMsg.from?.id === selfId;
+
+    // ONE path out of the source group, and it is the reader.
+    //
+    // Telegram delivers human messages from that group to us directly, so a
+    // photo posted by hand was relayed twice — once from this delivery and once
+    // from the reader's copy of the same message. Dedup by update_id cannot
+    // catch it: the two arrive as genuinely different updates.
+    //
+    // Dropping the direct one costs nothing. The reader sees every message in
+    // the group, human or bot, and the relay has been fully dependent on it
+    // since the day it was built — bot posts never arrive any other way.
+    if (isSource && !groupMsg.via_reader) {
+      console.log("[router] dropped direct delivery from the source group; the reader is the only path", groupMsg.message_id);
+      return;
+    }
+
     if (isSource && hasContent && !isSelf) {
       const tenants = await activeTenants(db);
       if (tenants.length) {

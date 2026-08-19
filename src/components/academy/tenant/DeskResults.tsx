@@ -104,11 +104,11 @@ export function DeskResults({ primary }: { primary: string }) {
         </p>
       </div>
 
-      <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-8 grid grid-cols-3 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-4">
         {stats.map((s) => (
-          <div key={s.label} className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-            <div className="text-[11px] uppercase tracking-[0.16em] text-white/45">{s.label}</div>
-            <div className="mt-1 font-display text-3xl font-bold tabular-nums" style={{ color: primary }}>
+          <div key={s.label} className="rounded-2xl border border-white/10 bg-white/[0.03] p-3.5 sm:p-5">
+            <div className="text-[9px] uppercase tracking-[0.12em] text-white/45 sm:text-[11px] sm:tracking-[0.16em]">{s.label}</div>
+            <div className="mt-1 font-display text-2xl font-bold tabular-nums sm:text-3xl" style={{ color: primary }}>
               {s.value}
             </div>
           </div>
