@@ -160,7 +160,7 @@ function Band({ tone = "base", id, children }: { tone?: "base" | "raised"; id?: 
       id={id}
       className={
         "scroll-mt-8 px-4 py-16 sm:px-8 sm:py-24 " +
-        (tone === "raised" ? "border-y border-white/[0.07] bg-white/[0.022]" : "")
+        (tone === "raised" ? "border-y border-white/[0.08] bg-white/[0.035] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]" : "")
       }
     >
       <div className="pp-reveal mx-auto max-w-6xl">{children}</div>
@@ -176,13 +176,18 @@ function Band({ tone = "base", id, children }: { tone?: "base" | "raised"; id?: 
  */
 function SectionHead({ n, kicker, title }: { n: string; kicker: string; title: string }) {
   return (
-    <div className="mb-10 sm:mb-12">
+    <div className="relative mb-10 sm:mb-12">
+      {/* The watermark numeral is what makes a section identifiable at
+          scrolling speed — the small mono number never was. */}
+      <span aria-hidden className="pointer-events-none absolute -top-8 right-0 select-none font-display text-[5.5rem] font-black leading-none text-white/[0.05] sm:-top-12 sm:text-[7.5rem]">
+        {n}
+      </span>
       <div className="flex items-center gap-3">
         <span className="font-mono text-[11px] font-bold tabular-nums text-primary">{n}</span>
         <span className="h-px w-6 bg-primary/40" aria-hidden />
         <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">{kicker}</span>
       </div>
-      <h2 className="mt-4 max-w-3xl font-display text-[1.75rem] font-bold leading-[1.1] tracking-tight sm:text-[2.25rem]">
+      <h2 className="pp-sheen mt-4 max-w-3xl font-display text-[1.75rem] font-bold leading-[1.1] tracking-tight sm:text-[2.25rem]">
         {title}
       </h2>
     </div>
@@ -219,6 +224,7 @@ function PartnerProgramm() {
           /* One orchestrated load, not scattered effects: headline, sub, CTAs,
              stats and Cosmo arrive as a single staggered sequence. Pure CSS,
              so SSR paints the final state for crawlers with animations off. */
+          .pp-sheen { background: linear-gradient(180deg,#ffffff 0%,rgba(255,255,255,.92) 55%,rgba(255,255,255,.55) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
           @keyframes ppRise { from { opacity:0; transform: translateY(14px) } to { opacity:1; transform: translateY(0) } }
           .pp-in   { animation: ppRise .7s cubic-bezier(.22,1,.36,1) both }
           .pp-in2  { animation: ppRise .7s cubic-bezier(.22,1,.36,1) .12s both }
@@ -258,7 +264,7 @@ function PartnerProgramm() {
 
         <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 pb-14 pt-6 sm:px-8 sm:pb-20 sm:pt-10 lg:grid-cols-[1.25fr_1fr] lg:gap-4">
           <div>
-            <h1 className="pp-in max-w-3xl font-display text-[2rem] font-bold leading-[1.05] tracking-tight sm:text-[3.4rem]">
+            <h1 className="pp-in pp-sheen max-w-3xl font-display text-[2rem] font-bold leading-[1.05] tracking-tight sm:text-[3.4rem]">
               A complete trading academy —<br />
               <span className="text-primary">under your name, built for free.</span>
             </h1>
@@ -335,7 +341,10 @@ function PartnerProgramm() {
                     Slightly dimmed at rest and lifted on hover — the reveal marks it
                     as a live thing to look at, not a decorative texture. */}
                 {f.img && (
-                  <div className="relative mt-auto h-36 overflow-hidden border-t border-white/10 sm:h-52">
+                  <div className="relative mt-auto min-h-[10rem] flex-1 overflow-hidden border-t border-white/10 sm:min-h-[13rem]">
+                    {/* flex-1 statt fester Hoehe: die Reihe streckt sich nach der
+                        hoechsten Karte, und vorher blieb genau dort ein totes Loch
+                        zwischen Text und Bildleiste. Jetzt fuellt das Bild alles. */}
                     <img
                       src={f.img} alt={f.imgAlt} loading="lazy"
                       className="h-full w-full object-cover object-left-top opacity-90 saturate-[0.92] transition-all duration-500 group-hover:scale-[1.03] group-hover:opacity-100 group-hover:saturate-100"
