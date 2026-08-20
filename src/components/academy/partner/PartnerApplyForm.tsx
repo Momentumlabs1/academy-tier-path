@@ -118,9 +118,14 @@ export function PartnerApplyForm() {
      bound reads as a black hole to anyone who has filled in a partner form
      before — and this one has to carry the promise that the rates and the
      broker are actually waiting on the other side. */
+  /* SHELL NOTE: the route wraps this component in a 1px gradient ring, so the
+     card draws no border of its own — a second edge inside the ring read as a
+     rendering artifact. The backgrounds are OPAQUE for the same reason: a
+     translucent wash would let the ring's gradient bleed through the whole
+     card instead of stopping at the 1px edge. */
   if (done) {
     return (
-      <div className="rounded-[22px] border border-primary/25 bg-primary/[0.06] p-7 sm:p-10">
+      <div className="rounded-[22px] bg-[color-mix(in_oklch,var(--primary)_8%,oklch(0.115_0.028_258))] p-7 sm:p-10">
         <CheckCircle2 className="h-10 w-10 text-primary" />
         <h3 className="mt-4 font-display text-2xl font-bold sm:text-3xl">Application received.</h3>
         <p className="mt-2.5 max-w-xl text-sm leading-relaxed text-foreground/75">
@@ -156,7 +161,7 @@ export function PartnerApplyForm() {
   }
 
   return (
-    <form onSubmit={submit} className="rounded-[22px] border border-white/10 bg-white/[0.03] p-6 sm:p-8">
+    <form onSubmit={submit} className="rounded-[22px] bg-[oklch(0.13_0.028_258)] p-6 sm:p-8">
       {/* The step counter is the point: it promises the form ends. */}
       <div className="flex items-center gap-3">
         {STEPS.map((_, i) => (

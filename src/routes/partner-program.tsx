@@ -35,6 +35,14 @@
  *     the boundary is structural rather than typographic. That is what makes it
  *     scan as six components instead of one document.
  *
+ * VISUAL PASS 20.08.2026: the rebuild fixed the structure but every component
+ * still wore the same rounded-2xl border-white/8 shell, so the six sections
+ * were separated without being distinguishable. Each component TYPE now has
+ * its own form — exhibits vs points in the bento, a node-spine timeline for
+ * the steps, a sealed tile for the rate, plaques for the assurances, opening
+ * cards for the FAQ, and one lit gradient ring reserved for the form. The
+ * copy is untouched; the WHY of each treatment sits next to it inline.
+ *
  * Public. The partner LOGIN/dashboard lives at /partner; this is the pitch.
  */
 import type { ReactNode } from "react";
@@ -203,11 +211,17 @@ function PartnerProgramm() {
         <style>{`
           @keyframes ppTwinkle { 0%,100% { opacity:.15 } 50% { opacity:.75 } }
           @keyframes ppFloat  { 0%,100% { transform: scaleX(-1) translate3d(0,0,0) } 50% { transform: scaleX(-1) translate3d(0,-14px,0) } }
+          @keyframes ppSweep  { 0% { transform: translateX(-100%) } 100% { transform: translateX(400%) } }
           .pp-twinkle { animation: ppTwinkle 4s ease-in-out infinite }
           .pp-cosmo   { animation: ppFloat 7s ease-in-out infinite; will-change: transform; backface-visibility: hidden; transform-style: preserve-3d }
+          /* The light band that slides across the barred rate tile in 03. It says
+             "there is something under here" without showing a single digit — a
+             static stripe pattern alone read as a texture, not as a cover. */
+          .pp-sweep   { animation: ppSweep 3.4s ease-in-out infinite }
           @media (prefers-reduced-motion: reduce) {
             .pp-twinkle { animation: none }
             .pp-cosmo { animation: none; transform: scaleX(-1) }
+            .pp-sweep { animation: none; opacity: 0 }
           }
         `}</style>
 
@@ -274,78 +288,135 @@ function PartnerProgramm() {
       {/* 01 */}
       <Band tone="raised">
         <SectionHead n="01" kicker="What you get" title="Everything is already built." />
+        {/* Two card anatomies, not one. The cards that carry evidence (a
+            screenshot, the live signals preview) keep the icon tile and the
+            media panel — they are exhibits. The purely textual points drop the
+            tile and put the icon on the title line instead: at six identical
+            shells the grid read as "six equal claims", and the exhibits lost
+            their weight. Now the eye sorts the grid before reading a word. */}
         <div className="grid gap-3 sm:gap-4 md:grid-cols-3">
-          {GET.map((f) => (
-            <div
-              key={f.title}
-              className={`group flex flex-col overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03] transition-colors hover:border-primary/25 ${f.span}`}
-            >
-              <div className="p-4 sm:p-6">
-                <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 text-primary ring-1 ring-primary/20 transition-transform group-hover:scale-105 sm:h-11 sm:w-11">
-                  <f.icon className="h-5 w-5 sm:h-[22px] sm:w-[22px]" />
-                </span>
-                <h3 className="mt-4 font-display text-lg font-bold leading-snug">{f.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-foreground/60">{f.body}</p>
-              </div>
+          {GET.map((f) => {
+            const evidence = Boolean(f.img || f.preview);
+            return evidence ? (
+              <div
+                key={f.title}
+                className={`group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.04] transition-colors hover:border-primary/30 ${f.span}`}
+              >
+                <div className="p-4 sm:p-6">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 text-primary ring-1 ring-primary/20 transition-transform group-hover:scale-105 sm:h-11 sm:w-11">
+                    <f.icon className="h-5 w-5 sm:h-[22px] sm:w-[22px]" />
+                  </span>
+                  <h3 className="mt-4 font-display text-lg font-bold leading-snug">{f.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-foreground/60">{f.body}</p>
+                </div>
 
-              {/* Evidence sits inside the claim it backs, cropped so the card keeps
-                  its shape rather than being dictated by the screenshot's aspect. */}
-              {f.img && (
-                <div className="mt-auto h-36 overflow-hidden border-t border-white/8 sm:h-52">
-                  <img
-                    src={f.img} alt={f.imgAlt} loading="lazy"
-                    className="h-full w-full object-cover object-left-top transition-transform duration-500 group-hover:scale-[1.03]"
-                  />
+                {/* Evidence sits inside the claim it backs, cropped so the card keeps
+                    its shape rather than being dictated by the screenshot's aspect.
+                    Slightly dimmed at rest and lifted on hover — the reveal marks it
+                    as a live thing to look at, not a decorative texture. */}
+                {f.img && (
+                  <div className="relative mt-auto h-36 overflow-hidden border-t border-white/10 sm:h-52">
+                    <img
+                      src={f.img} alt={f.imgAlt} loading="lazy"
+                      className="h-full w-full object-cover object-left-top opacity-90 saturate-[0.92] transition-all duration-500 group-hover:scale-[1.03] group-hover:opacity-100 group-hover:saturate-100"
+                    />
+                    {/* The screenshot melts into the card instead of butting against
+                        the border — one component, not a card with a photo stapled on. */}
+                    <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-black/35 to-transparent" />
+                  </div>
+                )}
+                {f.preview === "signals" && (
+                  <div className="mt-auto border-t border-white/10 p-4">
+                    <SignalsPreview primary={BRAND.primary} />
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div
+                key={f.title}
+                className={`group relative rounded-2xl border border-white/[0.06] bg-white/[0.015] p-4 transition-all hover:-translate-y-0.5 hover:border-primary/25 sm:p-6 ${f.span}`}
+              >
+                {/* A hairline of accent along the top edge instead of an icon tile:
+                    enough identity to not look unfinished, little enough that the
+                    evidence cards stay the loudest thing in the grid. */}
+                <span aria-hidden className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-primary/45 to-transparent transition-opacity group-hover:from-primary/70" />
+                <div className="flex items-center gap-2.5">
+                  <f.icon className="h-[18px] w-[18px] shrink-0 text-primary" />
+                  <h3 className="font-display text-lg font-bold leading-snug">{f.title}</h3>
                 </div>
-              )}
-              {f.preview === "signals" && (
-                <div className="mt-auto border-t border-white/8 p-4">
-                  <SignalsPreview primary={BRAND.primary} />
-                </div>
-              )}
-            </div>
-          ))}
+                <p className="mt-2.5 text-sm leading-relaxed text-foreground/60">{f.body}</p>
+              </div>
+            );
+          })}
         </div>
       </Band>
 
       {/* 02 */}
       <Band>
         <SectionHead n="02" kicker="How it runs" title="Six steps. Three of them cost you minutes." />
-        <ol className="overflow-hidden rounded-2xl border border-white/10">
-          {STEPS.map((s, i) => (
-            <li
-              key={s.title}
-              className={`relative flex items-center gap-4 p-4 sm:gap-5 sm:p-5 ${i > 0 ? "border-t border-white/8" : ""}`}
-            >
-              {/* A widening bar down the left edge: the argument of this section is
-                  that the work shifts off the partner after step three, and a row
-                  of six identical lines showed none of that. */}
-              <span
-                aria-hidden
-                className="absolute left-0 top-0 h-full bg-primary/70"
-                style={{ width: `${3 + i * 2}px`, opacity: 0.25 + i * 0.13 }}
-              />
-              <span className="ml-2 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 font-mono text-[11px] font-bold tabular-nums text-primary ring-1 ring-primary/20">
-                {String(i + 1).padStart(2, "0")}
-              </span>
-              <div className="min-w-0 flex-1">
-                <h3 className="font-display text-base font-bold leading-snug sm:text-lg">{s.title}</h3>
-                <p className="mt-0.5 text-sm leading-relaxed text-foreground/60">{s.body}</p>
-              </div>
-              {/* "nothing" is the payoff of the whole section, so it stops looking
-                  like the other chips the moment it becomes true. */}
-              <span
-                className={
-                  "shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] " +
-                  (s.you === "nothing"
-                    ? "bg-primary/12 text-primary ring-1 ring-primary/25"
-                    : "border border-white/10 text-muted-foreground")
-                }
-              >
-                {s.you}
-              </span>
-            </li>
-          ))}
+        {/* One shared box made this read as a table — six rows of data. A process
+            is nodes on a line, so each step is now its own card hung off a spine
+            of numbered nodes. The moment the partner's work ends (the "nothing"
+            rows) the node fills solid and the card takes a faint primary wash:
+            the sequence visibly changes hands halfway down, which is the whole
+            pitch of this section. */}
+        <ol className="space-y-2.5 sm:space-y-3">
+          {STEPS.map((s, i) => {
+            const auto = s.you === "nothing";
+            const last = i === STEPS.length - 1;
+            return (
+              <li key={s.title} className="flex gap-3 sm:gap-4">
+                <div className="relative flex w-8 flex-none justify-center">
+                  <span
+                    className={
+                      "z-10 flex h-8 w-8 items-center justify-center rounded-full font-mono text-[11px] font-bold tabular-nums " +
+                      (auto
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-[oklch(0.13_0.03_258)] text-primary ring-1 ring-primary/25")
+                    }
+                  >
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  {/* The connector runs through the gap to the next node — without
+                      it the nodes are just badges and the timeline claim collapses. */}
+                  {!last && (
+                    <span aria-hidden className="absolute -bottom-3 top-8 w-px bg-gradient-to-b from-white/15 to-white/5" />
+                  )}
+                </div>
+                <div
+                  className={
+                    "relative flex min-w-0 flex-1 items-center gap-3 overflow-hidden rounded-xl border p-4 sm:gap-4 sm:p-5 " +
+                    (auto ? "border-primary/20 bg-primary/[0.045]" : "border-white/8 bg-white/[0.03]")
+                  }
+                >
+                  {/* A widening bar down the left edge: the argument of this section is
+                      that the work shifts off the partner after step three, and a row
+                      of six identical lines showed none of that. */}
+                  <span
+                    aria-hidden
+                    className="absolute left-0 top-0 h-full bg-primary/70"
+                    style={{ width: `${3 + i * 2}px`, opacity: 0.25 + i * 0.13 }}
+                  />
+                  <div className="ml-2 min-w-0 flex-1">
+                    <h3 className="font-display text-base font-bold leading-snug sm:text-lg">{s.title}</h3>
+                    <p className="mt-0.5 text-sm leading-relaxed text-foreground/60">{s.body}</p>
+                  </div>
+                  {/* "nothing" is the payoff of the whole section, so it stops looking
+                      like the other chips the moment it becomes true. */}
+                  <span
+                    className={
+                      "shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em] " +
+                      (auto
+                        ? "bg-primary/15 text-primary ring-1 ring-primary/30"
+                        : "border border-white/10 text-muted-foreground")
+                    }
+                  >
+                    {s.you}
+                  </span>
+                </div>
+              </li>
+            );
+          })}
         </ol>
       </Band>
 
@@ -384,13 +455,28 @@ function PartnerProgramm() {
                 fourth column ran off the edge because the grid had no
                 breakpoint. One tile says the same thing, honestly, at any
                 width. */}
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-center">
+            <div className="relative rounded-2xl border border-white/10 bg-white/[0.03] p-6 text-center">
+              {/* Corner brackets, like a document with a strip redacted. The tile
+                  used to be a plain stripe block, which read as decoration; the
+                  brackets and the lock make it read as something deliberately
+                  withheld — which is exactly the message of this section. */}
+              {[
+                "left-2 top-2 border-l border-t",
+                "right-2 top-2 border-r border-t",
+                "bottom-2 left-2 border-b border-l",
+                "bottom-2 right-2 border-b border-r",
+              ].map((pos) => (
+                <span key={pos} aria-hidden className={`absolute h-3 w-3 border-primary/40 ${pos}`} />
+              ))}
               <div className="text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
                 Your rate
               </div>
-              <div className="mx-auto mt-3 flex h-12 w-full max-w-[220px] items-center justify-center rounded-xl border border-white/10"
+              <div className="relative mx-auto mt-3 flex h-12 w-full max-w-[220px] items-center justify-center overflow-hidden rounded-xl border border-white/10"
                    style={{ backgroundImage: "repeating-linear-gradient(115deg, rgba(255,255,255,0.13) 0 6px, rgba(255,255,255,0.035) 6px 12px)" }}
-                   aria-label="locked" />
+                   aria-label="locked">
+                <span aria-hidden className="pp-sweep absolute inset-y-0 left-0 w-1/4 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                <Lock aria-hidden className="relative h-4 w-4 text-foreground/70" />
+              </div>
               <div className="mt-3 text-[12px] text-muted-foreground">per traded lot · visible after approval</div>
             </div>
           </div>
@@ -415,10 +501,17 @@ function PartnerProgramm() {
               body: "Your members' funds sit in accounts in their own name and can be withdrawn any time. We never touch them.",
             },
           ].map((c) => (
-            <div key={c.title} className="rounded-2xl border border-white/8 bg-white/[0.03] p-5 sm:p-6">
-              <c.icon className="h-5 w-5 text-primary" />
+            /* These two are assurances, not features, so they must not look like
+               strays from the 01 bento. A framed icon chip plus the same icon as
+               an oversized watermark bleeding off the corner gives them a plaque
+               character of their own — read once, believed, not scanned. */
+            <div key={c.title} className="relative overflow-hidden rounded-2xl border border-white/8 bg-gradient-to-b from-white/[0.045] to-white/[0.015] p-5 sm:p-6">
+              <c.icon aria-hidden className="absolute -bottom-7 -right-6 h-32 w-32 text-primary/[0.06]" strokeWidth={1} />
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-primary/25 bg-primary/10 text-primary">
+                <c.icon className="h-[18px] w-[18px]" />
+              </span>
               <h3 className="mt-3 font-display text-lg font-bold leading-snug">{c.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-foreground/60">{c.body}</p>
+              <p className="mt-2 max-w-prose text-sm leading-relaxed text-foreground/60">{c.body}</p>
             </div>
           ))}
         </div>
@@ -428,14 +521,32 @@ function PartnerProgramm() {
       <Band tone="raised">
         <div className="mx-auto max-w-3xl">
           <SectionHead n="05" kicker="Questions" title="The ones everybody asks." />
-          <div>
+          {/* Ruled rows made the FAQ look like the small print at the end of a
+              contract. Each question is now its own closed card that visibly
+              opens — accent border, filled plus-chip — so the open item is
+              findable again after scrolling, and the component reads as an FAQ
+              rather than as more prose. details/summary stays: it is keyboard-
+              and screen-reader-correct for free, so only the skin changes. */}
+          <div className="space-y-2.5">
             {FAQ.map((f) => (
-              <details key={f.q} className="group border-t border-white/10 py-4 last:border-b">
-                <summary className="flex cursor-pointer items-center justify-between gap-4 text-sm font-semibold marker:content-['']">
+              <details
+                key={f.q}
+                className="group overflow-hidden rounded-xl border border-white/8 bg-white/[0.02] transition-colors open:border-primary/25 open:bg-white/[0.035]"
+              >
+                <summary className="flex cursor-pointer items-center justify-between gap-4 rounded-xl p-4 text-sm font-semibold marker:content-[''] [&::-webkit-details-marker]:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/60 sm:p-5">
                   {f.q}
-                  <span className="text-lg font-normal text-muted-foreground transition-transform group-open:rotate-45">+</span>
+                  <span
+                    aria-hidden
+                    className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/10 text-sm font-normal text-muted-foreground transition-all group-open:rotate-45 group-open:border-primary/30 group-open:bg-primary/15 group-open:text-primary"
+                  >
+                    +
+                  </span>
                 </summary>
-                <p className="mt-2.5 text-sm leading-relaxed text-foreground/70">{f.a}</p>
+                {/* The answer hangs off a short accent rule instead of floating in
+                    the card — it visibly belongs to the question above it. */}
+                <p className="mx-4 mb-4 border-l-2 border-primary/30 pl-3 text-sm leading-relaxed text-foreground/70 sm:mx-5 sm:mb-5">
+                  {f.a}
+                </p>
               </details>
             ))}
           </div>
@@ -444,9 +555,31 @@ function PartnerProgramm() {
 
       {/* 06 */}
       <Band id="apply">
-        <div className="mx-auto max-w-3xl">
+        {/* `isolate` because the glow sits at negative z-index: without its own
+            stacking context it would paint behind the page background and vanish. */}
+        <div className="relative isolate mx-auto max-w-3xl">
+          {/* A nebula glow returns behind the form — the same light the hero
+              opened with. The page starts and ends on the same note, and the
+              form reads as the destination everything above was pointing at. */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute left-1/2 top-28 -z-10 h-[420px] w-[560px] max-w-[92vw] -translate-x-1/2 rounded-full blur-[120px]"
+            style={{ background: `color-mix(in oklch, ${BRAND.primary} 15%, transparent)` }}
+          />
           <SectionHead n="06" kicker="Apply" title="Tell us where to reach you." />
-          <PartnerApplyForm />
+          {/* The form is the terminal component of the page, so it gets the one
+              framing no other card has: a gradient ring, brightest at the top
+              edge, falling to hairline. Everything else borders itself in
+              white/8 — this is the door, and it is lit. */}
+          <div
+            className="rounded-[23px] p-px shadow-[0_30px_90px_-40px_rgba(0,0,0,0.8)]"
+            style={{
+              background:
+                "linear-gradient(180deg, color-mix(in oklch, var(--primary) 45%, transparent), rgba(255,255,255,0.10) 45%, rgba(255,255,255,0.05))",
+            }}
+          >
+            <PartnerApplyForm />
+          </div>
 
           {/* A name-drop, at name-drop size. Partners are one of many, so no single
               one gets to headline the programme's own page. */}
