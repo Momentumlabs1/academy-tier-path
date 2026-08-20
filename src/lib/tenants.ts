@@ -223,6 +223,17 @@ export const COSMOS_MASTER: TenantConfig = {
     { icon: "📚", title: "Structured Course", body: "12 lessons that take you from your first candle to a repeatable, elite-level edge." },
     { icon: "🤖", title: "Orderflow Tools", body: "Read the market like a pro: Level 2 depth, volume profile and footprint charts, plus built-in position calculators." },
   ],
+  // The master landing shipped without a faq while every generated partner got
+  // the factory default — so the one page most visitors see was the one page
+  // whose FAQ section rendered nothing. The money question leads: in this
+  // niche "is this a scam" is the objection every visitor actually has.
+  faq: [
+    { q: "Is it really free?", a: "Yes. No course fee, no subscription. You fund your own trading account at our partner broker (from €100) — and that money stays yours." },
+    { q: "Where does my money actually sit?", a: "In a trading account opened in your own name at the broker. We never hold a cent of it, and you can withdraw whenever you like." },
+    { q: "I've never traded — can I start here?", a: "That's who the course is built for. It starts at your very first candle, and every signal spells out entry, stop-loss and targets." },
+    { q: "How do the signals reach me?", a: "In a private Telegram channel, seconds after the desk calls them. Access unlocks automatically once your deposit is verified." },
+    { q: "How do you earn if I pay nothing?", a: "The broker pays us on trading volume — that's the whole model, and it's written on this page. We earn nothing extra when you lose, so we only do well if you stay." },
+  ],
 };
 
 // Slugs that collide with real app routes — a partner can never own one, else
