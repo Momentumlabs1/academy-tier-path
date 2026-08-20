@@ -140,6 +140,17 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         .ticker-track { animation: tickerScroll 34s linear infinite; }
         @keyframes twinkle { 0%,100% { opacity:.15; } 50% { opacity:.8; } }
         .twinkle { animation: twinkle 4s ease-in-out infinite; }
+        /* One orchestrated load for the hero, and a scroll reveal for the bands.
+           Same system as /partner-program: pure CSS, so SSR paints the final
+           state and browsers without animation-timeline just show the section. */
+        @keyframes lvRise { from { opacity:0; transform: translateY(14px); } to { opacity:1; transform: translateY(0); } }
+        .lv-in  { animation: lvRise .7s cubic-bezier(.22,1,.36,1) both; }
+        .lv-in2 { animation: lvRise .7s cubic-bezier(.22,1,.36,1) .12s both; }
+        .lv-in3 { animation: lvRise .7s cubic-bezier(.22,1,.36,1) .24s both; }
+        @supports (animation-timeline: view()) {
+          .lv-reveal { animation: lvRise .8s cubic-bezier(.22,1,.36,1) both;
+                       animation-timeline: view(); animation-range: entry 0% entry 38%; }
+        }
         @keyframes spinSlow { to { transform: rotate(360deg); } }
         .spin-slow { animation: spinSlow 48s linear infinite; }
         .spin-rev { animation: spinSlow 60s linear infinite reverse; }
@@ -160,7 +171,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         .orbit-stage:hover .cosmo-lotus { filter: brightness(1.05) drop-shadow(0 0 26px color-mix(in oklch, ${accent} 45%, transparent)); }
         .orbit-stage:hover .orbit-ring, .orbit-stage:hover .orbit-spin { animation-duration: ${Math.round(ORBIT_DUR * 0.6)}s; }
         @media (prefers-reduced-motion: reduce) {
-          .cosmo-float,.cosmo-bob,.chip-float,.candle-grow,.ticker-track,.twinkle,.spin-slow,.spin-rev,.aura-pulse,.orbit-ring,.orbit-spin,.cosmo-lotus { animation: none !important; }
+          .cosmo-float,.cosmo-bob,.chip-float,.candle-grow,.ticker-track,.twinkle,.spin-slow,.spin-rev,.aura-pulse,.orbit-ring,.orbit-spin,.cosmo-lotus,.lv-in,.lv-in2,.lv-in3,.lv-reveal { animation: none !important; }
         }
       `}</style>
 
@@ -214,18 +225,18 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               {showCosmo ? "Cosmos Candles Academy" : `Powered by Cosmos Candles`}
             </div>
 
-            <h1 className="font-display text-[2.75rem] font-black leading-[0.95] tracking-tight sm:text-6xl lg:text-[4.25rem]">
+            <h1 className="lv-in font-display text-[2.75rem] font-black leading-[0.95] tracking-tight sm:text-6xl lg:text-[4.25rem]">
               {showCosmo ? (
                 <>Learn to trade<br />the <span style={{ color: primary }}>whole cosmos.</span></>
               ) : (tenant.headline ?? tenant.tagline)}
             </h1>
-            <p className="mx-auto mt-4 max-w-lg text-[15px] text-white/65 sm:mt-5 sm:text-lg lg:mx-0">
+            <p className="lv-in2 mx-auto mt-4 max-w-lg text-[15px] text-white/65 sm:mt-5 sm:text-lg lg:mx-0">
               {showCosmo
                 ? "Live signals, a course from zero, and pro orderflow tools. Free — Cosmo reads every candle with you."
                 : (tenant.subhead ?? tenant.description)}
             </p>
 
-            <div className="mt-6 flex flex-col items-stretch gap-2.5 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-3 lg:justify-start">
+            <div className="lv-in3 mt-6 flex flex-col items-stretch gap-2.5 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-3 lg:justify-start">
               <button onClick={goRegister}
                 className="group inline-flex items-center justify-center gap-2 rounded-full px-5 py-3.5 text-[13px] font-black text-black transition-transform hover:-translate-y-0.5 sm:py-3"
                 style={cta}>
@@ -627,7 +638,7 @@ function Band({ tone = "base", max = "max-w-6xl", className, children }: {
       tone === "raised" && "border-y border-white/[0.07] bg-white/[0.022]",
       className,
     )}>
-      <div className={cn("mx-auto", max)}>{children}</div>
+      <div className={cn("lv-reveal mx-auto", max)}>{children}</div>
     </section>
   );
 }

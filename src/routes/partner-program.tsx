@@ -163,7 +163,7 @@ function Band({ tone = "base", id, children }: { tone?: "base" | "raised"; id?: 
         (tone === "raised" ? "border-y border-white/[0.07] bg-white/[0.022]" : "")
       }
     >
-      <div className="mx-auto max-w-6xl">{children}</div>
+      <div className="pp-reveal mx-auto max-w-6xl">{children}</div>
     </section>
   );
 }
@@ -191,7 +191,11 @@ function SectionHead({ n, kicker, title }: { n: string; kicker: string; title: s
 
 function PartnerProgramm() {
   return (
-    <div className="min-h-screen bg-[oklch(0.10_0.028_258)] font-sans text-foreground">
+    <div className="relative min-h-screen bg-[oklch(0.10_0.028_258)] font-sans text-foreground">
+      {/* Film grain over the whole page. At 2.5% opacity it is below conscious
+          notice; what it removes is the dead flatness of large dark surfaces. */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-50 opacity-[0.025]"
+           style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E\")" }} />
       <header className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-8 sm:py-5">
         <img src="/cosmos-logo.png" alt="Cosmos Candles" className="h-9 w-auto sm:h-10" />
         {/* Auf 375px nahm dieser Button fast die halbe Kopfzeile und drueckte das
@@ -212,6 +216,21 @@ function PartnerProgramm() {
           @keyframes ppTwinkle { 0%,100% { opacity:.15 } 50% { opacity:.75 } }
           @keyframes ppFloat  { 0%,100% { transform: scaleX(-1) translate3d(0,0,0) } 50% { transform: scaleX(-1) translate3d(0,-14px,0) } }
           @keyframes ppSweep  { 0% { transform: translateX(-100%) } 100% { transform: translateX(400%) } }
+          /* One orchestrated load, not scattered effects: headline, sub, CTAs,
+             stats and Cosmo arrive as a single staggered sequence. Pure CSS,
+             so SSR paints the final state for crawlers with animations off. */
+          @keyframes ppRise { from { opacity:0; transform: translateY(14px) } to { opacity:1; transform: translateY(0) } }
+          .pp-in   { animation: ppRise .7s cubic-bezier(.22,1,.36,1) both }
+          .pp-in2  { animation: ppRise .7s cubic-bezier(.22,1,.36,1) .12s both }
+          .pp-in3  { animation: ppRise .7s cubic-bezier(.22,1,.36,1) .24s both }
+          .pp-in4  { animation: ppRise .7s cubic-bezier(.22,1,.36,1) .36s both }
+          /* Scroll reveal as progressive enhancement: animation-timeline is
+             ignored by browsers without support, which then simply show the
+             section — no JS, no hydration risk, nothing ever stuck hidden. */
+          @supports (animation-timeline: view()) {
+            .pp-reveal { animation: ppRise .8s cubic-bezier(.22,1,.36,1) both;
+                         animation-timeline: view(); animation-range: entry 0% entry 38% }
+          }
           .pp-twinkle { animation: ppTwinkle 4s ease-in-out infinite }
           .pp-cosmo   { animation: ppFloat 7s ease-in-out infinite; will-change: transform; backface-visibility: hidden; transform-style: preserve-3d }
           /* The light band that slides across the barred rate tile in 03. It says
@@ -221,6 +240,7 @@ function PartnerProgramm() {
           @media (prefers-reduced-motion: reduce) {
             .pp-twinkle { animation: none }
             .pp-cosmo { animation: none; transform: scaleX(-1) }
+            .pp-in, .pp-in2, .pp-in3, .pp-in4, .pp-reveal { animation: none }
             .pp-sweep { animation: none; opacity: 0 }
           }
         `}</style>
@@ -238,14 +258,14 @@ function PartnerProgramm() {
 
         <div className="mx-auto grid max-w-6xl items-center gap-8 px-4 pb-14 pt-6 sm:px-8 sm:pb-20 sm:pt-10 lg:grid-cols-[1.25fr_1fr] lg:gap-4">
           <div>
-            <h1 className="max-w-3xl font-display text-[2rem] font-bold leading-[1.05] tracking-tight sm:text-[3.4rem]">
+            <h1 className="pp-in max-w-3xl font-display text-[2rem] font-bold leading-[1.05] tracking-tight sm:text-[3.4rem]">
               A complete trading academy —<br />
               <span className="text-primary">under your name, built for free.</span>
             </h1>
-            <p className="mt-4 max-w-lg leading-relaxed text-foreground/70 sm:mt-5 sm:text-lg">
+            <p className="pp-in2 mt-4 max-w-lg leading-relaxed text-foreground/70 sm:mt-5 sm:text-lg">
               You bring the audience. We build and run the whole product under your brand — you earn on every lot your people trade.
             </p>
-            <div className="mt-7 flex flex-wrap items-center gap-3">
+            <div className="pp-in3 mt-7 flex flex-wrap items-center gap-3">
               <a href="#apply" className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-[var(--shadow-brand)] transition-transform hover:-translate-y-0.5 sm:px-7 sm:py-3.5">
                 Become a partner <ArrowRight className="h-4 w-4" />
               </a>
@@ -253,7 +273,7 @@ function PartnerProgramm() {
                 What would it pay?
               </a>
             </div>
-            <div className="mt-8 flex flex-wrap gap-x-10 gap-y-4 border-t border-white/10 pt-5 sm:gap-x-12">
+            <div className="pp-in4 mt-8 flex flex-wrap gap-x-10 gap-y-4 border-t border-white/10 pt-5 sm:gap-x-12">
               {/* "$5–10 per traded lot" used to stand here. It is the single
                   most valuable line on the page and it was the first thing any
                   visitor read — including the ones who never apply. The middle
