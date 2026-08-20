@@ -143,6 +143,23 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         .candle-grow { transform-origin: bottom; animation: candleGrow .9s cubic-bezier(.2,.8,.2,1) both; }
         @keyframes tickerScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
         .ticker-track { animation: tickerScroll 34s linear infinite; }
+        /* ── Apple-grade material system ─────────────────────────────────
+           Sheen: headlines carry a vertical metallic gradient instead of flat
+           white — the single cheapest "expensive" move on dark grounds. A
+           child span that sets its own color (the brand-colored word) stays
+           opaque and simply floats on top.
+           Glass: cards get a top-edge highlight + vertical falloff, so they
+           read as material, not as outlined rectangles.
+           Exit: the hero eases out as you scroll away — scroll-driven, so it
+           tracks the finger, not a timer; @supports keeps it progressive. */
+        .apl-sheen { background: linear-gradient(180deg, #ffffff 0%, rgba(255,255,255,.92) 55%, rgba(255,255,255,.55) 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .apl-card { background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.02)); box-shadow: inset 0 1px 0 rgba(255,255,255,.07); }
+        .cta-btn { transition: transform .35s cubic-bezier(.22,1,.36,1), box-shadow .35s cubic-bezier(.22,1,.36,1); }
+        .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 44px -12px color-mix(in oklch, ${primary} 65%, transparent); }
+        @keyframes heroExit { to { opacity:.3; transform: translateY(-28px) scale(.985); } }
+        @supports (animation-timeline: scroll()) {
+          .hero-exit { animation: heroExit linear both; animation-timeline: scroll(); animation-range: 0 70vh; }
+        }
         @keyframes twinkle { 0%,100% { opacity:.15; } 50% { opacity:.8; } }
         .twinkle { animation: twinkle 4s ease-in-out infinite; }
         /* One orchestrated load for the hero, and a scroll reveal for the bands.
@@ -181,7 +198,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         .orbit-stage:hover .cosmo-lotus { filter: brightness(1.05) drop-shadow(0 0 26px color-mix(in oklch, ${accent} 45%, transparent)); }
         .orbit-stage:hover .orbit-ring, .orbit-stage:hover .orbit-spin, .orbit-stage:hover .orbit-bill { animation-duration: ${Math.round(ORBIT_DUR * 0.6)}s; }
         @media (prefers-reduced-motion: reduce) {
-          .cosmo-float,.cosmo-bob,.chip-float,.candle-grow,.ticker-track,.twinkle,.spin-slow,.spin-rev,.aura-pulse,.orbit-ring,.orbit-spin,.orbit-bill,.cosmo-lotus,.lv-in,.lv-in2,.lv-in3,.lv-reveal { animation: none !important; }
+          .cosmo-float,.cosmo-bob,.chip-float,.candle-grow,.ticker-track,.twinkle,.spin-slow,.spin-rev,.aura-pulse,.orbit-ring,.orbit-spin,.orbit-bill,.cosmo-lotus,.lv-in,.lv-in2,.lv-in3,.lv-reveal,.hero-exit { animation: none !important; }
         }
       `}</style>
 
@@ -229,13 +246,13 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
 
         <div className="mx-auto grid max-w-6xl items-center gap-6 px-4 pb-8 pt-6 sm:gap-10 sm:pb-16 sm:px-8 sm:pt-12 lg:grid-cols-[1.02fr_0.98fr] lg:gap-14 lg:pb-24 lg:pt-16">
           {/* Left: copy */}
-          <div className="relative z-10 text-center lg:text-left">
+          <div className="hero-exit relative z-10 text-center lg:text-left">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 sm:mb-6 bg-white/[0.04] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
               <span className="relative flex h-1.5 w-1.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-70" style={{ background: primary }} /><span className="relative inline-flex h-1.5 w-1.5 rounded-full" style={{ background: primary }} /></span>
               {showCosmo ? "Cosmos Candles Academy" : `Powered by Cosmos Candles`}
             </div>
 
-            <h1 className="lv-in font-display text-[2.75rem] font-black leading-[0.95] tracking-tight sm:text-6xl lg:text-[4.25rem]">
+            <h1 className="lv-in apl-sheen font-display text-[2.75rem] font-black leading-[0.95] tracking-tight sm:text-6xl lg:text-[4.25rem]">
               {showCosmo ? (
                 <>Learn to trade<br />the <span style={{ color: primary }}>whole cosmos.</span></>
               ) : (tenant.headline ?? tenant.tagline)}
@@ -248,7 +265,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
 
             <div className="lv-in3 mt-6 flex flex-col items-stretch gap-2.5 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-3 lg:justify-start">
               <button onClick={goRegister}
-                className="group inline-flex items-center justify-center gap-2 rounded-full px-5 py-3.5 text-[13px] font-black text-black transition-transform hover:-translate-y-0.5 sm:py-3"
+                className="cta-btn group inline-flex items-center justify-center gap-2 rounded-full px-5 py-3.5 text-[13px] font-black text-black sm:py-3"
                 style={cta}>
                 Start free — €0 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </button>
@@ -277,7 +294,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               chart candles orbiting him. (Swap cosmo-full.png for the meditating
               cross-legged render when it's produced — same slot.) */}
           {heroHasMascot && (
-            <div className="relative z-10 mx-auto w-full max-w-[200px] sm:max-w-[420px] lg:max-w-[500px]" style={{ containerType: "inline-size" }}>
+            <div className="hero-exit relative z-10 mx-auto w-full max-w-[200px] sm:max-w-[420px] lg:max-w-[500px]" style={{ containerType: "inline-size" }}>
               {showCosmo ? (
                 <div className="orbit-stage relative mx-auto aspect-square w-full">
                   {/* lotus aura — the glow he radiates */}
@@ -468,7 +485,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
             { step: "02", icon: Radio, you: "guided in chat", title: "Connect Telegram", body: "We walk you through the setup in the chat and send your personal invite." },
             { step: "03", icon: LineChart, you: "at your pace", title: "Trade with confidence", body: "Follow the signals, work through the lessons, and level up tier by tier." },
           ].map((s, i) => (
-            <div key={s.step} className="relative rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6">
+            <div key={s.step} className="apl-card relative rounded-3xl border border-white/[0.07] p-6">
               {/* The effort chip is the argument of this section — three steps,
                   none of which costs real work. Same mechanic as the partner
                   page's "nothing" chips. */}
@@ -487,7 +504,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         <SectionHead n="04" kicker="How far you can go" title="Member tiers" primary={primary} />
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           {TIERS.map((t, idx) => (
-            <div key={t.key} className={"relative flex flex-col rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6" + (idx === 1 ? " sm:-translate-y-2" : "")}
+            <div key={t.key} className={"apl-card relative flex flex-col rounded-3xl border border-white/[0.07] p-6" + (idx === 1 ? " sm:-translate-y-2" : "")}
               style={idx === 1 ? { borderColor:`color-mix(in oklch, ${primary} 45%, transparent)`, background:`linear-gradient(180deg, color-mix(in oklch, ${primary} 8%, transparent), transparent)`, boxShadow:`0 24px 60px -28px color-mix(in oklch, ${primary} 55%, transparent)` } : {}}>
               {idx === 1 && <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-[10px] font-bold uppercase text-black" style={{ background: primary }}>Most popular</span>}
               <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: t.color }} /><span className="font-display text-lg font-bold">{t.name}</span></div>
@@ -528,7 +545,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           <SectionHead n="06" kicker="Questions" title="Good to know" primary={primary} />
           <div className="mt-8 space-y-3">
             {tenant.faq.map((f) => (
-              <details key={f.q} className="group rounded-2xl border border-white/[0.07] bg-white/[0.04] px-5 py-4">
+              <details key={f.q} className="apl-card group rounded-2xl border border-white/[0.07] px-5 py-4">
                 <summary className="flex cursor-pointer items-center justify-between text-sm font-semibold marker:content-['']">{f.q}<span className="ml-4 text-lg text-white/40 transition-transform group-open:rotate-45">+</span></summary>
                 <p className="mt-3 text-sm text-white/65">{f.a}</p>
               </details>
@@ -543,7 +560,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           <div className="grid gap-10 p-6 sm:p-12 lg:grid-cols-[1fr_0.85fr] lg:items-center">
             <div>
               <p className="mb-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: primary }}><Building2 className="h-4 w-4" /> How the money works</p>
-              <h2 className="font-display text-3xl font-black leading-tight sm:text-4xl">Your money<br />stays your money.</h2>
+              <h2 className="apl-sheen font-display text-3xl font-black leading-tight sm:text-4xl">Your money<br />stays your money.</h2>
               <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/65">
                 {/* "a licensed, award-winning global broker" was written for
                     TradeQuo and then left attached to whatever tenant.brokerName
@@ -609,10 +626,10 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
             </div>
           )}
           {tenant.mascot === "zeko" && <img src="/zeko-point.png" alt="" className="mx-auto mb-2 h-28 w-28 rounded-full object-cover" />}
-          <h2 className="font-display text-3xl font-black sm:text-5xl">Your first candle<br />starts today.</h2>
+          <h2 className="apl-sheen font-display text-3xl font-black sm:text-5xl">Your first candle<br />starts today.</h2>
           <p className="mx-auto mt-4 max-w-md text-white/65">Join {tenant.name}, connect Telegram, and we take it from there.</p>
           <div className="mt-7 flex justify-center">
-            <button onClick={goRegister} className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-[13px] font-black text-black transition-transform hover:-translate-y-0.5" style={cta}>Start free — €0 <ArrowRight className="h-4 w-4" /></button>
+            <button onClick={goRegister} className="cta-btn inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-[13px] font-black text-black" style={cta}>Start free — €0 <ArrowRight className="h-4 w-4" /></button>
           </div>
           {/* Objections resurface at the moment of action, so the answer
               stands next to the button — not only up in the hero. */}
@@ -630,7 +647,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                 <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: primary }}>
                   <Sparkles className="h-4 w-4" /> For creators & communities
                 </p>
-                <h2 className="mt-3 font-display text-3xl font-black leading-tight sm:text-4xl">Run this exact academy<br />under your own brand.</h2>
+                <h2 className="apl-sheen mt-3 font-display text-3xl font-black leading-tight sm:text-4xl">Run this exact academy<br />under your own brand.</h2>
                 <p className="mt-4 max-w-md text-sm text-white/65">
                   Everything you just scrolled — signals, auto-trader, academy, quizzes, rewards — is a white-label engine. Bring your audience; we handle the desk, the tech and the broker deal.
                 </p>
@@ -639,7 +656,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                     <li key={p} className="flex items-center gap-2 text-sm text-white/80"><CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: primary }} />{p}</li>
                   ))}
                 </ul>
-                <Link to="/partner-program" className="mt-7 inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-[13px] font-black text-black transition-transform hover:-translate-y-0.5" style={cta}>Become a partner <ArrowRight className="h-4 w-4" /></Link>
+                <Link to="/partner-program" className="cta-btn mt-7 inline-flex items-center gap-2 rounded-full px-6 py-3.5 text-[13px] font-black text-black" style={cta}>Become a partner <ArrowRight className="h-4 w-4" /></Link>
               </div>
               <WhitelabelPreview primary={primary} />
             </div>
@@ -667,7 +684,7 @@ function Band({ tone = "base", max = "max-w-6xl", className, children }: {
 }) {
   return (
     <section className={cn(
-      "px-4 py-12 sm:px-8 sm:py-16",
+      "px-4 py-14 sm:px-8 sm:py-20",
       tone === "raised" && "border-y border-white/[0.07] bg-white/[0.022]",
       className,
     )}>
