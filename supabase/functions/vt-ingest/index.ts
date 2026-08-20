@@ -40,6 +40,8 @@ interface Row {
   first_deposit_amount_usd?: number | null;
   current_balance_usd?: number | null;
   volume_lots?: number | null;
+  base_currency?: string | null;
+  campaign_source?: string | null;
 }
 
 /** Zeitgleicher Vergleich, damit die Laufzeit nichts ueber das Geheimnis verraet. */
@@ -72,7 +74,44 @@ Deno.serve(async (req) => {
   let body: { clients?: Row[] };
   try { body = await req.json(); } catch { return json({ error: "invalid json" }, 400); }
 
-  const rows = (body.clients ?? []).filter((r) => (r.email ?? "").includes("@"));
+  const raw = (body.clients ?? []).filter((r) => (r.email ?? "").includes("@"));
+
+  // ── Waehrung ──────────────────────────────────────────────────────────────
+  // VT fuehrt jedes Konto in der Waehrung des Kunden. Bei den bestehenden steht
+  // dort EUR, nicht USD — und die Stufenschwellen (100 / 2000 / 50000) werden
+  // gegen USD verglichen. Eine EUR-Zahl ungerechnet einzusetzen waere ein
+  // stiller Fehler in der Groessenordnung von 8 %.
+  //
+  // Der Kurs steht in app_secrets als FX_EUR_USD. Fehlt er, wird mit 1.0
+  // gerechnet, und das ist Absicht: EUR ist mehr wert als USD, also ist eine
+  // EUR-Zahl als USD gelesen immer ZU KLEIN. Der Fehler geht damit in die
+  // Richtung "schaltet spaeter frei", nie in Richtung "schaltet eine Stufe
+  // frei, die niemand bezahlt hat".
+  const rates: Record<string, number> = { USD: 1 };
+  for (const cur of new Set(raw.map((r) => (r.base_currency ?? "USD").toUpperCase()))) {
+    if (cur === "USD") continue;
+    const { data } = await db.from("app_secrets").select("value").eq("key", `FX_${cur}_USD`).maybeSingle();
+    const rate = Number(data?.value ?? 0);
+    if (!rate || !Number.isFinite(rate)) {
+      console.warn(`[vt-ingest] Kein Kurs FX_${cur}_USD hinterlegt — rechne 1.0 (konservativ).`);
+      rates[cur] = 1;
+    } else {
+      rates[cur] = rate;
+    }
+  }
+
+  const conv = (v: number | null | undefined, cur: string) =>
+    v == null || !Number.isFinite(Number(v)) ? null : Number(v) * (rates[cur] ?? 1);
+
+  const rows = raw.map((r) => {
+    const cur = (r.base_currency ?? "USD").toUpperCase();
+    return {
+      ...r,
+      net_deposit: conv(r.net_deposit, cur),
+      first_deposit_amount_usd: conv(r.first_deposit_amount_usd, cur),
+      current_balance_usd: conv(r.current_balance_usd, cur),
+    };
+  });
   // Ein leerer Stapel ist ein Fehler, keine Nachricht. Wenn das Auslesen nichts
   // gefunden hat, ist die Sitzung tot oder die Seite hat sich geaendert — und
   // beides muss auffallen, statt als "0 Kunden, alles gut" durchzugehen.
