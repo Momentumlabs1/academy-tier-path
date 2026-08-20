@@ -160,6 +160,13 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         @supports (animation-timeline: scroll()) {
           .hero-exit { animation: heroExit linear both; animation-timeline: scroll(); animation-range: 0 70vh; }
         }
+        /* Most visitors are on phones: one thumb-height CTA that slides in
+           once the hero's own buttons have scrolled away. Scroll-driven, so
+           it arrives exactly when the hero CTA leaves — not on a timer. */
+        @keyframes mCtaIn { from { opacity:0; transform: translateY(110%); } to { opacity:1; transform: translateY(0); } }
+        @supports (animation-timeline: scroll()) {
+          .m-cta { animation: mCtaIn linear both; animation-timeline: scroll(); animation-range: 55vh 85vh; }
+        }
         @keyframes twinkle { 0%,100% { opacity:.15; } 50% { opacity:.8; } }
         .twinkle { animation: twinkle 4s ease-in-out infinite; }
         /* One orchestrated load for the hero, and a scroll reveal for the bands.
@@ -198,7 +205,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         .orbit-stage:hover .cosmo-lotus { filter: brightness(1.05) drop-shadow(0 0 26px color-mix(in oklch, ${accent} 45%, transparent)); }
         .orbit-stage:hover .orbit-ring, .orbit-stage:hover .orbit-spin, .orbit-stage:hover .orbit-bill { animation-duration: ${Math.round(ORBIT_DUR * 0.6)}s; }
         @media (prefers-reduced-motion: reduce) {
-          .cosmo-float,.cosmo-bob,.chip-float,.candle-grow,.ticker-track,.twinkle,.spin-slow,.spin-rev,.aura-pulse,.orbit-ring,.orbit-spin,.orbit-bill,.cosmo-lotus,.lv-in,.lv-in2,.lv-in3,.lv-reveal,.hero-exit { animation: none !important; }
+          .cosmo-float,.cosmo-bob,.chip-float,.candle-grow,.ticker-track,.twinkle,.spin-slow,.spin-rev,.aura-pulse,.orbit-ring,.orbit-spin,.orbit-bill,.cosmo-lotus,.lv-in,.lv-in2,.lv-in3,.lv-reveal,.hero-exit,.m-cta { animation: none !important; }
         }
       `}</style>
 
@@ -223,9 +230,9 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                 credentials cannot open. /signup signs existing members straight in.
                 Never hidden on mobile either — that left a phone visitor with no
                 way back into their own account at all. */}
-            <Link to="/signup" className="rounded-full px-3 py-2 text-sm font-medium text-white/70 hover:text-white sm:px-4">Sign in</Link>
+            <Link to="/signup" className="inline-flex min-h-[44px] items-center rounded-full px-3 py-2 text-sm font-medium text-white/70 hover:text-white sm:px-4">Sign in</Link>
             <button onClick={goRegister}
-              className="inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold text-black shadow-lg transition-transform hover:-translate-y-0.5"
+              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold text-black shadow-lg transition-transform hover:-translate-y-0.5"
               style={cta}>
               Sign up free <ArrowRight className="h-3.5 w-3.5" />
             </button>
@@ -294,7 +301,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               chart candles orbiting him. (Swap cosmo-full.png for the meditating
               cross-legged render when it's produced — same slot.) */}
           {heroHasMascot && (
-            <div className="hero-exit relative z-10 mx-auto w-full max-w-[200px] sm:max-w-[420px] lg:max-w-[500px]" style={{ containerType: "inline-size" }}>
+            <div className="hero-exit relative z-10 mx-auto w-full max-w-[290px] sm:max-w-[420px] lg:max-w-[500px]" style={{ containerType: "inline-size" }}>
               {showCosmo ? (
                 <div className="orbit-stage relative mx-auto aspect-square w-full">
                   {/* lotus aura — the glow he radiates */}
@@ -609,7 +616,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                   people drop out of, and a link here sends them there alone — see
                   TELEGRAM_ENTRY in broker.ts. The route is Telegram, where a person
                   walks them through it. */}
-              <a href={TELEGRAM_ENTRY.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 text-xs font-medium text-white/60 underline-offset-4 hover:text-white hover:underline">{TELEGRAM_ENTRY.label} <ArrowUpRight className="h-3.5 w-3.5" /></a>
+              <a href={TELEGRAM_ENTRY.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center gap-1.5 py-3 text-xs font-medium text-white/60 underline-offset-4 hover:text-white hover:underline">{TELEGRAM_ENTRY.label} <ArrowUpRight className="h-3.5 w-3.5" /></a>
             </div>
           </div>
         </div>
@@ -664,7 +671,22 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         </section>
       )}
 
-      <footer className="border-t border-white/[0.06] px-4 py-6 text-center text-[11px] text-white/40">
+      {/* Mobile-only sticky CTA. sm:hidden keeps desktop clean; the footer
+          below reserves room so the last lines are never covered. */}
+      <div className="m-cta fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#05070e]/90 px-4 pt-2.5 backdrop-blur-xl sm:hidden"
+           style={{ paddingBottom: "calc(0.625rem + env(safe-area-inset-bottom))" }}>
+        <div className="flex items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-[12px] font-bold">{tenant.name}</div>
+            <div className="truncate text-[10px] text-white/50">Free — no card, your money stays yours</div>
+          </div>
+          <button onClick={goRegister} className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-5 py-3 text-[13px] font-black text-black" style={cta}>
+            Start free <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      <footer className="border-t border-white/[0.06] px-4 pt-6 pb-24 text-center text-[11px] text-white/40 sm:pb-6">
         {tenant.name} · Powered by <Link to="/" className="underline hover:text-white">Cosmos Candles Academy</Link> · In partnership with {tenant.brokerName} · <Lock className="inline h-2.5 w-2.5" /> Trading involves risk — 74–89% of retail CFD accounts lose money.
       </footer>
     </div>
