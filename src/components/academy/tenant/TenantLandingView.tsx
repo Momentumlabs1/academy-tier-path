@@ -176,6 +176,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         .lv-in  { animation: lvRise .7s cubic-bezier(.22,1,.36,1) both; }
         .lv-in2 { animation: lvRise .7s cubic-bezier(.22,1,.36,1) .12s both; }
         .lv-in3 { animation: lvRise .7s cubic-bezier(.22,1,.36,1) .24s both; }
+        .lv-in4 { animation: lvRise .7s cubic-bezier(.22,1,.36,1) .36s both; }
         @supports (animation-timeline: view()) {
           .lv-reveal { animation: lvRise .8s cubic-bezier(.22,1,.36,1) both;
                        animation-timeline: view(); animation-range: entry 0% entry 38%; }
@@ -205,7 +206,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         .orbit-stage:hover .cosmo-lotus { filter: brightness(1.05) drop-shadow(0 0 26px color-mix(in oklch, ${accent} 45%, transparent)); }
         .orbit-stage:hover .orbit-ring, .orbit-stage:hover .orbit-spin, .orbit-stage:hover .orbit-bill { animation-duration: ${Math.round(ORBIT_DUR * 0.6)}s; }
         @media (prefers-reduced-motion: reduce) {
-          .cosmo-float,.cosmo-bob,.chip-float,.candle-grow,.ticker-track,.twinkle,.spin-slow,.spin-rev,.aura-pulse,.orbit-ring,.orbit-spin,.orbit-bill,.cosmo-lotus,.lv-in,.lv-in2,.lv-in3,.lv-reveal,.hero-exit,.m-cta { animation: none !important; }
+          .cosmo-float,.cosmo-bob,.chip-float,.candle-grow,.ticker-track,.twinkle,.spin-slow,.spin-rev,.aura-pulse,.orbit-ring,.orbit-spin,.orbit-bill,.cosmo-lotus,.lv-in,.lv-in2,.lv-in3,.lv-in4,.lv-reveal,.hero-exit,.m-cta { animation: none !important; }
         }
       `}</style>
 
@@ -253,24 +254,24 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
 
         <div className="mx-auto grid max-w-6xl items-center gap-6 px-4 pb-8 pt-6 sm:gap-10 sm:pb-16 sm:px-8 sm:pt-12 lg:grid-cols-[1.02fr_0.98fr] lg:gap-14 lg:pb-24 lg:pt-16">
           {/* Left: copy */}
-          <div className="hero-exit relative z-10 text-center lg:text-left">
+          <div className="hero-exit relative z-20 text-center lg:text-left">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 sm:mb-6 bg-white/[0.04] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
               <span className="relative flex h-1.5 w-1.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-70" style={{ background: primary }} /><span className="relative inline-flex h-1.5 w-1.5 rounded-full" style={{ background: primary }} /></span>
               {showCosmo ? "Cosmos Candles Academy" : `Powered by Cosmos Candles`}
             </div>
 
-            <h1 className="lv-in apl-sheen font-display text-[2.75rem] font-black leading-[0.95] tracking-tight sm:text-6xl lg:text-[4.25rem]">
+            <h1 className="lv-in2 apl-sheen font-display text-[2.75rem] font-black leading-[0.95] tracking-tight sm:text-6xl lg:text-[4.25rem]">
               {showCosmo ? (
                 <>Learn to trade<br />the <span style={{ color: primary }}>whole cosmos.</span></>
               ) : (tenant.headline ?? tenant.tagline)}
             </h1>
-            <p className="lv-in2 mx-auto mt-4 max-w-lg text-[15px] text-white/65 sm:mt-5 sm:text-lg lg:mx-0">
+            <p className="lv-in3 mx-auto mt-4 max-w-lg text-[15px] text-white/65 sm:mt-5 sm:text-lg lg:mx-0">
               {showCosmo
                 ? "Live signals, a course from zero, and pro orderflow tools. Free — Cosmo reads every candle with you."
                 : (tenant.subhead ?? tenant.description)}
             </p>
 
-            <div className="lv-in3 mt-6 flex flex-col items-stretch gap-2.5 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-3 lg:justify-start">
+            <div className="lv-in4 mt-6 flex flex-col items-stretch gap-2.5 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-3 lg:justify-start">
               <button onClick={goRegister}
                 className="cta-btn group inline-flex items-center justify-center gap-2 rounded-full px-5 py-3.5 text-[13px] font-black text-black sm:py-3"
                 style={cta}>
@@ -301,7 +302,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               chart candles orbiting him. (Swap cosmo-full.png for the meditating
               cross-legged render when it's produced — same slot.) */}
           {heroHasMascot && (
-            <div className="hero-exit relative z-10 mx-auto w-full max-w-[290px] sm:max-w-[420px] lg:max-w-[500px]" style={{ containerType: "inline-size" }}>
+            <div className="hero-exit lv-in order-first relative z-10 mx-auto -mb-12 w-full max-w-[290px] sm:max-w-[420px] lg:order-none lg:mb-0 lg:max-w-[500px]" style={{ containerType: "inline-size" }}>
               {showCosmo ? (
                 <div className="orbit-stage relative mx-auto aspect-square w-full">
                   {/* lotus aura — the glow he radiates */}
