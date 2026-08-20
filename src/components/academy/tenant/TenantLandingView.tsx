@@ -68,12 +68,17 @@ const ORBIT_ITEMS = Array.from({ length: ORBIT_N }, (_, i) => {
   return { angle, h, w, y, bh, bt: Number(bt.toFixed(1)), isUp };
 });
 
-function CandleShape({ up, down, isUp, bt, bh }: { up: string; down: string; isUp: boolean; bt: number; bh: number }) {
+function CandleShape({ up, down, isUp, bt, bh, growDelay }: { up: string; down: string; isUp: boolean; bt: number; bh: number; growDelay?: number }) {
   const c = isUp ? up : down;
   const lit = `color-mix(in oklch, ${c} 55%, white)`;
   const shade = `color-mix(in oklch, ${c} 82%, black)`;
   return (
-    <span className="relative block h-full w-full">
+    // Staggered grow-in: the ring assembles candle by candle instead of
+    // popping in whole. The class lives on this span because it carries no
+    // inline transform — the sizing wrapper above does, and candleGrow's
+    // scaleY would fight it there.
+    <span className={"relative block h-full w-full" + (growDelay != null ? " candle-grow" : "")}
+          style={growDelay != null ? { animationDelay: `${growDelay.toFixed(2)}s` } : undefined}>
       {/* wick — thin, rounded caps, faintly lit */}
       <span className="absolute left-1/2 top-0 h-full -translate-x-1/2 rounded-full" style={{ width: "14%", minWidth: 1.5, background: `linear-gradient(180deg, ${lit}, color-mix(in oklch, ${c} 55%, transparent))` }} />
       {/* body — rounded, top-lit gradient, crisp edge + colour glow */}
@@ -164,14 +169,19 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         .orbit-scene { position:absolute; inset:0; transform-style:preserve-3d; }
         .orbit-ring { position:absolute; inset:0; transform-style:preserve-3d; animation: cosmoRingSpin ${ORBIT_DUR}s linear infinite; will-change: transform; }
         .orbit-pos { position:absolute; left:50%; top:50%; transform-style:preserve-3d; }
-        .orbit-bill { transform-style:preserve-3d; }
+        /* Depth cue: a candle passing behind Cosmo dims and desaturates. The
+           ring spins linearly, so a linear keyframe with a per-candle negative
+           delay of -(angle/360)*duration stays in phase with it forever. Only
+           opacity+filter animate here — the billboard transform is inline. */
+        @keyframes orbitDepth { 0%,100% { opacity:1; filter:none; } 50% { opacity:.4; filter:saturate(.7) brightness(.65); } }
+        .orbit-bill { transform-style:preserve-3d; animation: orbitDepth ${ORBIT_DUR}s linear infinite; }
         .orbit-spin { animation: cosmoRingSpinRev ${ORBIT_DUR}s linear infinite; will-change: transform; }
         .cosmo-lotus { position:absolute; left:50%; top:50%; transform: translate(-50%,-50%); animation: cosmoLotusFloat 6s ease-in-out infinite; transition: filter .4s ease; backface-visibility:hidden; }
         /* hover: Cosmo brightens, candles speed up — cheap filter/timing only */
         .orbit-stage:hover .cosmo-lotus { filter: brightness(1.05) drop-shadow(0 0 26px color-mix(in oklch, ${accent} 45%, transparent)); }
-        .orbit-stage:hover .orbit-ring, .orbit-stage:hover .orbit-spin { animation-duration: ${Math.round(ORBIT_DUR * 0.6)}s; }
+        .orbit-stage:hover .orbit-ring, .orbit-stage:hover .orbit-spin, .orbit-stage:hover .orbit-bill { animation-duration: ${Math.round(ORBIT_DUR * 0.6)}s; }
         @media (prefers-reduced-motion: reduce) {
-          .cosmo-float,.cosmo-bob,.chip-float,.candle-grow,.ticker-track,.twinkle,.spin-slow,.spin-rev,.aura-pulse,.orbit-ring,.orbit-spin,.cosmo-lotus,.lv-in,.lv-in2,.lv-in3,.lv-reveal { animation: none !important; }
+          .cosmo-float,.cosmo-bob,.chip-float,.candle-grow,.ticker-track,.twinkle,.spin-slow,.spin-rev,.aura-pulse,.orbit-ring,.orbit-spin,.orbit-bill,.cosmo-lotus,.lv-in,.lv-in2,.lv-in3,.lv-reveal { animation: none !important; }
         }
       `}</style>
 
@@ -280,10 +290,10 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                     <div className="orbit-ring">
                       {ORBIT_ITEMS.map((it, i) => (
                         <div key={i} className="orbit-pos" style={{ transform: `rotateY(${it.angle}deg) translateZ(30cqw) translateY(${it.y}px)` }}>
-                          <div className="orbit-bill" style={{ transform: `rotateY(${-it.angle}deg)` }}>
+                          <div className="orbit-bill" style={{ transform: `rotateY(${-it.angle}deg)`, animationDelay: `-${((it.angle / 360) * ORBIT_DUR).toFixed(2)}s` }}>
                             <div className="orbit-spin">
                               <div style={{ height: it.h, width: it.w, transform: "translate(-50%,-50%)" }}>
-                                <CandleShape up={up} down={down} isUp={it.isUp} bt={it.bt} bh={it.bh} />
+                                <CandleShape up={up} down={down} isUp={it.isUp} bt={it.bt} bh={it.bh} growDelay={0.15 + i * 0.09} />
                               </div>
                             </div>
                           </div>
@@ -454,13 +464,20 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         </div>
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           {[
-            { step: "01", icon: GraduationCap, title: "Create your free account", body: "Takes a minute. No card, no subscription, nothing to cancel." },
-            { step: "02", icon: Radio, title: "Connect Telegram", body: "We walk you through the setup in the chat and send your personal invite." },
-            { step: "03", icon: LineChart, title: "Trade with confidence", body: "Follow the signals, work through the lessons, and level up tier by tier." },
-          ].map((s) => (
-            <div key={s.step} className="rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6">
+            { step: "01", icon: GraduationCap, you: "1 minute", title: "Create your free account", body: "Takes a minute. No card, no subscription, nothing to cancel." },
+            { step: "02", icon: Radio, you: "guided in chat", title: "Connect Telegram", body: "We walk you through the setup in the chat and send your personal invite." },
+            { step: "03", icon: LineChart, you: "at your pace", title: "Trade with confidence", body: "Follow the signals, work through the lessons, and level up tier by tier." },
+          ].map((s, i) => (
+            <div key={s.step} className="relative rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6">
+              {/* The effort chip is the argument of this section — three steps,
+                  none of which costs real work. Same mechanic as the partner
+                  page's "nothing" chips. */}
               <div className="mb-3 flex items-center justify-between"><span className="font-display text-5xl font-black opacity-10">{s.step}</span><s.icon className="h-6 w-6" style={{ color: primary }} /></div>
               <h3 className="font-display text-base font-bold">{s.title}</h3><p className="mt-2 text-sm text-white/65">{s.body}</p>
+              <span className="mt-4 inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em]" style={{ background:`color-mix(in oklch, ${primary} 12%, transparent)`, color: primary }}>{s.you}</span>
+              {/* Connector between the cards, so the row reads as a sequence
+                  rather than three parallel offers. */}
+              {i < 2 && <ArrowRight className="absolute -right-[22px] top-1/2 hidden h-5 w-5 -translate-y-1/2 text-white/25 sm:block" aria-hidden />}
             </div>
           ))}
         </div>
@@ -470,8 +487,8 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         <SectionHead n="04" kicker="How far you can go" title="Member tiers" primary={primary} />
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           {TIERS.map((t, idx) => (
-            <div key={t.key} className="relative flex flex-col rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6"
-              style={idx === 1 ? { borderColor:`color-mix(in oklch, ${primary} 45%, transparent)`, background:`linear-gradient(180deg, color-mix(in oklch, ${primary} 8%, transparent), transparent)` } : {}}>
+            <div key={t.key} className={"relative flex flex-col rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6" + (idx === 1 ? " sm:-translate-y-2" : "")}
+              style={idx === 1 ? { borderColor:`color-mix(in oklch, ${primary} 45%, transparent)`, background:`linear-gradient(180deg, color-mix(in oklch, ${primary} 8%, transparent), transparent)`, boxShadow:`0 24px 60px -28px color-mix(in oklch, ${primary} 55%, transparent)` } : {}}>
               {idx === 1 && <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-[10px] font-bold uppercase text-black" style={{ background: primary }}>Most popular</span>}
               <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: t.color }} /><span className="font-display text-lg font-bold">{t.name}</span></div>
               <div className="mt-3 font-display text-4xl font-black">{formatMoney(t.minDeposit, "€")}<span className="text-base font-normal text-white/40">+</span></div>
@@ -542,6 +559,19 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               <RiskWarning className="mt-5" />
               <CommissionDisclosure className="mt-3" />
               <div className="mt-6 grid gap-2.5 sm:grid-cols-2">
+                {/* Model facts, not broker claims: these three hold no matter
+                    which broker clears the trades, which is why they can stand
+                    here while BROKER.trust stays deliberately empty. */}
+                {[
+                  { icon: Shield, label: "Account opened in your own name" },
+                  { icon: Wallet, label: "Withdraw anytime — it's your account" },
+                  { icon: Zap, label: "We never hold a cent of your funds" },
+                ].map((f) => (
+                  <div key={f.label} className="flex items-center gap-2.5 rounded-xl border border-white/8 bg-white/[0.03] px-3.5 py-3">
+                    <f.icon className="h-4 w-4 shrink-0" style={{ color: primary }} />
+                    <span className="text-xs font-medium text-white/75">{f.label}</span>
+                  </div>
+                ))}
                 {(BROKER_SWITCH.paused ? [] : BROKER.trust).map((t) => (
                   <div key={t.label} className="flex items-center gap-2.5 rounded-xl border border-white/8 bg-white/[0.03] px-3.5 py-3">
                     <span className="text-base" style={{ color: primary }}>{t.icon}</span>
@@ -584,7 +614,10 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           <div className="mt-7 flex justify-center">
             <button onClick={goRegister} className="inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-[13px] font-black text-black transition-transform hover:-translate-y-0.5" style={cta}>Start free — €0 <ArrowRight className="h-4 w-4" /></button>
           </div>
-          <p className="mt-4 text-[11px] text-white/45">Questions? <a href={`mailto:${tenant.affiliateEmail}`} className="underline hover:text-white">{tenant.affiliateEmail}</a></p>
+          {/* Objections resurface at the moment of action, so the answer
+              stands next to the button — not only up in the hero. */}
+          <p className="mt-4 text-[11px] font-medium text-white/55">No card · No course fee · Your money stays yours</p>
+          <p className="mt-2 text-[11px] text-white/45">Questions? <a href={`mailto:${tenant.affiliateEmail}`} className="underline hover:text-white">{tenant.affiliateEmail}</a></p>
         </div>
       </Band>
 

@@ -97,7 +97,7 @@ const GET = [
     icon: GraduationCap,
     span: "md:col-span-2",
     title: "The full trading academy",
-    body: "Twelve lessons, first candle to real orderflow — recorded on the live terminal.",
+    body: "Twelve video lessons, beginner to advanced — recorded on a real trading screen.",
     img: "/partner/orderflow-lesson.jpg",
     imgAlt: "A lesson recorded on the live orderflow terminal showing volume profile and footprint data",
   },
@@ -117,7 +117,7 @@ const GET = [
     icon: Send,
     span: "md:col-span-2",
     title: "A private community channel",
-    body: "A Telegram group under your brand, where members stay accountable to each other.",
+    body: "A Telegram group under your brand where your members keep each other going.",
   },
 ];
 
@@ -132,16 +132,16 @@ const STEPS = [
   { title: "We build your page", you: "one call", body: "Your brand set up, reviewed once by you. Usually live the same day." },
   { title: "You share your link", you: "ongoing", body: "One link in your bio. The only recurring work on your side." },
   { title: "Your people sign up free", you: "nothing", body: "No card, no course fee. Their trading account stays theirs." },
-  { title: "Everything unlocks itself", you: "nothing", body: "Deposit verified, academy opened, Telegram granted." },
+  { title: "Everything unlocks itself", you: "nothing", body: "Deposit checked, academy opened, Telegram invite sent — all automatic." },
   { title: "You get paid, every month", you: "nothing", body: "Per lot traded, for as long as they keep trading." },
 ];
 
 const FAQ = [
-  { q: "What does it cost me?", a: "Nothing. The website, the academy, the signals, the bot and the dashboard are free. You invest your reach and nothing else." },
-  { q: "Do I need a licence or trading experience?", a: "No. You bring people together; the academy and the desk do the teaching and the calls. You are not giving investment advice." },
+  { q: "What does it cost me?", a: "Nothing. Website, academy, signals and dashboard are free. You only bring your reach." },
+  { q: "Do I need a licence or trading experience?", a: "No. The academy does the teaching and our desk makes the calls. You never give investment advice." },
   { q: "Can other partners see my customers?", a: "No. Each brand is separate — its own page, its own link, its own Telegram channels and its own numbers." },
-  { q: "How and when do I get paid?", a: "Per lot your customers trade, paid monthly. Every amount is visible live in your dashboard as it accrues." },
-  { q: "What happens if someone stops trading?", a: "You keep everything already earned. Commission is per lot traded, so it simply stops accruing for that customer — there is no clawback." },
+  { q: "How and when do I get paid?", a: "Monthly, for every lot your customers trade. You watch it add up live in your dashboard." },
+  { q: "What happens if someone stops trading?", a: "You keep everything you earned. Commission just stops for that customer — nothing is ever taken back." },
 ];
 
 /**
@@ -263,7 +263,7 @@ function PartnerProgramm() {
               <span className="text-primary">under your name, built for free.</span>
             </h1>
             <p className="pp-in2 mt-4 max-w-lg leading-relaxed text-foreground/70 sm:mt-5 sm:text-lg">
-              You bring the audience. We build and run the whole product under your brand — you earn on every lot your people trade.
+              You bring the audience. We run the whole product under your brand. You earn every time your people trade.
             </p>
             <div className="pp-in3 mt-7 flex flex-wrap items-center gap-3">
               <a href="#apply" className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-[var(--shadow-brand)] transition-transform hover:-translate-y-0.5 sm:px-7 sm:py-3.5">
@@ -373,7 +373,7 @@ function PartnerProgramm() {
 
       {/* 02 */}
       <Band>
-        <SectionHead n="02" kicker="How it runs" title="Six steps. Three of them cost you minutes." />
+        <SectionHead n="02" kicker="How it runs" title="Six steps — only three need you." />
         {/* One shared box made this read as a table — six rows of data. A process
             is nodes on a line, so each step is now its own card hung off a spine
             of numbered nodes. The moment the partner's work ends (the "nothing"
@@ -463,7 +463,7 @@ function PartnerProgramm() {
                 The exact rates come with your approval.
               </h3>
               <p className="mt-3 max-w-md text-sm leading-relaxed text-foreground/70">
-                A fixed amount per lot, the same at both brokers, paid every month your customers keep trading.
+                A fixed amount for every lot your customers trade, paid out monthly.
               </p>
               <a href="#apply" className="mt-5 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-[var(--shadow-brand)] transition-transform hover:-translate-y-0.5">
                 Apply for access <ArrowRight className="h-4 w-4" />
@@ -513,7 +513,7 @@ function PartnerProgramm() {
             {
               icon: Wallet,
               title: "You earn on volume, not on signups",
-              body: "A fixed amount per lot traded. Nobody pays a course fee, and we earn nothing extra when someone trades badly — it only works if they stay.",
+              body: "Nobody pays a course fee. We earn a fixed amount per traded lot — so we only do well when your people keep trading.",
             },
             {
               icon: Gauge,
