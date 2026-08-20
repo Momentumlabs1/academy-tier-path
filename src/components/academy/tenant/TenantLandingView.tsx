@@ -199,14 +199,15 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
            delay of -(angle/360)*duration stays in phase with it forever. Only
            opacity+filter animate here — the billboard transform is inline. */
         @keyframes orbitDepth { 0%,100% { opacity:1; filter:none; } 50% { opacity:.4; filter:saturate(.7) brightness(.65); } }
-        .orbit-bill { transform-style:preserve-3d; animation: orbitDepth ${ORBIT_DUR}s linear infinite; }
+        .orbit-bill { transform-style:preserve-3d; }
+        .orbit-depth { animation: orbitDepth ${ORBIT_DUR}s linear infinite; }
         .orbit-spin { animation: cosmoRingSpinRev ${ORBIT_DUR}s linear infinite; will-change: transform; }
         .cosmo-lotus { position:absolute; left:50%; top:50%; transform: translate(-50%,-50%); animation: cosmoLotusFloat 6s ease-in-out infinite; transition: filter .4s ease; backface-visibility:hidden; }
         /* hover: Cosmo brightens, candles speed up — cheap filter/timing only */
         .orbit-stage:hover .cosmo-lotus { filter: brightness(1.05) drop-shadow(0 0 26px color-mix(in oklch, ${accent} 45%, transparent)); }
-        .orbit-stage:hover .orbit-ring, .orbit-stage:hover .orbit-spin, .orbit-stage:hover .orbit-bill { animation-duration: ${Math.round(ORBIT_DUR * 0.6)}s; }
+        .orbit-stage:hover .orbit-ring, .orbit-stage:hover .orbit-spin, .orbit-stage:hover .orbit-depth { animation-duration: ${Math.round(ORBIT_DUR * 0.6)}s; }
         @media (prefers-reduced-motion: reduce) {
-          .cosmo-float,.cosmo-bob,.chip-float,.candle-grow,.ticker-track,.twinkle,.spin-slow,.spin-rev,.aura-pulse,.orbit-ring,.orbit-spin,.orbit-bill,.cosmo-lotus,.lv-in,.lv-in2,.lv-in3,.lv-in4,.lv-reveal,.hero-exit,.m-cta { animation: none !important; }
+          .cosmo-float,.cosmo-bob,.chip-float,.candle-grow,.ticker-track,.twinkle,.spin-slow,.spin-rev,.aura-pulse,.orbit-ring,.orbit-spin,.orbit-depth,.cosmo-lotus,.lv-in,.lv-in2,.lv-in3,.lv-in4,.lv-reveal,.hero-exit,.m-cta { animation: none !important; }
         }
       `}</style>
 
@@ -315,9 +316,9 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                     <div className="orbit-ring">
                       {ORBIT_ITEMS.map((it, i) => (
                         <div key={i} className="orbit-pos" style={{ transform: `rotateY(${it.angle}deg) translateZ(30cqw) translateY(${it.y}px)` }}>
-                          <div className="orbit-bill" style={{ transform: `rotateY(${-it.angle}deg)`, animationDelay: `-${((it.angle / 360) * ORBIT_DUR).toFixed(2)}s` }}>
+                          <div className="orbit-bill" style={{ transform: `rotateY(${-it.angle}deg)` }}>
                             <div className="orbit-spin">
-                              <div style={{ height: it.h, width: it.w, transform: "translate(-50%,-50%)" }}>
+                              <div className="orbit-depth" style={{ height: it.h, width: it.w, transform: "translate(-50%,-50%)", animationDelay: `-${((it.angle / 360) * ORBIT_DUR).toFixed(2)}s` }}>
                                 <CandleShape up={up} down={down} isUp={it.isUp} bt={it.bt} bh={it.bh} growDelay={0.15 + i * 0.09} />
                               </div>
                             </div>
@@ -438,31 +439,31 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         </div>
 
         <div className="mt-10 space-y-12 sm:mt-14 sm:space-y-24">
-          <Showcase primary={primary} icon={Radio} tag="Live signals"
+          <Showcase n="01" primary={primary} icon={Radio} tag="Live signals"
             title="Every call from the desk — on your phone in seconds"
             body="Entry, stop-loss and targets, pushed the moment the desk fires."
             points={["Real-time Telegram delivery", "Entry · SL · multiple targets", "Win/loss tracked openly"]}
             preview={<SignalsPreview primary={primary} />} />
 
-          <Showcase primary={primary} reversed icon={Bot} tag="Auto-Trader"
+          <Showcase n="02" primary={primary} reversed icon={Bot} tag="Auto-Trader"
             title="Copy the master account — hands-off"
             body="Mirror the desk's trades automatically into your own broker account — switch it off anytime."
             points={["One-tap copy of the master desk", "Risk scaled to your account", "Full transparency on every position"]}
             preview={<BotPreview primary={primary} />} />
 
-          <Showcase primary={primary} icon={GraduationCap} tag="The Academy"
+          <Showcase n="03" primary={primary} icon={GraduationCap} tag="The Academy"
             title="From your first candle to a funded month"
             body="Twelve structured lessons with video, built to take you from zero to a repeatable edge."
             points={["12 video lessons, zero to pro", "Progress + completion tracking", "Orderflow tools most traders never see"]}
             preview={<AcademyPreview primary={primary} accent={accent} />} />
 
-          <Showcase primary={primary} reversed icon={Sparkles} tag="Live quizzes"
+          <Showcase n="04" primary={primary} reversed icon={Sparkles} tag="Live quizzes"
             title="Learn it, then prove it — and get paid XP"
             body="Short quizzes lock in each lesson — answer right, bank XP, climb the ladder."
             points={["Quiz after every lesson", "Instant XP on correct answers", "Reinforces the exact rules that matter"]}
             preview={<QuizPreview primary={primary} />} />
 
-          <Showcase primary={primary} icon={Trophy} tag="Earn & level up"
+          <Showcase n="05" primary={primary} icon={Trophy} tag="Earn & level up"
             title="Every action earns — every level unlocks"
             body="XP, streaks and levels turn progress into momentum."
             points={["XP, streaks & levels", "Tier ladder tied to real progress", "Unlock the live room, auto-trader & more"]}
@@ -732,27 +733,55 @@ function SectionHead({ n, kicker, title, primary, center }: { n: string; kicker:
   );
 }
 
-function Showcase({ tag, title, body, points, preview, primary, icon: Icon, reversed }: {
-  tag: string; title: string; body: string; points: string[]; preview: React.ReactNode;
+/**
+ * One product chapter. Rebuilt 21.08. because five of these in a row read as
+ * "generic blocks with text" — the user's words, and he was right:
+ *
+ *   · The PREVIEW is the product, so it leads. On the phone it renders first
+ *     (show, then tell — same instinct as Cosmo opening the hero), and it
+ *     sits in an app-window frame: traffic lights, tag in the title bar, a
+ *     brand glow behind. The same window metaphor the demo video already
+ *     uses, so the page speaks one visual language for "this is the app".
+ *   · A giant watermark numeral gives each chapter an identity at a glance —
+ *     you can tell 03 from 04 while scrolling fast, without reading a word.
+ *   · The checklist became chips: three short claims wrap in a row instead
+ *     of stacking as another block of list-text.
+ */
+function Showcase({ n, tag, title, body, points, preview, primary, icon: Icon, reversed }: {
+  n: string; tag: string; title: string; body: string; points: string[]; preview: React.ReactNode;
   primary: string; icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; reversed?: boolean;
 }) {
   return (
-    <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-14">
-      <div className={cn(reversed && "lg:order-2")}>
+    <div className="relative grid items-center gap-6 lg:grid-cols-2 lg:gap-14">
+      <span aria-hidden className="pointer-events-none absolute -top-10 right-0 select-none font-display text-[6rem] font-black leading-none text-white/[0.045] sm:text-[8rem] lg:-top-14">
+        {n}
+      </span>
+
+      <div className={cn("relative", reversed && "lg:order-2")}>
         <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: primary }}>
           <Icon className="h-3.5 w-3.5" /> {tag}
         </span>
-        <h3 className="mt-4 font-display text-2xl font-black leading-tight sm:text-3xl">{title}</h3>
+        <h3 className="apl-sheen mt-4 font-display text-2xl font-black leading-tight sm:text-3xl">{title}</h3>
         <p className="mt-3 max-w-md text-sm leading-relaxed text-white/65">{body}</p>
-        <ul className="mt-5 space-y-2.5">
+        <div className="mt-5 flex flex-wrap gap-2">
           {points.map((p) => (
-            <li key={p} className="flex items-center gap-2.5 text-sm text-white/80">
-              <CheckCircle2 className="h-4 w-4 shrink-0" style={{ color: primary }} /> {p}
-            </li>
+            <span key={p} className="apl-card inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] px-3 py-1.5 text-[12px] font-medium text-white/80">
+              <CheckCircle2 className="h-3.5 w-3.5 shrink-0" style={{ color: primary }} /> {p}
+            </span>
           ))}
-        </ul>
+        </div>
       </div>
-      <div className={cn(reversed && "lg:order-1")}>{preview}</div>
+
+      {/* The previews already ship inside their own app-window Frame (see
+          LandingPreviews.tsx) — wrapping them in a second window here doubled
+          the traffic lights. This wrapper only adds what the Frame lacks: the
+          brand glow, and preview-first order on the phone. */}
+      <div className={cn("order-first lg:order-none", reversed && "lg:order-1")}>
+        <div className="relative">
+          <div aria-hidden className="absolute -inset-4 rounded-[2rem] blur-2xl" style={{ background: `color-mix(in oklch, ${primary} 12%, transparent)` }} />
+          <div className="relative">{preview}</div>
+        </div>
+      </div>
     </div>
   );
 }
