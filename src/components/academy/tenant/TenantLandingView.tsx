@@ -8,6 +8,13 @@
  * commits to that world — a cinematic candle-field hero, oversized editorial
  * section numbers, and the lime "COSMO" coach-badge motif recurring throughout.
  * Every partner inherits the same world, skinned to their colors/broker/mascot.
+ *
+ * Surface system (20.08.2026): sections sit on alternating full-width bands —
+ * base ground vs a raised `border-y border-white/[0.07] bg-white/[0.022]` —
+ * the structure proven on /partner-program, so sections separate structurally
+ * instead of typographically. Section heads are number + kicker + title with
+ * NO lead paragraph, and each card/claim carries exactly one sentence. The
+ * SECTION ORDER is researched and fixed; do not reorder or remove sections.
  */
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -289,7 +296,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
       </section>
 
       {/* ─────────────────────── DEMO VIDEO ─────────────────────── */}
-      <section className="mx-auto max-w-4xl px-4 pb-10 pt-4 sm:px-8 sm:py-10">
+      <Band tone="raised" max="max-w-4xl" className="py-8 sm:py-12">
         {/* Das Video laeuft 1:19 — "60 seconds" stand hier noch aus der Zeit
             vor dem fertigen Schnitt. */}
         <SectionHead n="01" kicker="Watch first" title="The whole thing in 80 seconds" primary={primary} />
@@ -341,10 +348,10 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
             </div>
           </div>
         </div>
-      </section>
+      </Band>
 
       {/* ─────────────────────── TICKER ─────────────────────── */}
-      <div className="relative overflow-hidden border-y border-white/[0.06] bg-white/[0.02] py-3">
+      <div className="relative overflow-hidden border-b border-white/[0.07] bg-white/[0.022] py-3">
         <div className="ticker-track flex w-max items-center gap-3 whitespace-nowrap">
           {[...TICKER, ...TICKER].map((t, i) => (
             <span
@@ -379,51 +386,52 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
 
 
       {/* ─────────────────── CAPABILITIES SHOWCASE ─────────────────── */}
-      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-8 sm:py-16">
+      <Band>
         <div className="mx-auto max-w-2xl text-center">
-          <SectionHead n="02" kicker="Everything included · free" title="Not a course. A whole trading operating system." primary={primary} center
-            sub="Signals, auto-trader, academy, quizzes, tiers. Everything below is the real product — not screenshots." />
+          <SectionHead n="02" kicker="Everything included · free" title="Not a course. A whole trading operating system." primary={primary} center />
         </div>
 
         <div className="mt-10 space-y-12 sm:mt-14 sm:space-y-24">
           <Showcase primary={primary} icon={Radio} tag="Live signals"
             title="Every call from the desk — on your phone in seconds"
-            body="Entry, stop-loss and targets, pushed the moment the desk fires. Nothing to interpret, no hindsight, no screenshots — just the trade."
+            body="Entry, stop-loss and targets, pushed the moment the desk fires."
             points={["Real-time Telegram delivery", "Entry · SL · multiple targets", "Win/loss tracked openly"]}
             preview={<SignalsPreview primary={primary} />} />
 
           <Showcase primary={primary} reversed icon={Bot} tag="Auto-Trader"
             title="Copy the master account — hands-off"
-            body="Mirror the desk's trades automatically into your own broker account. Position sizing scales to your balance; you stay in control and can switch it off anytime."
+            body="Mirror the desk's trades automatically into your own broker account — switch it off anytime."
             points={["One-tap copy of the master desk", "Risk scaled to your account", "Full transparency on every position"]}
             preview={<BotPreview primary={primary} />} />
 
           <Showcase primary={primary} icon={GraduationCap} tag="The Academy"
             title="From your first candle to a funded month"
-            body="Twelve structured lessons with video, built to take you from zero to a repeatable edge. Progress is tracked and every lesson pays XP."
+            body="Twelve structured lessons with video, built to take you from zero to a repeatable edge."
             points={["12 video lessons, zero to pro", "Progress + completion tracking", "Orderflow tools most traders never see"]}
             preview={<AcademyPreview primary={primary} accent={accent} />} />
 
           <Showcase primary={primary} reversed icon={Sparkles} tag="Live quizzes"
             title="Learn it, then prove it — and get paid XP"
-            body="Short quizzes lock in each lesson. Answer right, bank XP, climb the ladder. It turns passive watching into skills that stick."
+            body="Short quizzes lock in each lesson — answer right, bank XP, climb the ladder."
             points={["Quiz after every lesson", "Instant XP on correct answers", "Reinforces the exact rules that matter"]}
             preview={<QuizPreview primary={primary} />} />
 
           <Showcase primary={primary} icon={Trophy} tag="Earn & level up"
             title="Every action earns — every level unlocks"
-            body="XP, streaks and levels turn progress into momentum. Verified deposits and completed lessons push you up the tiers, each one unlocking more of the platform."
+            body="XP, streaks and levels turn progress into momentum."
             points={["XP, streaks & levels", "Tier ladder tied to real progress", "Unlock the live room, auto-trader & more"]}
             preview={<RewardsPreview primary={primary} accent={accent} />} />
         </div>
-      </section>
+      </Band>
 
       {/* ───────────────── BEWEIS: echte Ergebnisse ─────────────────
-          Zahlen vor Preisen. Rendert nichts, wenn keine Daten da sind. */}
+          Zahlen vor Preisen. Rendert nichts, wenn keine Daten da sind — darum
+          bleibt sie AUSSERHALB der Band-Abfolge: eine leere erhabene Flaeche
+          waere schlimmer als gar keine Sektion. */}
       <DeskResults primary={primary} />
 
       {/* ─────────────────────── HOW IT WORKS ─────────────────────── */}
-      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-8 sm:py-16">
+      <Band tone="raised">
         <div className="flex flex-col items-center gap-4 text-center">
           {showCosmo && (
             <div className="relative">
@@ -445,9 +453,9 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
             </div>
           ))}
         </div>
-      </section>
+      </Band>
 
-      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-8 sm:py-16">
+      <Band>
         <SectionHead n="04" kicker="How far you can go" title="Member tiers" primary={primary} />
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           {TIERS.map((t, idx) => (
@@ -465,11 +473,11 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
             </div>
           ))}
         </div>
-      </section>
+      </Band>
 
       {/* ─────────────────────── TESTIMONIALS ─────────────────────── */}
       {tenant.testimonials && tenant.testimonials.length > 0 && (
-        <section className="mx-auto max-w-6xl px-4 py-12 sm:px-8 sm:py-16">
+        <Band tone="raised">
           <SectionHead n="05" kicker="Proof" title="Real members, real results" primary={primary} />
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
             {tenant.testimonials.map((t) => (
@@ -483,12 +491,12 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               </div>
             ))}
           </div>
-        </section>
+        </Band>
       )}
 
       {/* ─────────────────────── FAQ ─────────────────────── */}
       {tenant.faq && tenant.faq.length > 0 && (
-        <section className="mx-auto max-w-3xl px-4 py-12 sm:px-8 sm:py-16">
+        <Band tone="raised" max="max-w-3xl">
           <SectionHead n="06" kicker="Questions" title="Good to know" primary={primary} />
           <div className="mt-8 space-y-3">
             {tenant.faq.map((f) => (
@@ -498,13 +506,13 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               </details>
             ))}
           </div>
-        </section>
+        </Band>
       )}
 
       {/* ─────────────────────── BROKER BAND ─────────────────────── */}
-      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-8 sm:py-16">
+      <Band>
         <div className="overflow-hidden rounded-[2rem] border border-white/10" style={{ background:`radial-gradient(120% 120% at 0% 0%, color-mix(in oklch, ${primary} 12%, transparent), transparent 55%)` }}>
-          <div className="grid gap-10 p-8 sm:p-12 lg:grid-cols-[1fr_0.85fr] lg:items-center">
+          <div className="grid gap-10 p-6 sm:p-12 lg:grid-cols-[1fr_0.85fr] lg:items-center">
             <div>
               <p className="mb-4 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: primary }}><Building2 className="h-4 w-4" /> How the money works</p>
               <h2 className="font-display text-3xl font-black leading-tight sm:text-4xl">Your money<br />stays your money.</h2>
@@ -514,7 +522,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                     happens to say. We are mid-switch and have verified neither
                     licence nor award for the incoming broker — which is exactly
                     why BROKERS[x].trust is deliberately empty in broker.ts. */}
-                Your trading account is opened in your <span className="font-semibold text-white/90">own</span> name. The money stays in your name and you can withdraw it anytime. We earn from the broker, not from you — that's why everything here is free.
+                Your trading account is opened in your <span className="font-semibold text-white/90">own</span> name. We earn from the broker, not from you — that's why everything here is free.
               </p>
               {/* Both of these existed, were correct, and were imported by nothing.
                   The loss warning belongs next to the deposit ask, not in a footer,
@@ -547,11 +555,11 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
             </div>
           </div>
         </div>
-      </section>
+      </Band>
 
       {/* ─────────────────────── FINAL CTA ─────────────────────── */}
-      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-8 sm:py-16">
-        <div className="relative overflow-hidden rounded-[2rem] border p-10 text-center sm:p-16"
+      <Band>
+        <div className="relative overflow-hidden rounded-[2rem] border p-8 text-center sm:p-16"
           style={{ borderColor:`color-mix(in oklch, ${primary} 22%, transparent)`, background:`radial-gradient(120% 140% at 50% 0%, color-mix(in oklch, ${primary} 16%, transparent), color-mix(in oklch, ${accent} 8%, transparent) 60%, transparent)` }}>
           {showCosmo && (
             <div className="relative mx-auto mb-4 h-28 w-28">
@@ -567,20 +575,20 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           </div>
           <p className="mt-4 text-[11px] text-white/45">Questions? <a href={`mailto:${tenant.affiliateEmail}`} className="underline hover:text-white">{tenant.affiliateEmail}</a></p>
         </div>
-      </section>
+      </Band>
 
       {/* ─────────────────────── WHITE-LABEL ─────────────────────── */}
       {showCosmo && (
         <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-8">
           <div className="overflow-hidden rounded-[2rem] border border-white/[0.07] bg-white/[0.02]">
-            <div className="grid items-center gap-10 p-8 sm:p-12 lg:grid-cols-[0.95fr_1.05fr]">
+            <div className="grid items-center gap-10 p-6 sm:p-12 lg:grid-cols-[0.95fr_1.05fr]">
               <div>
                 <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: primary }}>
                   <Sparkles className="h-4 w-4" /> For creators & communities
                 </p>
                 <h2 className="mt-3 font-display text-3xl font-black leading-tight sm:text-4xl">Run this exact academy<br />under your own brand.</h2>
                 <p className="mt-4 max-w-md text-sm text-white/65">
-                  Everything you just scrolled — signals, auto-trader, academy, quizzes, rewards — is a white-label engine. Bring your audience; we handle the desk, the tech and the broker deal. Your colours, your name, your mascot.
+                  Everything you just scrolled — signals, auto-trader, academy, quizzes, rewards — is a white-label engine. Bring your audience; we handle the desk, the tech and the broker deal.
                 </p>
                 <ul className="mt-5 space-y-2">
                   {["Your branding, live in a day", "We run the signals & the platform", "You earn from the broker partnership"].map((p) => (
@@ -602,15 +610,40 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
   );
 }
 
-function SectionHead({ n, kicker, title, sub, primary, center }: { n: string; kicker: string; title: string; sub?: string; primary: string; center?: boolean }) {
+/**
+ * A full-width surface change between sections — the same Band as
+ * /partner-program. Alternating the ground (base vs raised) separates the
+ * sections structurally, so the heads no longer carry that job typographically.
+ * Inner max-width varies per section (video 4xl, FAQ 3xl), hence the prop.
+ * Tenant colors never touch the band surfaces — they are neutral white-alpha,
+ * so every white-label partner inherits them unchanged.
+ */
+function Band({ tone = "base", max = "max-w-6xl", className, children }: {
+  tone?: "base" | "raised"; max?: string; className?: string; children: React.ReactNode;
+}) {
+  return (
+    <section className={cn(
+      "px-4 py-12 sm:px-8 sm:py-16",
+      tone === "raised" && "border-y border-white/[0.07] bg-white/[0.022]",
+      className,
+    )}>
+      <div className={cn("mx-auto", max)}>{children}</div>
+    </section>
+  );
+}
+
+/* Number, kicker, title — and nothing else. Same head as /partner-program:
+   the optional `sub` lead paragraph is gone, because a title that needs
+   restating below itself is a title that isn't doing its job. */
+function SectionHead({ n, kicker, title, primary, center }: { n: string; kicker: string; title: string; primary: string; center?: boolean }) {
   return (
     <div className={center ? "text-center" : ""}>
-      <div className={cn("flex items-baseline gap-3", center && "justify-center")}>
-        <span className="font-display text-sm font-black tabular-nums" style={{ color: primary }}>{n}</span>
-        <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/45">{kicker}</span>
+      <div className={cn("flex items-center gap-3", center && "justify-center")}>
+        <span className="font-mono text-[11px] font-bold tabular-nums" style={{ color: primary }}>{n}</span>
+        <span className="h-px w-6" style={{ background: `color-mix(in oklch, ${primary} 40%, transparent)` }} aria-hidden />
+        <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">{kicker}</span>
       </div>
-      <h2 className="mt-2 font-display text-3xl font-black leading-tight sm:text-4xl">{title}</h2>
-      {sub && <p className={cn("mt-3 max-w-2xl text-sm text-white/60", center && "mx-auto")}>{sub}</p>}
+      <h2 className="mt-3 font-display text-3xl font-black leading-tight sm:text-4xl">{title}</h2>
     </div>
   );
 }
