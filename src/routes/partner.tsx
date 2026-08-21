@@ -52,9 +52,20 @@ function PartnerPortal() {
   const [rows, setRows] = useState<PartnerRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
-    const { data: session } = await supabase.auth.getSession();
-    const mail = session.session?.user?.email ?? null;
+  // Session kann hereingereicht werden. Der Grund ist ein Deadlock, kein Stil:
+  // supabase-js serialisiert Auth-Aufrufe ueber navigator.locks, und ein
+  // getSession() INNERHALB eines onAuthStateChange-Callbacks wartet auf den
+  // Lock, den der Callback selbst haelt. Mit bestehender Session feuert
+  // INITIAL_SESSION sofort — das Portal hing dann fuer immer im Spinner,
+  // fuer jeden eingeloggten Partner, in jedem Browser.
+  const load = useCallback(async (sessionArg?: { user?: { email?: string | null } } | null) => {
+    let mail: string | null;
+    if (sessionArg !== undefined) {
+      mail = sessionArg?.user?.email ?? null;
+    } else {
+      const { data: session } = await supabase.auth.getSession();
+      mail = session.session?.user?.email ?? null;
+    }
     setEmail(mail);
     setChecking(false);
     if (!mail) return;
@@ -79,7 +90,11 @@ function PartnerPortal() {
 
   useEffect(() => {
     load();
-    const { data: sub } = supabase.auth.onAuthStateChange(() => load());
+    // setTimeout: der Callback laeuft im Auth-Lock; erst rausspringen, dann
+    // laden — und die Session aus dem Event nutzen statt sie neu zu holen.
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setTimeout(() => load(session), 0);
+    });
     return () => sub.subscription.unsubscribe();
   }, [load]);
 
