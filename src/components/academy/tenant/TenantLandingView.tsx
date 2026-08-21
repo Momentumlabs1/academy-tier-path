@@ -21,7 +21,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight, ArrowUpRight, CheckCircle2, Lock, Shield, Star,
   PlayCircle, BadgeCheck, Wallet, Building2, Radio, GraduationCap, LineChart, Zap,
-  Bot, Trophy, Sparkles,
+  Bot, Trophy, ListChecks, Layers,
 } from "lucide-react";
 import { TIERS } from "@/lib/academy-data";
 import { formatMoney } from "@/lib/format";
@@ -457,7 +457,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
             points={["12 video lessons, zero to pro", "Progress + completion tracking", "Orderflow tools most traders never see"]}
             preview={<AcademyPreview primary={primary} accent={accent} />} />
 
-          <Showcase n="04" primary={primary} reversed icon={Sparkles} tag="Live quizzes"
+          <Showcase n="04" primary={primary} reversed icon={ListChecks} tag="Live quizzes"
             title="Learn it, then prove it — and get paid XP"
             body="Short quizzes lock in each lesson — answer right, bank XP, climb the ladder."
             points={["Quiz after every lesson", "Instant XP on correct answers", "Reinforces the exact rules that matter"]}
@@ -654,7 +654,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
             <div className="grid items-center gap-10 p-6 sm:p-12 lg:grid-cols-[0.95fr_1.05fr]">
               <div>
                 <p className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em]" style={{ color: primary }}>
-                  <Sparkles className="h-4 w-4" /> For creators & communities
+                  <Layers className="h-4 w-4" /> For creators & communities
                 </p>
                 <h2 className="apl-sheen mt-3 font-display text-3xl font-black leading-tight sm:text-4xl">Run this exact academy<br />under your own brand.</h2>
                 <p className="mt-4 max-w-md text-sm text-white/65">
