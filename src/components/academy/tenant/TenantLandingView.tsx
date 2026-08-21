@@ -435,25 +435,25 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
       {/* ─────────────────── CAPABILITIES SHOWCASE ─────────────────── */}
       <Band>
         <div className="mx-auto max-w-2xl text-center">
-          <SectionHead n="02" kicker="Everything included · free" title="Not a course. A whole trading operating system." primary={primary} center />
+          <SectionHead n="02" kicker="Everything included · free" title="Signals, academy, tools. One platform, free." primary={primary} center />
         </div>
 
         <div className="mt-10 space-y-12 sm:mt-14 sm:space-y-24">
           <Showcase n="01" primary={primary} icon={Radio} tag="Live signals"
             title="Every call from the desk — on your phone in seconds"
-            body="Entry, stop-loss and targets, pushed the moment the desk fires."
+            body="Entry, stop-loss and targets, pushed the moment the desk fires them."
             points={["Real-time Telegram delivery", "Entry · SL · multiple targets", "Win/loss tracked openly"]}
             preview={<SignalsPreview primary={primary} />} />
 
           <Showcase n="02" primary={primary} reversed icon={Bot} tag="Auto-Trader"
             title="Copy the master account — hands-off"
-            body="Mirror the desk's trades automatically into your own broker account — switch it off anytime."
+            body="Mirror the desk's trades automatically into your own broker account. Switch it off anytime."
             points={["One-tap copy of the master desk", "Risk scaled to your account", "Full transparency on every position"]}
             preview={<BotPreview primary={primary} />} />
 
           <Showcase n="03" primary={primary} icon={GraduationCap} tag="The Academy"
             title="From your first candle to a funded month"
-            body="Twelve structured lessons with video, built to take you from zero to a repeatable edge."
+            body="Twelve structured video lessons that take you from zero to a repeatable edge."
             points={["12 video lessons, zero to pro", "Progress + completion tracking", "Orderflow tools most traders never see"]}
             preview={<AcademyPreview primary={primary} accent={accent} />} />
 
@@ -465,7 +465,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
 
           <Showcase n="05" primary={primary} icon={Trophy} tag="Earn & level up"
             title="Every action earns — every level unlocks"
-            body="XP, streaks and levels turn progress into momentum."
+            body="XP, streaks and levels keep you coming back."
             points={["XP, streaks & levels", "Tier ladder tied to real progress", "Unlock the live room, auto-trader & more"]}
             preview={<RewardsPreview primary={primary} accent={accent} />} />
         </div>
