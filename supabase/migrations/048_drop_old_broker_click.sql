@@ -1,0 +1,12 @@
+-- 048 — die alte, 2-argumentige log_broker_click entfernen.
+--
+-- Migration 044 hat eine erweiterte Variante mit country + broker gebracht, die
+-- alte (nur tenant_slug + click_id) aber stehen lassen. Zwei Overloads mit
+-- gleichem Namen sind fuer PostgREST doppeldeutig: ein RPC-Aufruf kann auf der
+-- kurzen landen, und dann werden country/broker verworfen — genau deshalb stand
+-- broker bei jedem Klick auf NULL (clicks_with_broker = 0), obwohl das Frontend
+-- alle vier Werte schickt.
+--
+-- Das Frontend ruft nur die 4-argumentige Form auf (BrokerTrustStrip), die alte
+-- ist ungenutzt. Weg damit, dann landet der Broker wieder in der Zeile.
+DROP FUNCTION IF EXISTS public.log_broker_click(text, text);
