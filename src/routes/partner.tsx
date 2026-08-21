@@ -13,7 +13,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { BarChart3, Check, Copy, ExternalLink, Eye, Loader2, Lock, LogOut, MousePointerClick, TrendingUp, Users, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { PartnerProfileCard, type PartnerProfile } from "@/components/academy/partner/PartnerProfileCard";
+import { type PartnerProfile } from "@/components/academy/partner/PartnerProfileCard";
+import { PartnerPrimer } from "@/components/academy/partner/PartnerPrimer";
 import { PartnerIbSetup } from "@/components/academy/partner/PartnerIbSetup";
 import { PartnerOnboarding } from "@/components/academy/partner/PartnerOnboarding";
 import { ADMIN_EMAIL } from "@/lib/admin-auth";
@@ -290,7 +291,7 @@ export function PartnerCard({ row }: { row: PartnerRow }) {
           {/* Tag-1-Reihenfolge: erst die zwei Dinge, die der Partner selbst tun
               kann (Broker-Konto + Profil), dann das Gesperrte MIT Grund. */}
           <PartnerIbSetup slug={row.slug} />
-          <PartnerProfileCard profile={row.partner_profile} />
+          <PartnerPrimer name={row.name} />
 
           <div className="mt-5 grid gap-3 lg:grid-cols-2">
             <LockedShell title="Deine Website" icon={Eye} note={`Kommt in Schritt 4 — wir bauen sie gerade unter ${shareUrl.replace("https://", "")}.`}>
@@ -370,7 +371,7 @@ export function PartnerCard({ row }: { row: PartnerRow }) {
             )}
           </div>
 
-          <PartnerProfileCard profile={row.partner_profile} />
+          <PartnerPrimer name={row.name} />
           <PartnerIbSetup slug={row.slug} />
         </>
       )}

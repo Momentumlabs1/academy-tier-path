@@ -465,7 +465,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
             title="Every call from the desk — on your phone in seconds"
             body="Entry, stop-loss and targets, pushed the moment the desk fires them."
             points={["Real-time Telegram delivery", "Entry · SL · multiple targets", "Win/loss tracked openly"]}
-            preview={<SignalsPreview primary={primary} />} />
+            preview={<SignalsPreview primary={primary} showCosmo={showCosmo} />} />
 
           <Showcase n="02" primary={primary} reversed icon={Bot} tag="Auto-Trader"
             title="Copy the master account — hands-off"
