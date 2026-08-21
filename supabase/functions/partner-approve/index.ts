@@ -124,7 +124,10 @@ Deno.serve(async (req) => {
     const link = await db.auth.admin.generateLink({
       type: "recovery",
       email: app.email,
-      options: { redirectTo: `${SITE_URL}/partner` },
+      // Auf die Passwort-Seite, NICHT direkt ins Portal: der Recovery-Link
+      // loggt zwar ein, aber ohne gesetztes Passwort ist der zweite Besuch
+      // eine verschlossene Tuer. ?next= schickt ihn danach ins Portal.
+      options: { redirectTo: `${SITE_URL}/reset-password?next=/partner` },
     });
     const action = (link.data?.properties as { action_link?: string } | undefined)?.action_link;
     if (action) inviteUrl = action;

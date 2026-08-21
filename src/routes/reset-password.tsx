@@ -81,8 +81,12 @@ function ResetPasswordPage() {
 
     if (err) { setError(err.message); return; }
     setPhase("done");
-    // Already signed in by the recovery session — go straight to the dashboard.
-    setTimeout(() => navigate({ to: "/" }), 1400);
+    // Already signed in by the recovery session. WHERE to go is caller-defined:
+    // members land on the dashboard, a freshly approved partner must land in
+    // the partner portal — partner-approve appends ?next=/partner for that.
+    const next = new URLSearchParams(window.location.search).get("next");
+    const to = next === "/partner" ? "/partner" : "/";
+    setTimeout(() => navigate({ to }), 1400);
   }
 
   return (

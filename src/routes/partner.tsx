@@ -11,7 +11,7 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
-import { BarChart3, Check, Copy, ExternalLink, Eye, Loader2, LogOut, MousePointerClick, TrendingUp, Users, Wallet } from "lucide-react";
+import { BarChart3, Check, Copy, ExternalLink, Eye, Loader2, Lock, LogOut, MousePointerClick, TrendingUp, Users, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { PartnerProfileCard, type PartnerProfile } from "@/components/academy/partner/PartnerProfileCard";
 import { PartnerIbSetup } from "@/components/academy/partner/PartnerIbSetup";
@@ -145,6 +145,14 @@ function PartnerPortal() {
   );
 }
 
+/**
+ * Umbau 21.08. auf Dashboard-Logik: ein frisch freigegebener Partner wird
+ * BEGRUESST und sieht ein Dashboard, in dem die grossen Dinge — Website,
+ * Analytics — sichtbar, aber gesperrt sind, mit dem Grund daneben. Vorher
+ * war alles eine lange Seite in einer Reihenfolge, die fuer den Tag 30
+ * gebaut war, nicht fuer Tag 1: Nullen ohne Erklaerung lesen sich als
+ * kaputt, nicht als neu.
+ */
 export function PartnerCard({ row }: { row: PartnerRow }) {
   const isPercent = row.partner_rate_unit === "percent";
   const level = levelForVolume(row.partner_volume);
@@ -156,6 +164,24 @@ export function PartnerCard({ row }: { row: PartnerRow }) {
   const [copied, setCopied] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
 
+  // Aufbau vs. live — dieselbe Wahrheit, die auch das Tutorial benutzt: eine
+  // Marke ist live, sobald ihr Signalkanal existiert. Bis dahin sind Website
+  // und Analytics sichtbar, aber verschlossen.
+  const [live, setLive] = useState<boolean | null>(null);
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const { data } = await (supabase as unknown as {
+        from: (t: string) => { select: (c: string) => { eq: (c: string, v: string) => Promise<{ data: { telegram_channel_id: unknown }[] | null }> } };
+      }).from("tenants").select("telegram_channel_id").eq("slug", row.slug);
+      if (alive) setLive(Boolean(data?.[0]?.telegram_channel_id));
+    })();
+    return () => { alive = false; };
+  }, [row.slug]);
+  const setup = live === false;
+
+  const firstName = (row.name || row.slug).split(" ")[0];
+
   const stats = [
     { label: "Clicks", value: row.clicks.toLocaleString("de-AT"), icon: MousePointerClick },
     { label: "Leads", value: row.leads.toLocaleString("de-AT"), icon: BarChart3 },
@@ -163,12 +189,91 @@ export function PartnerCard({ row }: { row: PartnerRow }) {
     { label: "Deposits", value: formatMoney(row.total_deposits, "€"), icon: Wallet },
   ];
 
+  const copyLink = async () => {
+    const done = () => { setCopied(true); setTimeout(() => setCopied(false), 1500); };
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(shareUrl); done(); return;
+      }
+    } catch { /* fall through to legacy copy */ }
+    const ta = document.createElement("textarea");
+    ta.value = shareUrl; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    try { document.execCommand("copy"); done(); } catch { /* last resort: leave selected */ }
+    document.body.removeChild(ta);
+  };
+
+  /** Eine gesperrte Kachel: Inhalt sichtbar, aber ausgegraut, mit dem GRUND. */
+  const LockedShell = ({ title, icon: Icon, note, children }: {
+    title: string; icon: React.ComponentType<{ className?: string }>; note: string; children: React.ReactNode;
+  }) => (
+    <div className="relative overflow-hidden rounded-xl border border-white/5 bg-white/[0.02] p-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm font-semibold text-white/70"><Icon className="h-4 w-4" /> {title}</div>
+        <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.05] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-white/45">
+          <Lock className="h-3 w-3" /> Gesperrt
+        </span>
+      </div>
+      <div className="pointer-events-none mt-3 opacity-35 grayscale select-none" aria-hidden>{children}</div>
+      <p className="mt-2 text-[11px] font-medium text-primary/75">{note}</p>
+    </div>
+  );
+
+  const statGrid = (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      {stats.map((s) => {
+        const Icon = s.icon;
+        return (
+          <div key={s.label} className="rounded-xl border border-white/5 bg-white/[0.03] p-3">
+            <Icon className="h-4 w-4 text-muted-foreground" />
+            <div className="mt-2 font-display text-lg font-bold">{s.value}</div>
+            <div className="text-[11px] text-muted-foreground">{s.label}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  const ladder = !isPercent && (
+    <div className="mt-5 rounded-xl border border-white/5 bg-white/[0.02] p-4">
+      <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
+        <TrendingUp className="h-4 w-4 text-primary" /> Level {level.level} — {level.usdPerLot} $/lot
+      </div>
+      <div className="flex gap-1.5">
+        {COMMISSION_LADDER.map((l) => (
+          <div
+            key={l.level}
+            className={`h-2 flex-1 rounded-full ${l.level <= level.level ? "bg-primary" : "bg-white/10"}`}
+            title={`Level ${l.level}: ${l.usdPerLot} $/lot from ${formatMoney(l.fromVolume, "€")}`}
+          />
+        ))}
+      </div>
+      <div className="mt-2 text-[11px] text-muted-foreground">
+        Customer volume under you: {formatMoney(row.partner_volume, "€")}
+        {toNext
+          ? ` — ${formatMoney(toNext.remaining, "€")} to go until Level ${toNext.next.level} (${toNext.next.usdPerLot} $/lot)`
+          : " — top level reached 🎉"}
+      </div>
+    </div>
+  );
+
   return (
     <div className="rounded-2xl border border-white/10 bg-[oklch(0.15_0.045_255)] p-6">
-      <div className="mb-5 flex items-center justify-between">
+      {/* Begruessung zuerst: der Partner soll ANKOMMEN, nicht eine Akte oeffnen. */}
+      <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <div className="font-display text-xl font-bold">{row.name}</div>
-          <div className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">/{row.slug}</div>
+          <div className="font-display text-2xl font-bold">Willkommen, {firstName} 👋</div>
+          <div className="mt-1 flex items-center gap-2">
+            <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">/{row.slug}</span>
+            {live !== null && (
+              <span className={`inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] ${
+                setup ? "border border-amber-400/25 bg-amber-400/10 text-amber-400" : "border border-emerald-400/25 bg-emerald-400/10 text-emerald-400"
+              }`}>
+                <span className={`h-1.5 w-1.5 rounded-full ${setup ? "bg-amber-400" : "bg-emerald-400"}`} />
+                {setup ? "Im Aufbau" : "Live"}
+              </span>
+            )}
+          </div>
         </div>
         <div className="text-right">
           <div className="text-2xl font-bold text-primary">{rateLabel}</div>
@@ -176,133 +281,99 @@ export function PartnerCard({ row }: { row: PartnerRow }) {
         </div>
       </div>
 
-      {/* The profile form. Sits directly under the header because on day one it is
-          the only thing on this page a new partner can actually act on — every
-          figure below is still zero until their first customer funds an account,
-          and a dashboard of zeroes reads as broken rather than as new. */}
-      {/* Ganz oben: ein frisch freigegebener Partner sieht sonst nur Nullen und
-          weiss nicht, ob etwas kaputt ist oder ob er noch etwas tun muss. */}
+      {/* Das Mini-Tutorial: zeigt die Schritte bis zum Live-Gang und blendet
+          sich selbst aus, sobald die Marke live ist. */}
       <PartnerOnboarding slug={row.slug} name={row.name} />
 
-      <PartnerProfileCard profile={row.partner_profile} />
+      {setup ? (
+        <>
+          {/* Tag-1-Reihenfolge: erst die zwei Dinge, die der Partner selbst tun
+              kann (Broker-Konto + Profil), dann das Gesperrte MIT Grund. */}
+          <PartnerIbSetup slug={row.slug} />
+          <PartnerProfileCard profile={row.partner_profile} />
 
-      {/* Without this the dashboard above counts nothing: commission is credited
-          by IB account, and no partner had a way to tell us theirs. */}
-      <PartnerIbSetup slug={row.slug} />
+          <div className="mt-5 grid gap-3 lg:grid-cols-2">
+            <LockedShell title="Deine Website" icon={Eye} note={`Kommt in Schritt 4 — wir bauen sie gerade unter ${shareUrl.replace("https://", "")}.`}>
+              <div className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm">{shareUrl.replace("https://", "")}</div>
+            </LockedShell>
+            <LockedShell title="Analytics" icon={BarChart3} note="Schaltet frei, sobald deine Marke live ist — ab dann zaehlt hier jeder Klick und jeder Kunde.">
+              {statGrid}
+            </LockedShell>
+          </div>
 
-      {/* Your shareable link — this is the one you send out. */}
-      <div className="mb-5 mt-5 flex flex-col gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 sm:flex-row sm:items-center">
-        <div className="min-w-0 flex-1">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary/80">Your link</div>
-          <div className="truncate font-mono text-sm">{shareUrl}</div>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={async () => {
-              const done = () => { setCopied(true); setTimeout(() => setCopied(false), 1500); };
-              try {
-                if (typeof navigator !== "undefined" && navigator.clipboard) {
-                  await navigator.clipboard.writeText(shareUrl); done(); return;
-                }
-              } catch { /* fall through to legacy copy */ }
-              // Fallback for insecure contexts / older browsers: select + execCommand.
-              const ta = document.createElement("textarea");
-              ta.value = shareUrl; ta.style.position = "fixed"; ta.style.opacity = "0";
-              document.body.appendChild(ta); ta.focus(); ta.select();
-              try { document.execCommand("copy"); done(); } catch { /* last resort: leave selected */ }
-              document.body.removeChild(ta);
-            }}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90"
-          >
-            {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-            {copied ? "Copied" : "Copy"}
-          </button>
-          <a
-            href={shareUrl} target="_blank" rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold hover:bg-white/[0.08]"
-          >
-            Open <ExternalLink className="h-3.5 w-3.5" />
-          </a>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {stats.map((s) => {
-          const Icon = s.icon;
-          return (
-            <div key={s.label} className="rounded-xl border border-white/5 bg-white/[0.03] p-3">
-              <Icon className="h-4 w-4 text-muted-foreground" />
-              <div className="mt-2 font-display text-lg font-bold">{s.value}</div>
-              <div className="text-[11px] text-muted-foreground">{s.label}</div>
+          {ladder}
+        </>
+      ) : (
+        <>
+          {/* Live-Reihenfolge: der Link zuerst — das ist das Werkzeug des Tages. */}
+          <div className="mb-5 mt-5 flex flex-col gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 sm:flex-row sm:items-center">
+            <div className="min-w-0 flex-1">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary/80">Your link</div>
+              <div className="truncate font-mono text-sm">{shareUrl}</div>
             </div>
-          );
-        })}
-      </div>
+            <div className="flex gap-2">
+              <button
+                onClick={copyLink}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90"
+              >
+                {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                {copied ? "Copied" : "Copy"}
+              </button>
+              <a
+                href={shareUrl} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold hover:bg-white/[0.08]"
+              >
+                Open <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            </div>
+          </div>
 
-      {/* Commission staircase (USD/lot model) */}
-      {!isPercent && (
-        <div className="mt-5 rounded-xl border border-white/5 bg-white/[0.02] p-4">
-          <div className="mb-3 flex items-center gap-2 text-sm font-semibold">
-            <TrendingUp className="h-4 w-4 text-primary" /> Level {level.level} — {level.usdPerLot} $/lot
+          {statGrid}
+          {ladder}
+
+          {/* Vorschau deiner Seite — genau das, was deine Kunden ueber den Link sehen (nur Ansicht). */}
+          <div className="mt-5 rounded-xl border border-white/5 bg-white/[0.02] p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm font-semibold">
+                <Eye className="h-4 w-4 text-primary" /> Your page
+              </div>
+              <button
+                onClick={() => setShowPreview((v) => !v)}
+                className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold hover:bg-white/[0.08]"
+              >
+                {showPreview ? "Hide" : "Show preview"}
+              </button>
+            </div>
+            {showPreview && (
+              <div className="mt-3">
+                <div className="overflow-hidden rounded-xl border border-white/10 bg-black">
+                  <div className="flex items-center gap-1.5 border-b border-white/10 bg-white/[0.04] px-3 py-2">
+                    <span className="h-2.5 w-2.5 rounded-full bg-red-400/60" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-amber-400/60" />
+                    <span className="h-2.5 w-2.5 rounded-full bg-green-400/60" />
+                    <span className="ml-2 truncate font-mono text-[11px] text-muted-foreground">{shareUrl}</span>
+                  </div>
+                  <div className="relative h-[420px] w-full overflow-hidden">
+                    <iframe
+                      src={`/${row.slug}`}
+                      title={`Preview ${row.name}`}
+                      className="absolute left-0 top-0 origin-top-left"
+                      style={{ width: "133.33%", height: "133.33%", transform: "scale(0.75)", border: "0" }}
+                      loading="lazy"
+                    />
+                  </div>
+                </div>
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  Your page is built and maintained by our team — just share your link. Customers who sign up through it are automatically placed under you.
+                </p>
+              </div>
+            )}
           </div>
-          <div className="flex gap-1.5">
-            {COMMISSION_LADDER.map((l) => (
-              <div
-                key={l.level}
-                className={`h-2 flex-1 rounded-full ${l.level <= level.level ? "bg-primary" : "bg-white/10"}`}
-                title={`Level ${l.level}: ${l.usdPerLot} $/lot from ${formatMoney(l.fromVolume, "€")}`}
-              />
-            ))}
-          </div>
-          <div className="mt-2 text-[11px] text-muted-foreground">
-            Customer volume under you: {formatMoney(row.partner_volume, "€")}
-            {toNext
-              ? ` — ${formatMoney(toNext.remaining, "€")} to go until Level ${toNext.next.level} (${toNext.next.usdPerLot} $/lot)`
-              : " — top level reached 🎉"}
-          </div>
-        </div>
+
+          <PartnerProfileCard profile={row.partner_profile} />
+          <PartnerIbSetup slug={row.slug} />
+        </>
       )}
-
-      {/* Vorschau deiner Seite — genau das, was deine Kunden über den Link sehen (nur Ansicht). */}
-      <div className="mt-5 rounded-xl border border-white/5 bg-white/[0.02] p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm font-semibold">
-            <Eye className="h-4 w-4 text-primary" /> Your page
-          </div>
-          <button
-            onClick={() => setShowPreview((v) => !v)}
-            className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs font-semibold hover:bg-white/[0.08]"
-          >
-            {showPreview ? "Hide" : "Show preview"}
-          </button>
-        </div>
-        {showPreview && (
-          <div className="mt-3">
-            <div className="overflow-hidden rounded-xl border border-white/10 bg-black">
-              {/* Browser-Mock-Leiste */}
-              <div className="flex items-center gap-1.5 border-b border-white/10 bg-white/[0.04] px-3 py-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-red-400/60" />
-                <span className="h-2.5 w-2.5 rounded-full bg-amber-400/60" />
-                <span className="h-2.5 w-2.5 rounded-full bg-green-400/60" />
-                <span className="ml-2 truncate font-mono text-[11px] text-muted-foreground">{shareUrl}</span>
-              </div>
-              {/* Live-Vorschau (nur Ansicht) */}
-              <div className="relative h-[420px] w-full overflow-hidden">
-                <iframe
-                  src={`/${row.slug}`}
-                  title={`Preview ${row.name}`}
-                  className="absolute left-0 top-0 origin-top-left"
-                  style={{ width: "133.33%", height: "133.33%", transform: "scale(0.75)", border: "0" }}
-                  loading="lazy"
-                />
-              </div>
-            </div>
-            <p className="mt-2 text-[11px] text-muted-foreground">
-              Your page is built and maintained by our team — just share your link. Customers who sign up through it are automatically placed under you.
-            </p>
-          </div>
-        )}
-      </div>
     </div>
   );
 }
