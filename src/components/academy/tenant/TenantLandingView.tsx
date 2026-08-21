@@ -491,22 +491,29 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           )}
           <SectionHead n="03" kicker="Three steps" title="How it works" primary={primary} center />
         </div>
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+        {/* A descending staircase instead of three identical boxes: each card
+            steps down (lg), a gradient line runs through the numbered nodes,
+            and the number sits IN a brand ring instead of as pale decor. The
+            shape itself now says "sequence, downhill, easy". */}
+        <div className="relative mt-10 grid gap-10 sm:gap-4 sm:grid-cols-3">
+          <div aria-hidden className="absolute left-[16%] right-[16%] top-[26px] hidden h-px lg:block"
+               style={{ background: `linear-gradient(90deg, transparent, color-mix(in oklch, ${primary} 45%, transparent), transparent)` }} />
           {[
             { step: "01", icon: GraduationCap, you: "1 minute", title: "Create your free account", body: "Takes a minute. No card, no subscription, nothing to cancel." },
             { step: "02", icon: Radio, you: "guided in chat", title: "Connect Telegram", body: "We walk you through the setup in the chat and send your personal invite." },
             { step: "03", icon: LineChart, you: "at your pace", title: "Trade with confidence", body: "Follow the signals, work through the lessons, and level up tier by tier." },
           ].map((s, i) => (
-            <div key={s.step} className="apl-card relative rounded-3xl border border-white/[0.07] p-6">
-              {/* The effort chip is the argument of this section — three steps,
-                  none of which costs real work. Same mechanic as the partner
-                  page's "nothing" chips. */}
-              <div className="mb-3 flex items-center justify-between"><span className="font-display text-5xl font-black opacity-10">{s.step}</span><s.icon className="h-6 w-6" style={{ color: primary }} /></div>
-              <h3 className="font-display text-base font-bold">{s.title}</h3><p className="mt-2 text-sm text-white/65">{s.body}</p>
-              <span className="mt-4 inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em]" style={{ background:`color-mix(in oklch, ${primary} 12%, transparent)`, color: primary }}>{s.you}</span>
-              {/* Connector between the cards, so the row reads as a sequence
-                  rather than three parallel offers. */}
-              {i < 2 && <ArrowRight className="absolute -right-[22px] top-1/2 hidden h-5 w-5 -translate-y-1/2 text-white/25 sm:block" aria-hidden />}
+            <div key={s.step} className={cn("relative", i === 1 && "lg:translate-y-6", i === 2 && "lg:translate-y-12")}>
+              <div className="relative z-10 mx-auto mb-4 flex h-[52px] w-[52px] items-center justify-center rounded-full font-display text-sm font-black"
+                   style={{ background: "#0b1220", border: `1.5px solid color-mix(in oklch, ${primary} 55%, transparent)`, color: primary, boxShadow: `0 0 24px -6px color-mix(in oklch, ${primary} 60%, transparent)` }}>
+                {s.step}
+              </div>
+              <div className="apl-card relative rounded-3xl border border-white/[0.07] p-6 text-center">
+                <s.icon className="mx-auto h-6 w-6" style={{ color: primary }} />
+                <h3 className="mt-3 font-display text-base font-bold">{s.title}</h3>
+                <p className="mt-2 text-sm text-white/65">{s.body}</p>
+                <span className="mt-4 inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.1em]" style={{ background:`color-mix(in oklch, ${primary} 12%, transparent)`, color: primary }}>{s.you}</span>
+              </div>
             </div>
           ))}
         </div>
@@ -516,11 +523,15 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         <SectionHead n="04" kicker="How far you can go" title="Member tiers" primary={primary} />
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           {TIERS.map((t, idx) => (
-            <div key={t.key} className={"apl-card relative flex flex-col rounded-3xl border border-white/[0.07] p-6" + (idx === 1 ? " sm:-translate-y-2" : "")}
+            <div key={t.key} className={"apl-card relative flex flex-col overflow-hidden rounded-3xl border border-white/[0.07] p-6" + (idx === 1 ? " sm:-translate-y-2" : "")}
               style={idx === 1 ? { borderColor:`color-mix(in oklch, ${primary} 45%, transparent)`, background:`linear-gradient(180deg, color-mix(in oklch, ${primary} 8%, transparent), transparent)`, boxShadow:`0 24px 60px -28px color-mix(in oklch, ${primary} 55%, transparent)` } : {}}>
-              {idx === 1 && <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-[10px] font-bold uppercase text-black" style={{ background: primary }}>Most popular</span>}
-              <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: t.color }} /><span className="font-display text-lg font-bold">{t.name}</span></div>
-              <div className="mt-3 font-display text-4xl font-black">{formatMoney(t.minDeposit, "€")}<span className="text-base font-normal text-white/40">+</span></div>
+              {/* Each tier wears its colour as a top edge — three cards, three
+                  identities, readable before a single word. */}
+              <span aria-hidden className="absolute inset-x-0 top-0 h-[3px]"
+                    style={{ background: `linear-gradient(90deg, transparent, ${t.color}, transparent)` }} />
+              {idx === 1 && <span className="absolute -top-px left-1/2 -translate-x-1/2 rounded-b-lg px-3 py-1 text-[10px] font-bold uppercase text-black" style={{ background: primary }}>Most popular</span>}
+              <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: t.color, boxShadow: `0 0 12px ${t.color}` }} /><span className="font-display text-lg font-bold" style={{ color: t.color }}>{t.name}</span></div>
+              <div className="apl-sheen mt-3 font-display text-4xl font-black">{formatMoney(t.minDeposit, "€")}<span className="text-base font-normal">+</span></div>
               <div className="mb-4 text-[11px] uppercase tracking-[0.14em] text-white/45">verified account</div>
               <ul className="flex flex-1 flex-col gap-2">
                 {t.perks.map((perk) => <li key={perk} className="flex items-start gap-2 text-sm text-white/80"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" style={{ color: t.color }} />{perk}</li>)}
@@ -631,6 +642,11 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
       <Band>
         <div className="relative overflow-hidden rounded-[2rem] border p-8 text-center sm:p-16"
           style={{ borderColor:`color-mix(in oklch, ${primary} 22%, transparent)`, background:`radial-gradient(120% 140% at 50% 0%, color-mix(in oklch, ${primary} 16%, transparent), color-mix(in oklch, ${accent} 8%, transparent) 60%, transparent)` }}>
+          {/* The close quotes the open: the hero's twinkle field returns, so
+              the page ends in the same sky it started in. */}
+          {[["12%","10%"],["30%","88%"],["55%","6%"],["70%","93%"],["20%","55%"],["82%","30%"],["45%","72%"],["88%","62%"]].map(([tp,lf],i)=>(
+            <span key={i} aria-hidden className="twinkle absolute h-1 w-1 rounded-full bg-white" style={{ top: tp, left: lf, animationDelay: `${i*0.55}s` }} />
+          ))}
           {showCosmo && (
             <div className="relative mx-auto mb-4 h-28 w-28">
               <div className="absolute inset-0 rounded-full blur-2xl" style={{ background:`color-mix(in oklch, ${accent} 50%, transparent)` }} />
@@ -725,13 +741,19 @@ function Band({ tone = "base", max = "max-w-6xl", className, children }: {
    restating below itself is a title that isn't doing its job. */
 function SectionHead({ n, kicker, title, primary, center }: { n: string; kicker: string; title: string; primary: string; center?: boolean }) {
   return (
-    <div className={center ? "text-center" : ""}>
-      <div className={cn("flex items-center gap-3", center && "justify-center")}>
+    // Watermark numeral + sheen: the same head language the chapters and the
+    // partner page already speak — these were the last bare titles on the site.
+    <div className={cn("relative", center && "text-center")}>
+      <span aria-hidden className={cn(
+        "pointer-events-none absolute -top-9 select-none font-display text-[5rem] font-black leading-none text-white/[0.045] sm:-top-12 sm:text-[6.5rem]",
+        center ? "left-1/2 -translate-x-1/2" : "right-0",
+      )}>{n}</span>
+      <div className={cn("relative flex items-center gap-3", center && "justify-center")}>
         <span className="font-mono text-[11px] font-bold tabular-nums" style={{ color: primary }}>{n}</span>
         <span className="h-px w-6" style={{ background: `color-mix(in oklch, ${primary} 40%, transparent)` }} aria-hidden />
         <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">{kicker}</span>
       </div>
-      <h2 className="mt-3 font-display text-3xl font-black leading-tight sm:text-4xl">{title}</h2>
+      <h2 className="apl-sheen relative mt-3 font-display text-3xl font-black leading-tight sm:text-4xl">{title}</h2>
     </div>
   );
 }
