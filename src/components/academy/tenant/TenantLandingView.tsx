@@ -27,6 +27,7 @@ import { TIERS } from "@/lib/academy-data";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { writePartnerBrand } from "@/lib/partner-brand";
+import { supabase } from "@/integrations/supabase/client";
 import type { TenantConfig } from "@/lib/tenants";
 import { BROKER, BROKER_SWITCH, TELEGRAM_ENTRY } from "@/lib/broker";
 import { RiskWarning } from "@/components/academy/legal/RiskWarning";
@@ -115,6 +116,24 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
     if (typeof document === "undefined") return;
     document.cookie = `cosmo_ref=${encodeURIComponent(tenant.slug)}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
     writePartnerBrand(tenant);
+    // The partner dashboard's headline number counts affiliate_clicks — and
+    // until 21.08. nothing ever wrote that table, so every partner would have
+    // stared at a zero forever. One click per tab session, recorded through a
+    // definer RPC that resolves the slug server-side; fire-and-forget, a
+    // failed insert must never touch the visitor.
+    const key = `cc_click_${tenant.slug}`;
+    if (!sessionStorage.getItem(key)) {
+      sessionStorage.setItem(key, "1");
+      const params = new URLSearchParams(window.location.search);
+      const utm: Record<string, string> = {};
+      for (const [k, v] of params) if (k.startsWith("utm_") || k === "ref") utm[k] = v;
+      void supabase.rpc("record_affiliate_click", {
+        p_slug: tenant.slug,
+        p_referrer: document.referrer || null,
+        p_utm: Object.keys(utm).length ? utm : null,
+        p_user_agent: navigator.userAgent.slice(0, 300),
+      }).then(({ error }) => { if (error) console.warn("[click]", error.message); });
+    }
   }, [tenant]);
 
   const primary = tenant.primaryColor;
