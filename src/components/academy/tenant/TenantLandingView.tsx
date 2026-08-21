@@ -36,15 +36,24 @@ import {
   SignalsPreview, BotPreview, AcademyPreview, QuizPreview, RewardsPreview, WhitelabelPreview,
 } from "@/components/academy/tenant/LandingPreviews";
 
+/**
+ * The marquee used to be a market ticker with hand-typed prices — BTC at
+ * 64,210, a EUR/USD to four decimals — static numbers dressed up as live
+ * data. Same offence as the invented testimonials, just with digits. And
+ * half the instruments were ones the desk never trades.
+ *
+ * The strip keeps its rhythm but now carries only claims that are true for
+ * every tenant on every day, so it never needs a feed and can never lie.
+ */
 const TICKER = [
-  { s: "XAU/USD",  p: "2,318.4", d: "+0.62", up: true,  sym: "Au",  tone: "oklch(0.82 0.15 85)"  },
-  { s: "BTC/USDT", p: "64,210",  d: "+1.84", up: true,  sym: "\u20BF", tone: "oklch(0.78 0.16 60)"  },
-  { s: "NAS100",   p: "20,050",  d: "-0.41", up: false, sym: "NQ",  tone: "oklch(0.72 0.13 265)" },
-  { s: "EUR/USD",  p: "1.0842",  d: "+0.18", up: true,  sym: "\u20AC",  tone: "oklch(0.74 0.14 250)" },
-  { s: "US30",     p: "39,410",  d: "-0.27", up: false, sym: "DJ",  tone: "oklch(0.72 0.13 300)" },
-  { s: "ETH/USDT", p: "3,142",   d: "+2.10", up: true,  sym: "\u039E",  tone: "oklch(0.76 0.13 285)" },
-  { s: "GBP/JPY",  p: "199.84",  d: "+0.35", up: true,  sym: "\u00A3",  tone: "oklch(0.76 0.14 20)"  },
-  { s: "SPX500",   p: "5,268",   d: "-0.12", up: false, sym: "SP",  tone: "oklch(0.74 0.13 200)" },
+  { s: "Every call",    v: "Entry \u00b7 SL \u00b7 TP", sym: "\u25CE", tone: "oklch(0.74 0.14 250)" },
+  { s: "Course fee",    v: "\u20ac0",                    sym: "\u20ac", tone: "oklch(0.82 0.17 150)" },
+  { s: "Academy",       v: "12 lessons",                  sym: "12",      tone: "oklch(0.82 0.15 85)"  },
+  { s: "Delivery",      v: "Telegram, live",              sym: "\u2708", tone: "oklch(0.74 0.14 250)" },
+  { s: "Desk focus",    v: "Gold \u00b7 NAS100",         sym: "Au",      tone: "oklch(0.82 0.15 85)"  },
+  { s: "Your money",    v: "stays yours",                 sym: "\u2713", tone: "oklch(0.82 0.17 150)" },
+  { s: "Withdrawals",   v: "anytime",                     sym: "\u21c4", tone: "oklch(0.76 0.13 285)" },
+  { s: "To start",      v: "no card",                     sym: "\u2205", tone: "oklch(0.72 0.13 265)" },
 ];
 
 // ── Orbit engine (pure CSS 3D — GPU only, no z-index, no per-frame repaint) ──
@@ -413,13 +422,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                 {t.sym}
               </span>
               <span className="font-mono text-[11px] font-semibold tracking-tight text-white/85">{t.s}</span>
-              <span className="font-mono text-[11px] tabular-nums text-white/55">{t.p}</span>
-              <span
-                className="font-mono text-[10px] font-semibold tabular-nums"
-                style={{ color: t.up ? up : down }}
-              >
-                {t.up ? "\u25B2" : "\u25BC"} {t.d}%
-              </span>
+              <span className="font-mono text-[11px] text-white/55">{t.v}</span>
             </span>
           ))}
         </div>
