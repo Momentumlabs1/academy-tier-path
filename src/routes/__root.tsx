@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { CookieBanner } from "@/components/legal/CookieBanner";
 
 function CosmoMascot({ className }: { className?: string }) {
   return (
@@ -175,6 +176,8 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      {/* Globaler DSGVO-Hinweis — erscheint einmal, überall. */}
+      <CookieBanner />
     </QueryClientProvider>
   );
 }

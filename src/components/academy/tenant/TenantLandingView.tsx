@@ -727,7 +727,17 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
       </div>
 
       <footer className="border-t border-white/[0.06] px-4 pt-6 pb-24 text-center text-[11px] text-white/40 sm:pb-6">
-        {tenant.name} · Powered by <Link to="/" className="underline hover:text-white">Cosmos Candles Academy</Link> · In partnership with {tenant.brokerName} · <Lock className="inline h-2.5 w-2.5" /> Trading involves risk — 74–89% of retail CFD accounts lose money.
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+          <Link to="/impressum" className="hover:text-white">Impressum</Link>
+          <span aria-hidden>·</span>
+          <Link to="/datenschutz" className="hover:text-white">Datenschutz</Link>
+        </div>
+        <div className="mt-2">
+          {tenant.name} · Powered by <Link to="/" className="underline hover:text-white">Cosmos Candles Academy</Link>
+        </div>
+        <div className="mt-1 inline-flex items-center gap-1">
+          <Lock className="inline h-2.5 w-2.5" /> Trading involves risk — 74–89% of retail CFD accounts lose money.
+        </div>
       </footer>
     </div>
   );
