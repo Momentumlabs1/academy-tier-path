@@ -218,7 +218,17 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         @keyframes cosmoRingSpin { to { transform: rotateY(360deg); } }
         @keyframes cosmoRingSpinRev { to { transform: rotateY(-360deg); } }
         @keyframes cosmoLotusFloat { 0%,100% { transform: translate(-50%,-50%) translateZ(0.01px) translateY(0); } 50% { transform: translate(-50%,-50%) translateZ(0.01px) translateY(-14px); } }
-        .orbit-stage { perspective: 640px; }
+        /* Radius des Kerzenrings.
+           Stand vorher als 30cqw direkt im translateZ(). Container-Einheiten
+           INNERHALB einer 3D-Transformation loest iOS-Safari unzuverlässig auf:
+           faellt der Wert auf 0, sitzen alle zwoelf Kerzen im Mittelpunkt statt
+           auf einer Bahn, und die Gruppe kippt sichtbar aus der Mitte — genau
+           das war auf dem iPhone zu sehen, waehrend Chrome bei exakt 0px
+           Versatz mass. Feste Pixel je Breite sind ueberall gleich. Die Werte
+           sind 30 % der jeweiligen Buehnenbreite (290 / 420 / 500). */
+        .orbit-stage { perspective: 640px; --orbit-r: 87px; }
+        @media (min-width: 640px)  { .orbit-stage { --orbit-r: 126px; } }
+        @media (min-width: 1024px) { .orbit-stage { --orbit-r: 150px; } }
         .orbit-scene { position:absolute; inset:0; transform-style:preserve-3d; }
         .orbit-ring { position:absolute; inset:0; transform-style:preserve-3d; animation: cosmoRingSpin ${ORBIT_DUR}s linear infinite; will-change: transform; }
         .orbit-pos { position:absolute; left:50%; top:50%; transform-style:preserve-3d; }
@@ -343,7 +353,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                   <div className="orbit-scene">
                     <div className="orbit-ring">
                       {ORBIT_ITEMS.map((it, i) => (
-                        <div key={i} className="orbit-pos" style={{ transform: `rotateY(${it.angle}deg) translateZ(30cqw) translateY(${it.y}px)` }}>
+                        <div key={i} className="orbit-pos" style={{ transform: `rotateY(${it.angle}deg) translateZ(var(--orbit-r)) translateY(${it.y}px)` }}>
                           <div className="orbit-bill" style={{ transform: `rotateY(${-it.angle}deg)` }}>
                             <div className="orbit-spin">
                               <div className="orbit-depth" style={{ height: it.h, width: it.w, transform: "translate(-50%,-50%)", animationDelay: `-${((it.angle / 360) * ORBIT_DUR).toFixed(2)}s` }}>
@@ -460,7 +470,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           <SectionHead n="02" kicker="Everything included · free" title="Signals, academy, tools. One platform, free." primary={primary} center />
         </div>
 
-        <div className="mt-10 space-y-12 sm:mt-14 sm:space-y-24">
+        <div className="mt-10 space-y-20 sm:mt-14 sm:space-y-32">
           <Showcase n="01" primary={primary} icon={Radio} tag="Live signals"
             title="Every call from the desk — on your phone in seconds"
             body="Entry, stop-loss and targets, pushed the moment the desk fires them."
@@ -807,11 +817,44 @@ function Showcase({ n, tag, title, body, points, preview, primary, icon: Icon, r
 }) {
   return (
     <div className="relative grid items-center gap-6 lg:grid-cols-2 lg:gap-14">
-      <span aria-hidden className="pointer-events-none absolute -top-10 right-0 select-none font-display text-[6rem] font-black leading-none text-white/[0.045] sm:text-[8rem] lg:-top-14">
-        {n}
-      </span>
+      {/* Das Wasserzeichen stand auf 4,5 % Weiss — auf einem Telefon im Dunkeln
+          ist das schlicht unsichtbar, und die Idee, jedem Kapitel eine Nummer
+          zum Wiedererkennen zu geben, lief damit ins Leere. Jetzt in der
+          Markenfarbe (bleibt blau) und als KONTUR statt Fläche: eine gefüllte
+          Zahl dieser Grösse würde mit dem Text konkurrieren, eine Umrisszahl
+          liest sich als Grafik und bleibt trotzdem erkennbar. Sie wandert
+          ausserdem auf die Seite, die dem Vorschaufenster gegenüberliegt —
+          damit entsteht beim Scrollen ein Links-Rechts-Rhythmus statt fünfmal
+          derselben Anordnung. */}
+
+      {/* Kapitelmarke über die volle Breite. Beim schnellen Durchwischen sahen
+          die fünf Abschnitte gleich aus — gleiche Anordnung, gleiche Farbe,
+          kein Anfang. Diese Zeile ist der Schnitt dazwischen: Nummer, Linie,
+          Name. Man erkennt sie im Vorbeiscrollen, ohne ein Wort zu lesen. */}
+      <div aria-hidden className="flex items-center gap-3 lg:col-span-2">
+        <span className="font-mono text-[13px] font-black tabular-nums" style={{ color: primary }}>{n}</span>
+        {/* Nur Nummer und Linie. Der Name steht direkt darunter im Chip — ihn
+            hier zu wiederholen las sich wie ein Fehler, nicht wie Gestaltung. */}
+        <span className="h-px flex-1" style={{ background: `linear-gradient(to right, color-mix(in oklch, ${primary} 45%, transparent), transparent)` }} />
+      </div>
 
       <div className={cn("relative", reversed && "lg:order-2")}>
+        {/* Die Kapitelzahl liegt HINTER der Überschrift, nicht über dem
+            Vorschaufenster. Am Raster aufgehängt landete sie auf dem Telefon
+            quer auf der Produktkachel, weil dort die Vorschau zuerst kommt.
+            Hier ist immer Platz, und die Zahl liest sich als Hintergrund der
+            Kapitelüberschrift — was sie ja sein soll. */}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute -top-10 -z-10 select-none font-display text-[7rem] font-black leading-none sm:-top-14 sm:text-[10rem]"
+          style={{
+            [reversed ? "right" : "left"]: "-0.06em",
+            color: "transparent",
+            WebkitTextStroke: `2px color-mix(in oklch, ${primary} 30%, transparent)`,
+          }}
+        >
+          {n}
+        </span>
         <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-bold uppercase tracking-[0.16em]" style={{ color: primary }}>
           <Icon className="h-3.5 w-3.5" /> {tag}
         </span>

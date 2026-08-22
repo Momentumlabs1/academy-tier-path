@@ -78,7 +78,10 @@ function Shot({ src, pos, primary, className }: { src: string; pos: string; prim
         loading="lazy"
         decoding="async"
         className={cn("absolute inset-0 h-full w-full object-cover", className)}
-        style={{ objectPosition: pos }}
+        // Leicht heruntergeregelt, damit das Bild in den dunklen Kartengrund
+        // einsinkt statt dagegen zu leuchten. Das helle Terminal-Panel war
+        // sonst der hellste Fleck der ganzen Seite.
+        style={{ objectPosition: pos, opacity: 0.62 }}
       />
       {/* Markenschleier. Die Rohaufnahmen sind grelles Terminal-Weiss und
           Neon-Pink — nebeneinander auf einer dunkelblauen Seite beissen sie.
@@ -95,7 +98,7 @@ function Shot({ src, pos, primary, className }: { src: string; pos: string; prim
         aria-hidden
         className="absolute inset-0"
         style={{
-          background: "linear-gradient(160deg, rgba(10,16,32,.65), rgba(10,16,32,.25))",
+          background: "linear-gradient(160deg, rgba(8,13,26,.78), rgba(8,13,26,.42))",
           mixBlendMode: "multiply",
         }}
       />
@@ -203,7 +206,7 @@ export function BotPreview({ primary }: { primary: string }) {
       </div>
       {/* Das Zahlengitter des Master-Kontos — rechter Bildausschnitt, kein Branding. */}
       <div className="relative aspect-[16/8] overflow-hidden rounded-xl border border-white/10">
-        <Shot src="/partner/orderflow-lesson.jpg" pos="72% 38%" primary={primary} />
+        <Shot src="/partner/orderflow-lesson.jpg" pos="80% 42%" primary={primary} />
         <div className="absolute inset-0 bg-gradient-to-t from-[#0a0d16] via-transparent to-[#0a0d16]/40" />
         {/* Die Equity-Kurve des Master-Kontos liegt darüber. */}
         <svg viewBox="0 0 320 96" className="absolute inset-x-0 bottom-0 h-2/3 w-full" preserveAspectRatio="none">
