@@ -120,13 +120,13 @@ export function buildEmail(input: BuildInput): { subject: string; html: string }
      */
     case "partner_approved":
       return {
-        subject: `Aufgenommen — dein Zugang zum ${brand.name} Partnerprogramm`,
-        html: wrap("Deine Bewerbung ist angenommen — hier geht es weiter.",
-          h1("Du bist dabei" + (input.firstName ? `, ${esc(input.firstName)}` : "") + ".") +
-          p("Wir haben deine Bewerbung gelesen und dich ins Partnerprogramm aufgenommen. Dein Zugang ist eingerichtet.") +
-          p("Im Partnerbereich steht, was jetzt passiert — was wir übernehmen, und die zwei Dinge, die wir von dir brauchen.") +
-          `<div style="margin:22px 0">${button(a, input.resetUrl ?? dash, "Zugang einrichten")}</div>` +
-          p(`<span style="color:#6b7788;font-size:13px">Über den Knopf setzt du einmalig dein Passwort. Danach erreichst du deinen Bereich jederzeit unter ${esc(dash)}.</span>`)),
+        subject: `You're in — your access to the ${brand.name} partner program`,
+        html: wrap("Your application is accepted — here's what happens next.",
+          h1("You're in" + (input.firstName ? `, ${esc(input.firstName)}` : "") + ".") +
+          p("We read your application and accepted you into the partner program. Your access is set up.") +
+          p("The partner portal tells you what happens now — what we take care of, and the two things we need from you.") +
+          `<div style="margin:22px 0">${button(a, input.resetUrl ?? dash, "Set up your access")}</div>` +
+          p(`<span style="color:#6b7788;font-size:13px">The button sets your password, once. After that you can reach your portal any time at ${esc(dash)}.</span>`)),
       };
 
     case "doi":

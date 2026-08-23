@@ -212,7 +212,7 @@ export function PartnerCard({ row }: { row: PartnerRow }) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm font-semibold text-white/70"><Icon className="h-4 w-4" /> {title}</div>
         <span className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.05] px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-white/45">
-          <Lock className="h-3 w-3" /> Gesperrt
+          <Lock className="h-3 w-3" /> Locked
         </span>
       </div>
       <div className="pointer-events-none mt-3 opacity-35 grayscale select-none" aria-hidden>{children}</div>
@@ -263,7 +263,7 @@ export function PartnerCard({ row }: { row: PartnerRow }) {
       {/* Begruessung zuerst: der Partner soll ANKOMMEN, nicht eine Akte oeffnen. */}
       <div className="mb-6 flex items-start justify-between gap-4">
         <div>
-          <div className="font-display text-2xl font-bold">Willkommen, {firstName} 👋</div>
+          <div className="font-display text-2xl font-bold">Welcome, {firstName} 👋</div>
           <div className="mt-1 flex items-center gap-2">
             <span className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">/{row.slug}</span>
             {live !== null && (
@@ -271,7 +271,7 @@ export function PartnerCard({ row }: { row: PartnerRow }) {
                 setup ? "border border-amber-400/25 bg-amber-400/10 text-amber-400" : "border border-emerald-400/25 bg-emerald-400/10 text-emerald-400"
               }`}>
                 <span className={`h-1.5 w-1.5 rounded-full ${setup ? "bg-amber-400" : "bg-emerald-400"}`} />
-                {setup ? "Im Aufbau" : "Live"}
+                {setup ? "In setup" : "Live"}
               </span>
             )}
           </div>
@@ -294,10 +294,10 @@ export function PartnerCard({ row }: { row: PartnerRow }) {
           <PartnerPrimer name={row.name} />
 
           <div className="mt-5 grid gap-3 lg:grid-cols-2">
-            <LockedShell title="Deine Website" icon={Eye} note={`Kommt in Schritt 4 — wir bauen sie gerade unter ${shareUrl.replace("https://", "")}.`}>
+            <LockedShell title="Your website" icon={Eye} note={`Coming in step 4 — we're building it right now at ${shareUrl.replace("https://", "")}.`}>
               <div className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm">{shareUrl.replace("https://", "")}</div>
             </LockedShell>
-            <LockedShell title="Analytics" icon={BarChart3} note="Schaltet frei, sobald deine Marke live ist — ab dann zaehlt hier jeder Klick und jeder Kunde.">
+            <LockedShell title="Analytics" icon={BarChart3} note="Unlocks as soon as your brand is live — from then on every click and every customer is counted here.">
               {statGrid}
             </LockedShell>
           </div>

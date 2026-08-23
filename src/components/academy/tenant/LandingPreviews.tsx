@@ -267,7 +267,7 @@ export function AcademyPreview({ primary, accent }: { primary: string; accent: s
           <button
             type="button"
             onClick={() => vid.current?.play()}
-            aria-label="Lektion abspielen"
+            aria-label="Play lesson"
             className="group absolute inset-0 flex cursor-pointer items-center justify-center bg-black/25"
           >
             <span

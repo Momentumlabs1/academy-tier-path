@@ -19,7 +19,7 @@ export function LegalPage({ title, updated, children }: { title: string; updated
       <header className="border-b border-white/[0.06]">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-4 sm:px-6">
           <Link to="/" className="inline-flex items-center gap-2 text-sm text-white/60 hover:text-white">
-            <ArrowLeft className="h-4 w-4" /> Zurück
+            <ArrowLeft className="h-4 w-4" /> Back
           </Link>
           <img src="/cosmos-logo.png" alt="Cosmos Candles Academy" className="h-7 w-auto opacity-80" />
         </div>
@@ -27,7 +27,7 @@ export function LegalPage({ title, updated, children }: { title: string; updated
 
       <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
         <h1 className="font-display text-3xl font-black tracking-tight sm:text-4xl">{title}</h1>
-        {updated && <p className="mt-2 text-xs text-white/40">Stand: {updated}</p>}
+        {updated && <p className="mt-2 text-xs text-white/40">Last updated: {updated}</p>}
         <div className="legal-prose mt-8 space-y-6 text-[15px] leading-relaxed text-white/75">
           {children}
         </div>

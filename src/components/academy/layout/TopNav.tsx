@@ -88,7 +88,7 @@ export function TopNav() {
               borderColor: `color-mix(in oklch, ${brand.accentColor} 40%, transparent)`,
               background: `color-mix(in oklch, ${brand.accentColor} 12%, transparent)`,
             }}
-            title={`Empfohlen von ${brand.name}`}
+            title={`Recommended by ${brand.name}`}
           >
             <span
               className="flex h-4 w-4 items-center justify-center rounded text-[8px] font-black text-white"

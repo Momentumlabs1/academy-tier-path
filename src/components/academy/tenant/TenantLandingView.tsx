@@ -738,9 +738,9 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
 
       <footer className="border-t border-white/[0.06] px-4 pt-6 pb-24 text-center text-[11px] text-white/40 sm:pb-6">
         <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-          <Link to="/impressum" className="hover:text-white">Impressum</Link>
+          <Link to="/impressum" className="hover:text-white">Legal notice</Link>
           <span aria-hidden>·</span>
-          <Link to="/datenschutz" className="hover:text-white">Datenschutz</Link>
+          <Link to="/datenschutz" className="hover:text-white">Privacy</Link>
         </div>
         <div className="mt-2">
           {tenant.name} · Powered by <Link to="/" className="underline hover:text-white">Cosmos Candles Academy</Link>

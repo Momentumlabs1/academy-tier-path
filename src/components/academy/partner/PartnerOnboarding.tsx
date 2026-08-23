@@ -65,45 +65,45 @@ export function PartnerOnboarding({ slug, name }: { slug: string; name: string }
   const steps: Step[] = [
     {
       who: "wir",
-      title: "Wir melden uns bei dir",
-      body: "Kurzer Call: wir gehen deine Nische durch, deinen Kanal und wie deine Leute am besten reinkommen.",
+      title: "We get in touch",
+      body: "A short call: we go through your niche, your channel, and the best way for your people to come in.",
     },
     {
       who: "du",
-      title: "Broker-Konto über unseren Link eröffnen",
-      body: "Unten auf dieser Seite. Ein Konto, das woanders eröffnet wird, hängt nicht unter uns und kann nie abgerechnet werden.",
+      title: "Open a broker account through our link",
+      body: "Further down on this page. An account opened anywhere else does not sit under us and can never be counted for commission.",
       done: hasIbClaim,
     },
     {
       who: "du",
-      title: "Deine Kontonummer hier eintragen",
-      body: "Damit ordnen wir dir dein Volumen zu. Wir bestätigen sie von Hand gegen die Broker-Daten.",
+      title: "Enter your account number here",
+      body: "That is how we assign your volume to you. We confirm it by hand against the broker data.",
       done: hasIbClaim,
     },
     {
       who: "wir",
-      title: "Wir bauen deine Seite und deine Kanäle",
-      body: "Landingpage unter deinem Namen, dein Signalkanal, dein Infokanal, dein eigener Bot. Du musst nichts installieren.",
+      title: "We build your page and your channels",
+      body: "A landing page under your name, your signal channel, your info channel, your own bot. You don't have to install anything.",
     },
     {
       who: "wir",
-      title: "Wir schalten dich scharf",
-      body: "Ab dann laufen Signale automatisch in deine Kanäle, und dein Dashboard hier zeigt echte Zahlen statt Nullen.",
+      title: "We switch you live",
+      body: "From then on signals run into your channels automatically, and your dashboard here shows real numbers instead of zeros.",
     },
   ];
 
   return (
     <div className="rounded-[22px] border border-primary/25 bg-[linear-gradient(165deg,color-mix(in_oklch,var(--primary)_10%,transparent),transparent_60%)] p-5 sm:p-7">
       <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-primary">
-        <Check className="h-3 w-3" /> Aufgenommen
+        <Check className="h-3 w-3" /> You're in
       </span>
 
       <h2 className="mt-3 font-display text-2xl font-bold leading-tight sm:text-3xl">
-        Willkommen{name ? `, ${name}` : ""}. So geht es weiter.
+        Welcome{name ? `, ${name}` : ""}. Here is what happens next.
       </h2>
       <p className="mt-2 max-w-2xl text-sm leading-relaxed text-foreground/70">
-        Dein Zugang steht. Die Zahlen unten sind noch leer — das ist richtig so, deine Marke wird
-        gerade eingerichtet. Zwei Dinge brauchen wir von dir, den Rest machen wir.
+        Your access is live. The numbers below are still empty — that is normal, your brand is being
+        set up right now. We need two things from you, we do the rest.
       </p>
 
       <ol className="mt-6 space-y-2.5">
@@ -142,7 +142,7 @@ export function PartnerOnboarding({ slug, name }: { slug: string; name: string }
                       : "border-white/12 bg-white/5 text-muted-foreground",
                   )}
                 >
-                  {s.who === "du" ? "du" : "wir"}
+                  {s.who === "du" ? "you" : "us"}
                 </span>
               </div>
               <p className="mt-1 text-[13px] leading-relaxed text-muted-foreground">{s.body}</p>
@@ -158,10 +158,10 @@ export function PartnerOnboarding({ slug, name }: { slug: string; name: string }
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground transition-transform hover:-translate-y-0.5"
         >
-          <MessageSquare className="h-4 w-4" /> Direkt schreiben <ArrowUpRight className="h-3.5 w-3.5" />
+          <MessageSquare className="h-4 w-4" /> Message us <ArrowUpRight className="h-3.5 w-3.5" />
         </a>
         <span className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground">
-          <Clock className="h-3.5 w-3.5" /> Wir melden uns in der Regel am selben Werktag.
+          <Clock className="h-3.5 w-3.5" /> We usually reply the same business day.
         </span>
       </div>
     </div>

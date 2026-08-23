@@ -37,16 +37,16 @@ export function CookieBanner() {
   return (
     <div
       role="dialog"
-      aria-label="Cookie-Hinweis"
+      aria-label="Cookie notice"
       className="fixed inset-x-0 bottom-0 z-[100] border-t border-white/10 bg-[#080b12]/95 px-4 py-4 backdrop-blur-md sm:px-6"
     >
       <div className="mx-auto flex max-w-5xl flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-[13px] leading-relaxed text-white/70">
-          Wir verwenden nur <span className="font-semibold text-white/90">notwendige Cookies</span> —
-          für deinen Login und um zu erkennen, über welchen Partner du gekommen bist.
-          Kein Tracking, keine Werbung. Mehr in der{" "}
+          We only use <span className="font-semibold text-white/90">necessary cookies</span> —
+          to keep you signed in and to know which partner you came through.
+          No tracking, no advertising. More in our{" "}
           <Link to="/datenschutz" className="underline underline-offset-2 hover:text-white">
-            Datenschutzerklärung
+            privacy policy
           </Link>
           .
         </p>
@@ -55,13 +55,13 @@ export function CookieBanner() {
             onClick={() => choose("essential")}
             className="flex-1 rounded-full border border-white/15 px-4 py-2 text-[13px] font-semibold text-white/80 hover:bg-white/5 sm:flex-none"
           >
-            Nur notwendige
+            Necessary only
           </button>
           <button
             onClick={() => choose("all")}
             className="flex-1 rounded-full bg-primary px-5 py-2 text-[13px] font-bold text-primary-foreground hover:opacity-90 sm:flex-none"
           >
-            Verstanden
+            Got it
           </button>
         </div>
       </div>

@@ -173,8 +173,8 @@ export function AdminPartners() {
     const again = row.status === "approved";
     if (!confirm(
       again
-        ? `Einladung an ${row.email} erneut senden?\n\nLogin und Marke bleiben wie sie sind — es geht nur die Mail nochmal raus.`
-        : `${row.name || row.email} freigeben?\n\nLegt Login und Marke an und schickt die Einladung an ${row.email}.`
+        ? `Resend the invitation to ${row.email}?\n\nLogin and brand stay exactly as they are — only the email goes out again.`
+        : `Approve ${row.name || row.email}?\n\nCreates the login and the brand, and sends the invitation to ${row.email}.`
     )) return;
     setApproving(row.id); setError(null);
     try {
@@ -190,8 +190,8 @@ export function AdminPartners() {
       const out = await res.json().catch(() => ({}));
       if (!res.ok) { setError(String(out.error ?? `HTTP ${res.status}`)); return; }
       setRows((prev) => prev?.map((r) => (r.id === row.id ? { ...r, status: "approved" } : r)) ?? prev);
-      setNotice(`${row.name || row.email} ist freigegeben — Marke "${out.slug}" angelegt.` +
-        (out.mailed ? " E-Mail ist raus." : " ACHTUNG: E-Mail konnte nicht gesendet werden."));
+      setNotice(`${row.name || row.email} is approved — brand "${out.slug}" created.` +
+        (out.mailed ? " Email is on its way." : " WARNING: the email could not be sent."));
     } catch (e) {
       setError(String(e));
     } finally {
@@ -269,7 +269,7 @@ export function AdminPartners() {
                       className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-[12px] font-bold text-primary-foreground transition-transform hover:-translate-y-0.5 disabled:opacity-50"
                     >
                       {approving === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />}
-                      {r.status === "approved" ? "Einladung erneut senden" : "Freigeben"}
+                      {r.status === "approved" ? "Resend invitation" : "Approve"}
                     </button>
                   )}
                 </div>

@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
   const expected = String(sec?.value ?? Deno.env.get("VT_SYNC_SECRET") ?? "");
   // Ohne hinterlegtes Geheimnis ist die Funktion zu, nicht offen. Ein fehlender
   // Schluessel darf nie "jeder darf" bedeuten.
-  if (!expected) return json({ error: "VT_SYNC_SECRET ist nicht hinterlegt" }, 503);
+  if (!expected) return json({ error: "VT_SYNC_SECRET is not configured" }, 503);
   if (!sameSecret(req.headers.get("x-sync-secret") ?? "", expected)) {
     return json({ error: "unauthorized" }, 401);
   }
@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
   // Ein leerer Stapel ist ein Fehler, keine Nachricht. Wenn das Auslesen nichts
   // gefunden hat, ist die Sitzung tot oder die Seite hat sich geaendert — und
   // beides muss auffallen, statt als "0 Kunden, alles gut" durchzugehen.
-  if (!rows.length) return json({ error: "keine verwertbaren Zeilen empfangen" }, 400);
+  if (!rows.length) return json({ error: "no usable rows received" }, 400);
 
   const { data, error } = await db.rpc("vt_ingest_clients", { p_rows: rows });
   if (error) {
