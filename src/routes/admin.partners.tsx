@@ -48,7 +48,22 @@ const STATUS: Record<string, { label: string; tone: string }> = {
   approved: { label: "Approved",  tone: "text-emerald-400 bg-emerald-400/10 border-emerald-400/25" },
   rejected: { label: "Declined",  tone: "text-red-400 bg-red-400/10 border-red-400/25" },
 };
-const NEXT: Record<string, string> = { new: "contacted", contacted: "approved", approved: "new", rejected: "new" };
+/**
+ * Was das Status-Etikett weiterschalten darf — und was nicht.
+ *
+ * "approved" stand hier drin und war damit per Klick auf ein Etikett
+ * erreichbar. Das Etikett schreibt aber nur ein Wort in die Datenbank: kein
+ * Login, keine Marke, keine Mail. Schlimmer noch, der echte Freigeben-Knopf
+ * rendert nur solange der Status NICHT "approved" ist — zwei Klicks auf das
+ * Etikett und die Bewerbung galt als erledigt, waehrend nichts passiert war,
+ * und der Weg, es richtig zu machen, war verschwunden. Genau so ist Louis
+ * (@filosofosombra) drei Tage auf eine Mail warten gelassen worden.
+ *
+ * "approved" ist kein Vermerk, sondern das Ergebnis eines Vorgangs. Es entsteht
+ * ausschliesslich in approve() ueber partner-approve. Das Etikett schaltet nur
+ * noch zwischen den beiden Notizen hin und her, die wirklich Notizen sind.
+ */
+const NEXT: Record<string, string> = { new: "contacted", contacted: "new", approved: "approved", rejected: "new" };
 
 interface IbClaim { id: string; tenant_slug: string; broker: string; ib_account: string; status: string; created_at: string }
 
@@ -155,7 +170,12 @@ export function AdminPartners() {
    * gewartet, die niemand geschickt hat.
    */
   async function approve(row: Application) {
-    if (!confirm(`${row.name || row.email} freigeben?\n\nLegt Login und Marke an und schickt die Einladung an ${row.email}.`)) return;
+    const again = row.status === "approved";
+    if (!confirm(
+      again
+        ? `Einladung an ${row.email} erneut senden?\n\nLogin und Marke bleiben wie sie sind — es geht nur die Mail nochmal raus.`
+        : `${row.name || row.email} freigeben?\n\nLegt Login und Marke an und schickt die Einladung an ${row.email}.`
+    )) return;
     setApproving(row.id); setError(null);
     try {
       const { data: sess } = await supabase.auth.getSession();
@@ -235,14 +255,21 @@ export function AdminPartners() {
                     {st.label}
                   </button>
                   <span className="ml-auto text-[11px] text-muted-foreground">{time(r.created_at)}</span>
-                  {r.status !== "approved" && (
+                  {/* Immer erreichbar. partner-approve ist idempotent: ein
+                      vorhandener Login und eine vorhandene Marke werden
+                      weiterverwendet, nie doppelt angelegt. Den Knopf bei
+                      "approved" auszublenden hat genau eine Sache bewirkt —
+                      wenn die Mail einmal nicht rausging, gab es keinen Weg
+                      mehr, sie zu schicken. Jetzt heisst er dann eben
+                      "Einladung erneut senden". */}
+                  {(
                     <button
                       onClick={() => approve(r)}
                       disabled={approving === r.id}
                       className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-[12px] font-bold text-primary-foreground transition-transform hover:-translate-y-0.5 disabled:opacity-50"
                     >
                       {approving === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <UserPlus className="h-3.5 w-3.5" />}
-                      Freigeben
+                      {r.status === "approved" ? "Einladung erneut senden" : "Freigeben"}
                     </button>
                   )}
                 </div>
