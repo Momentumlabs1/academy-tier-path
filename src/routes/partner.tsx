@@ -13,6 +13,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { BarChart3, Check, Copy, ExternalLink, Eye, Loader2, Lock, LogOut, MousePointerClick, TrendingUp, Users, Wallet } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { functionUrl } from "@/integrations/supabase/functions-url";
 import { type PartnerProfile } from "@/components/academy/partner/PartnerProfileCard";
 import { PartnerPrimer } from "@/components/academy/partner/PartnerPrimer";
 import { PartnerIbSetup } from "@/components/academy/partner/PartnerIbSetup";
@@ -437,9 +438,29 @@ function PartnerLogin({ onDone }: { onDone: () => void }) {
             type="button"
             onClick={async () => {
               if (!email) { setError("Enter your email above first."); return; }
-              const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/partner` : undefined;
-              const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
-              setError(error ? error.message : "Password-reset link sent — check your inbox.");
+              // Ueber unsere eigene password-reset-Funktion, nicht ueber
+              // supabase.auth.resetPasswordForEmail. Der eingebaute Weg war hier
+              // gleich doppelt kaputt:
+              //
+              //   1. Er verschickt ueber Supabases Mailer von
+              //      noreply@mail.app.supabase.io mit Standardvorlage — das liest
+              //      sich wie Phishing und landet im Spam. Genau deshalb geht
+              //      signup.tsx laengst den eigenen Weg.
+              //   2. redirectTo zeigte auf /partner, und dort gibt es KEIN Feld,
+              //      um ein Passwort zu setzen. Selbst eine angekommene Mail
+              //      fuehrte also auf eine Seite, die nichts tun kann.
+              //
+              // Unsere Funktion erzeugt denselben Link serverseitig, schickt ihn
+              // ueber Resend von send.cosmos-candles.com und landet auf
+              // /reset-password — der Seite, die das Passwort wirklich setzt.
+              const res = await fetch(functionUrl("password-reset"), {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: email.trim() }),
+              }).catch(() => null);
+              setError(res && res.ok
+                ? "Password link sent — check your inbox, and your spam folder."
+                : "Could not send the link. Please try again.");
             }}
             className="font-medium text-muted-foreground underline underline-offset-2 hover:text-foreground"
           >

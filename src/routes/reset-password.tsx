@@ -23,6 +23,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowRight, CheckCircle2, Loader2, KeyRound } from "lucide-react";
+import { functionUrl } from "@/integrations/supabase/functions-url";
 import { supabase } from "@/integrations/supabase/client";
 import { FunnelShell } from "@/components/academy/onboarding/FunnelShell";
 import { usePartnerBrand } from "@/lib/partner-brand";
