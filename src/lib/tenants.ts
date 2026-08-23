@@ -144,8 +144,8 @@ export const TENANTS: TenantConfig[] = [
   {
     slug: "zekoglobal",
     name: "Zeko Global",
-    tagline: "Trading, erklärt von jemandem, der es selbst macht.",
-    description: "Live-Signale, ein Kurs von null an und Werkzeuge, die Profis benutzen. Kein Hype, keine Gurus.",
+    tagline: "Trading, explained by someone who actually does it.",
+    description: "Live signals, a course that starts at zero, and the tools professionals use. No hype, no gurus.",
     logoInitials: "Z",
     primaryColor: "oklch(0.76 0.06 158)",
     accentColor: "oklch(0.9 0.035 85)",
