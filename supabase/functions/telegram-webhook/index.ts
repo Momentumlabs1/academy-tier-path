@@ -1118,9 +1118,23 @@ Deno.serve(async (req: Request) => {
 
   const db = admin();
   // Idempotency: drop redelivered updates before any side effects.
+  //
+  // NUR die Eindeutigkeitsverletzung ist ein Duplikat. Vorher galt JEDER Fehler
+  // dieses Inserts als "schon gesehen" und das Update wurde verworfen — ein
+  // Verbindungsabbruch, eine geaenderte RLS-Regel, eine volle Tabelle, und ein
+  // echter Ruf des Desks verschwand still, mit 200 und ok:true nach aussen. Bei
+  // einem Signalprodukt ist das der teuerste Fehler ueberhaupt: niemand merkt
+  // es, und der Trade ist weg.
+  //
+  // Deshalb: 23505 (unique_violation) heisst wirklich doppelt -> verwerfen.
+  // Alles andere wird laut protokolliert und TROTZDEM verarbeitet. Ein Signal
+  // zweimal zu schicken ist peinlich; eines zu verlieren kostet Geld.
   const { error: dupErr } = await db.from("telegram_updates").insert({ update_id: update.update_id });
-  if (dupErr) {
+  if (dupErr?.code === "23505") {
     return new Response(JSON.stringify({ ok: true, duplicate: true }), { headers: { "Content-Type": "application/json" } });
+  }
+  if (dupErr) {
+    console.error("[telegram-webhook] Dedupe-Insert fehlgeschlagen, verarbeite trotzdem:", dupErr.code, dupErr.message);
   }
 
   // Process synchronously so the relay actually completes, then ACK.

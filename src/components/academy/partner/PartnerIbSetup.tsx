@@ -37,6 +37,7 @@ const db = () => supabase as unknown as {
   from: (t: string) => {
     select: (c: string) => { eq: (c: string, v: string) => Promise<{ data: Claim[] | null }> };
     insert: (v: Record<string, unknown>) => Promise<{ error: { message: string } | null }>;
+    update: (v: Record<string, unknown>) => { eq: (c: string, val: string) => Promise<{ error: { message: string } | null }> };
   };
   auth: { getUser: () => Promise<{ data: { user: { id: string } | null } }> };
 };
@@ -54,17 +55,38 @@ export function PartnerIbSetup({ slug }: { slug: string }) {
   }, [slug]);
 
   async function submit(broker: string) {
-    const ib = (values[broker] ?? "").trim();
+    // Das Feld ist beim Korrigieren mit der bisherigen Nummer vorbelegt; wer
+    // nichts tippt, hat sie trotzdem im Feld stehen. Nur `values` zu lesen
+    // haette den Knopf dann ins Leere laufen lassen.
+    const existing = (claims ?? []).find((c) => c.broker === broker && c.status !== "approved");
+    const ib = (values[broker] ?? existing?.ib_account ?? "").trim();
     if (!ib) return;
     setBusy(broker); setError(null);
     const { data } = await db().auth.getUser();
-    const { error: e } = await db().from("tenant_ib_claims").insert({
-      tenant_slug: slug, broker, ib_account: ib,
-      status: "pending", submitted_by: data.user?.id,
-    });
+
+    // Korrektur AENDERT die vorhandene ungepruefte Zeile, statt eine zweite
+    // anzulegen — sonst laegen nach einem Tippfehler zwei Nummern im Admin, und
+    // dort entscheidet ein Klick, wohin die Provision geht.
+    //
+    // Geaendert, nicht geloescht: auf tenant_ib_claims gibt es GAR KEINE
+    // DELETE-Regel, ein Loeschen waere also wirkungslos durchgelaufen und die
+    // Dublette waere trotzdem entstanden — dieselbe stille Sorte Fehler, die
+    // hier gerade repariert wird. Eine UPDATE-Regel existiert dagegen und
+    // erlaubt dem Inhaber genau das, solange der Status "pending" ist.
+    const { error: e } = existing
+      ? await db().from("tenant_ib_claims")
+          .update({ ib_account: ib, submitted_by: data.user?.id })
+          .eq("id", existing.id)
+      : await db().from("tenant_ib_claims").insert({
+          tenant_slug: slug, broker, ib_account: ib,
+          status: "pending", submitted_by: data.user?.id,
+        });
     setBusy(null);
     if (e) { setError(e.message); return; }
-    setClaims((prev) => [...(prev ?? []), { id: crypto.randomUUID(), broker, ib_account: ib, status: "pending" }]);
+    setClaims((prev) => [
+      ...(prev ?? []).filter((c) => !(c.broker === broker && c.status !== "approved")),
+      { id: existing?.id ?? crypto.randomUUID(), broker, ib_account: ib, status: "pending" },
+    ]);
     setValues((v) => ({ ...v, [broker]: "" }));
   }
 
@@ -107,22 +129,30 @@ export function PartnerIbSetup({ slug }: { slug: string }) {
                 Open your {b.name} account <ArrowUpRight className="h-3.5 w-3.5" />
               </a>
 
-              {claim ? (
+              {/* Nur eine BESTAETIGTE Nummer ist endgueltig.
+                  Vorher verschwanden Eingabefeld und Knopf, sobald irgendeine
+                  Zeile existierte — auch eine noch ungepruefte. Wer sich beim
+                  Abschicken vertippt hatte, sah ab da nur noch seine falsche
+                  Nummer mit "Being checked" daneben und hatte keinen Weg mehr,
+                  sie zu korrigieren. Da an dieser Nummer haengt, wohin die
+                  Provision geht, ist das die teuerste Sackgasse im Portal.
+                  Solange sie geprueft wird, darf sie also nachgereicht werden. */}
+              {claim?.status === "approved" ? (
                 <div className="mt-3 font-mono text-[13px] text-foreground/80">{claim.ib_account}</div>
               ) : (
                 <div className="mt-3 flex gap-2">
                   <input
-                    value={values[b.broker] ?? ""}
+                    value={values[b.broker] ?? claim?.ib_account ?? ""}
                     onChange={(e) => setValues((v) => ({ ...v, [b.broker]: e.target.value }))}
                     placeholder="Your account number"
                     className="min-w-0 flex-1 rounded-lg border border-white/10 bg-[oklch(0.11_0.03_258)] px-3 py-2 text-base outline-none focus:border-primary/50 sm:text-[13px]"
                   />
                   <button
                     onClick={() => submit(b.broker)}
-                    disabled={busy === b.broker || !(values[b.broker] ?? "").trim()}
+                    disabled={busy === b.broker || !((values[b.broker] ?? claim?.ib_account ?? "").trim())}
                     className="shrink-0 rounded-lg bg-primary px-3.5 py-2 text-[12px] font-bold text-primary-foreground disabled:opacity-40"
                   >
-                    {busy === b.broker ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Send"}
+                    {busy === b.broker ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : claim ? "Update" : "Send"}
                   </button>
                 </div>
               )}
