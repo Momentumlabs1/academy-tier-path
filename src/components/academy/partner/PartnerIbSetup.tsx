@@ -24,11 +24,25 @@ import { useEffect, useState } from "react";
 import { ArrowUpRight, Check, Clock, Loader2, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { BROKERS } from "@/lib/broker";
 
-/** The master's own referral links — a partner registering through these lands under us. */
+/**
+ * Die Werbelinks des Masters — wer sich darueber registriert, haengt unter uns.
+ *
+ * Sie kommen aus BROKERS und stehen NICHT mehr hier abgeschrieben. Vorher war
+ * die Hero-Adresse eine eigene Kopie, und sie war die falsche:
+ *
+ *   hier:      https://herofx.co/?partner_code=2248356        (Startseite)
+ *   broker.ts: https://portal.herofx.co/auth/register?...     (Anmeldeformular)
+ *
+ * broker.ts erklaert ausdruecklich, warum die Startseite nicht genommen wird:
+ * sie wirft den Tracking-Parameter weg. Genau diese Erkenntnis war hier nicht
+ * angekommen, weil die Adresse doppelt gepflegt wurde — und der Code aendert
+ * sich irgendwann an einer Stelle und nicht an der anderen. Eine Quelle.
+ */
 const SIGNUP = [
-  { broker: "hero", name: "HeroFX",     url: "https://herofx.co/?partner_code=2248356" },
-  { broker: "vt",   name: "VT Markets", url: "https://vtm.pro/la5-com/global/aAaRH40s" },
+  { broker: "hero", name: BROKERS.hero.name, url: BROKERS.hero.url },
+  { broker: "vt",   name: BROKERS.vt.name,   url: BROKERS.vt.url },
 ] as const;
 
 interface Claim { id: string; broker: string; ib_account: string; status: string }
