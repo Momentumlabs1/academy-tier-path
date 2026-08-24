@@ -830,15 +830,25 @@ async function handleStart(db: SupabaseClient, msg: TgMessage) {
 
 async function handleJoinRequest(db: SupabaseClient, reqObj: { chat: TgChat; from: TgUser }) {
   const { data: link } = await db
-    .from("telegram_links").select("id, members(deposit, activity_status)")
+    .from("telegram_links").select("id, tenant_id, members(deposit, activity_status), tenants(telegram_channel_id)")
     .eq("telegram_user_id", reqObj.from.id).in("status", ["linked", "joined"]).maybeSingle();
 
   const member = link?.members as unknown as { deposit: number; activity_status: string } | null;
+  // Und in den Kanal SEINER Marke, nicht in irgendeinen.
+  //
+  // Geprueft wurde bisher nur "ist dieser Telegram-Nutzer ein zahlendes
+  // Mitglied" — nicht, ob der Kanal, an dem er klopft, ueberhaupt zu seiner
+  // Marke gehoert. Ein Mitglied von uns konnte also den Einladungslink von
+  // Zekos Kanal irgendwo auftreiben und wurde dort eingelassen: Zekos
+  // Mitgliederzahl steigt um jemanden, der nie zu ihm gehoerte, und unser
+  // Kunde liest die Signale in einem fremden Kanal.
+  const ownChannel = (link?.tenants as unknown as { telegram_channel_id: number | string | null } | null)?.telegram_channel_id;
+  const channelMatches = ownChannel != null && Number(ownChannel) === Number(reqObj.chat.id);
   // Gate on BOTH: funded (deposit ≥ threshold) AND not inactivity-revoked. An
   // inactivity-kicked member must trade again (status leaves 'inactive') before
   // they can rejoin — otherwise the activity kick would be instantly undone.
   const eligible =
-    !!link && !!member &&
+    !!link && !!member && channelMatches &&
     Number(member.deposit) >= MIN_DEPOSIT_FOR_SIGNALS &&
     member.activity_status !== "inactive";
 
@@ -1104,8 +1114,18 @@ async function processUpdate(update: TgUpdate) {
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return new Response("ok", { status: 200 });
 
+  // Fehlt das Geheimnis, ist die Funktion ZU — nicht offen.
+  //
+  // Vorher stand hier `if (secret && ...)`: ohne hinterlegtes Geheimnis fiel die
+  // Pruefung ersatzlos weg und JEDER konnte eine Telegram-Update-Struktur an
+  // diese Adresse schicken. Die wandert dann durch den Signal-Umschreiber in
+  // JEDEN Partnerkanal — gefaelschte Trade-Rufe an alle Kunden gleichzeitig.
+  // Ein leerer Schluessel entsteht schnell: neue Umgebung, vergessener Eintrag
+  // in app_secrets, vertippter Name. Genau dann darf nicht alles offenstehen.
+  // vt-ingest macht es an derselben Stelle richtig ("Ein fehlender Schluessel
+  // darf nie 'jeder darf' bedeuten").
   const secret = await cfg("TELEGRAM_WEBHOOK_SECRET");
-  if (secret && req.headers.get("x-telegram-bot-api-secret-token") !== secret) {
+  if (!secret || req.headers.get("x-telegram-bot-api-secret-token") !== secret) {
     return new Response(JSON.stringify({ error: "Bad secret" }), { status: 401 });
   }
 
