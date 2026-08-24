@@ -49,6 +49,16 @@ interface MemberInput {
   deposit: number;
   monthlyLots: number;
   activityStatus: "active" | "grace" | "inactive";
+  /**
+   * Vom Admin gesperrt (members.active = false).
+   *
+   * Das Feld wurde bisher NIRGENDS gelesen. "Zugang sperren" im Admin setzte
+   * es, und in der Web-App aenderte sich nichts: der Gesperrte sah Signale,
+   * Lektionen und Werkzeuge unveraendert weiter. Ein Schalter, der aussieht,
+   * als entziehe er Zugang, aber keinen entzieht, ist schlimmer als kein
+   * Schalter — man glaubt, es sei erledigt.
+   */
+  disabled: boolean;
   notifications: Notification[];
   loaded: boolean;
 }
@@ -59,6 +69,7 @@ const EMPTY_INPUT: MemberInput = {
   deposit: 0,
   monthlyLots: 0,
   activityStatus: "active",
+  disabled: false,
   notifications: [],
   loaded: false,
 };
@@ -122,7 +133,7 @@ async function fetchMemberInput(): Promise<MemberInput> {
   };
 
   const [{ data: member }, { data: notifRows }] = await Promise.all([
-    client.from("members").select("id, name, email, telegram_handle, deposit, monthly_lots, activity_status, joined_at, avatar_url").eq("auth_user_id", user.id).maybeSingle(),
+    client.from("members").select("id, name, email, telegram_handle, active, deposit, monthly_lots, activity_status, joined_at, avatar_url").eq("auth_user_id", user.id).maybeSingle(),
     client.from("notifications").select("id, type, title, body, link, read_at, created_at").order("created_at", { ascending: false }),
   ]);
 
@@ -148,7 +159,12 @@ async function fetchMemberInput(): Promise<MemberInput> {
       joinedAt: (member?.joined_at as string) ?? "",
       avatarUrl: (member?.avatar_url as string) ?? "",
     },
-    deposit: Number(member?.deposit ?? 0),
+    // Gesperrt wird ueber die Einzahlung gesperrt, nicht ueber eine zweite
+    // Abfrage an jeder Stelle: die Stufe und damit ALLES Freigeschaltete
+    // leitet sich hieraus ab. Eine 0 schliesst deshalb zuverlaessig jede
+    // Tuer, auch die, an die beim naechsten Feature niemand denkt.
+    deposit: member?.active === false ? 0 : Number(member?.deposit ?? 0),
+    disabled: member?.active === false,
     monthlyLots: Number(member?.monthly_lots ?? 0),
     activityStatus: ((member?.activity_status as string) ?? "active") as MemberInput["activityStatus"],
     notifications,

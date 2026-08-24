@@ -53,6 +53,25 @@ async function secret(db: ReturnType<typeof admin>, key: string): Promise<string
   return String(data?.value ?? Deno.env.get(key) ?? "");
 }
 
+/**
+ * Kennungen, die es schon als Route gibt.
+ *
+ * admin-tenants prueft dagegen — dieser Weg nicht. Wird ein Partner "Signals"
+ * oder "Login" genannt, bekam er cosmos-candles.com/signals als Werbelink,
+ * und dort liegt die App-Route. Sein Link fuehrte also nie auf seine Seite,
+ * und er haette es erst gemerkt, wenn Besucher sich wundern.
+ *
+ * Bewusst eine Kopie der Liste aus src/lib/tenants.ts: eine Edge-Funktion kann
+ * nicht aus dem Frontend importieren. Kommt eine Route dazu, gehoert sie an
+ * beide Stellen.
+ */
+const RESERVED_SLUGS = new Set([
+  "admin", "partner", "partner-programm", "partner-program", "login", "signals", "lessons",
+  "tools", "tier", "unlocks", "notifications", "settings", "t", "api", "assets", "hegemony",
+  "auth", "dashboard", "registrieren", "willkommen", "signup", "welcome", "reset-password",
+  "impressum", "datenschutz",
+]);
+
 /** "Zeko Global" → "zeko-global". Kollisionen bekommen eine Zahl angehängt. */
 function slugify(s: string): string {
   return (s || "partner")
@@ -142,7 +161,8 @@ Deno.serve(async (req) => {
   let slug = base;
   for (let i = 2; i < 50; i++) {
     const { data: taken } = await db.from("tenants").select("slug").eq("slug", slug).maybeSingle();
-    if (!taken) break;
+    // Eine belegte Route zaehlt wie eine belegte Kennung: weiterzaehlen.
+    if (!taken && !RESERVED_SLUGS.has(slug)) break;
     slug = `${base}-${i}`;
   }
 

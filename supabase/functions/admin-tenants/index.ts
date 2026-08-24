@@ -131,6 +131,18 @@ Deno.serve(async (req) => {
       const { data: list } = await db.auth.admin.listUsers();
       ownerId = list?.users?.find((u) => u.email?.toLowerCase() === email)?.id ?? null;
       if (!ownerId) return json({ error: cErr.message }, 500);
+
+      // Das eingegebene Passwort auch wirklich setzen.
+      //
+      // Bestand das Konto schon, wurde createUser abgewiesen und das Passwort
+      // aus dem Formular fiel hier lautlos unter den Tisch — die Oberflaeche
+      // meldete trotzdem Erfolg. Der Admin gab dem Partner also
+      // Zugangsdaten, die nie galten, und der Partner kam nicht hinein,
+      // ohne dass irgendwo ein Fehler stand.
+      if (password) {
+        const { error: pErr } = await db.auth.admin.updateUserById(ownerId, { password });
+        if (pErr) return json({ error: `Brand not created: the password could not be set (${pErr.message})` }, 500);
+      }
     } else {
       ownerId = created.user?.id ?? null;
     }
