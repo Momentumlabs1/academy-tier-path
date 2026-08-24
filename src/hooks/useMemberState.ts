@@ -59,6 +59,16 @@ interface MemberInput {
    * Schalter — man glaubt, es sei erledigt.
    */
   disabled: boolean;
+  /**
+   * Vom Admin geschenkter Vollzugang (Team, Tests, Partner-Demo).
+   *
+   * Ist er gesetzt, gilt DIESE Stufe statt der aus der Einzahlung berechneten.
+   * Eine erfundene Einzahlung waere der falsche Weg gewesen: apply_broker_rollup
+   * bucht die Differenz zwischen Broker-Summe und Kassenbuch — auch negativ —
+   * und haette einen Handeintrag beim naechsten Abgleich wieder abgezogen.
+   * Ausserdem soll ein geschenkter Zugang nirgends als Umsatz auftauchen.
+   */
+  tierOverride: string | null;
   notifications: Notification[];
   loaded: boolean;
 }
@@ -70,6 +80,7 @@ const EMPTY_INPUT: MemberInput = {
   monthlyLots: 0,
   activityStatus: "active",
   disabled: false,
+  tierOverride: null,
   notifications: [],
   loaded: false,
 };
@@ -84,7 +95,16 @@ function progressBetween(deposit: number, current: Tier | undefined, next: Tier 
 
 function deriveState(input: MemberInput): MemberState {
   const deposit = input.deposit;
-  const currentTier = tierForDeposit(deposit);
+  // Der Freibrief schlaegt die Einzahlung — aber nur nach OBEN. Wer bezahlt
+  // hat, verliert nichts, falls jemand einen niedrigeren Wert eintraegt.
+  const overrideTier = input.tierOverride
+    ? TIERS.find((t) => t.key === input.tierOverride)
+    : undefined;
+  const byDeposit = tierForDeposit(deposit);
+  const currentTier =
+    overrideTier && (!byDeposit || TIERS.indexOf(overrideTier) > TIERS.indexOf(byDeposit))
+      ? overrideTier
+      : byDeposit;
   const nextTier = nextTierFor(deposit);
   const reached = currentTier ? TIERS.findIndex((t) => t.key === currentTier.key) : -1;
   const unlockedProducts = PRODUCTS.filter((p) => TIERS.findIndex((t) => t.key === p.requires) <= reached);
@@ -133,7 +153,7 @@ async function fetchMemberInput(): Promise<MemberInput> {
   };
 
   const [{ data: member }, { data: notifRows }] = await Promise.all([
-    client.from("members").select("id, name, email, telegram_handle, active, access_revoked, deposit, monthly_lots, activity_status, joined_at, avatar_url").eq("auth_user_id", user.id).maybeSingle(),
+    client.from("members").select("id, name, email, telegram_handle, active, access_revoked, tier_override, deposit, monthly_lots, activity_status, joined_at, avatar_url").eq("auth_user_id", user.id).maybeSingle(),
     client.from("notifications").select("id, type, title, body, link, read_at, created_at").order("created_at", { ascending: false }),
   ]);
 
@@ -171,6 +191,7 @@ async function fetchMemberInput(): Promise<MemberInput> {
     // ein Mensch, und keine Verrechnung fasst es an (Migration 054).
     deposit: member?.access_revoked === true ? 0 : Number(member?.deposit ?? 0),
     disabled: member?.access_revoked === true,
+    tierOverride: (member?.tier_override as string | null) ?? null,
     monthlyLots: Number(member?.monthly_lots ?? 0),
     activityStatus: ((member?.activity_status as string) ?? "active") as MemberInput["activityStatus"],
     notifications,
