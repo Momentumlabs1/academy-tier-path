@@ -31,11 +31,11 @@ interface Step {
  * Ansicht haengt genau daran. Beide Abfragen sind per RLS auf die eigene Marke
  * beschraenkt.
  */
-const db = () => supabase as unknown as {
-  from: (t: string) => {
-    select: (c: string) => { eq: (c: string, v: string) => Promise<{ data: Record<string, unknown>[] | null }> };
+const db = () =>
+  supabase as unknown as {
+    from: (t: string) => { select: (c: string) => { eq: (c: string, v: string) => Promise<{ data: Record<string, unknown>[] | null }> } };
+    rpc: (f: string, a: Record<string, unknown>) => Promise<{ data: Record<string, unknown>[] | null }>;
   };
-};
 
 export function PartnerOnboarding({ slug, name }: { slug: string; name: string }) {
   const [state, setState] = useState<{ hasChannel: boolean; hasIbClaim: boolean } | null>(null);
@@ -43,7 +43,12 @@ export function PartnerOnboarding({ slug, name }: { slug: string; name: string }
   useEffect(() => {
     let alive = true;
     Promise.all([
-      db().from("tenants").select("telegram_channel_id").eq("slug", slug),
+      // Ueber my_tenant_channels statt direkt auf tenants: seit Migration 051
+      // darf `authenticated` telegram_channel_id nicht mehr spaltenweise lesen
+      // (jeder Angemeldete konnte sonst die privaten Kanal-IDs JEDER Marke
+      // abfragen). Die Funktion gibt nur die eigenen zurueck — sie prueft
+      // selbst auf owner_user_id = auth.uid() bzw. Admin.
+      db().rpc("my_tenant_channels", { p_slug: slug }),
       db().from("tenant_ib_claims").select("id").eq("tenant_slug", slug),
     ]).then(([t, c]) => {
       if (!alive) return;

@@ -173,9 +173,14 @@ export function PartnerCard({ row }: { row: PartnerRow }) {
   useEffect(() => {
     let alive = true;
     (async () => {
+      // Ueber my_tenant_channels statt direkt auf tenants: seit Migration 051
+      // darf `authenticated` telegram_channel_id nicht mehr spaltenweise lesen
+      // (jeder Angemeldete konnte sonst die privaten Kanal-IDs JEDER Marke
+      // abfragen). Die Funktion gibt nur die eigenen zurueck — sie prueft
+      // selbst auf owner_user_id = auth.uid() bzw. Admin.
       const { data } = await (supabase as unknown as {
-        from: (t: string) => { select: (c: string) => { eq: (c: string, v: string) => Promise<{ data: { telegram_channel_id: unknown }[] | null }> } };
-      }).from("tenants").select("telegram_channel_id").eq("slug", row.slug);
+        rpc: (f: string, a: Record<string, unknown>) => Promise<{ data: { telegram_channel_id: unknown }[] | null }>;
+      }).rpc("my_tenant_channels", { p_slug: row.slug });
       if (alive) setLive(Boolean(data?.[0]?.telegram_channel_id));
     })();
     return () => { alive = false; };
