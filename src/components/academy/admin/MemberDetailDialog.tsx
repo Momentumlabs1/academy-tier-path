@@ -127,9 +127,21 @@ export function MemberDetailDialog({
     setBusy("toggle");
     setError(null);
     const next = !member.active;
+    // access_revoked ist das Feld, das haelt.
+    //
+    // Vorher wurde nur `active` geschrieben — und das berechnet
+    // recalculate_tier_after_deposit bei jedem Beleg neu als (deposit > 0).
+    // Die Sperre war damit spaetestens beim naechsten Broker-Abgleich weg,
+    // lautlos. `active` wird weiter mitgesetzt, damit die Admin-Liste sofort
+    // stimmt; die Wahrheit ist aber access_revoked.
     const { error: e } = await client
       .from("members")
-      .update({ active: next, activity_status: next ? "active" : "inactive", updated_at: new Date().toISOString() })
+      .update({
+        active: next,
+        access_revoked: !next,
+        activity_status: next ? "active" : "inactive",
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", member.id);
     if (e) {
       setError(e.message);

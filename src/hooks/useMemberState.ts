@@ -133,7 +133,7 @@ async function fetchMemberInput(): Promise<MemberInput> {
   };
 
   const [{ data: member }, { data: notifRows }] = await Promise.all([
-    client.from("members").select("id, name, email, telegram_handle, active, deposit, monthly_lots, activity_status, joined_at, avatar_url").eq("auth_user_id", user.id).maybeSingle(),
+    client.from("members").select("id, name, email, telegram_handle, active, access_revoked, deposit, monthly_lots, activity_status, joined_at, avatar_url").eq("auth_user_id", user.id).maybeSingle(),
     client.from("notifications").select("id, type, title, body, link, read_at, created_at").order("created_at", { ascending: false }),
   ]);
 
@@ -163,8 +163,14 @@ async function fetchMemberInput(): Promise<MemberInput> {
     // Abfrage an jeder Stelle: die Stufe und damit ALLES Freigeschaltete
     // leitet sich hieraus ab. Eine 0 schliesst deshalb zuverlaessig jede
     // Tuer, auch die, an die beim naechsten Feature niemand denkt.
-    deposit: member?.active === false ? 0 : Number(member?.deposit ?? 0),
-    disabled: member?.active === false,
+    //
+    // Geprueft wird access_revoked, NICHT active. `active` ist ein berechneter
+    // Wert (recalculate_tier_after_deposit setzt active = deposit > 0) und ist
+    // fuer 9 von 12 Mitgliedern schlicht "hat noch nicht eingezahlt" — daran
+    // eine Sperre festzumachen waere sinnentstellt. access_revoked setzt nur
+    // ein Mensch, und keine Verrechnung fasst es an (Migration 054).
+    deposit: member?.access_revoked === true ? 0 : Number(member?.deposit ?? 0),
+    disabled: member?.access_revoked === true,
     monthlyLots: Number(member?.monthly_lots ?? 0),
     activityStatus: ((member?.activity_status as string) ?? "active") as MemberInput["activityStatus"],
     notifications,
