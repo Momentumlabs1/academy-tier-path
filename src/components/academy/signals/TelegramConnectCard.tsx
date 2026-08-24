@@ -3,6 +3,7 @@ import { CheckCircle2, Link2, Loader2, Send } from "lucide-react";
 import { Card } from "@/components/academy/primitives/Card";
 import { useMemberState } from "@/hooks/useMemberState";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 import { functionUrl } from "@/integrations/supabase/functions-url";
 
 // Fallback bot handle for pure-demo mode (no backend). Live URL comes from the
@@ -31,10 +32,21 @@ export function TelegramConnectCard() {
     setLoading(true);
     let url = `https://t.me/${BOT_USERNAME}?start=demo`;
     try {
+      // Die eigene Sitzung ausweisen statt die eigene Adresse nennen.
+      // Vorher genuegte die E-Mail im Anfragetext — wer die Adresse eines
+      // Mitglieds kannte, bekam dessen Telegram-Token und damit Zutritt zum
+      // bezahlten Kanal. Die Funktion leitet das Mitglied jetzt aus dem Token
+      // ab; ohne Anmeldung gibt es keinen Link.
+      const { data: sess } = await supabase.auth.getSession();
+      const accessToken = sess.session?.access_token;
+      if (!accessToken) throw new Error("not signed in");
       const res = await fetch(FN_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: state.profile.email }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({}),
       });
       const data = await res.json();
       if (res.ok && data?.url) url = data.url;

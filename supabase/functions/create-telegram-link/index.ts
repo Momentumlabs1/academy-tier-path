@@ -1,16 +1,32 @@
 /**
- * create-telegram-link — issues a one-time deep-link token for a verified
- * member so the website's "Connect Telegram" button can hand them a
- * t.me/<bot>?start=<token> URL. The bot resolves the token in /start.
+ * create-telegram-link — issues a deep-link token for a verified member so the
+ * website's "Connect Telegram" button can hand them a t.me/<bot>?start=<token>
+ * URL. The bot resolves the token in /start.
  *
- * Body: { email: string, tenant?: string }  (tenant slug, optional)
+ * Auth: the caller's Supabase access token. The member is derived from it.
  * Returns: { url: "https://t.me/<bot>?start=<token>" }
  *
- * Auth note (v1): identifies the member by email. Once real Supabase Auth is
- * wired, take the member from the JWT instead of the request body.
+ * WARUM DIE E-MAIL AUS DEM ANFRAGETEXT WEG MUSSTE (Pruefung 23.08.2026)
+ * Die Funktion laeuft mit verify_jwt = false und suchte das Mitglied ueber
+ * `.eq("email", body.email)` — mit dem Dienstschluessel, also an der RLS vorbei.
+ * Schritt 3 gibt zudem ein BESTEHENDES Token zurueck, kein frisches. Und der
+ * Bot akzeptiert in handleStart jeden Status ausser "revoked" und ueberschreibt
+ * telegram_user_id mit dem, der den Link oeffnet.
  *
- * Deploy: verify_jwt = false (called from the public site); it validates the
- * member itself. Secrets: TELEGRAM_BOT_TOKEN, SUPABASE_URL, SERVICE_ROLE_KEY.
+ * Damit reichte die Kenntnis einer fremden Mitglieds-Adresse:
+ *   POST {"email":"..."} -> t.me-Link -> /start aus dem eigenen Telegram
+ *   -> der Bot bindet den Zugang auf den Angreifer um und laesst ihn in den
+ *      bezahlten Signalkanal; die Beitrittsanfragen des echten Mitglieds
+ *      werden ab da abgelehnt, weil die Bindung nicht mehr ihm gehoert.
+ *
+ * Der Kopf sagte "Auth note (v1): ... once real Supabase Auth is wired, take
+ * the member from the JWT instead of the request body." Supabase Auth IST
+ * verdrahtet — mentor-chat macht es in derselben Codebasis richtig vor. Das
+ * hier war eine liegengebliebene Notiz, kein Entwurf.
+ *
+ * Deploy: verify_jwt bleibt false, weil die Funktion den Token selbst prueft
+ * und bei fehlendem Token eine saubere Meldung geben soll.
+ * Secrets: TELEGRAM_BOT_TOKEN, SUPABASE_URL, SERVICE_ROLE_KEY, ANON_KEY.
  */
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -42,14 +58,9 @@ Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  let body: { email?: string; tenant?: string };
-  try {
-    body = await req.json();
-  } catch {
-    return json({ error: "Invalid JSON" }, 400);
-  }
-  const email = body.email?.toLowerCase().trim();
-  if (!email) return json({ error: "email required" }, 400);
+  // ── Wer ruft? ─────────────────────────────────────────────────────────────
+  const bearer = req.headers.get("Authorization")?.replace(/^Bearer\s+/i, "") ?? "";
+  if (!bearer) return json({ error: "unauthorized" }, 401);
 
   const db = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -57,11 +68,15 @@ Deno.serve(async (req: Request) => {
     { auth: { persistSession: false } },
   );
 
-  // 1. Verify the member exists and has crossed the signal threshold.
+  const { data: userData, error: userErr } = await db.auth.getUser(bearer);
+  const authUserId = userData?.user?.id;
+  if (userErr || !authUserId) return json({ error: "unauthorized" }, 401);
+
+  // ── Das Mitglied kommt aus dem Token, nicht aus dem Anfragetext ───────────
   const { data: member } = await db
     .from("members")
-    .select("id, deposit, name")
-    .eq("email", email)
+    .select("id, deposit, name, referred_by_tenant")
+    .eq("auth_user_id", authUserId)
     .maybeSingle();
 
   if (!member) return json({ error: "member_not_found" }, 404);
@@ -69,18 +84,20 @@ Deno.serve(async (req: Request) => {
     return json({ error: "deposit_not_verified", need: MIN_DEPOSIT }, 403);
   }
 
-  // 2. Resolve the tenant channel (default to the first active brand).
+  // ── Der Kanal DIESES Mitglieds ────────────────────────────────────────────
+  // Vorher: "erste aktive Marke" als Rueckfall — bei mehreren Partnern also
+  // irgendeine. Ein Mitglied, das ueber Zeko kam, landete dann in einem
+  // fremden Kanal, und der Partner, der es gebracht hat, sah es nie.
+  // Ohne bekannte Herkunft wird KEIN Kanal geraten.
   let tenantId: string | null = null;
-  if (body.tenant) {
-    const { data: t } = await db.from("tenants").select("id").eq("slug", body.tenant).maybeSingle();
+  if (member.referred_by_tenant) {
+    const { data: t } = await db.from("tenants")
+      .select("id").eq("slug", member.referred_by_tenant).eq("active", true).maybeSingle();
     tenantId = t?.id ?? null;
   }
-  if (!tenantId) {
-    const { data: t } = await db.from("tenants").select("id").eq("active", true).limit(1).maybeSingle();
-    tenantId = t?.id ?? null;
-  }
+  if (!tenantId) return json({ error: "no_channel_for_member" }, 409);
 
-  // 3. Reuse an existing pending/linked row for this member, else create one.
+  // ── Token: vorhandenes wiederverwenden, sonst anlegen ─────────────────────
   const { data: existing } = await db
     .from("telegram_links")
     .select("link_token, status")

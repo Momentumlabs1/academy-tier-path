@@ -86,7 +86,16 @@ export function MemberDetailDialog({
     }
 
     const trail = note.trim() || "Manual unlock";
-    await client.from("deposit_events").insert({
+    // Der Beleg ist der eigentliche Vorgang, nicht die Stufe.
+    //
+    // Beide Einfuegungen liefen frueher ohne Fehlerpruefung: auf
+    // deposit_events und audit_log gab es GAR KEINE INSERT-Regel, die RLS wies
+    // sie also ab, der Fehler landete im Nichts und die Oberflaeche meldete
+    // Erfolg. Die Stufe stieg kurz (sie wird direkt auf members gesetzt) und
+    // fiel beim naechsten apply_broker_rollup zurueck, weil die dortige
+    // Neuberechnung keinen Beleg fand. Migration 053 legt die Regeln an; hier
+    // wird der Fehler jetzt auch gezeigt, statt ihn zu verschlucken.
+    const { error: evErr } = await client.from("deposit_events").insert({
       member_id: member.id,
       amount: parsed,
       type: "deposit",
@@ -94,11 +103,19 @@ export function MemberDetailDialog({
       tier_after: nextTier,
       note: trail,
     });
-    await client.from("audit_log").insert({
+    if (evErr) {
+      setError(`Tier set, but the ledger entry failed — it will be reverted on the next sync: ${evErr.message}`);
+      setBusy(null);
+      return;
+    }
+    const { error: logErr } = await client.from("audit_log").insert({
       action: "tier_changed",
       target: member.email || member.id,
       detail: `Manual unlock → ${formatMoney(parsed, "€")} (${tierName}). ${trail}`,
     });
+    // Das Protokoll darf den Vorgang nicht abbrechen — der Beleg steht schon.
+    // Es lautlos zu verlieren waere aber genau der Fehler von oben.
+    if (logErr) console.error("[MemberDetailDialog] audit_log:", logErr.message);
 
     onChanged({ deposit: parsed, tier: nextTier, active: parsed > 0 });
     setBusy(null);
