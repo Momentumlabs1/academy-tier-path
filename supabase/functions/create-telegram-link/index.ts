@@ -75,11 +75,13 @@ Deno.serve(async (req: Request) => {
   // ── Das Mitglied kommt aus dem Token, nicht aus dem Anfragetext ───────────
   const { data: member } = await db
     .from("members")
-    .select("id, deposit, name, referred_by_tenant")
+    .select("id, deposit, name, referred_by_tenant, access_revoked")
     .eq("auth_user_id", authUserId)
     .maybeSingle();
 
   if (!member) return json({ error: "member_not_found" }, 404);
+  // Ein vom Admin gesperrter Zugang bekommt keinen neuen Kanal-Link.
+  if (member.access_revoked === true) return json({ error: "access_revoked" }, 403);
   if (Number(member.deposit) < MIN_DEPOSIT) {
     return json({ error: "deposit_not_verified", need: MIN_DEPOSIT }, 403);
   }
@@ -88,11 +90,22 @@ Deno.serve(async (req: Request) => {
   // Vorher: "erste aktive Marke" als Rueckfall — bei mehreren Partnern also
   // irgendeine. Ein Mitglied, das ueber Zeko kam, landete dann in einem
   // fremden Kanal, und der Partner, der es gebracht hat, sah es nie.
-  // Ohne bekannte Herkunft wird KEIN Kanal geraten.
+  // Ohne bekannte Herkunft faellt es auf die HAUSMARKE zurueck, nicht auf
+  // "irgendeine aktive". Wer ueber niemanden kam, gehoert zu uns — das ist eine
+  // Aussage, keine Vermutung. (Beim Durchlauf am 24.08. hatte der einzige
+  // zahlende Kunde referred_by_tenant = NULL; ein hartes 409 haette ihn vom
+  // Signalkanal ausgesperrt.)
+  const HOUSE = "cosmos-candles";
   let tenantId: string | null = null;
-  if (member.referred_by_tenant) {
+  const slug = member.referred_by_tenant || HOUSE;
+  {
     const { data: t } = await db.from("tenants")
-      .select("id").eq("slug", member.referred_by_tenant).eq("active", true).maybeSingle();
+      .select("id").eq("slug", slug).eq("active", true).maybeSingle();
+    tenantId = t?.id ?? null;
+  }
+  if (!tenantId && slug !== HOUSE) {
+    const { data: t } = await db.from("tenants")
+      .select("id").eq("slug", HOUSE).eq("active", true).maybeSingle();
     tenantId = t?.id ?? null;
   }
   if (!tenantId) return json({ error: "no_channel_for_member" }, 409);
