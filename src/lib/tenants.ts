@@ -1,4 +1,19 @@
 import { BROKER, TELEGRAM_ENTRY } from "./broker";
+import { LESSONS } from "./academy-data";
+
+/**
+ * Die Lektionszahl wird NICHT abgeschrieben.
+ *
+ * Auf der Seite stand ueberall "12 lessons" — ausgeliefert werden aber nur
+ * die Lektionen MIT eigener Aufnahme (academy-data filtert ALL_LESSONS auf
+ * `videoObject`), und das sind fuenf. Zwoelf war die Zahl der geplanten
+ * Lektionen, nicht der vorhandenen. Eine Zahl, die ein Besucher nachzaehlen
+ * kann, darf nicht groesser sein als das, was er dann vorfindet.
+ *
+ * Als Ausdruck statt als Text kann sie nicht mehr abdriften: kommt eine
+ * Aufnahme dazu, steigt sie ueberall von selbst mit.
+ */
+const N_LESSONS = LESSONS.length;
 export interface TenantTierOverride {
   name: string;
   minDeposit: number;
@@ -19,6 +34,16 @@ export interface TenantConfig {
   brokerName: string;
   brokerUrl: string;
   telegramChannel: string;
+  /**
+   * Eigenes Vorstellungsvideo. FEHLT ES, ENTFAELLT DER ABSCHNITT.
+   *
+   * Vorher lief auf jeder Partnerseite fest `/pitch.mp4` — unser Film, in dem
+   * Cosmo spricht und die Cosmos-Candles-Seite zu sehen ist. Auf Zekos Seite
+   * warb damit also unsere Marke. Ein fremdes Video ist schlimmer als kein
+   * Video: der Besucher kam fuer Zeko und sieht uns.
+   */
+  pitchVideo?: string;
+  pitchPoster?: string;
   affiliateEmail: string;
   stats: { label: string; value: string }[];
   features: { icon: string; title: string; body: string }[];
@@ -79,7 +104,7 @@ export const TENANTS: TenantConfig[] = [
     ],
     features: [
       { icon: "📡", title: "Live Telegram Signals", body: "Real-time trade calls from our desk, direct to your phone." },
-      { icon: "📚", title: "Structured Curriculum", body: "12 lessons from basics to elite-level edge building." },
+      { icon: "📚", title: "Structured Curriculum", body: `${N_LESSONS} lessons from basics to elite-level edge building.` },
       { icon: "🤖", title: "Auto-Trader", body: "Copy our master account trades automatically (Operator+)." },
     ],
   },
@@ -208,6 +233,10 @@ export const COSMOS_MASTER: TenantConfig = {
   brokerName: BROKER.name,
   brokerUrl: BROKER.url,
   telegramChannel: TELEGRAM_ENTRY.url,
+  // Nur unsere eigene Marke. In diesem Film spricht Cosmo vor der
+  // Cosmos-Candles-Seite — auf einer Partnerseite waere das unsere Werbung.
+  pitchVideo: "/pitch.mp4",
+  pitchPoster: "/pitch-poster.jpg",
   affiliateEmail: "kontakt@momentumlabs.at",
   headline: "Learn to trade — for free, with Cosmo",
   subhead:
@@ -220,7 +249,7 @@ export const COSMOS_MASTER: TenantConfig = {
   ],
   features: [
     { icon: "📡", title: "Live Telegram Signals", body: "Every call from our desk lands on your phone with entry, stop-loss and targets — nothing to interpret." },
-    { icon: "📚", title: "Structured Course", body: "12 lessons that take you from your first candle to a repeatable, elite-level edge." },
+    { icon: "📚", title: "Structured Course", body: `${N_LESSONS} lessons that take you from your first candle to a repeatable, elite-level edge.` },
     { icon: "🤖", title: "Orderflow Tools", body: "Read the market like a pro: Level 2 depth, volume profile and footprint charts, plus built-in position calculators." },
   ],
   // The master landing shipped without a faq while every generated partner got
@@ -283,7 +312,7 @@ export function buildTenantConfig(
     ],
     features: [
       { icon: "📡", title: "Live Telegram Signals", body: "Real-time trades from the desk — straight to your phone, with entry, stop-loss and targets." },
-      { icon: "📚", title: "Structured Academy", body: "12 lessons from the fundamentals to a real orderflow edge." },
+      { icon: "📚", title: "Structured Academy", body: `${N_LESSONS} lessons from the fundamentals to a real orderflow edge.` },
       { icon: "💸", title: "Free to Join", body: "Fund an account with our partner broker and unlock every signal & lesson." },
     ],
     faq: [

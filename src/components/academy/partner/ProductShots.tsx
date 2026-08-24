@@ -19,6 +19,8 @@ interface Shot {
   wide?: boolean;
 }
 
+import { LESSONS } from "@/lib/academy-data";
+
 const SHOTS: Shot[] = [
   {
     src: "/partner/orderflow-lesson.jpg",
@@ -34,7 +36,7 @@ const SHOTS: Shot[] = [
   {
     src: "/posters/l3.jpg",
     alt: "A lesson board from the academy course on trading psychology",
-    caption: "Twelve lessons, from the first candle upward.",
+    caption: `${LESSONS.length} lessons, from the first candle upward.`,
   },
 ];
 

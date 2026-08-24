@@ -23,7 +23,7 @@ import {
   PlayCircle, BadgeCheck, Wallet, Building2, Radio, GraduationCap, LineChart, Zap,
   Bot, Trophy, ListChecks, Layers,
 } from "lucide-react";
-import { TIERS } from "@/lib/academy-data";
+import { TIERS, LESSONS } from "@/lib/academy-data";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { writePartnerBrand } from "@/lib/partner-brand";
@@ -49,7 +49,7 @@ import {
 const TICKER = [
   { s: "Every call",    v: "Entry \u00b7 SL \u00b7 TP", sym: "\u25CE", tone: "oklch(0.74 0.14 250)" },
   { s: "Course fee",    v: "\u20ac0",                    sym: "\u20ac", tone: "oklch(0.82 0.17 150)" },
-  { s: "Academy",       v: "12 lessons",                  sym: "12",      tone: "oklch(0.82 0.15 85)"  },
+  { s: "Academy",       v: `${LESSONS.length} lessons`,      sym: String(LESSONS.length), tone: "oklch(0.82 0.15 85)"  },
   { s: "Delivery",      v: "Telegram, live",              sym: "\u2708", tone: "oklch(0.74 0.14 250)" },
   { s: "Desk focus",    v: "Gold \u00b7 NAS100",         sym: "Au",      tone: "oklch(0.82 0.15 85)"  },
   { s: "Your money",    v: "stays yours",                 sym: "\u2713", tone: "oklch(0.82 0.17 150)" },
@@ -381,6 +381,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
       </section>
 
       {/* ─────────────────────── DEMO VIDEO ─────────────────────── */}
+      {tenant.pitchVideo && (
       <Band tone="raised" max="max-w-4xl" className="py-8 sm:py-12">
         {/* Das Video laeuft 1:19 — "60 seconds" stand hier noch aus der Zeit
             vor dem fertigen Schnitt. */}
@@ -411,12 +412,12 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                 controls
                 playsInline
                 preload="none"
-                poster="/pitch-poster.jpg"
+                poster={tenant.pitchPoster ?? "/pitch-poster.jpg"}
                 onPlay={() => setPitchPlaying(true)}
                 onEnded={() => setPitchPlaying(false)}
                 className="h-full w-full object-cover"
               >
-                <source src="/pitch.mp4" type="video/mp4" />
+                <source src={tenant.pitchVideo} type="video/mp4" />
               </video>
               {!pitchPlaying && (
                 <button
@@ -434,6 +435,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           </div>
         </div>
       </Band>
+      )}
 
       {/* ─────────────────────── TICKER ─────────────────────── */}
       <div className="relative overflow-hidden border-b border-white/[0.07] bg-white/[0.022] py-3">
@@ -485,8 +487,8 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
 
           <Showcase n="03" primary={primary} icon={GraduationCap} tag="The Academy"
             title="From your first candle to a funded month"
-            body="Twelve structured video lessons that take you from zero to a repeatable edge."
-            points={["12 video lessons, zero to pro", "Progress + completion tracking", "Orderflow tools most traders never see"]}
+            body={`${LESSONS.length} structured video lessons that take you from zero to a repeatable edge.`}
+            points={[`${LESSONS.length} video lessons, zero to pro`, "Progress + completion tracking", "Orderflow tools most traders never see"]}
             preview={<AcademyPreview primary={primary} accent={accent} />} />
 
           <Showcase n="04" primary={primary} reversed icon={ListChecks} tag="Live quizzes"
@@ -660,8 +662,14 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               {/* No direct broker link from a public page. The broker sign-up is the step
                   people drop out of, and a link here sends them there alone — see
                   TELEGRAM_ENTRY in broker.ts. The route is Telegram, where a person
-                  walks them through it. */}
-              <a href={TELEGRAM_ENTRY.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center gap-1.5 py-3 text-xs font-medium text-white/60 underline-offset-4 hover:text-white hover:underline">{TELEGRAM_ENTRY.label} <ArrowUpRight className="h-3.5 w-3.5" /></a>
+                  walks them through it.
+
+                  Der Kanal des TENANTS, nicht unserer. Hier stand fest
+                  TELEGRAM_ENTRY.url — auf Zekos Seite fuehrte der Knopf also in
+                  den Cosmos-Kanal, und sein Besucher landete bei uns statt bei
+                  ihm. Dieselbe Absicherung wie oben im Hero (Zeile ~319):
+                  eigener Kanal, sonst unserer als Rueckfall. */}
+              <a href={tenant.telegramChannel && tenant.telegramChannel !== "#" ? tenant.telegramChannel : TELEGRAM_ENTRY.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center gap-1.5 py-3 text-xs font-medium text-white/60 underline-offset-4 hover:text-white hover:underline">{TELEGRAM_ENTRY.label} <ArrowUpRight className="h-3.5 w-3.5" /></a>
             </div>
           </div>
         </div>

@@ -51,6 +51,7 @@ import {
   ArrowRight, ArrowUpRight, Bot, Gauge, GraduationCap, LayoutDashboard, Lock, Radio, Send, Wallet,
 } from "lucide-react";
 import { SignalsPreview } from "@/components/academy/tenant/LandingPreviews";
+import { LESSONS } from "@/lib/academy-data";
 import { PartnerApplyForm } from "@/components/academy/partner/PartnerApplyForm";
 import { BRAND } from "@/lib/tenants";
 
@@ -97,7 +98,7 @@ const GET = [
     icon: GraduationCap,
     span: "md:col-span-2",
     title: "The full trading academy",
-    body: "Twelve video lessons, beginner to advanced — recorded on a real trading screen.",
+    body: `${LESSONS.length} video lessons, beginner to advanced — recorded on a real trading screen.`,
     img: "/partner/orderflow-lesson.jpg",
     imgAlt: "A lesson recorded on the live orderflow terminal showing volume profile and footprint data",
   },
