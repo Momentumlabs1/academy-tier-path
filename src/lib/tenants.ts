@@ -299,7 +299,16 @@ export function buildTenantConfig(
     // destination have to come from the same place or they drift apart silently.
     brokerName: BROKER.name,
     brokerUrl: BROKER.url,
-    telegramChannel: TELEGRAM_ENTRY.url,
+    // LEER, nicht unser Kanal.
+    //
+    // Hier stand TELEGRAM_ENTRY.url — also t.me/cosmoscandles. Jeder ueber den
+    // Admin angelegte Partner bekam damit UNSEREN Kanal auf seine Seite, an
+    // zwei Stellen. Beim Durchlauf von Louis' Seite standen beide Knoepfe auf
+    // uns: sein Besucher waere in unserem Kanal gelandet, nicht in seinem.
+    // Kein Kanal ist richtig, solange er keinen hat — die Knoepfe pruefen auf
+    // leer und entfallen dann. Sobald sein Kanal eingerichtet ist, traegt der
+    // Admin ihn ein (config.telegramChannel) und sie erscheinen.
+    telegramChannel: "",
     affiliateEmail: "kontakt@momentumlabs.at",
     // This is the default every NEW partner inherits, so anything invented here
     // propagates to every future partner page without anyone typing it again.

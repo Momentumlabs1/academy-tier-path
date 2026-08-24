@@ -668,8 +668,17 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                   TELEGRAM_ENTRY.url — auf Zekos Seite fuehrte der Knopf also in
                   den Cosmos-Kanal, und sein Besucher landete bei uns statt bei
                   ihm. Dieselbe Absicherung wie oben im Hero (Zeile ~319):
-                  eigener Kanal, sonst unserer als Rueckfall. */}
-              <a href={tenant.telegramChannel && tenant.telegramChannel !== "#" ? tenant.telegramChannel : TELEGRAM_ENTRY.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center gap-1.5 py-3 text-xs font-medium text-white/60 underline-offset-4 hover:text-white hover:underline">{TELEGRAM_ENTRY.label} <ArrowUpRight className="h-3.5 w-3.5" /></a>
+                  ihm.
+
+                  KEIN Rueckfall auf unseren Kanal. Erst stand hier fest
+                  TELEGRAM_ENTRY.url, dann "eigener Kanal, sonst unserer" — und
+                  beim echten Durchlauf von Louis' Seite fuehrten trotzdem BEIDE
+                  Knoepfe zu t.me/cosmoscandles, weil buildTenantConfig genau
+                  diesen Wert als Vorgabe setzte. Hat ein Partner keinen Kanal,
+                  gehoert hier nichts hin. */}
+              {tenant.telegramChannel && tenant.telegramChannel !== "#" && (
+              <a href={tenant.telegramChannel} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center gap-1.5 py-3 text-xs font-medium text-white/60 underline-offset-4 hover:text-white hover:underline">{showCosmo ? TELEGRAM_ENTRY.label : "Join the channel"} <ArrowUpRight className="h-3.5 w-3.5" /></a>
+              )}
             </div>
           </div>
         </div>
