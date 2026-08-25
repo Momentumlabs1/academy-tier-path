@@ -30,7 +30,15 @@ const USD_PER_LOT = COMMISSION_LADDER[0].usdPerLot; // 6 — eine Rate, beide Br
 const money = (n: number) =>
   "$" + Math.round(n).toLocaleString("en-US");
 
-/** Die drei Glieder der Kette, in der Reihenfolge, in der sie passieren. */
+/**
+ * Die drei Glieder der Kette, in der Reihenfolge, in der sie passieren.
+ *
+ * WER ZAHLT: der Broker, direkt an den Partner. Hier stand "Der Broker rechnet
+ * uns ab, wir dir" — das war schlicht falsch. Der Partner haengt als eigener
+ * IB unter dem Master, seine 6 $/Lot kommen vom Broker auf sein Konto, nicht
+ * ueber uns. Eine falsche Aussage darueber, WOHER das Geld kommt, ist die
+ * Sorte Satz, an die sich jemand erinnert, wenn eine Zahlung ausbleibt.
+ */
 const CHAIN = [
   {
     icon: MessageSquare,
@@ -45,7 +53,7 @@ const CHAIN = [
   {
     icon: Radio,
     title: "They trade — and every lot pays you",
-    body: `The broker settles with us, we settle with you: $${USD_PER_LOT} per lot traded. No subscription, no fee for your people.`,
+    body: `The broker pays you directly — $${USD_PER_LOT} per lot your people trade. It never passes through us. No subscription, no fee for your people.`,
   },
 ];
 
@@ -157,7 +165,7 @@ export function PartnerPrimer({ name }: { name?: string }) {
 
         <p className="mt-4 text-[11px] leading-relaxed text-muted-foreground">
           This is a calculation, not a promise. How much someone trades is up to them — and
-          trading is risky; many people lose money. You get paid on what was actually traded,
+          trading is risky; many people lose money. The broker pays on what was actually traded,
           and that is exactly what this page will show.
         </p>
       </div>

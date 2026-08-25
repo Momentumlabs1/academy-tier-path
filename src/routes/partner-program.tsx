@@ -134,7 +134,7 @@ const STEPS = [
   { title: "You share your link", you: "ongoing", body: "One link in your bio. The only recurring work on your side." },
   { title: "Your people sign up free", you: "nothing", body: "No card, no course fee. Their trading account stays theirs." },
   { title: "Everything unlocks itself", you: "nothing", body: "Deposit checked, academy opened, Telegram invite sent — all automatic." },
-  { title: "You get paid, every month", you: "nothing", body: "Per lot traded, for as long as they keep trading." },
+  { title: "The broker pays you, every month", you: "nothing", body: "Per lot traded, straight from the broker, for as long as they keep trading." },
 ];
 
 const FAQ = [
