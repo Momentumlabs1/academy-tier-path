@@ -16,7 +16,14 @@ import { cn } from "@/lib/utils";
 
 // One source for the entry point. The literal that used to sit here pointed at
 // a different brand's channel, inherited with the template.
-const TELEGRAM_URL = TELEGRAM_ENTRY.url;
+//
+// DER KANAL DES PARTNERS, DURCH DEN ER GEKOMMEN IST.
+// Die Akademie ist fuer alle dieselbe — es gibt keine gebrandete Akademie, und
+// das soll auch so bleiben. Der Telegram-Kanal ist die Ausnahme: dort laufen
+// die Signale, und die kommen bei einem Zeko-Kunden aus Zekos Kanal. Hier stand
+// fest unser Kanal, damit waere jeder Zeko-Kunde in unserem Chat gelandet
+// statt in seinem — und Zeko haette den Kunden, den er gebracht hat, nie
+// gesehen. Ohne Partner (Direktzugang) bleibt es unser Kanal.
 
 export const Route = createFileRoute("/_app/signals")({
   head: () => ({
@@ -31,6 +38,10 @@ export const Route = createFileRoute("/_app/signals")({
 function SignalsPage() {
   const brand = usePartnerBrand();
   const accent = brand?.accentColor ?? COSMO.accentColor;
+  const telegramUrl =
+    brand?.telegramChannel && brand.telegramChannel !== "#"
+      ? brand.telegramChannel
+      : TELEGRAM_ENTRY.url;
   const state = useMemberState();
   const hasAccess = !!state.currentTier;
   // Locked until the first deposit clears — and while the member state is still
@@ -80,7 +91,7 @@ function SignalsPage() {
         </div>
         {hasAccess ? (
           <a
-            href={TELEGRAM_URL}
+            href={telegramUrl}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex shrink-0 items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-[var(--shadow-lime)] hover:opacity-90"
