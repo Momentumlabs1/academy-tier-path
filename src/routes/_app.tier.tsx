@@ -27,7 +27,7 @@ function TierPage() {
   const state = useMemberState();
   const myRank = state.currentTier ? TIERS.findIndex((t) => t.key === state.currentTier!.key) : -1;
   const nextTier = TIERS[myRank + 1];
-  const toNext = nextTier ? Math.max(0, nextTier.minDeposit - state.lifetimeDeposits) : 0;
+  const toNext = nextTier ? Math.max(0, nextTier.minDeposit - state.accessDeposit) : 0;
 
   return (
     <div className="space-y-6">
@@ -76,7 +76,7 @@ function TierPage() {
         {TIERS.map((t, idx) => {
           const isCurrent = idx === myRank;
           const unlocked = idx <= myRank;
-          const gap = Math.max(0, t.minDeposit - state.lifetimeDeposits);
+          const gap = Math.max(0, t.minDeposit - state.accessDeposit);
 
           return (
             <div

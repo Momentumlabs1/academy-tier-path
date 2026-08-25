@@ -85,7 +85,7 @@ function UnlockPanel({ min }: { min: number }) {
 export function MentorChat() {
   const state = useMemberState();
   const minDeposit = TIERS[0].minDeposit;
-  const locked = state.loaded && state.lifetimeDeposits < minDeposit;
+  const locked = state.loaded && state.accessDeposit < minDeposit;
 
   const [open, setOpen] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([GREETING]);

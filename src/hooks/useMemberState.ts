@@ -25,6 +25,8 @@ export interface MemberState {
   memberId: string;
   profile: { name: string; email: string; telegramHandle: string; joinedAt: string; avatarUrl: string };
   lifetimeDeposits: number;
+  /** Wie viel Zugang gilt — inkl. Admin-Freibrief. NICHT anzeigen als Betrag. */
+  accessDeposit: number;
   currentTier: Tier | undefined;
   nextTier: Tier | undefined;
   nextTierRemaining: number;
@@ -105,7 +107,17 @@ function deriveState(input: MemberInput): MemberState {
     overrideTier && (!byDeposit || TIERS.indexOf(overrideTier) > TIERS.indexOf(byDeposit))
       ? overrideTier
       : byDeposit;
-  const nextTier = nextTierFor(deposit);
+  // ZWEI ZAHLEN, ZWEI ZWECKE.
+  //
+  // `deposit` ist die Wahrheit ueber das Geld und bleibt so stehen, wo sie
+  // angezeigt wird ("Lifetime deposits 0 EUR, verified at broker"). Zum
+  // AUFSPERREN wird sie aber angehoben, wenn ein Freibrief gilt — sonst sagt
+  // die Seite "You're an Elite member" und sperrt daneben alles zu, weil elf
+  // Stellen den Betrag statt der Stufe fragen. Genau so sah es aus.
+  const accessDeposit = overrideTier
+    ? Math.max(deposit, overrideTier.minDeposit)
+    : deposit;
+  const nextTier = nextTierFor(accessDeposit);
   const reached = currentTier ? TIERS.findIndex((t) => t.key === currentTier.key) : -1;
   const unlockedProducts = PRODUCTS.filter((p) => TIERS.findIndex((t) => t.key === p.requires) <= reached);
   const lockedProducts = PRODUCTS.filter((p) => !unlockedProducts.includes(p));
@@ -113,10 +125,13 @@ function deriveState(input: MemberInput): MemberState {
     memberId: input.memberId,
     profile: input.profile,
     lifetimeDeposits: deposit,
+    // Nur fuers Aufsperren und die Fortschrittsanzeige — nie fuer eine Zahl,
+    // die als "so viel wurde eingezahlt" gelesen wird.
+    accessDeposit,
     currentTier,
     nextTier,
-    nextTierRemaining: nextTier ? Math.max(0, nextTier.minDeposit - deposit) : 0,
-    progressPctToNext: progressBetween(deposit, currentTier, nextTier),
+    nextTierRemaining: nextTier ? Math.max(0, nextTier.minDeposit - accessDeposit) : 0,
+    progressPctToNext: progressBetween(accessDeposit, currentTier, nextTier),
     // DB-authoritative once activity enforcement is live; before a member has any
     // trades the server defaults them to "active", so a funded member isn't shown
     // inactive just for having 0 lots yet.

@@ -48,7 +48,7 @@ const HATCH =
 
 export function DepositLadder({ compact = false }: { compact?: boolean }) {
   const state = useMemberState();
-  const userPct = positionPct(state.lifetimeDeposits);
+  const userPct = positionPct(state.accessDeposit);
   // What the member is working towards is the useful default — nobody should
   // have to hunt for the interaction to learn what the next €100 is for.
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
@@ -177,7 +177,7 @@ function MilestonePanel({ tier, compact }: { tier: Tier; compact: boolean }) {
   const rank = TIERS.findIndex((t) => t.key === tier.key);
   const myRank = state.currentTier ? TIERS.findIndex((t) => t.key === state.currentTier!.key) : -1;
   const unlocked = rank <= myRank;
-  const gap = Math.max(0, tier.minDeposit - state.lifetimeDeposits);
+  const gap = Math.max(0, tier.minDeposit - state.accessDeposit);
   const items = tier.perks.length
     ? tier.perks
     : PRODUCTS.filter((p) => p.requires === tier.key).map((p) => p.name);

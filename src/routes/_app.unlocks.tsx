@@ -36,7 +36,7 @@ function UnlocksPage() {
   const have = PRODUCTS.filter((p) => unlockedIds.has(p.id)).length;
   const pct = Math.round((have / total) * 100);
   const nextTier = TIERS[myRank + 1];
-  const toNext = nextTier ? Math.max(0, nextTier.minDeposit - state.lifetimeDeposits) : 0;
+  const toNext = nextTier ? Math.max(0, nextTier.minDeposit - state.accessDeposit) : 0;
 
   return (
     <div className="space-y-8">
@@ -84,7 +84,7 @@ function UnlocksPage() {
       {TIERS.map((tier, tierIdx) => {
         const products = PRODUCTS.filter((p) => p.requires === tier.key);
         const reached = tierIdx <= myRank;
-        const gap = Math.max(0, tier.minDeposit - state.lifetimeDeposits);
+        const gap = Math.max(0, tier.minDeposit - state.accessDeposit);
 
         return (
           <section key={tier.key}>

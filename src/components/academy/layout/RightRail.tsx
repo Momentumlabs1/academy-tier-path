@@ -23,7 +23,7 @@ export function RightRail() {
   // state is still loading we treat them as locked — showing unlocked content
   // for a frame and then snapping it shut is the wrong way round.
   const state = useMemberState();
-  const locked = !state.loaded || state.lifetimeDeposits < TIERS[0].minDeposit;
+  const locked = !state.loaded || state.accessDeposit < TIERS[0].minDeposit;
 
   return (
     <aside className="sticky top-4 hidden h-fit w-[340px] shrink-0 flex-col gap-6 xl:flex 2xl:w-[400px]">

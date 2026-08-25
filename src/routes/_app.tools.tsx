@@ -41,7 +41,7 @@ function ToolsPage() {
   const member = useMemberState();
   // Treated as locked while the member state loads, so the tools never appear
   // usable for a frame and then close.
-  const toolsLocked = !member.loaded || member.lifetimeDeposits < TIERS[0].minDeposit;
+  const toolsLocked = !member.loaded || member.accessDeposit < TIERS[0].minDeposit;
   const [account, setAccount] = useState(10_000);
   const [riskPct, setRiskPct] = useState(1);
   const [entry, setEntry] = useState(1.085);

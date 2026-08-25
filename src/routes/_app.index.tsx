@@ -82,7 +82,7 @@ function Dashboard() {
   const state = useMemberState();
   // Before the first deposit, everything gated should "breathe" — a gentle pull
   // toward the deposit that unlocks it. Once funded, the glow/veil fall away.
-  const notFunded = state.loaded && state.lifetimeDeposits <= 0;
+  const notFunded = state.loaded && state.accessDeposit <= 0;
   const tierRank = state.currentTier
     ? ["foundation", "operator", "elite"].indexOf(state.currentTier.key)
     : -1;
