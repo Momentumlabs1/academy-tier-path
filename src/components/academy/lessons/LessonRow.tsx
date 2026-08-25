@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { formatMoney } from "@/lib/format";
 import { PillValue } from "../primitives/PillValue";
 import { TierTag } from "../primitives/TierTag";
 import { TIERS, lessonThumb, type Lesson } from "@/lib/academy-data";
@@ -12,11 +13,19 @@ function difficulty(tier: Lesson["tier"]): number {
 }
 
 export function LessonRow({ lesson }: { lesson: Lesson }) {
-  const memberTier = useMemberState().currentTier;
+  const { currentTier: memberTier, loaded } = useMemberState();
   const memberRank = memberTier ? TIERS.findIndex((t) => t.key === memberTier.key) : -1;
-  const locked = TIERS.findIndex((t) => t.key === lesson.tier) > memberRank;
+  // SOLANGE NICHTS GELADEN IST, IST NICHTS GESPERRT.
+  //
+  // currentTier ist undefined, bis der Mitglieds-Abruf zurueckkommt — damit war
+  // memberRank -1 und JEDE Lektion galt kurz als gesperrt: Schloss, verwaschenes
+  // Vorschaubild, "Unlocks at Foundation". Ein zahlendes Mitglied sah bei jedem
+  // Seitenaufruf zuerst, dass es nichts darf. Das Dashboard prueft `loaded`
+  // laengst mit; die Lektionsliste war die einzige Stelle, die es vergass.
+  const locked = loaded && TIERS.findIndex((t) => t.key === lesson.tier) > memberRank;
   const { isCompleted, toggle } = useCompletedLessons();
   const completed = isCompleted(lesson.id);
+  const lessonTier = TIERS.find((t) => t.key === lesson.tier);
   const xp = lesson.durationMin * 10;
 
   const tierName = TIERS.find((t) => t.key === lesson.tier)?.name ?? lesson.tier;
@@ -52,7 +61,10 @@ export function LessonRow({ lesson }: { lesson: Lesson }) {
             </span>
           ) : locked ? (
             <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground">
-              <Lock className="h-3.5 w-3.5" /> Unlocks at {tierName}
+              {/* Die Sperre nennt den Preis. "Unlocks at Operator" sagt jemandem,
+                  der die Stufen nicht auswendig kann, ueberhaupt nichts — der
+                  Betrag ist die Information, nach der er sucht. */}
+              <Lock className="h-3.5 w-3.5" /> Unlocks at {tierName} · {formatMoney(lessonTier?.minDeposit ?? 0, "€")}
             </span>
           ) : null}
         </div>

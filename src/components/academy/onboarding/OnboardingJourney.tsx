@@ -109,7 +109,7 @@ function WelcomeVideoCard({ accent, onDone }: { accent: string; onDone: () => vo
 }
 
 /* ── Stage 2a: €0 ignite strip ──────────────────────────────────────────────── */
-function IgniteStrip({ accent, href, onDeposit }: { accent: string; href: string; onDeposit: () => void }) {
+function IgniteStrip({ accent, href, onDeposit, onSaysDeposited }: { accent: string; href: string; onDeposit: () => void; onSaysDeposited: () => void }) {
   useDepositWatcher(true);
   return (
     <div className="flex flex-col gap-3 rounded-2xl border px-4 py-3.5 sm:flex-row sm:items-center" style={{ borderColor: `color-mix(in oklch, ${accent} 40%, transparent)`, background: `color-mix(in oklch, ${accent} 8%, transparent)` }}>
@@ -119,11 +119,22 @@ function IgniteStrip({ accent, href, onDeposit }: { accent: string; href: string
       </span>
       <p className="min-w-0 flex-1 text-sm">
         <span className="font-semibold">Next step:</span>{" "}
-        <span className="text-foreground/75">Make your first deposit of {formatMoney(FOUNDATION_MIN, "€")}+ at {BROKER.name}. The moment it lands, everything here unlocks automatically.</span>
+        <span className="text-foreground/75">Open your account and make your first deposit of {formatMoney(FOUNDATION_MIN, "€")}+. We walk you through it on Telegram — {BROKER.name}. The moment it lands, everything here unlocks automatically.</span>
       </p>
       <a href={href} target="_blank" rel="noopener noreferrer" onClick={onDeposit} className="shrink-0 rounded-full px-4 py-2 text-xs font-bold text-[#08111a] transition-transform hover:scale-[1.03]" style={{ background: accent }}>
-        Deposit at {BROKER.name} →
+        Start on Telegram →
       </a>
+      {/* Der ruhige zweite Weg. Wer schon eingezahlt hat, soll das sagen
+          koennen, statt darauf zu warten, dass der Broker-Abgleich ihn
+          irgendwann findet — der laeuft nur ein paar Mal am Tag. Bewusst
+          unauffaellig: der Hauptweg ist und bleibt Telegram. */}
+      <button
+        type="button"
+        onClick={onSaysDeposited}
+        className="shrink-0 rounded-full border border-white/12 px-4 py-2 text-[12px] font-semibold text-muted-foreground transition-colors hover:border-white/25 hover:text-foreground"
+      >
+        I already deposited
+      </button>
     </div>
   );
 }
@@ -206,7 +217,7 @@ function VerifyingCard({ accent, href, onDeposit, since }: {
         <p className="mt-3 text-[11px] text-foreground/50">
           Not deposited yet?{" "}
           <a href={href} target="_blank" rel="noopener noreferrer" onClick={onDeposit} className="underline hover:text-foreground">
-            Open {BROKER.name} →
+            Ask us on Telegram →
           </a>
         </p>
       </div>
@@ -230,7 +241,7 @@ function TopupStrip({ accent, amount, href, onDeposit }: { accent: string; amoun
           <span className="text-foreground/75">— only <b style={{ color: accent }}>{formatMoney(missing, "€")}</b> to go until Foundation (signals, lessons & tools).</span>
         </p>
         <a href={href} target="_blank" rel="noopener noreferrer" onClick={onDeposit} className="shrink-0 rounded-full px-4 py-2 text-xs font-bold text-[#08111a] transition-transform hover:scale-[1.03]" style={{ background: accent }}>
-          Top up at {BROKER.name} →
+          Top up — ask on Telegram →
         </a>
       </div>
       <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-white/10">
@@ -434,7 +445,26 @@ export function OnboardingJourney() {
   // decides the tracking parameter.
   // Telegram, not the broker — see TELEGRAM_ENTRY in broker.ts.
   const href = TELEGRAM_ENTRY.url;
-  const onDeposit = () => { markDepositClick(email); advance(); };
+  // EIN TELEGRAM-KLICK IST KEINE EINZAHLUNG.
+  //
+  // Hier stand `markDepositClick(email)` am Telegram-Knopf. Das schaltete die
+  // Ansicht drei Stunden lang auf "We're checking your deposit" und ab Minute
+  // zehn auf "Your money is safe in your HeroFX account" — bei jemandem, der
+  // gerade erst auf einen Chat getippt hat und womoeglich noch gar kein
+  // Broker-Konto besitzt. Eine Tatsachenbehauptung ueber fremdes Geld, die
+  // nichts belegt. Aus derselben Codebasis wurden Regulierungs-Aussagen und
+  // erfundene Zahlen aus genau diesem Grund entfernt.
+  //
+  // Schlimmer noch: im "verifying"-Zustand verschwand der Einzahl-Aufruf bis
+  // auf einen 11px-Link. Wer bloss Telegram angetippt hatte, sah drei Stunden
+  // lang keinen naechsten Schritt mehr.
+  //
+  // Der Telegram-Knopf oeffnet jetzt nur Telegram. Die Pruefung startet, wenn
+  // ein Mensch sagt, dass er eingezahlt hat — siehe onSaysDeposited.
+  const onDeposit = () => { advance(); };
+
+  /** Erst DIESER Klick behauptet eine Einzahlung — weil ihn der Nutzer macht. */
+  const onSaysDeposited = () => { markDepositClick(email); advance(); };
 
   if (stage === "loading" || stage === "done") return null;
   if (stage === "video") {
@@ -446,7 +476,7 @@ export function OnboardingJourney() {
   if (BROKER_SWITCH.paused && (stage === "ignite" || stage === "topup")) {
     return <BrokerPausedNotice className="mb-6" />;
   }
-  if (stage === "ignite") return <IgniteStrip accent={accent} href={href} onDeposit={onDeposit} />;
+  if (stage === "ignite") return <IgniteStrip accent={accent} href={href} onDeposit={onDeposit} onSaysDeposited={onSaysDeposited} />;
   if (stage === "verifying") return <VerifyingCard accent={accent} href={href} onDeposit={onDeposit} since={depositClickedAt(email)} />;
   if (stage === "topup") return <TopupStrip accent={accent} amount={amount} href={href} onDeposit={onDeposit} />;
   return (

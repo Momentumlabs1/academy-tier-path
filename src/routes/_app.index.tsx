@@ -13,6 +13,7 @@ import { LockedGate } from "@/components/academy/onboarding/LockedGate";
 import { OnboardingJourney } from "@/components/academy/onboarding/OnboardingJourney";
 import { PostDepositWelcome } from "@/components/academy/onboarding/PostDepositWelcome";
 import { LESSONS } from "@/lib/academy-data";
+import { useCompletedLessons } from "@/hooks/useCompletedLessons";
 import { useMemberState } from "@/hooks/useMemberState";
 import { cn } from "@/lib/utils";
 
@@ -83,16 +84,33 @@ function Dashboard() {
   const state = useMemberState();
   // Before the first deposit, everything gated should "breathe" — a gentle pull
   // toward the deposit that unlocks it. Once funded, the glow/veil fall away.
+  const { isCompleted } = useCompletedLessons();
   const notFunded = state.loaded && state.accessDeposit <= 0;
   const tierRank = state.currentTier
     ? ["foundation", "operator", "elite"].indexOf(state.currentTier.key)
     : -1;
 
-  const foundationLessons = LESSONS.filter((l) => l.tier === "foundation").slice(0, 4);
-  const unlockedLessons = LESSONS.filter((l) => {
-    const rank = ["foundation", "operator", "elite"].indexOf(l.tier);
-    return rank <= tierRank;
-  }).slice(0, 4);
+  // EINE Liste, nicht zwei.
+  //
+  // Vorher standen hier zwei Abschnitte: "Continue learning / Foundation" und
+  // "Your tier unlocks / Available to you". Seit LESSONS auf Lektionen MIT
+  // Aufnahme gefiltert ist (5 statt 12) enthalten beide fuer ein
+  // Foundation-Mitglied exakt dieselben zwei Karten — zweimal untereinander,
+  // unter zwei Ueberschriften. Und wegen slice(0,4) tauchte l11, die einzige
+  // Elite-Lektion, im Abschnitt "Your tier unlocks" nie auf: die Ueberschrift
+  // zeigte das Gegenteil dessen, was sie versprach.
+  //
+  // Erledigte werden nach UNTEN sortiert, nicht herausgefiltert — bei fuenf
+  // Lektionen ist "alles gesehen" erreichbar, und eine leere Karte waere die
+  // schlechtere Antwort. Gesperrte bleiben sichtbar: LessonRow zeigt Schloss
+  // und Preis selbst, und genau das ist vor der Einzahlung der Zug nach vorn.
+  const rankOf = (t: string) => ["foundation", "operator", "elite"].indexOf(t);
+  const dashboardLessons = [...LESSONS].sort((a, b) => {
+    const done = Number(isCompleted(a.id)) - Number(isCompleted(b.id));
+    if (done !== 0) return done;
+    const mine = (l: typeof a) => (rankOf(l.tier) <= tierRank ? 0 : 1);
+    return mine(a) - mine(b) || rankOf(a.tier) - rankOf(b.tier);
+  });
 
   return (
     <div className="space-y-6">
@@ -247,15 +265,8 @@ function Dashboard() {
         >
           Continue learning
         </SectionTitle>
-        <LessonGroup title="Foundation" lessons={foundationLessons} />
+        <LessonGroup title="" lessons={dashboardLessons} />
       </section>
-
-      {unlockedLessons.length > 0 && (
-        <section>
-          <SectionTitle>Your tier unlocks</SectionTitle>
-          <LessonGroup title="Available to you" lessons={unlockedLessons} />
-        </section>
-      )}
     </div>
   );
 }

@@ -67,7 +67,19 @@ function DepositCta({ className }: { className?: string }) {
          someone who can answer. See TELEGRAM_ENTRY in broker.ts. */
       href={TELEGRAM_ENTRY.url}
       onClick={() => {
-        markDepositClick(profile.email);
+        // KEIN markDepositClick hier.
+        //
+        // Dieser Knopf oeffnet Telegram. Er hat bis heute zusaetzlich
+        // markDepositClick gesetzt, und damit lief das Dashboard drei Stunden
+        // lang in "We're checking your deposit" — bei jemandem, der nur einen
+        // Chat geoeffnet hat. Die Behauptung "dein Geld ist unterwegs" gehoert
+        // dem Nutzer, nicht einem Klick auf einen Chatlink; im Dashboard sagt
+        // er sie jetzt selbst ("I already deposited").
+        //
+        // Die Klick-Erfassung unten BLEIBT: sie ist eine Messung, keine
+        // Behauptung, und sie ist die einzige Zahl, die die Partner-Dashboards
+        // ueberhaupt fuellt.
+
         // Server-side too. The localStorage flag only drives this browser's
         // "verifying your deposit…" screen; it cannot tell us later WHO left for
         // the broker and when. That record is the only way to recognise a member
