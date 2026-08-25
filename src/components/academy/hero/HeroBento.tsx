@@ -57,6 +57,29 @@ export function HeroBento() {
               loading={idx === 0 ? "eager" : "lazy"}
               className="absolute inset-0 h-full w-full object-cover opacity-80 transition-transform duration-500 group-hover:scale-105"
             />
+            {/* Markenschleier.
+                Die drei Aufnahmen sind Magenta-Partikelrender aus der Zeit vor
+                dem blauen Auftritt — auf einem Dashboard, das sonst durchgehend
+                Azur traegt, waren sie der einzige pinke Fleck und lasen sich
+                wie ein fremdes Produkt. `color` faerbt den Farbton um und
+                laesst die Helligkeit stehen, sodass die Partikelstruktur
+                erhalten bleibt; der Multiply-Verlauf darueber zieht die hellen
+                Stellen ins Dunkle, statt sie auszubrennen. Kein Neurendern
+                noetig, und wenn spaeter echte Aufnahmen kommen, faellt der
+                Schleier einfach weg. */}
+            <span
+              aria-hidden
+              className="absolute inset-0"
+              style={{ background: "var(--primary)", mixBlendMode: "color", opacity: 0.85 }}
+            />
+            <span
+              aria-hidden
+              className="absolute inset-0"
+              style={{
+                background: "linear-gradient(160deg, rgba(4,19,44,.55), rgba(4,19,44,.15))",
+                mixBlendMode: "multiply",
+              }}
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
             <div className="relative flex h-full flex-col justify-between p-4 lg:p-6">
               <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">

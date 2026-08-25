@@ -88,6 +88,16 @@ export function MentorChat() {
   const locked = state.loaded && state.accessDeposit < minDeposit;
 
   const [open, setOpen] = useState(false);
+
+  // Die untere Leiste auf dem Telefon oeffnet den Chat ueber ein Ereignis
+  // statt ueber durchgereichte Zustaende: MobileNav und MentorChat haengen an
+  // ganz verschiedenen Stellen im Baum, und ein Kontext nur fuer "ist der Chat
+  // offen" waere mehr Verdrahtung als der Fall wert ist.
+  useEffect(() => {
+    const openChat = () => setOpen(true);
+    window.addEventListener("cosmo:open", openChat);
+    return () => window.removeEventListener("cosmo:open", openChat);
+  }, []);
   const [msgs, setMsgs] = useState<Msg[]>([GREETING]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -169,37 +179,74 @@ export function MentorChat() {
         <button
           onClick={() => setOpen(true)}
           aria-label="Ask Cosmo"
-          /* Anchored to the bottom-right corner, clearing the mobile nav pill
-             (bottom-3 + ~68px tall) by four pixels. It used to sit at bottom-24
-             with the label stacked underneath, which on a phone put a ~90px-tall
-             block in the middle of the first card — it read as broken content
-             rather than as a launcher. */
-          className="group fixed bottom-[84px] right-3 z-40 flex flex-col items-center gap-1 transition-transform duration-300 hover:scale-105 lg:bottom-6 lg:right-4"
+          /*
+           * COSMO ALS RUNDER EINWURF, WIE BEI EINEM STREAMER.
+           *
+           * Vorher schwebte ein freigestelltes 52-68px-Portrait ohne Rahmen in
+           * der Ecke, mit "Talk with me" als Zeile darunter. Zwei Probleme, die
+           * Diego auf dem Desktop sofort gesehen hat: der Kopf endete an einer
+           * harten Kante am Hals — freigestellt, aber ohne Form, die den
+           * Schnitt erklaert — und die Beschriftung darunter machte aus einem
+           * Knopf einen zweizeiligen Block, der neben nichts stand.
+           *
+           * Ein Kreis loest beides. Er begruendet den Bildausschnitt (eine
+           * Kamera ist rund), er gibt dem Ganzen eine Silhouette, die man auf
+           * jedem Hintergrund erkennt, und der leuchtende Ring in der
+           * Markenfarbe macht ihn zum einzigen runden, leuchtenden Ding auf der
+           * Seite. Der Bildausschnitt sitzt auf Kopf und Schultern, damit im
+           * Kreis ein Gesicht steht und kein Ausschnitt.
+           *
+           * Die Beschriftung wandert nach LINKS und erscheint beim Darueberfahren
+           * — auf dem Desktop, wo es einen Mauszeiger gibt. Auf dem Handy
+           * uebernimmt die untere Leiste (MobileNav), dort ist Cosmo ein
+           * Menuepunkt statt ein schwebendes Etwas.
+           */
+          className="group fixed bottom-6 right-5 z-40 hidden items-center gap-3 transition-transform duration-300 hover:scale-[1.04] lg:flex"
         >
           <style>{`
-            @keyframes cosmoLaunchFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-            .cosmo-launch { animation: cosmoLaunchFloat 4.5s ease-in-out infinite; }
+            @keyframes cosmoLaunchFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+            .cosmo-launch { animation: cosmoLaunchFloat 5s ease-in-out infinite; }
             @media (prefers-reduced-motion: reduce) { .cosmo-launch { animation: none; } }
           `}</style>
-          <span className="relative flex h-[52px] w-[52px] items-center justify-center lg:h-[68px] lg:w-[68px]">
-            <span
-              className="pointer-events-none absolute inset-0 -m-1 rounded-full blur-xl transition-opacity duration-300 group-hover:opacity-100"
-              style={{ background: "radial-gradient(circle, color-mix(in oklch, #75B9F5 60%, transparent), transparent 70%)", opacity: 0.8 }}
-              aria-hidden
-            />
-            <img
-              src={COSMO_HEAD}
-              alt=""
-              className="cosmo-launch relative h-[52px] w-[52px] object-contain drop-shadow-[0_6px_14px_rgba(0,0,0,0.55)] lg:h-[68px] lg:w-[68px]"
-            />
-            {locked && (
-              <span className="absolute bottom-0 right-0 flex h-5 w-5 items-center justify-center rounded-full bg-[oklch(0.14_0.04_255)] ring-1 ring-white/15">
-                <Lock className="h-2.5 w-2.5 text-foreground/70" />
-              </span>
-            )}
+
+          {/* Beschriftung links, nur beim Darueberfahren */}
+          <span className="pointer-events-none translate-x-2 rounded-full border border-primary/35 bg-[oklch(0.14_0.04_255)]/95 px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-primary opacity-0 shadow-lg transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100">
+            {locked ? "Unlock Cosmo" : "Talk with me"}
           </span>
-          <span className="hidden rounded-full border border-primary/40 bg-[oklch(0.14_0.04_255)]/90 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.08em] text-primary shadow-lg backdrop-blur-sm lg:block">
-            Talk with me
+
+          <span className="cosmo-launch relative block h-[88px] w-[88px] shrink-0">
+            {/* Schein nach aussen */}
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-0 -m-2 rounded-full blur-2xl transition-opacity duration-300 group-hover:opacity-100"
+              style={{ background: "radial-gradient(circle, color-mix(in oklch, var(--primary) 65%, transparent), transparent 70%)", opacity: 0.55 }}
+            />
+            {/* Der Kreis selbst */}
+            <span
+              className="relative block h-full w-full overflow-hidden rounded-full"
+              style={{
+                border: "2px solid color-mix(in oklch, var(--primary) 75%, white)",
+                boxShadow: "0 0 0 4px rgba(0,0,0,.45), 0 0 26px -2px var(--primary), 0 10px 26px -8px rgba(0,0,0,.7)",
+                background: "linear-gradient(160deg, oklch(0.24 0.07 258), oklch(0.13 0.04 258))",
+              }}
+            >
+              <img
+                src={COSMO_HEAD}
+                alt=""
+                className="h-full w-full object-cover"
+                style={{ objectPosition: "50% 30%", transform: "scale(1.18)" }}
+              />
+              {/* Leichter Verlauf nach unten, damit der Kreis Tiefe bekommt */}
+              <span aria-hidden className="absolute inset-x-0 bottom-0 h-1/3" style={{ background: "linear-gradient(to top, rgba(0,0,0,.5), transparent)" }} />
+            </span>
+            {/* Lebendzeichen bzw. Schloss */}
+            {locked ? (
+              <span className="absolute bottom-0.5 right-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-[oklch(0.14_0.04_255)] ring-2 ring-[oklch(0.09_0.03_258)]">
+                <Lock className="h-3 w-3 text-foreground/70" />
+              </span>
+            ) : (
+              <span className="absolute bottom-1 right-1 h-3.5 w-3.5 rounded-full ring-2 ring-[oklch(0.09_0.03_258)]" style={{ background: "oklch(0.82 0.17 150)" }} />
+            )}
           </span>
         </button>
       )}

@@ -9,12 +9,12 @@ const NAV = [
   { to: "/", label: "Home", icon: LayoutDashboard },
   { to: "/lessons", label: "Lessons", icon: BookOpen },
   { to: "/signals", label: "Signals", icon: Radio },
-  { to: "/tier", label: "Tier", icon: Trophy },
 ];
 
 // Everything not on the bottom bar lives in the "More" sheet so nothing is
 // stranded on mobile (previously /tools, /unlocks, /settings were unreachable).
 const MORE = [
+  { to: "/tier", label: "Tier", icon: Trophy },
   { to: "/tools", label: "Trader tools", icon: Calculator },
   { to: "/unlocks", label: "Unlocks", icon: Unlock },
   { to: "/notifications", label: "Notifications", icon: Bell },
@@ -85,6 +85,31 @@ export function MobileNav() {
             </Link>
           );
         })}
+
+        {/* COSMO ALS MENUEPUNKT, NICHT ALS SCHWEBENDES ETWAS.
+            Auf dem Desktop darf sein Kopf in der Ecke schweben — dort ist Platz
+            und es gibt einen Mauszeiger. Auf einem Telefon lag genau dasselbe
+            Portrait mitten ueber der ersten Karte und las sich als kaputter
+            Inhalt statt als Knopf. Hier gehoert er hin: eine Leiste, in der
+            jeder Daumen ihn ohnehin sucht. Der Kreis ist derselbe wie oben
+            rechts auf dem Desktop, nur kleiner — damit man ihn wiedererkennt. */}
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent("cosmo:open"))}
+          aria-label="Ask Cosmo"
+          className={cell(false)}
+        >
+          <span
+            className="relative block h-[22px] w-[22px] overflow-hidden rounded-full"
+            style={{
+              border: "1.5px solid color-mix(in oklch, var(--primary) 70%, white)",
+              boxShadow: "0 0 10px -2px var(--primary)",
+            }}
+          >
+            <img src="/cosmo/cosmo-head.png" alt="" className="h-full w-full object-cover"
+                 style={{ objectPosition: "50% 30%", transform: "scale(1.18)" }} />
+          </span>
+          Cosmo
+        </button>
 
         <button
           onClick={() => setMoreOpen(true)}

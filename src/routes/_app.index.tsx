@@ -4,6 +4,7 @@ import artWave from "@/assets/art-wave.jpg";
 import { HeroBento } from "@/components/academy/hero/HeroBento";
 import { LessonGroup } from "@/components/academy/lessons/LessonGroup";
 import { SectionTitle } from "@/components/academy/primitives/SectionTitle";
+import { TierStrip } from "@/components/academy/tier/TierStrip";
 import { DepositLadder } from "@/components/academy/tier/DepositLadder";
 import { ProgressStats } from "@/components/academy/progress/ProgressStats";
 import { Card } from "@/components/academy/primitives/Card";
@@ -204,19 +205,37 @@ function Dashboard() {
         </div>
       </Card>
 
-      {/* Money — single source of truth for tier, deposits & progress.
-          Unfunded → the whole card breathes so the deposit path is the focal point. */}
-      <div className={cn("rounded-[var(--radius)]", notFunded && "animate-glow")}>
-        <DepositLadder />
-      </div>
+      {/* ── ZWEI DASHBOARDS IN EINEM ────────────────────────────────────────
+          Vor der Einzahlung und danach sind das zwei verschiedene Fragen, und
+          deshalb zwei verschiedene Reihenfolgen.
 
-      {/* Learning — lessons & XP */}
-      <ProgressStats />
+          VORHER ist die einzige Frage "was bekomme ich fuer 100 EUR?". Die
+          Leiter beantwortet sie und steht deshalb ganz oben, gross und
+          leuchtend; die Produktkacheln stehen darunter, sichtbar aber gesperrt
+          — sie sind das Versprechen, nicht das Werkzeug.
 
-      {/* Premium tiles — visible but gated (blurred + glowing) until first deposit. */}
-      <LockedGate locked={notFunded} label="Unlock live signals & mentors with your first deposit">
-        <HeroBento />
-      </LockedGate>
+          NACHHER ist die Frage beantwortet, und ein bildschirmfuellender
+          Fortschrittsbalken ueber etwas Erledigtem draengt genau das weg,
+          was jetzt zaehlt. Also drehen sich die beiden um: die Kacheln
+          ruecken nach oben und sind das Erste nach der Begruessung, der
+          Stufenstand schrumpft auf eine Zeile und wandert nach unten. */}
+      {notFunded ? (
+        <>
+          <div className="rounded-[var(--radius)] animate-glow">
+            <DepositLadder />
+          </div>
+          <ProgressStats />
+          <LockedGate locked label="Unlock live signals & mentors with your first deposit">
+            <HeroBento />
+          </LockedGate>
+        </>
+      ) : (
+        <>
+          <HeroBento />
+          <ProgressStats />
+          <TierStrip />
+        </>
+      )}
 
       <section>
         <SectionTitle

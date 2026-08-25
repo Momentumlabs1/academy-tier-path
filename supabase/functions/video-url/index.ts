@@ -72,9 +72,31 @@ Deno.serve(async (req) => {
 
   // Entitlement: their live deposit → tier, checked against the video's rule.
   const { data: member } = await db
-    .from("members").select("deposit").eq("auth_user_id", userData.user.id).maybeSingle();
+    .from("members")
+    .select("deposit, tier_override, access_revoked")
+    .eq("auth_user_id", userData.user.id)
+    .maybeSingle();
+
+  // Ein vom Admin entzogener Zugang sieht keine Videos, egal was sonst gilt.
+  if (member?.access_revoked === true) return json({ error: "access_revoked" }, 403);
   const deposit = Number(member?.deposit ?? 0);
-  const allowed = rule === "funded" ? deposit > 0 : tierRankForDeposit(deposit) >= TIER_RANK[rule];
+
+  // DER FREIBRIEF GILT AUCH HIER.
+  //
+  // Diese Funktion rechnete die Stufe ausschliesslich aus der Einzahlung. Ein
+  // vom Admin freigeschaltetes Konto (members.tier_override, Migration 055)
+  // hat aber deposit = 0 — die Oberflaeche sagte "Elite", und JEDE Lektion
+  // antwortete hier mit 403 locked. Genau so sah es am 24.08. aus: das Video
+  // blieb schwarz und der Player fragte in einer Schleife nach.
+  //
+  // Die Berechtigung ist der HOEHERE der beiden Werte.
+  const overrideRank =
+    member?.tier_override && member.tier_override in TIER_RANK
+      ? TIER_RANK[member.tier_override as keyof typeof TIER_RANK]
+      : -1;
+  const rank = Math.max(tierRankForDeposit(deposit), overrideRank);
+
+  const allowed = rule === "funded" ? (deposit > 0 || overrideRank >= 0) : rank >= TIER_RANK[rule];
   if (!allowed) return json({ error: "locked", rule }, 403);
 
   // Hand back a time-limited signed URL for exactly this object.
