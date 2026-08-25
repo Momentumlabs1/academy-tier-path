@@ -91,7 +91,7 @@ function WelcomeVideoCard({ accent, onDone }: { accent: string; onDone: () => vo
             <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 p-6 text-center" style={{ background: `linear-gradient(160deg, ${COSMO.bgFrom}, ${COSMO.bgTo})` }}>
               <PlayCircle className="h-12 w-12 text-white/30" />
               <p className="max-w-md text-sm text-white/70">
-                <b>How it works:</b> Your first deposit of {formatMoney(FOUNDATION_MIN, "€")}+ stays <b>your money</b> in <b>your own {BROKER.name} account</b> — it unlocks signals, lessons and tools. We earn from the broker, not from you.
+                <b>How it works:</b> Your first deposit of {formatMoney(FOUNDATION_MIN, "€")}+ stays <b>your money</b> in <b>your own broker account</b> — it unlocks signals, lessons and tools. We earn from the broker, not from you.
               </p>
             </div>
           )}
@@ -119,7 +119,7 @@ function IgniteStrip({ accent, href, onDeposit, onSaysDeposited }: { accent: str
       </span>
       <p className="min-w-0 flex-1 text-sm">
         <span className="font-semibold">Next step:</span>{" "}
-        <span className="text-foreground/75">Open your account and make your first deposit of {formatMoney(FOUNDATION_MIN, "€")}+. We walk you through it on Telegram — {BROKER.name}. The moment it lands, everything here unlocks automatically.</span>
+        <span className="text-foreground/75">Everything starts on Telegram — we send you the broker link, walk you through opening the account, and your first deposit of {formatMoney(FOUNDATION_MIN, "€")}+ unlocks the rest.</span>
       </p>
       <a href={href} target="_blank" rel="noopener noreferrer" onClick={onDeposit} className="shrink-0 rounded-full px-4 py-2 text-xs font-bold text-[#08111a] transition-transform hover:scale-[1.03]" style={{ background: accent }}>
         Start on Telegram →
@@ -186,9 +186,9 @@ function VerifyingCard({ accent, href, onDeposit, since }: {
             </h2>
             <p className="mt-1.5 text-sm text-foreground/70">
               {overdue ? (
-                <>This is taking a little longer than usual. Your money is safe in your {BROKER.name} account — we're still waiting for the confirmation and will unlock everything the moment it lands.</>
+                <>This is taking a little longer than usual. Your money is safe in your own broker account — we're still waiting for the confirmation and will unlock everything the moment it lands.</>
               ) : (
-                <>{BROKER.name} confirms deposits in batches, so this takes <b className="text-foreground">up to 10 minutes</b>. You don't have to wait here — everything unlocks automatically, and we'll email you as soon as it's done.</>
+                <>The broker confirms deposits in batches, so this takes <b className="text-foreground">up to 10 minutes</b>. You don't have to wait here — everything unlocks automatically, and we'll email you as soon as it's done.</>
               )}
             </p>
           </div>
@@ -381,7 +381,7 @@ function CelebrationOverlay({ accent, amount, href, onDeposit, prevAmount, tierN
             </div>
             <div className="mt-6 flex flex-wrap gap-3">
               <a href={href} target="_blank" rel="noopener noreferrer" onClick={() => { onDeposit(); close(); }} className="inline-flex flex-1 items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-[#08111a] transition-transform hover:scale-[1.02]" style={{ background: accent }}>
-                <Sparkles className="h-4 w-4" /> Top up {formatMoney(missing, "€")} at {BROKER.name}
+                <Sparkles className="h-4 w-4" /> Top up {formatMoney(missing, "€")} — start on Telegram
               </a>
               <button onClick={close} className="rounded-full border border-white/15 px-5 py-3 text-sm font-semibold text-foreground/80 hover:bg-white/5">
                 Okay

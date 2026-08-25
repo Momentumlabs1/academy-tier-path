@@ -152,7 +152,13 @@ export function BrokerTrustStrip({ cta = true, compact = false, className }: {
 
       <ol className="relative mt-5 grid gap-3 sm:grid-cols-3">
         <Step n={1} title="Join us on Telegram" body="We send you the broker link and walk you through the account opening." />
-        <Step n={2} title={`Deposit €100+ at ${BROKER.name}`} body="Your own account, in your own name. The money stays yours and withdrawable." />
+        {/* KEIN Broker-Name im Schritt.
+            Welcher Broker es wird, haengt vom Land ab (brokerForCountry) und
+            wird ohnehin erst im Chat uebergeben — hier einen zu nennen legt
+            etwas fest, was an dieser Stelle noch offen ist, und muss bei jedem
+            Wechsel nachgezogen werden. Was zaehlt, steht ohnehin daneben: es
+            ist SEIN Konto, auf SEINEN Namen, das Geld bleibt seins. */}
+        <Step n={2} title="Deposit €100+ into your own account" body="Opened in your own name through the link we send you. The money stays yours and withdrawable." />
         <Step n={3} title="Everything unlocks" body="The broker confirms the deposit and your access opens automatically — no codes." />
       </ol>
 
