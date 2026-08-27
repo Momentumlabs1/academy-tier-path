@@ -94,7 +94,16 @@ Deno.serve(async (req) => {
   const { data: userRes } = await db.auth.getUser(jwt);
   const callerEmail = (userRes?.user?.email ?? "").toLowerCase();
   const adminEmail = (await secret(db, "ADMIN_EMAIL")) || "kontakt@momentumlabs.at";
-  if (!callerEmail || callerEmail !== adminEmail.toLowerCase()) {
+  const isAdmin = !!callerEmail && callerEmail === adminEmail.toLowerCase();
+  // Mitarbeiter aus dem Team-Bereich duerfen ebenfalls freigeben — die Tabelle
+  // pflegt nur der Admin, also bleibt die Entscheidung, WER das darf, bei ihm.
+  let isStaff = false;
+  if (!isAdmin && callerEmail) {
+    const { data: st } = await db.from("staff_members")
+      .select("email").eq("active", true).ilike("email", callerEmail).maybeSingle();
+    isStaff = !!st;
+  }
+  if (!callerEmail || (!isAdmin && !isStaff)) {
     return json({ error: "unauthorized" }, 403);
   }
 

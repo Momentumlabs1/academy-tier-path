@@ -86,7 +86,7 @@ function ResetPasswordPage() {
     // members land on the dashboard, a freshly approved partner must land in
     // the partner portal — partner-approve appends ?next=/partner for that.
     const next = new URLSearchParams(window.location.search).get("next");
-    const to = next === "/partner" ? "/partner" : "/";
+    const to = next === "/partner" ? "/partner" : next === "/team" ? "/team" : "/";
     setTimeout(() => navigate({ to }), 1400);
   }
 

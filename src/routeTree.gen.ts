@@ -23,6 +23,7 @@ import { Route as PartnerProgrammRouteImport } from './routes/partner-programm'
 import { Route as RegistrierenRouteImport } from './routes/registrieren'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignupRouteImport } from './routes/signup'
+import { Route as TeamRouteImport } from './routes/team'
 import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as WillkommenRouteImport } from './routes/willkommen'
 import { Route as SlugAdminRouteImport } from './routes/$slug_.admin'
@@ -116,6 +117,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const SignupRoute = SignupRouteImport.update({
   id: '/signup',
   path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeamRoute = TeamRouteImport.update({
+  id: '/team',
+  path: '/team',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WelcomeRoute = WelcomeRouteImport.update({
@@ -259,6 +265,7 @@ export interface FileRoutesByFullPath {
   '/registrieren': typeof RegistrierenRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/team': typeof TeamRoute
   '/welcome': typeof WelcomeRoute
   '/willkommen': typeof WillkommenRoute
   '/$slug/admin': typeof SlugAdminRoute
@@ -297,6 +304,7 @@ export interface FileRoutesByTo {
   '/registrieren': typeof RegistrierenRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/team': typeof TeamRoute
   '/welcome': typeof WelcomeRoute
   '/willkommen': typeof WillkommenRoute
   '/$slug/admin': typeof SlugAdminRoute
@@ -338,6 +346,7 @@ export interface FileRoutesById {
   '/registrieren': typeof RegistrierenRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
+  '/team': typeof TeamRoute
   '/welcome': typeof WelcomeRoute
   '/willkommen': typeof WillkommenRoute
   '/$slug_/admin': typeof SlugAdminRoute
@@ -381,6 +390,7 @@ export interface FileRouteTypes {
     | '/registrieren'
     | '/reset-password'
     | '/signup'
+    | '/team'
     | '/welcome'
     | '/willkommen'
     | '/$slug/admin'
@@ -419,6 +429,7 @@ export interface FileRouteTypes {
     | '/registrieren'
     | '/reset-password'
     | '/signup'
+    | '/team'
     | '/welcome'
     | '/willkommen'
     | '/$slug/admin'
@@ -459,6 +470,7 @@ export interface FileRouteTypes {
     | '/registrieren'
     | '/reset-password'
     | '/signup'
+    | '/team'
     | '/welcome'
     | '/willkommen'
     | '/$slug_/admin'
@@ -501,6 +513,7 @@ export interface RootRouteChildren {
   RegistrierenRoute: typeof RegistrierenRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
+  TeamRoute: typeof TeamRoute
   WelcomeRoute: typeof WelcomeRoute
   WillkommenRoute: typeof WillkommenRoute
   SlugAdminRoute: typeof SlugAdminRoute
@@ -605,6 +618,13 @@ declare module '@tanstack/react-router' {
       path: '/signup'
       fullPath: '/signup'
       preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/team': {
+      id: '/team'
+      path: '/team'
+      fullPath: '/team'
+      preLoaderRoute: typeof TeamRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/welcome': {
@@ -868,6 +888,7 @@ const rootRouteChildren: RootRouteChildren = {
   RegistrierenRoute: RegistrierenRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
+  TeamRoute: TeamRoute,
   WelcomeRoute: WelcomeRoute,
   WillkommenRoute: WillkommenRoute,
   SlugAdminRoute: SlugAdminRoute,
