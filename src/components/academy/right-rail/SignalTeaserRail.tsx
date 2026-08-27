@@ -98,7 +98,42 @@ export function SignalTeaserRail({ locked }: { locked: boolean }) {
         )}
       </div>
 
-      <div className="relative mt-4 space-y-2.5">
+      {/* WAS DIE LISTE ALLEIN NICHT SAGT.
+          Einzelne Karten sind Einzelfaelle; die Frage dahinter ist "trifft der
+          Desk ueberhaupt was". Diese Zeile beantwortet sie aus genau den Rufen,
+          die darunter stehen — gezaehlt, nicht behauptet, und bewusst als
+          "hat TP1 erreicht" formuliert und nicht als Rendite oder Trefferquote:
+          ob jemand Geld verdient hat, haengt an seiner Position, nicht am Ruf. */}
+      {live && rows && rows.length >= 3 && (
+        <div className="relative mt-3.5 rounded-2xl border border-white/8 bg-white/[0.025] px-3.5 py-3">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+              Last {rows.length} calls
+            </span>
+            <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
+              {rows.filter((r) => r.targets_hit > 0).length}/{rows.length}
+            </span>
+          </div>
+          <div className="mt-2 flex gap-1">
+            {rows.map((r) => (
+              <span
+                key={r.id}
+                title={r.stopped_out ? "stopped out" : r.targets_hit > 0 ? `${r.targets_hit} targets` : "running"}
+                className={cn(
+                  "h-1.5 flex-1 rounded-full",
+                  r.stopped_out ? "bg-red-400/70" : r.targets_hit > 0 ? "bg-emerald-400/80" : "bg-white/15",
+                )}
+              />
+            ))}
+          </div>
+          <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
+            {rows.filter((r) => r.targets_hit > 0).length} reached at least their first target.
+            What that was worth depends on your own position size.
+          </p>
+        </div>
+      )}
+
+      <div className="relative mt-3 space-y-2.5">
         {rows === null
           ? [0, 1, 2].map((i) => <div key={i} className="h-[104px] animate-pulse rounded-2xl bg-white/[0.04]" />)
           : live
@@ -162,7 +197,7 @@ function TeaserCard({ s, locked }: { s: Teaser; locked: boolean }) {
     ? { text: "Stopped out", cls: "text-red-400/90", dot: "bg-red-400" }
     : s.targets_hit > 0
       ? {
-          text: `${s.targets_hit} of ${s.targets || s.targets_hit} targets hit${s.moved_to_be ? " · at break-even" : ""}`,
+          text: `TP${s.targets_hit} reached${s.moved_to_be ? " · stop at break-even" : ""}`,
           cls: "text-emerald-400/90",
           dot: "bg-emerald-400",
         }
@@ -201,13 +236,27 @@ function TeaserCard({ s, locked }: { s: Teaser; locked: boolean }) {
       ) : (
         <>
           {/* Der Ausgang, gross genug um ihn zu lesen. */}
-          <div className={cn("mt-2.5 flex items-center gap-2 text-[12px] font-semibold", outcome.cls)}>
+          {/* Ziele als Punktreihe: auf einen Blick lesbar, ohne sie zu zaehlen. */}
+          {s.targets > 0 && (
+            <div className="mt-2.5 flex items-center gap-1.5">
+              {Array.from({ length: s.targets }, (_, i) => (
+                <span
+                  key={i}
+                  className={cn(
+                    "h-1.5 flex-1 rounded-full",
+                    s.stopped_out
+                      ? "bg-white/10"
+                      : i < s.targets_hit
+                        ? "bg-emerald-400"
+                        : "bg-white/12",
+                  )}
+                />
+              ))}
+            </div>
+          )}
+          <div className={cn("mt-2 flex items-center gap-1.5 text-[11.5px] font-semibold", outcome.cls)}>
             <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", outcome.dot)} />
             {outcome.text}
-          </div>
-          {/* Die Schwaerzung EINMAL, als Nebensatz. */}
-          <div className="mt-1.5 text-[11px] text-muted-foreground">
-            Entry, stop{s.targets > 0 ? ` and ${s.targets} targets` : ""} — in the channel
           </div>
         </>
       )}
