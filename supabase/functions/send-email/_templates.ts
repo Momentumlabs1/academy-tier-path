@@ -74,7 +74,7 @@ function p(t: string) { return `<p style="margin:0 0 14px;font-size:15px;line-he
 
 export type EmailKind =
   | "password_reset" | "partner_approved" | "doi" | "welcome" | "deposit_confirmed" | "tier_unlocked"
-  | "tier_nudge" | "inactivity_warning" | "new_lesson" | "broadcast";
+  | "tier_nudge" | "inactivity_warning" | "new_lesson" | "broadcast" | "team_invite";
 
 export interface BuildInput {
   kind: EmailKind;
@@ -127,6 +127,19 @@ export function buildEmail(input: BuildInput): { subject: string; html: string }
           p("The partner portal tells you what happens now — what we take care of, and the two things we need from you.") +
           `<div style="margin:22px 0">${button(a, input.resetUrl ?? dash, "Set up your access")}</div>` +
           p(`<span style="color:#6b7788;font-size:13px">The button sets your password, once. After that you can reach your portal any time at ${esc(dash)}.</span>`)),
+      };
+
+    // Mitarbeiter-Zugang zum Team-Bereich. Gleicher Link-Mechanismus wie
+    // partner_approved (Recovery-Link, Passwort einmal selbst setzen), aber
+    // eigene Ansprache: der Empfaenger ist Kollege, kein Bewerber.
+    case "team_invite":
+      return {
+        subject: `Dein Team-Zugang — ${brand.name}`,
+        html: wrap("Einmal Passwort setzen, dann bist du im Team-Bereich.",
+          h1("Willkommen im Team" + (input.firstName ? `, ${esc(input.firstName)}` : "") + "!") +
+          p(`Dein Zugang zum ${esc(brand.name)}-Team-Bereich ist eingerichtet: Scout-Liste, eigene Accounts eintragen und Partner-Bewerbungen bearbeiten.`) +
+          `<div style="margin:22px 0">${button(a, input.resetUrl ?? dash, "Zugang einrichten")}</div>` +
+          p(`<span style="color:#6b7788;font-size:13px">Der Knopf setzt einmalig dein Passwort. Danach erreichst du den Team-Bereich jederzeit unter cosmos-candles.com/team — die Anleitung bekommst du separat.</span>`)),
       };
 
     case "doi":

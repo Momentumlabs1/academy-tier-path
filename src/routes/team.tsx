@@ -44,7 +44,7 @@ interface Lead {
   id: string; source: string; platform: string | null; handle: string; name: string | null;
   url: string | null; yt_subs: number | null; tg_subs: number | null; tt_followers: number | null;
   sprache: string | null; score: number | null; fit: string | null; opener: string | null;
-  status: string; notes: string | null;
+  status: string; notes: string | null; released: boolean;
 }
 interface Application {
   id: string; name: string | null; email: string; phone: string | null; channel: string | null;
@@ -118,7 +118,7 @@ function TeamArea() {
           </button>
         </header>
         <div className="space-y-10">
-          <ScoutLeads staffEmail={email} />
+          <ScoutLeads staffEmail={email} isAdmin={email.toLowerCase() === "kontakt@momentumlabs.at"} />
           <Applications />
         </div>
       </div>
@@ -128,7 +128,7 @@ function TeamArea() {
 
 /* ── Scout-Leads: die Anschreib-Pipeline ─────────────────────────────────── */
 
-function ScoutLeads({ staffEmail }: { staffEmail: string }) {
+function ScoutLeads({ staffEmail, isAdmin }: { staffEmail: string; isAdmin: boolean }) {
   const [leads, setLeads] = useState<Lead[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("alle");
@@ -149,6 +149,23 @@ function ScoutLeads({ staffEmail }: { staffEmail: string }) {
     if (error) { setError(error.message); load(); }
   };
 
+  // Nur der Admin: Tool-Leads fuers Team sichtbar schalten (RLS + Trigger
+  // erzwingen das serverseitig — die UI blendet den Schalter nur aus).
+  const setReleased = async (id: string, released: boolean) => {
+    setLeads((p) => (p ?? []).map((l) => (l.id === id ? { ...l, released } : l)));
+    const { error } = await db().from("scout_leads").update({ released }).eq("id", id);
+    if (error) { setError(error.message); load(); }
+  };
+  const releaseAll = async () => {
+    const gesperrt = (leads ?? []).filter((l) => !l.released);
+    setLeads((p) => (p ?? []).map((l) => ({ ...l, released: true })));
+    for (const l of gesperrt) {
+      const { error } = await db().from("scout_leads").update({ released: true }).eq("id", l.id);
+      if (error) { setError(error.message); break; }
+    }
+    load();
+  };
+
   const copyOpener = async (l: Lead) => {
     try { await navigator.clipboard.writeText(l.opener ?? ""); setCopied(l.id); setTimeout(() => setCopied(null), 1500); } catch { /* egal */ }
   };
@@ -164,9 +181,16 @@ function ScoutLeads({ staffEmail }: { staffEmail: string }) {
           <h2 className="font-display text-lg font-bold">Scout-Leads</h2>
           <span className="text-xs text-muted-foreground">{(leads ?? []).length} Accounts</span>
         </div>
-        <button onClick={() => setAdding((v) => !v)} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground hover:opacity-90">
-          <Plus className="h-3.5 w-3.5" /> Account eintragen
-        </button>
+        <div className="flex items-center gap-2">
+          {isAdmin && (leads ?? []).some((l) => !l.released) && (
+            <button onClick={releaseAll} className="rounded-lg border border-amber-400/40 bg-amber-400/10 px-3 py-2 text-xs font-bold text-amber-300 hover:bg-amber-400/20">
+              {(leads ?? []).filter((l) => !l.released).length} gesperrt — alle freischalten
+            </button>
+          )}
+          <button onClick={() => setAdding((v) => !v)} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground hover:opacity-90">
+            <Plus className="h-3.5 w-3.5" /> Account eintragen
+          </button>
+        </div>
       </div>
 
       {adding && <AddLead staffEmail={staffEmail} onDone={() => { setAdding(false); load(); }} />}
@@ -202,6 +226,7 @@ function ScoutLeads({ staffEmail }: { staffEmail: string }) {
                     )}
                     {l.score != null && <span className="rounded-full border border-white/10 bg-white/[0.05] px-2 py-0.5 font-mono text-[10px] font-bold">{l.score}</span>}
                     {l.sprache && <span className="text-[10px] uppercase text-muted-foreground">{l.sprache}</span>}
+                    {isAdmin && !l.released && <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-bold text-amber-300">Gesperrt</span>}
                   </div>
                   <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 font-mono text-[11px] tabular-nums text-muted-foreground">
                     <span>YT {fmt(l.yt_subs)}</span><span>TG {fmt(l.tg_subs)}</span><span>TT {fmt(l.tt_followers)}</span>
@@ -210,6 +235,12 @@ function ScoutLeads({ staffEmail }: { staffEmail: string }) {
                   {l.notes && <p className="mt-1 max-w-xl text-xs text-white/45">📝 {l.notes}</p>}
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
+                  {isAdmin && (
+                    <button onClick={() => setReleased(l.id, !l.released)}
+                      className={`rounded-lg border px-2.5 py-1.5 text-[11px] font-semibold ${l.released ? "border-white/10 text-muted-foreground hover:text-foreground" : "border-amber-400/40 bg-amber-400/10 text-amber-300"}`}>
+                      {l.released ? "Sperren" : "Freischalten"}
+                    </button>
+                  )}
                   {l.opener && (
                     <button onClick={() => copyOpener(l)} className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1.5 text-[11px] font-semibold hover:bg-white/[0.08]" title={l.opener}>
                       {copied === l.id ? <Check className="h-3 w-3 text-emerald-400" /> : <Copy className="h-3 w-3" />} Opener

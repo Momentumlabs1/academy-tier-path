@@ -24,7 +24,7 @@ const json = (b: unknown, s = 200) =>
 
 const TEMPLATE_KINDS: EmailKind[] = [
   "password_reset", "partner_approved", "doi", "welcome", "deposit_confirmed", "tier_unlocked",
-  "tier_nudge", "inactivity_warning", "new_lesson", "broadcast",
+  "tier_nudge", "inactivity_warning", "new_lesson", "broadcast", "team_invite",
 ];
 
 /**
