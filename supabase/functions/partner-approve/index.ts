@@ -69,7 +69,7 @@ const RESERVED_SLUGS = new Set([
   "admin", "partner", "partner-programm", "partner-program", "login", "signals", "lessons",
   "tools", "tier", "unlocks", "notifications", "settings", "t", "api", "assets", "hegemony",
   "auth", "dashboard", "registrieren", "willkommen", "signup", "welcome", "reset-password",
-  "impressum", "datenschutz",
+  "impressum", "datenschutz", "team",
 ]);
 
 /** "Zeko Global" → "zeko-global". Kollisionen bekommen eine Zahl angehängt. */
