@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { BarChart2, BookOpen, FileText, Handshake, Headset, LayoutDashboard, LogOut, Network, Palette, Radio, ScrollText, Users , MessageSquare} from "lucide-react";
+import { BarChart2, BookOpen, FileText, Handshake, Headset, LayoutDashboard, LogOut, Network, Palette, Radio, ScrollText, Search, Users , MessageSquare} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { adminSignOut } from "@/lib/admin-auth";
 
@@ -18,6 +18,9 @@ const MENU = [
   // anyone looks for: the search in your head is "partner". A correct label
   // nobody scans past is a broken label.
   { to: "/admin/partners", label: "Partner applications", icon: Handshake, group: "Growth" },
+  // Scout-Leads und die Team-Sicht leben in /team (auch fuer Mitarbeiter) —
+  // der Admin springt von hier aus rueber, statt die Seite zu suchen.
+  { to: "/team", label: "Scout-Leads (Team)", icon: Search, group: "Growth" },
   { to: "/admin/signals", label: "Signal Relay", icon: Radio, group: "Growth" },
   { to: "/admin/tenants", label: "Partner brands", icon: Palette, group: "Growth" },
   { to: "/admin/lessons", label: "Content", icon: BookOpen, group: "Growth" },
