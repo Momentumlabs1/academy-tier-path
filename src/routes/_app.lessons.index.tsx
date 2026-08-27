@@ -56,7 +56,7 @@ function ContinueHero() {
   );
 }
 
-function LessonsPage() {
+export function LessonsPage() {
   const [q, setQ] = useState("");
   const [tier, setTier] = useState<string>("all");
   const { stats } = useCompletedLessons();

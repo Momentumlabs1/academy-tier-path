@@ -80,7 +80,7 @@ const QUICK_ACTIONS = [
   { label: "Trader tools", sub: "Size & risk calculators", icon: GaugeGlyph, to: "/tools", accent: "oklch(0.82 0.16 80)" },
 ] as const;
 
-function Dashboard() {
+export function Dashboard() {
   const state = useMemberState();
   // Before the first deposit, everything gated should "breathe" — a gentle pull
   // toward the deposit that unlocks it. Once funded, the glow/veil fall away.

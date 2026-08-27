@@ -13,6 +13,7 @@ import { Route as SlugRouteImport } from './routes/$slug'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as DatenschutzRouteImport } from './routes/datenschutz'
+import { Route as FilmsetRouteImport } from './routes/filmset'
 import { Route as HegemonyRouteImport } from './routes/hegemony'
 import { Route as ImpressumRouteImport } from './routes/impressum'
 import { Route as LoginRouteImport } from './routes/login'
@@ -65,6 +66,11 @@ const AdminRoute = AdminRouteImport.update({
 const DatenschutzRoute = DatenschutzRouteImport.update({
   id: '/datenschutz',
   path: '/datenschutz',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FilmsetRoute = FilmsetRouteImport.update({
+  id: '/filmset',
+  path: '/filmset',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HegemonyRoute = HegemonyRouteImport.update({
@@ -243,6 +249,7 @@ export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/admin': typeof AdminRouteWithChildren
   '/datenschutz': typeof DatenschutzRoute
+  '/filmset': typeof FilmsetRoute
   '/hegemony': typeof HegemonyRoute
   '/impressum': typeof ImpressumRoute
   '/login': typeof LoginRoute
@@ -280,6 +287,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/$slug': typeof SlugRoute
   '/datenschutz': typeof DatenschutzRoute
+  '/filmset': typeof FilmsetRoute
   '/hegemony': typeof HegemonyRoute
   '/impressum': typeof ImpressumRoute
   '/login': typeof LoginRoute
@@ -320,6 +328,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
   '/datenschutz': typeof DatenschutzRoute
+  '/filmset': typeof FilmsetRoute
   '/hegemony': typeof HegemonyRoute
   '/impressum': typeof ImpressumRoute
   '/login': typeof LoginRoute
@@ -362,6 +371,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/datenschutz'
+    | '/filmset'
     | '/hegemony'
     | '/impressum'
     | '/login'
@@ -399,6 +409,7 @@ export interface FileRouteTypes {
   to:
     | '/$slug'
     | '/datenschutz'
+    | '/filmset'
     | '/hegemony'
     | '/impressum'
     | '/login'
@@ -438,6 +449,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/admin'
     | '/datenschutz'
+    | '/filmset'
     | '/hegemony'
     | '/impressum'
     | '/login'
@@ -479,6 +491,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
   DatenschutzRoute: typeof DatenschutzRoute
+  FilmsetRoute: typeof FilmsetRoute
   HegemonyRoute: typeof HegemonyRoute
   ImpressumRoute: typeof ImpressumRoute
   LoginRoute: typeof LoginRoute
@@ -522,6 +535,13 @@ declare module '@tanstack/react-router' {
       path: '/datenschutz'
       fullPath: '/datenschutz'
       preLoaderRoute: typeof DatenschutzRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/filmset': {
+      id: '/filmset'
+      path: '/filmset'
+      fullPath: '/filmset'
+      preLoaderRoute: typeof FilmsetRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/hegemony': {
@@ -838,6 +858,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
   DatenschutzRoute: DatenschutzRoute,
+  FilmsetRoute: FilmsetRoute,
   HegemonyRoute: HegemonyRoute,
   ImpressumRoute: ImpressumRoute,
   LoginRoute: LoginRoute,

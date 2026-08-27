@@ -23,7 +23,7 @@ export const Route = createFileRoute("/_app/tier")({
   component: TierPage,
 });
 
-function TierPage() {
+export function TierPage() {
   const state = useMemberState();
   const myRank = state.currentTier ? TIERS.findIndex((t) => t.key === state.currentTier!.key) : -1;
   const nextTier = TIERS[myRank + 1];

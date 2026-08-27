@@ -35,7 +35,7 @@ export const Route = createFileRoute("/_app/signals")({
   component: SignalsPage,
 });
 
-function SignalsPage() {
+export function SignalsPage() {
   const brand = usePartnerBrand();
   const accent = brand?.accentColor ?? COSMO.accentColor;
   const telegramUrl =

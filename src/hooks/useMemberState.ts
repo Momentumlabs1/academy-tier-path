@@ -218,11 +218,23 @@ async function fetchMemberInput(): Promise<MemberInput> {
 // force a re-fetch without prop-drilling — value is a stable function.
 const MemberRefreshContext = createContext<() => void>(() => {});
 
-export function MemberProvider({ children }: { children: ReactNode }) {
+/**
+ * Fester Mitgliedsstand statt Supabase-Abfrage.
+ *
+ * Nur die Filmset-Route (/filmset) setzt das. Sie dient Bildschirmaufnahmen
+ * fuer Marketingmaterial: die Oberflaeche soll mit plausiblen Zahlen laufen,
+ * OHNE dass dafuer ein echter Account gefilmt wird — eine echte Ansicht traegt
+ * echten Namen, echte E-Mail und echte Einzahlung, und nichts davon gehoert in
+ * ein oeffentliches Video. Ohne die Prop ist das Verhalten unveraendert.
+ */
+export type MemberOverride = Partial<Omit<MemberInput, "loaded">>;
+
+export function MemberProvider({ children, override }: { children: ReactNode; override?: MemberOverride }) {
   const [input, setInput] = useState<MemberInput>(EMPTY_INPUT);
   const [refreshTick, setRefreshTick] = useState(0);
 
   useEffect(() => {
+    if (override) return;               // fester Stand: nichts nachladen
     let alive = true;
     const load = () => {
       fetchMemberInput()
@@ -233,12 +245,14 @@ export function MemberProvider({ children }: { children: ReactNode }) {
     // Reload whenever auth state changes (sign-in after the registration gate).
     const { data: sub } = supabase.auth.onAuthStateChange(() => load());
     return () => { alive = false; sub.subscription.unsubscribe(); };
-  }, [refreshTick]);
+  }, [refreshTick, override]);
+
+  const effective = override ? { ...EMPTY_INPUT, ...override, loaded: true } : input;
 
   return createElement(
     MemberRefreshContext.Provider,
     { value: () => setRefreshTick((t) => t + 1) },
-    createElement(MemberContext.Provider, { value: input }, children),
+    createElement(MemberContext.Provider, { value: effective }, children),
   );
 }
 

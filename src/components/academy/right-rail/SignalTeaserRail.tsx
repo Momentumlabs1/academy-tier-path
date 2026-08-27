@@ -26,7 +26,10 @@ interface Teaser {
   created_at: string;
   asset: string;
   side: string;
-  target_count: number;
+  targets: number;
+  targets_hit: number;
+  stopped_out: boolean;
+  moved_to_be: boolean;
 }
 
 const SHORT_SIDES = new Set(["SELL", "SHORT"]);
@@ -58,7 +61,7 @@ export function SignalTeaserRail({ locked }: { locked: boolean }) {
   useEffect(() => {
     let alive = true;
     db().from("signal_teasers")
-      .select("id, created_at, asset, side, target_count")
+      .select("id, created_at, asset, side, targets, targets_hit, stopped_out, moved_to_be")
       .order("created_at", { ascending: false })
       .limit(4)
       .then(({ data }) => { if (alive) setRows(data ?? []); })
@@ -140,52 +143,75 @@ function TeaserCard({ s, locked }: { s: Teaser; locked: boolean }) {
   const Icon = short ? TrendingDown : TrendingUp;
   const tone = short ? "text-red-400" : "text-emerald-400";
   const toneBg = short ? "bg-red-400/10 border-red-400/25" : "bg-emerald-400/10 border-emerald-400/25";
-  // Entry + stop always; the desk's own targets after that, capped so one
-  // five-target call doesn't turn the card into a wall of bars.
-  const bars = ["Entry", "Stop"].concat(
-    Array.from({ length: Math.min(s.target_count, 3) }, (_, i) => `TP${i + 1}`),
-  );
+
+  /**
+   * DER AUSGANG IST DIE NACHRICHT.
+   *
+   * Vorher stand auf jeder Karte fuenfmal untereinander "in Telegram" — einmal
+   * je Zeile fuer Entry, Stop und die Ziele. Fuer ein gesperrtes Mitglied war
+   * das eine schraffierte Leiste und damit ehrlich; fuer ein freigeschaltetes
+   * war es eine Wand aus demselben Wort, die wie ein Fehler aussah. Die Zahlen
+   * gehoeren in den Kanal, das bleibt so — aber das muss man einmal sagen,
+   * nicht fuenfmal.
+   *
+   * Der Platz gehoert jetzt dem, was der Desk nach dem Ruf gemeldet hat:
+   * getroffene Ziele, auf Einstand gezogen, ausgestoppt. Gemessen, nicht
+   * behauptet — genau die Sorte Beleg, die diese Seite sonst nirgends hat.
+   */
+  const outcome = s.stopped_out
+    ? { text: "Stopped out", cls: "text-red-400/90", dot: "bg-red-400" }
+    : s.targets_hit > 0
+      ? {
+          text: `${s.targets_hit} of ${s.targets || s.targets_hit} targets hit${s.moved_to_be ? " · at break-even" : ""}`,
+          cls: "text-emerald-400/90",
+          dot: "bg-emerald-400",
+        }
+      : s.moved_to_be
+        ? { text: "Moved to break-even", cls: "text-foreground/70", dot: "bg-white/40" }
+        : { text: "Running", cls: "text-foreground/55", dot: "bg-white/30" };
 
   return (
     <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3.5">
       <div className="flex items-center gap-2">
         <span className="font-display text-base font-black tracking-tight">{s.asset}</span>
         {s.side && (
-          <span className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-black uppercase", toneBg, tone)}>
+          <span className={cn("inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-black uppercase", tone, toneBg)}>
             <Icon className="h-3 w-3" /> {s.side}
           </span>
         )}
         <span className="ml-auto text-[10px] font-medium text-muted-foreground">{ago(s.created_at)}</span>
       </div>
 
-      <div className="mt-2.5 space-y-1.5">
-        {bars.map((label) => (
-          <div key={label} className="flex items-center gap-2">
-            <span className="w-10 shrink-0 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
-            {locked ? (
-              /* A hatched bar, not a blurred number. Nothing is hidden underneath
-                 because the server never sent one. */
+      {locked ? (
+        /* Schraffierte Leisten statt verwischter Zahlen. Darunter liegt nichts,
+           weil der Server nie eine geschickt hat. */
+        <div className="mt-2.5 space-y-1.5">
+          {["Entry", "Stop"].concat(Array.from({ length: Math.min(s.targets, 3) }, (_, i) => `TP${i + 1}`)).map((label) => (
+            <div key={label} className="flex items-center gap-2">
+              <span className="w-10 shrink-0 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">{label}</span>
               <span
                 className="relative h-3.5 flex-1 overflow-hidden rounded-[5px] border border-white/10"
-                style={{
-                  backgroundImage:
-                    "repeating-linear-gradient(115deg, rgba(255,255,255,0.11) 0 6px, rgba(255,255,255,0.03) 6px 12px)",
-                }}
+                style={{ backgroundImage: "repeating-linear-gradient(115deg, rgba(255,255,255,0.11) 0 6px, rgba(255,255,255,0.03) 6px 12px)" }}
                 aria-label="locked"
               />
-            ) : (
-              <span className="flex-1 text-[11px] font-medium text-muted-foreground">in Telegram</span>
-            )}
-            {locked && <Lock className="h-3 w-3 shrink-0 text-white/25" />}
-          </div>
-        ))}
-      </div>
-
-      {s.target_count > 3 && (
-        <div className="mt-2 text-[10px] font-semibold text-muted-foreground">
-          +{s.target_count - 3} more targets
+              <Lock className="h-3 w-3 shrink-0 text-white/25" />
+            </div>
+          ))}
         </div>
+      ) : (
+        <>
+          {/* Der Ausgang, gross genug um ihn zu lesen. */}
+          <div className={cn("mt-2.5 flex items-center gap-2 text-[12px] font-semibold", outcome.cls)}>
+            <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", outcome.dot)} />
+            {outcome.text}
+          </div>
+          {/* Die Schwaerzung EINMAL, als Nebensatz. */}
+          <div className="mt-1.5 text-[11px] text-muted-foreground">
+            Entry, stop{s.targets > 0 ? ` and ${s.targets} targets` : ""} — in the channel
+          </div>
+        </>
       )}
     </div>
   );
 }
+
