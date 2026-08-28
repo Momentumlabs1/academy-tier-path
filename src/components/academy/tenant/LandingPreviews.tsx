@@ -32,8 +32,21 @@ function PreviewStyles() {
       @keyframes lpFlash { 0%,45% { background: rgba(255,255,255,.03); } 55%,100% { background: color-mix(in oklch, ${UP} 16%, transparent); } }
       @keyframes lpCount { 0%,40% { opacity:0; transform: translateY(6px);} 55%,100% { opacity:1; transform: translateY(0);} }
       @keyframes lpFlame { 0%,100% { transform: rotate(-4deg) scale(1);} 50% { transform: rotate(4deg) scale(1.08);} }
+      /* Dauerleben. Die One-Shot-Animationen (Kurve zeichnen, Balken fuellen)
+         waren laengst fertig, wenn der Besucher hinscrollte — die Kacheln
+         wirkten tot. Alles Sichtbare loopt jetzt mit langer Haltephase:
+         zeichnen, stehen lassen, kurz ausblenden, von vorn. */
+      @keyframes lpDrawLoop { 0% { stroke-dashoffset: 620; opacity: 1; } 26% { stroke-dashoffset: 0; } 88% { stroke-dashoffset: 0; opacity: 1; } 96% { opacity: 0; } 100% { stroke-dashoffset: 620; opacity: 0; } }
+      @keyframes lpCountLoop { 0%,20% { opacity: 0; transform: translateY(6px); } 30%,88% { opacity: 1; transform: translateY(0); } 96%,100% { opacity: 0; } }
+      @keyframes lpDot { 0%,100% { transform: scale(1); opacity: .9; } 50% { transform: scale(1.8); opacity: .3; } }
+      @keyframes lpKen { 0% { transform: scale(1.06) translate(0,0); } 100% { transform: scale(1.14) translate(-2.5%,-1.5%); } }
+      @keyframes lpHit { 0%,55% { background: rgba(255,255,255,.02); } 62%,86% { background: color-mix(in oklch, ${UP} 13%, transparent); } 100% { background: rgba(255,255,255,.02); } }
+      @keyframes lpHitCheck { 0%,55% { transform: scale(1); } 62% { transform: scale(1.5); } 72%,100% { transform: scale(1); } }
+      @keyframes lpSheen { 0%,55% { transform: translateX(-120%); } 90%,100% { transform: translateX(340%); } }
+      @keyframes lpBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+      @keyframes lpGlow { 0%,100% { box-shadow: 0 0 0 3px rgba(0,0,0,.45), 0 0 16px -2px var(--lp-glow), 0 0 32px -8px var(--lp-glow); } 50% { box-shadow: 0 0 0 3px rgba(0,0,0,.45), 0 0 26px 0px var(--lp-glow), 0 0 52px -4px var(--lp-glow); } }
       @media (prefers-reduced-motion: reduce) {
-        .lp-draw,.lp-rise,.lp-fill,.lp-pulse,.lp-pop,.lp-slide,.lp-flash,.lp-count,.lp-flame { animation: none !important; }
+        .lp-draw,.lp-rise,.lp-fill,.lp-pulse,.lp-pop,.lp-slide,.lp-flash,.lp-count,.lp-flame,.lp-ken,.lp-hit,.lp-sheen,.lp-bob,.lp-dot,.lp-glow { animation: none !important; }
         .lp-draw { stroke-dashoffset: 0 !important; } .lp-fill span { width: var(--w) !important; }
       }
     `}</style>
@@ -77,11 +90,13 @@ function Shot({ src, pos, primary, className }: { src: string; pos: string; prim
         aria-hidden
         loading="lazy"
         decoding="async"
-        className={cn("absolute inset-0 h-full w-full object-cover", className)}
+        className={cn("lp-ken absolute inset-0 h-full w-full object-cover", className)}
         // Leicht heruntergeregelt, damit das Bild in den dunklen Kartengrund
         // einsinkt statt dagegen zu leuchten. Das helle Terminal-Panel war
         // sonst der hellste Fleck der ganzen Seite.
-        style={{ objectPosition: pos, opacity: 0.62 }}
+        // Ken-Burns: eine kaum merkliche Kamerafahrt — das eine Detail, das
+        // ein Standbild von einem laufenden Terminal unterscheidet.
+        style={{ objectPosition: pos, opacity: 0.62, animation: "lpKen 24s ease-in-out infinite alternate" }}
       />
       {/* Markenschleier. Die Rohaufnahmen sind grelles Terminal-Weiss und
           Neon-Pink — nebeneinander auf einer dunkelblauen Seite beissen sie.
@@ -125,10 +140,13 @@ function Shot({ src, pos, primary, className }: { src: string; pos: string; prim
 function CosmoCam({ primary, className }: { primary: string; className?: string }) {
   return (
     <div
-      className={cn("absolute overflow-hidden rounded-full", className)}
+      className={cn("lp-glow absolute overflow-hidden rounded-full", className)}
       style={{
         border: `2px solid color-mix(in oklch, ${primary} 75%, white)`,
+        ["--lp-glow" as string]: primary,
         boxShadow: `0 0 0 3px rgba(0,0,0,.45), 0 0 22px -2px ${primary}, 0 0 42px -8px ${primary}`,
+        // Atmender Ring — wie die On-Air-Leuchte einer Webcam.
+        animation: "lpGlow 3.2s ease-in-out infinite",
       }}
     >
       <img
@@ -179,14 +197,16 @@ export function SignalsPreview({ primary, showCosmo }: { primary: string; showCo
           </div>
         </div>
       </div>
+      {/* Die Treffer-Zeilen blitzen abwechselnd auf, als kaeme der TP gerade
+          rein — synchron zum 7s-Takt der Signal-Karte darueber. */}
       <div className="space-y-1.5">
-        <div className="flex items-center justify-between rounded-lg border border-white/8 bg-white/[0.02] px-3 py-2 opacity-80">
+        <div className="lp-hit flex items-center justify-between rounded-lg border border-white/8 px-3 py-2 opacity-90" style={{ animation: "lpHit 7s ease-in-out infinite" }}>
           <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-bold" style={{ color: DOWN }}><TrendingDown className="h-3.5 w-3.5" /> SHORT · NAS100</span>
-          <span className="font-mono text-[10px]" style={{ color: UP }}>✓ TP1 hit</span>
+          <span className="lp-pop inline-block font-mono text-[10px]" style={{ color: UP, animation: "lpHitCheck 7s ease-in-out infinite" }}>✓ TP1 hit</span>
         </div>
-        <div className="flex items-center justify-between rounded-lg border border-white/8 bg-white/[0.02] px-3 py-2 opacity-55">
+        <div className="lp-hit flex items-center justify-between rounded-lg border border-white/8 px-3 py-2 opacity-70" style={{ animation: "lpHit 7s ease-in-out 3.2s infinite" }}>
           <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-bold" style={{ color: UP }}><TrendingUp className="h-3.5 w-3.5" /> LONG · BTC/USDT</span>
-          <span className="font-mono text-[10px]" style={{ color: UP }}>✓ TP2 hit</span>
+          <span className="lp-pop inline-block font-mono text-[10px]" style={{ color: UP, animation: "lpHitCheck 7s ease-in-out 3.2s infinite" }}>✓ TP2 hit</span>
         </div>
       </div>
     </Frame>
@@ -211,14 +231,20 @@ export function BotPreview({ primary }: { primary: string }) {
         {/* Die Equity-Kurve des Master-Kontos liegt darüber. */}
         <svg viewBox="0 0 320 96" className="absolute inset-x-0 bottom-0 h-2/3 w-full" preserveAspectRatio="none">
           <defs><linearGradient id="lpArea" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={primary} stopOpacity="0.35" /><stop offset="100%" stopColor={primary} stopOpacity="0" /></linearGradient></defs>
-          <path d="M0,80 L40,72 L80,76 L120,58 L160,62 L200,40 L240,44 L280,22 L320,10 L320,96 L0,96 Z" fill="url(#lpArea)" />
-          <path className="lp-draw" d="M0,80 L40,72 L80,76 L120,58 L160,62 L200,40 L240,44 L280,22 L320,10" fill="none" stroke={primary} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" style={{ strokeDasharray: 620, animation: "lpDraw 2.4s ease-out forwards" }} />
+          {/* Loop statt One-Shot: zeichnen (3s), lange stehen lassen, weich
+              raus, von vorn — so ist die Kurve IMMER in Bewegung, egal wann
+              der Besucher hinscrollt. */}
+          <path d="M0,80 L40,72 L80,76 L120,58 L160,62 L200,40 L240,44 L280,22 L320,10 L320,96 L0,96 Z" fill="url(#lpArea)" style={{ animation: "lpCountLoop 12s ease-in-out infinite" }} />
+          <path className="lp-draw" d="M0,80 L40,72 L80,76 L120,58 L160,62 L200,40 L240,44 L280,22 L320,10" fill="none" stroke={primary} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" style={{ strokeDasharray: 620, animation: "lpDrawLoop 12s ease-in-out infinite" }} />
+          {/* Pulsierender Endpunkt: die Kurve lebt am aktuellen Kurs. */}
+          <circle className="lp-dot" cx="316" cy="12" r="3.5" fill={primary} style={{ transformOrigin: "316px 12px", animation: "lpDot 1.8s ease-in-out infinite, lpCountLoop 12s ease-in-out infinite" }} />
         </svg>
-        <div className="lp-count absolute right-2 top-2 rounded-md bg-black/60 px-1.5 py-0.5 font-mono text-[11px] font-bold backdrop-blur-sm" style={{ color: UP, animation: "lpCount 2.6s ease-out forwards" }}>+18.4%</div>
+        <div className="lp-count absolute right-2 top-2 rounded-md bg-black/60 px-1.5 py-0.5 font-mono text-[11px] font-bold backdrop-blur-sm" style={{ color: UP, animation: "lpCountLoop 12s ease-in-out infinite" }}>+18.4%</div>
       </div>
       <div className="mt-2.5 space-y-1.5">
+        {/* Gespiegelte Trades blitzen versetzt auf — der Bot arbeitet sichtbar. */}
         {[["XAU/USD", "LONG", "+1.4%", true], ["EUR/USD", "SHORT", "+0.6%", true]].map(([p, d, r, u], i) => (
-          <div key={i} className="flex items-center justify-between rounded-lg bg-white/[0.03] px-2.5 py-1.5 font-mono text-[11px]">
+          <div key={i} className="lp-hit flex items-center justify-between rounded-lg px-2.5 py-1.5 font-mono text-[11px]" style={{ animation: `lpHit 8s ease-in-out ${i * 4}s infinite` }}>
             <span className="text-white/80">{p}</span>
             <span className="text-white/40">{d}</span>
             <span style={{ color: u ? UP : DOWN }}>{r}</span>
@@ -281,13 +307,16 @@ export function AcademyPreview({ primary, accent }: { primary: string; accent: s
         {!playing && (
           <>
             <span className="pointer-events-none absolute bottom-2 left-2 rounded bg-black/60 px-1.5 py-0.5 font-mono text-[10px] text-white/80">02:59</span>
-            <span className="pointer-events-none absolute right-2 top-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold text-black" style={{ background: primary }}><Zap className="h-3 w-3" /> +80 XP</span>
+            <span className="pointer-events-none absolute right-2 top-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold text-black" style={{ background: primary, animation: "lpBob 3.4s ease-in-out infinite" }}><Zap className="h-3 w-3" /> +80 XP</span>
           </>
         )}
       </div>
       <div className="flex items-center justify-between text-[11px] text-white/60"><span className="font-semibold text-white/85">Lesson 06 · Copy signals like a pro</span><span>6 / 12</span></div>
-      <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-white/8">
+      <div className="relative mt-1.5 h-2 overflow-hidden rounded-full bg-white/8">
         <span className="lp-fill block h-full rounded-full" style={{ ["--w" as string]: "50%", width: "50%", background: primary, animation: "lpFill 1.6s ease-out" }} />
+        {/* Sheen-Lauf: der Balken glaenzt periodisch durch — lebendig, ohne
+            dass sich der Fortschritt luegnerisch bewegt. */}
+        <span aria-hidden className="lp-sheen pointer-events-none absolute inset-y-0 left-0 w-1/3 rounded-full" style={{ background: "linear-gradient(100deg, transparent, rgba(255,255,255,.35), transparent)", animation: "lpSheen 4.6s ease-in-out infinite" }} />
       </div>
       <div className="mt-3 flex gap-1.5">
         {[true, true, true, true, true, false].map((done, i) => (
@@ -455,8 +484,9 @@ export function RewardsPreview({ primary, accent }: { primary: string; accent: s
         <span className="lp-flame inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] font-bold text-white/80" style={{ animation: "lpFlame 2.2s ease-in-out infinite" }}><Flame className="h-3.5 w-3.5" style={{ color: accent }} /> 12-day streak</span>
       </div>
       <div className="mt-2 flex items-center justify-between text-[11px] text-white/50"><span>1,840 XP</span><span>2,000 XP → Level 8</span></div>
-      <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-white/8">
+      <div className="relative mt-1.5 h-2.5 overflow-hidden rounded-full bg-white/8">
         <span className="lp-fill block h-full rounded-full" style={{ ["--w" as string]: "72%", width: "72%", background: `linear-gradient(90deg, ${accent}, ${primary})`, animation: "lpFill 1.8s ease-out" }} />
+        <span aria-hidden className="lp-sheen pointer-events-none absolute inset-y-0 left-0 w-1/3 rounded-full" style={{ background: "linear-gradient(100deg, transparent, rgba(255,255,255,.35), transparent)", animation: "lpSheen 5.2s ease-in-out 1s infinite" }} />
       </div>
       <div className="mt-4 flex items-center gap-1.5">
         {tiers.map((t, i) => (
@@ -485,7 +515,7 @@ export function WhitelabelPreview({ primary }: { primary: string }) {
       <PreviewStyles />
       <div className="grid grid-cols-3 gap-2.5">
         {skins.map((s, i) => (
-          <div key={i} className="lp-rise overflow-hidden rounded-xl border border-white/10 bg-[#070a13]" style={{ animation: `lpRise .8s ease-out ${i * 0.15}s both` }}>
+          <div key={i} className="lp-rise overflow-hidden rounded-xl border border-white/10 bg-[#070a13]" style={{ animation: `lpRise .8s ease-out ${i * 0.15}s both, lpBob 5s ease-in-out ${1 + i * 0.6}s infinite` }}>
             <div className="h-8" style={{ background: `linear-gradient(135deg, color-mix(in oklch, ${s.a} 45%, #070a13), #070a13)` }} />
             <div className="space-y-1.5 p-2">
               <div className="h-1.5 w-2/3 rounded-full" style={{ background: s.c }} />
