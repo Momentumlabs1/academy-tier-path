@@ -17,6 +17,7 @@ import { functionUrl } from "@/integrations/supabase/functions-url";
 import { type PartnerProfile } from "@/components/academy/partner/PartnerProfileCard";
 import { PartnerPrimer } from "@/components/academy/partner/PartnerPrimer";
 import { PartnerBrokerLinks } from "@/components/academy/partner/PartnerBrokerLinks";
+import { PartnerChannelPulse } from "@/components/academy/partner/PartnerChannelPulse";
 import { PartnerOnboarding } from "@/components/academy/partner/PartnerOnboarding";
 import { ADMIN_EMAIL } from "@/lib/admin-auth";
 import { COMMISSION_LADDER, levelForVolume, volumeToNextLevel } from "@/lib/commission";
@@ -287,6 +288,11 @@ export function PartnerCard({ row }: { row: PartnerRow }) {
           <div className="text-[11px] text-muted-foreground">your commission</div>
         </div>
       </div>
+
+      {/* Zuerst die Begruessung und der eigene Kanal — das ist die Frage, mit
+          der ein Partner das Portal oeffnet ("ist etwas passiert?"). Klicks und
+          Kunden sind Zahlen ueber Fremde und kommen danach. */}
+      <PartnerChannelPulse slug={row.slug} name={row.name} live={!setup} />
 
       {/* Das Mini-Tutorial: zeigt die Schritte bis zum Live-Gang und blendet
           sich selbst aus, sobald die Marke live ist. */}
