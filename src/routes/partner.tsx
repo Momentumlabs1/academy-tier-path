@@ -377,7 +377,28 @@ export function PartnerCard({ row }: { row: PartnerRow }) {
             )}
           </div>
 
-          <PartnerPrimer name={row.name} />
+          {/* WAS NACH DEM LIVE-GANG BLEIBT — UND WAS NICHT.
+              Der Erklaerblock (PartnerPrimer: "hier bist du gelandet, so
+              entsteht Geld, rechne es nach") beantwortet die Fragen von Tag 1.
+              Er stand bisher auch hier unten und war damit fuer Zeko, der seit
+              Anfang August live ist, immer noch der groesste Textblock der
+              Seite — als waere er gerade erst freigeschaltet worden.
+              Weggeworfen wird er nicht, die Rechnung ist weiter nuetzlich; er
+              ist nur zugeklappt und heisst jetzt, wonach man ihn spaeter
+              sucht. */}
+          <details className="mt-5 rounded-2xl border border-white/8 bg-white/[0.02] px-5 py-3.5">
+            <summary className="cursor-pointer text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground">
+              How the commission works
+            </summary>
+            <div className="mt-2">
+              <PartnerPrimer name={row.name} />
+            </div>
+          </details>
+
+          {/* Die Kontonummer bleibt OFFEN sichtbar, solange sie nicht
+              bestaetigt ist: ohne sie wird kein Lot gutgeschrieben, egal wie
+              viel seine Leute handeln. Ist sie bestaetigt, schrumpft die
+              Komponente von selbst auf eine Zeile. */}
           <PartnerIbSetup slug={row.slug} />
         </>
       )}
