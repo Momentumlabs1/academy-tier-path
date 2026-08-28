@@ -5,6 +5,7 @@ import { useMemberState } from "@/hooks/useMemberState";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { functionUrl } from "@/integrations/supabase/functions-url";
+import { openTelegramApp, TelegramFallback } from "./telegram-handoff";
 
 // Fallback bot handle for pure-demo mode (no backend). Live URL comes from the
 // create-telegram-link edge function.
@@ -27,6 +28,9 @@ export function TelegramConnectCard() {
     return localStorage.getItem(STORAGE_KEY) === "1";
   });
   const [loading, setLoading] = useState(false);
+  // Set when the tg:// deep link went nowhere — the member has no Telegram
+  // app. Holds the personal link so the fallback can retry with the SAME url.
+  const [noApp, setNoApp] = useState<string | null>(null);
 
   async function connect() {
     setLoading(true);
@@ -51,10 +55,28 @@ export function TelegramConnectCard() {
       const data = await res.json();
       if (res.ok && data?.url) url = data.url;
     } catch { /* backend not live yet → fall back to the demo link */ }
-    window.open(url, "_blank", "noopener");
-    localStorage.setItem(STORAGE_KEY, "1");
-    setLinked(true);
+    // Straight into the app instead of a browser tab. Only count the step as
+    // done when Telegram actually opened — before, one tap on a phone without
+    // the app marked "linked" while the member saw nothing at all.
+    const opened = await openTelegramApp(url);
+    if (opened) {
+      localStorage.setItem(STORAGE_KEY, "1");
+      setLinked(true);
+      setNoApp(null);
+    } else {
+      setNoApp(url);
+    }
     setLoading(false);
+  }
+
+  async function retry() {
+    if (!noApp) return;
+    const opened = await openTelegramApp(noApp);
+    if (opened) {
+      localStorage.setItem(STORAGE_KEY, "1");
+      setLinked(true);
+      setNoApp(null);
+    }
   }
 
   const steps = [
@@ -130,6 +152,7 @@ export function TelegramConnectCard() {
           );
         })}
       </div>
+      {noApp && <TelegramFallback url={noApp} onRetry={retry} />}
     </Card>
   );
 }
