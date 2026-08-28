@@ -32,6 +32,7 @@ import { PRODUCTS } from "@/lib/products";
 import { BROKER, BROKER_SWITCH, TELEGRAM_ENTRY } from "@/lib/broker";
 import { BrokerPausedNotice } from "@/components/academy/tier/BrokerPausedNotice";
 import { markDepositClick, depositClickedAt, clearDepositClick } from "@/lib/deposit-intent";
+import { supabase } from "@/integrations/supabase/client";
 import { formatMoney } from "@/lib/format";
 import { Card } from "@/components/academy/primitives/Card";
 import { cn } from "@/lib/utils";
@@ -427,7 +428,22 @@ export function OnboardingJourney() {
   const onDeposit = () => { advance(); };
 
   /** Erst DIESER Klick behauptet eine Einzahlung — weil ihn der Nutzer macht. */
-  const onSaysDeposited = () => { markDepositClick(email); advance(); };
+  const onSaysDeposited = () => {
+    markDepositClick(email);
+    // Serverseitig festhalten: der Insert stoesst den Telegram-Alert an den
+    // Admin an (Trigger auf deposit_intents) — der Broker-Abgleich ist teils
+    // Handarbeit, ohne Ping wartet der Kunde sonst ins Leere.
+    if (email) {
+      void (async () => {
+        try {
+          await (supabase as unknown as {
+            from: (t: string) => { insert: (v: Record<string, unknown>) => Promise<unknown> };
+          }).from("deposit_intents").insert({ email });
+        } catch { /* Alert ist nice-to-have — den Nutzer nie blockieren */ }
+      })();
+    }
+    advance();
+  };
 
   if (stage === "loading" || stage === "done") return null;
   // DIE VIDEO-STUFE IST RAUS.

@@ -1,0 +1,6 @@
+-- 050: Admin-Alerts nach Telegram (Kanal "Cosmos Admin 🔔", -1003841230149).
+-- (Identisch zur via MCP applizierten Migration. admin_alert() liest Bot-Token
+-- und Chat-ID aus app_secrets und postet via pg_net; Trigger auf members
+-- (Insert + Deposit 0→>0), partner_applications, tenant_ib_claims und der
+-- neuen Tabelle deposit_intents, die den "Habe eingezahlt"-Klick serverseitig
+-- festhält.)
