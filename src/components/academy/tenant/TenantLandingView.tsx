@@ -394,7 +394,10 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                 poster={tenant.pitchPoster ?? "/pitch-poster.jpg"}
                 onPlay={() => setPitchPlaying(true)}
                 onEnded={() => setPitchPlaying(false)}
-                className="h-full w-full object-cover"
+                // object-contain, nicht cover: im Vollbild (16:10-Displays)
+                // schnitt cover links und rechts ab — genau dort sitzen im
+                // Video die Einblendungen.
+                className="h-full w-full object-contain"
               >
                 <source src={tenant.pitchVideo} type="video/mp4" />
               </video>
