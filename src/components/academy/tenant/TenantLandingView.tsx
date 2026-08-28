@@ -37,25 +37,6 @@ import {
   SignalsPreview, BotPreview, AcademyPreview, QuizPreview, RewardsPreview, WhitelabelPreview,
 } from "@/components/academy/tenant/LandingPreviews";
 
-/**
- * The marquee used to be a market ticker with hand-typed prices — BTC at
- * 64,210, a EUR/USD to four decimals — static numbers dressed up as live
- * data. Same offence as the invented testimonials, just with digits. And
- * half the instruments were ones the desk never trades.
- *
- * The strip keeps its rhythm but now carries only claims that are true for
- * every tenant on every day, so it never needs a feed and can never lie.
- */
-const TICKER = [
-  { s: "Every call",    v: "Entry \u00b7 SL \u00b7 TP", sym: "\u25CE", tone: "oklch(0.74 0.14 250)" },
-  { s: "Course fee",    v: "\u20ac0",                    sym: "\u20ac", tone: "oklch(0.82 0.17 150)" },
-  { s: "Academy",       v: `${LESSONS.length} lessons`,      sym: String(LESSONS.length), tone: "oklch(0.82 0.15 85)"  },
-  { s: "Delivery",      v: "Telegram, live",              sym: "\u2708", tone: "oklch(0.74 0.14 250)" },
-  { s: "Desk focus",    v: "Gold \u00b7 NAS100",         sym: "Au",      tone: "oklch(0.82 0.15 85)"  },
-  { s: "Your money",    v: "stays yours",                 sym: "\u2713", tone: "oklch(0.82 0.17 150)" },
-  { s: "Withdrawals",   v: "anytime",                     sym: "\u21c4", tone: "oklch(0.76 0.13 285)" },
-  { s: "To start",      v: "no card",                     sym: "\u2205", tone: "oklch(0.72 0.13 265)" },
-];
 
 // ── Orbit engine (pure CSS 3D — GPU only, no z-index, no per-frame repaint) ──
 // Candles sit on a real 3D ring around Cosmo. The ring spins on ONE animated
@@ -168,9 +149,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         @keyframes chipFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-11px); } }
         .chip-float { animation: chipFloat 4.5s ease-in-out infinite; }
         @keyframes candleGrow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
-        .candle-grow { transform-origin: bottom; animation: candleGrow .9s cubic-bezier(.2,.8,.2,1) both; }
-        @keyframes tickerScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-        .ticker-track { animation: tickerScroll 34s linear infinite; }
+        .candle-grow { transform-origin: bottom; animation: candleGrow .9s cubic-bezier(.2,.8,.2,1) both; } }
         /* ── Apple-grade material system ─────────────────────────────────
            Sheen: headlines carry a vertical metallic gradient instead of flat
            white — the single cheapest "expensive" move on dark grounds. A
@@ -245,7 +224,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         .orbit-stage:hover .cosmo-lotus { filter: brightness(1.05) drop-shadow(0 0 26px color-mix(in oklch, ${accent} 45%, transparent)); }
         .orbit-stage:hover .orbit-ring, .orbit-stage:hover .orbit-spin, .orbit-stage:hover .orbit-depth { animation-duration: ${Math.round(ORBIT_DUR * 0.6)}s; }
         @media (prefers-reduced-motion: reduce) {
-          .cosmo-float,.cosmo-bob,.chip-float,.candle-grow,.ticker-track,.twinkle,.spin-slow,.spin-rev,.aura-pulse,.orbit-ring,.orbit-spin,.orbit-depth,.cosmo-lotus,.lv-in,.lv-in2,.lv-in3,.lv-in4,.lv-reveal,.hero-exit,.m-cta { animation: none !important; }
+          .cosmo-float,.cosmo-bob,.chip-float,.candle-grow,.twinkle,.spin-slow,.spin-rev,.aura-pulse,.orbit-ring,.orbit-spin,.orbit-depth,.cosmo-lotus,.lv-in,.lv-in2,.lv-in3,.lv-in4,.lv-reveal,.hero-exit,.m-cta { animation: none !important; }
         }
       `}</style>
 
@@ -294,17 +273,17 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         <div className="mx-auto grid max-w-6xl items-center gap-6 px-4 pb-8 pt-6 sm:gap-10 sm:pb-16 sm:px-8 sm:pt-12 lg:grid-cols-[1.02fr_0.98fr] lg:gap-14 lg:pb-24 lg:pt-16">
           {/* Left: copy */}
           <div className="hero-exit relative z-20 text-center lg:text-left">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 sm:mb-6 bg-white/[0.04] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 sm:mb-6 bg-white/[0.04] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
               <span className="relative flex h-1.5 w-1.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-70" style={{ background: primary }} /><span className="relative inline-flex h-1.5 w-1.5 rounded-full" style={{ background: primary }} /></span>
               {showCosmo ? "Cosmos Candles Academy" : `Powered by Cosmos Candles`}
             </div>
 
-            <h1 className="lv-in2 apl-sheen font-display text-[2.75rem] font-black leading-[0.95] tracking-tight sm:text-6xl lg:text-[4.25rem]">
+            <h1 className="lv-in2 apl-sheen font-display text-[2.1rem] font-black leading-[1.02] tracking-tight [text-wrap:balance] sm:text-5xl sm:leading-[0.98] lg:text-6xl xl:text-[4.25rem] lg:leading-[0.95]">
               {showCosmo ? (
                 <>Learn to trade<br />the <span style={{ color: primary }}>whole cosmos.</span></>
               ) : (tenant.headline ?? tenant.tagline)}
             </h1>
-            <p className="lv-in3 mx-auto mt-4 max-w-lg text-[15px] text-white/65 sm:mt-5 sm:text-lg lg:mx-0">
+            <p className="lv-in3 mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-white/65 sm:mt-5 sm:max-w-lg sm:text-lg lg:mx-0">
               {showCosmo
                 ? "Live signals, a course from zero, and pro orderflow tools. Free — Cosmo reads every candle with you."
                 : (tenant.subhead ?? tenant.description)}
@@ -341,7 +320,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               chart candles orbiting him. (Swap cosmo-full.png for the meditating
               cross-legged render when it's produced — same slot.) */}
           {heroHasMascot && (
-            <div className="hero-exit lv-in order-first relative z-10 mx-auto -mb-12 w-full max-w-[290px] sm:max-w-[420px] lg:order-none lg:mb-0 lg:max-w-[500px]" style={{ containerType: "inline-size" }}>
+            <div className="hero-exit lv-in order-first relative z-10 mx-auto -mb-2 w-full max-w-[240px] sm:-mb-10 sm:max-w-[420px] lg:order-none lg:mb-0 lg:max-w-[500px]" style={{ containerType: "inline-size" }}>
               {showCosmo ? (
                 <div className="orbit-stage relative mx-auto aspect-square w-full">
                   {/* lotus aura — the glow he radiates */}
@@ -437,33 +416,14 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
       </Band>
       )}
 
-      {/* ─────────────────────── TICKER ─────────────────────── */}
-      <div className="relative overflow-hidden border-b border-white/[0.07] bg-white/[0.022] py-3">
-        <div className="ticker-track flex w-max items-center gap-3 whitespace-nowrap">
-          {[...TICKER, ...TICKER].map((t, i) => (
-            <span
-              key={i}
-              className="inline-flex items-center gap-2.5 rounded-full border border-white/[0.07] bg-white/[0.03] py-1.5 pl-1.5 pr-3.5"
-            >
-              <span
-                className="flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-black"
-                style={{ background: `color-mix(in oklch, ${t.tone} 22%, transparent)`, color: t.tone }}
-                aria-hidden
-              >
-                {t.sym}
-              </span>
-              <span className="font-mono text-[11px] font-semibold tracking-tight text-white/85">{t.s}</span>
-              <span className="font-mono text-[11px] text-white/55">{t.v}</span>
-            </span>
-          ))}
-        </div>
-      </div>
+      {/* KEIN TICKER MEHR.
+          Das Laufband trug zuletzt nur noch allgemeine Aussagen ("Course fee
+          0 EUR", "Academy 5 lessons") — die Kurszahlen waren schon frueher
+          raus, weil sie handgetippt und damit erfunden waren. Was blieb, war
+          Bewegung ohne Inhalt: auf dem Handy ein abgeschnittener Streifen
+          halber Woerter, der die Seite billig aussehen liess. Dieselben
+          Aussagen stehen ohnehin im Hero und in den Abschnitten darunter. */}
 
-      {/* Der STATS-Banner ist raus. Vier Kacheln — 155K+ COMMUNITY, TELEGRAM,
-          FROM €100, €0 — direkt unter dem Hero, bevor irgendetwas erklaert war.
-          Zwei davon waren Behauptungen, die niemand nachprueft, eine nannte
-          einen Betrag vor dem Gespraech, und alle vier standen zwischen dem
-          Besucher und dem, wofuer er gekommen ist. */}
 
 
       {/* ─────────────────── CAPABILITIES SHOWCASE ─────────────────── */}

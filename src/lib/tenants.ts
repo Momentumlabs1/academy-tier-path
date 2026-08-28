@@ -182,6 +182,11 @@ export const TENANTS: TenantConfig[] = [
     brokerName: BROKER.name,
     brokerUrl: BROKER.url,
     telegramChannel: "https://t.me/zekoglobal",
+    // Sein eigener Film, nicht unserer. Neu kodiert mit +faststart, damit der
+    // Index vorne steht — sonst muss ein Handy die ganze Datei laden, bevor
+    // ueberhaupt etwas zu sehen ist, und das sieht aus wie "laedt nicht".
+    pitchVideo: "/zeko-pitch.mp4",
+    pitchPoster: "/zeko-pitch-poster.jpg",
     affiliateEmail: "zekoglobalhq@gmail.com",
     // Leer: "155K+" hat niemand geprueft, "from €100" nannte einen Betrag vor
     // dem Gespraech, das ihn erklaeren soll. Die Kacheln standen zwischen dem
