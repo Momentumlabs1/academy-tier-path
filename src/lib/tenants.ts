@@ -183,7 +183,14 @@ export const TENANTS: TenantConfig[] = [
     // destination have to come from the same place or they drift apart silently.
     brokerName: BROKER.name,
     brokerUrl: BROKER.url,
-    telegramChannel: "https://t.me/zekoglobal",
+    // Sein INFO-Kanal ("Zekoglobal Info"), nicht sein Bot.
+    //
+    // Hier stand t.me/zekoglobal — darunter antwortet sein Bot, und ein
+    // Besucher, der auf "Watch the signals" drueckt, landete in einem
+    // Chatfenster statt im Kanal. Der Kanal ist privat und hat deshalb keinen
+    // @-Namen; sein Einladungslink ist die richtige Adresse. Direkt vom Bot
+    // ueber getChat(-1004463541503) geholt, nicht geraten.
+    telegramChannel: "https://t.me/+7Nte7MEUqj1iM2Y0",
     // Sein eigener Film, nicht unserer. Neu kodiert mit +faststart, damit der
     // Index vorne steht — sonst muss ein Handy die ganze Datei laden, bevor
     // ueberhaupt etwas zu sehen ist, und das sieht aus wie "laedt nicht".
