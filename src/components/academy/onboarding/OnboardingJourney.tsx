@@ -12,7 +12,6 @@
  *     Also fires again on later tier jumps (e.g. €100 → €2.000 Operator).
  *
  * Stages:
- *   "video"     — €0, intro not watched: Cosmo video integrated in the dashboard
  *   "ignite"    — €0, video done: pulsing next-step strip + deposit watcher
  *   "topup"     — €1–99: real-amount strip with progress to Foundation + watcher
  *   "celebrate" — amount rose: overlay (partial or full variant)
@@ -58,7 +57,7 @@ const writeSeen = (email: string, amount: number) => {
   try { localStorage.setItem(k(email, "seen"), String(amount)); } catch { /* private mode */ }
 };
 
-type Stage = "loading" | "video" | "ignite" | "verifying" | "topup" | "celebrate" | "done";
+type Stage = "loading" | "ignite" | "verifying" | "topup" | "celebrate" | "done";
 
 /* ── deposit watcher (poll + focus) ─────────────────────────────────────────── */
 function useDepositWatcher(active: boolean) {
@@ -74,43 +73,6 @@ function useDepositWatcher(active: boolean) {
 }
 
 /* ── Stage 1: integrated welcome video ──────────────────────────────────────── */
-function WelcomeVideoCard({ accent, onDone }: { accent: string; onDone: () => void }) {
-  const [videoOk, setVideoOk] = useState(true);
-  return (
-    <Card variant="hero" className="relative overflow-hidden p-5 sm:p-6">
-      <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full blur-3xl" style={{ background: `color-mix(in oklch, ${COSMO.primaryColor} 22%, transparent)` }} />
-      <div className="relative">
-        <div className="mb-1 text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: COSMO.primaryColor }}>Step 1 of 2</div>
-        <h2 className="font-display text-xl font-bold sm:text-2xl">Welcome! Cosmo explains how everything works — in 30 seconds</h2>
-        <p className="mt-1 text-sm text-foreground/65">
-          In short: <span className="font-semibold text-foreground/85">you never pay us</span> — you fund your own account at a licensed, regulated broker — and that is what unlocks everything here.
-        </p>
-
-        <div className="mt-4 overflow-hidden rounded-2xl border border-white/10 bg-black">
-          {videoOk ? (
-            <video controls playsInline className="aspect-video w-full object-cover" onEnded={onDone} onError={() => setVideoOk(false)}>
-              <source src="/intro.mp4" type="video/mp4" />
-            </video>
-          ) : (
-            <div className="flex aspect-video w-full flex-col items-center justify-center gap-3 p-6 text-center" style={{ background: `linear-gradient(160deg, ${COSMO.bgFrom}, ${COSMO.bgTo})` }}>
-              <PlayCircle className="h-12 w-12 text-white/30" />
-              <p className="max-w-md text-sm text-white/70">
-                <b>How it works:</b> Your first deposit of {formatMoney(FOUNDATION_MIN, "€")}+ stays <b>your money</b> in <b>your own broker account</b> — it unlocks signals, lessons and tools. We earn from the broker, not from you.
-              </p>
-            </div>
-          )}
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <button onClick={onDone} className="inline-flex items-center gap-2 rounded-full px-6 py-2.5 text-sm font-bold text-[#08111a] transition-transform hover:scale-[1.03]" style={{ background: accent }}>
-            Got it — continue <ArrowRight className="h-4 w-4" />
-          </button>
-          <span className="text-xs text-foreground/50">Next we'll show you where to start.</span>
-        </div>
-      </div>
-    </Card>
-  );
-}
 
 /* ── Stage 2a: €0 ignite strip ──────────────────────────────────────────────── */
 function IgniteStrip({ accent, href, onDeposit, onSaysDeposited }: { accent: string; href: string; onDeposit: () => void; onSaysDeposited: () => void }) {
@@ -422,7 +384,6 @@ export function OnboardingJourney() {
   // remembers the last acknowledged amount + whether the intro video was watched,
   // so dismissing the celebration always sticks for the session.
   const ackSeen = useRef(0);
-  const videoAck = useRef(false);
 
   const email = state.profile.email;
   const amount = state.lifetimeDeposits;
@@ -435,8 +396,6 @@ export function OnboardingJourney() {
     const seen = Math.max(readSeen(email), ackSeen.current);
     if (amount > seen) return "celebrate";                 // money arrived (or grew) → party (amount-aware)
     if (amount <= 0) {
-      const introDone = readFlag(email, "video") || videoAck.current;
-      if (!introDone) return "video";
       // Clicked "Deposit" but nothing booked yet → show the verifying state.
       if (depositClickedAt(email) > 0) return "verifying";
       return "ignite";
@@ -502,7 +461,7 @@ export function OnboardingJourney() {
       onDeposit={onDeposit}
       prevAmount={readSeen(email)}
       tierName={state.currentTier?.name}
-      onClose={() => { writeSeen(email, amount); writeFlag(email, "video"); clearDepositClick(email); ackSeen.current = amount; videoAck.current = true; advance(); }}
+      onClose={() => { writeSeen(email, amount); clearDepositClick(email); ackSeen.current = amount; advance(); }}
     />
   );
 }
