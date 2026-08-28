@@ -176,8 +176,8 @@ export function PartnerBrokerLinks({ slug }: { slug: string }) {
 
       {error && <p className="mt-3 text-sm text-destructive">{error}</p>}
       <p className="mt-3 text-[11px] leading-relaxed text-muted-foreground">
-        Green means a link is stored here — not that the broker has approved you. Commission
-        is credited by account number, which is the field below.
+        Green means a link is stored here — not that the broker has approved you. Your
+        customers and payouts live in your broker portal.
       </p>
     </div>
   );

@@ -38,7 +38,7 @@ const db = () =>
   };
 
 export function PartnerOnboarding({ slug, name }: { slug: string; name: string }) {
-  const [state, setState] = useState<{ hasChannel: boolean; hasIbClaim: boolean } | null>(null);
+  const [state, setState] = useState<{ hasChannel: boolean; hasIbClaim: boolean } | null>(null);   // hasIbClaim = eigener Broker-Link hinterlegt
 
   useEffect(() => {
     let alive = true;
@@ -49,12 +49,16 @@ export function PartnerOnboarding({ slug, name }: { slug: string; name: string }
       // abfragen). Die Funktion gibt nur die eigenen zurueck — sie prueft
       // selbst auf owner_user_id = auth.uid() bzw. Admin.
       db().rpc("my_tenant_channels", { p_slug: slug }),
-      db().from("tenant_ib_claims").select("id").eq("tenant_slug", slug),
+      // Erledigt heisst jetzt "hat mindestens einen eigenen Broker-Link
+      // hinterlegt". Vorher haing der Haken an tenant_ib_claims — in die
+      // Tabelle schreibt seit dem Ausbau des Kontonummer-Formulars niemand
+      // mehr, der Schritt waere also fuer immer offen geblieben.
+      db().from("tenant_broker_links").select("broker").eq("tenant_slug", slug),
     ]).then(([t, c]) => {
       if (!alive) return;
       setState({
         hasChannel: Boolean((t.data ?? [])[0]?.telegram_channel_id),
-        hasIbClaim: (c.data ?? []).length > 0,
+        hasIbClaim: (c.data ?? []).length > 0,   // = hat einen Broker-Link
       });
     }).catch(() => { if (alive) setState({ hasChannel: false, hasIbClaim: false }); });
     return () => { alive = false; };
@@ -75,14 +79,8 @@ export function PartnerOnboarding({ slug, name }: { slug: string; name: string }
     },
     {
       who: "du",
-      title: "Open a broker account through our link",
-      body: "Further down on this page. An account opened anywhere else does not sit under us and can never be counted for commission.",
-      done: hasIbClaim,
-    },
-    {
-      who: "du",
-      title: "Enter your account number here",
-      body: "That is how we assign your volume to you. We confirm it by hand against the broker data.",
+      title: "Add your own broker links",
+      body: "One per broker — HeroFX for the US, VT Markets for everywhere else. That is the address you give your audience, and it is what makes them yours at the broker.",
       done: hasIbClaim,
     },
     {
