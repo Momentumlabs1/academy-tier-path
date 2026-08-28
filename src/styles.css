@@ -308,3 +308,30 @@
   .leading-relaxed { line-height: 1.45; }
   .text-balance    { text-wrap: pretty; }
 }
+
+/* ── DAS HERUMZOOMEN AUF DEM HANDY ────────────────────────────────────────
+   iOS Safari zoomt beim Antippen eines Eingabefeldes AUTOMATISCH hinein,
+   sobald dessen Schrift kleiner als 16px ist — und zoomt danach nicht von
+   selbst zurueck. Die Seite steht dann schief, der Nutzer muss von Hand
+   herauszoomen, und genau das fuehlt sich an wie "man kann hin und her
+   zoomen und alles verzieht sich".
+
+   Von 26 Dateien mit Feldern hatten nur vier eine sichere Groesse. Das hier
+   loest es an einer Stelle statt in 26: auf Telefonen sind Felder 16px, auf
+   groesseren Schirmen gilt wieder, was die Komponente vorgibt.
+
+   Bewusst NICHT gemacht: user-scalable=no. Apple ignoriert das seit iOS 10
+   absichtlich, es wuerde also auf genau dem Geraet nichts aendern, um das es
+   hier geht — und es nimmt Menschen mit schlechten Augen das Zoomen weg.
+   Wenn es nichts zu reparieren gibt, will auch niemand zoomen. */
+@media (max-width: 767px) {
+  input, textarea, select { font-size: 16px !important; }
+}
+
+/* Nichts darf seitlich herausragen. Die Seite hat heute keinen Ueberlauf
+   (geprueft: scrollWidth == Viewport), aber ein einziges zu breites Element
+   in einem spaeteren Abschnitt wuerde reichen, damit sich die ganze Seite
+   seitlich schieben laesst. `clip` statt `hidden`, weil `hidden` auf dem
+   Wurzelelement position:sticky im Inneren kaputtmacht. */
+html { overflow-x: clip; }
+body { overflow-x: clip; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
