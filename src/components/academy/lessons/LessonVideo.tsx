@@ -30,7 +30,7 @@ export function LessonVideo({
   locked?: boolean;
   lockedTier?: string;
 }) {
-  const { url, loading, error, load } = useSignedVideoUrl(videoObject);
+  const { url, loading, error, load, retry } = useSignedVideoUrl(videoObject);
   const brandedPoster = "radial-gradient(120% 120% at 50% 0%, oklch(0.22 0.06 260), oklch(0.1 0.03 260))";
 
   // Request the signed URL only once the (entitled) member presses play.
@@ -69,8 +69,21 @@ export function LessonVideo({
             </video>
           ) : error ? (
             <div className="flex flex-col items-center gap-2 px-6 text-center text-sm text-white/70">
-              <span>{error === "locked" ? "This video is still locked at your tier." : error}</span>
-              <button onClick={load} className="text-primary hover:underline">Try again</button>
+              <span>
+                {error === "locked"
+                  ? `This lesson opens at ${lockedTier ?? "a higher level"} — your first deposit unlocks it.`
+                  : error === "access_revoked"
+                    ? "Your access is paused. Get in touch and we'll sort it out."
+                    : error === "unauthorized"
+                      ? "Your session expired. Sign in again and press play."
+                      : "The video could not be loaded."}
+              </span>
+              {/* retry(), nicht load(): load() merkt sich einen Fehlversuch und
+                  kehrt sofort zurueck, damit ein 403 nicht in einer Schleife
+                  nachgefragt wird. Der Knopf hat deshalb bisher NICHTS getan. */}
+              {error !== "locked" && (
+                <button onClick={retry} className="text-primary hover:underline">Try again</button>
+              )}
             </div>
           ) : (
             <Loader2 className="h-8 w-8 animate-spin text-white/60" />

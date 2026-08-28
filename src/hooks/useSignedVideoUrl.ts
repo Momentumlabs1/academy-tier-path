@@ -43,7 +43,23 @@ export function useSignedVideoUrl(object?: string) {
     setError(null);
     try {
       const { data, error } = await supabase.functions.invoke("video-url", { body: { object } });
-      const payload = data as { url?: string; error?: string } | null;
+      let payload = data as { url?: string; error?: string } | null;
+
+      // BEI 403 STEHT DER GRUND IM KOERPER, NICHT IN error.message.
+      //
+      // supabase-js wirft bei jedem Nicht-2xx einen FunctionsHttpError und
+      // laesst `data` leer. Der Text, den der Nutzer dann sah, war
+      // "Edge Function returned a non-2xx status code" — technisch korrekt und
+      // fuer den Betroffenen wertlos. Genau das sah aus, als "wuerden die
+      // Videos nicht laden", obwohl der Server sauber "locked" geantwortet hat.
+      // Die Antwort liegt in error.context; wir holen sie da raus.
+      if (error && !payload?.url) {
+        const ctx = (error as unknown as { context?: Response }).context;
+        if (ctx && typeof ctx.json === "function") {
+          try { payload = await ctx.clone().json(); } catch { /* kein JSON */ }
+        }
+      }
+
       if (error || !payload?.url) {
         // Auch ein Fehlschlag ist ein Ergebnis. Ohne diese Markierung fragt die
         // Seite eine abgelehnte Datei endlos nach.
