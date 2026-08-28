@@ -1,42 +1,54 @@
 /**
- * PostDepositWelcome — the Cosmo tutorial that lights up AFTER the first deposit
- * lands (Foundation reached, >= €100): "copy your first signal". Played from the
- * private `academy-videos` bucket via a gated, time-limited signed URL (fetched
- * only on play). Dismissable so it doesn't nag forever. Co-branded accent; the
- * video itself stays pure Cosmo.
+ * PostDepositWelcome — the Cosmo welcome that lights up AFTER the first deposit
+ * lands (Foundation reached, >= €100). Two videos, both streamed from the
+ * private `academy-videos` bucket via gated, time-limited signed URLs (fetched
+ * only on play): the 20s personal welcome and the "copy your first signal"
+ * tutorial. Dismissable so it doesn't nag forever. Co-branded accent; the
+ * videos themselves stay pure Cosmo.
  *
- * Renders nothing until the member is funded — so it simply appears (and can be
- * dismissed) the moment the broker webhook flips the deposit past Foundation.
+ * Renders nothing until the member is funded — and nothing while the
+ * celebration overlay is still unacknowledged: confetti first, welcome second.
  */
 import { useEffect, useState } from "react";
-import { PlayCircle, Sparkles, X, Loader2 } from "lucide-react";
+import { X } from "lucide-react";
 import { useMemberState } from "@/hooks/useMemberState";
-import { useSignedVideoUrl } from "@/hooks/useSignedVideoUrl";
 import { usePartnerBrand, COSMO } from "@/lib/partner-brand";
-// Der Player lebt jetzt eigenstaendig, damit er auch im Signal-Bereich
-// dauerhaft erreichbar ist — hier wird dieselbe Komponente verwendet.
+// Der Player lebt eigenstaendig, damit er auch im Signal-Bereich dauerhaft
+// erreichbar ist — hier wird dieselbe Komponente doppelt verwendet.
 import { SignalTutorialCard as SignalTutorial } from "@/components/academy/signals/SignalTutorialCard";
+import { readFlag, writeFlag, readSeen } from "@/components/academy/onboarding/OnboardingJourney";
 import { Card } from "@/components/academy/primitives/Card";
 
-const DISMISS_KEY = "cosmo_welcome_done";
-
+// Flip when welcome.mp4 is uploaded to the academy-videos bucket. Until then
+// only the signals tutorial shows — a play button on a missing file would
+// answer with an error, which is worse than one card fewer.
+const WELCOME_VIDEO_READY = false;
 
 export function PostDepositWelcome() {
   const state = useMemberState();
   const brand = usePartnerBrand();
   const accent = brand?.accentColor ?? COSMO.accentColor;
   const [dismissed, setDismissed] = useState(true);
+  const email = state.profile.email;
 
+  // Frueher war der Dismiss-Schluessel global ("cosmo_welcome_done") — EIN
+  // Klick hat die Karte fuer jedes Konto in diesem Browser beerdigt. Jetzt
+  // gilt er pro Konto, mit derselben onb_*:email-Konvention wie der Rest.
   useEffect(() => {
-    setDismissed(typeof localStorage !== "undefined" && localStorage.getItem(DISMISS_KEY) === "1");
-  }, []);
+    setDismissed(email ? readFlag(email, "welcome_done") : true);
+  }, [email]);
 
   // Only once Foundation is actually reached (>= €100) — a €50 partial deposit
   // must NOT trigger the "Unlocked" welcome — and only until dismissed.
-  if (!state.loaded || state.lifetimeDeposits < 100 || dismissed) return null;
+  if (!state.loaded || !email || state.lifetimeDeposits < 100 || dismissed) return null;
+
+  // Sequence, not collision: while the deposit celebration overlay is still
+  // unacknowledged (amount rose above the last seen amount), the confetti owns
+  // the screen. The welcome appears the moment the overlay is closed.
+  if (state.lifetimeDeposits > readSeen(email)) return null;
 
   function dismiss() {
-    try { localStorage.setItem(DISMISS_KEY, "1"); } catch { /* private mode */ }
+    writeFlag(email, "welcome_done");
     setDismissed(true);
   }
 
@@ -71,7 +83,16 @@ export function PostDepositWelcome() {
         </div>
       </div>
 
-      <div className="mt-5 max-w-md">
+      <div className={WELCOME_VIDEO_READY ? "mt-5 grid gap-4 sm:grid-cols-2" : "mt-5 max-w-md"}>
+        {WELCOME_VIDEO_READY && (
+          <SignalTutorial
+            accent={accent}
+            object="welcome.mp4"
+            poster="/posters/welcome.jpg"
+            title="You're officially in — Cosmo, 20 seconds"
+            subtitle="What your deposit unlocked, and your very first step."
+          />
+        )}
         <SignalTutorial accent={accent} />
       </div>
     </Card>

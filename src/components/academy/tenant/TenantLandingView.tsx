@@ -89,6 +89,15 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
   // Poster-Overlay fuer das Pitch-Video: weicht beim Start, kehrt am Ende zurueck.
   const pitchRef = useRef<HTMLVideoElement>(null);
   const [pitchPlaying, setPitchPlaying] = useState(false);
+  // ZWEI Merker, nicht einer.
+  //
+  // `pitchPlaying` steuert nur das Poster-Overlay und kippt bei Pause und am
+  // Ende zurueck. Die Knoepfe duerfen das NICHT tun: im Film sagt Cosmo "drueck
+  // unten auf die Knoepfe" — wer an dieser Stelle pausiert, um genau das zu
+  // tun, saehe sie sonst wieder verschwinden. Einmal gestartet heisst: ab
+  // jetzt sichtbar.
+  const [pitchStarted, setPitchStarted] = useState(false);
+  const [pitchEnded, setPitchEnded] = useState(false);
 
   const showCosmo = tenant.slug === "cosmos-candles";
   // Der Hero traegt das Maskottchen nur noch, wenn es KEIN Kopfzeilen-Portrait
@@ -416,8 +425,8 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                 // der Klick startet dadurch sofort, gestreamt wird progressiv.
                 preload="metadata"
                 poster={tenant.pitchPoster ?? "/pitch-poster.jpg?v=2"}
-                onPlay={() => setPitchPlaying(true)}
-                onEnded={() => setPitchPlaying(false)}
+                onPlay={() => { setPitchPlaying(true); setPitchStarted(true); setPitchEnded(false); }}
+                onEnded={() => { setPitchPlaying(false); setPitchEnded(true); }}
                 // object-contain, nicht cover: im Vollbild (16:10-Displays)
                 // schnitt cover links und rechts ab — genau dort sitzen im
                 // Video die Einblendungen.
@@ -440,6 +449,33 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
             </div>
           </div>
         </div>
+
+          {/* DIE KNOEPFE, VON DENEN COSMO IM FILM SPRICHT.
+              Im Video sagt er "drueck unten auf die Knoepfe" — auf der
+              Landingpage gab es darunter aber nichts, der Satz lief ins Leere.
+              Sie erscheinen beim PLAY, nicht am Ende: die meisten sehen einen
+              Film nicht zu Ende, und wer nach dreissig Sekunden ueberzeugt ist,
+              soll nicht warten muessen. Einmal sichtbar, bleiben sie sichtbar. */}
+          {pitchStarted && (
+            <div className="mt-4 flex flex-col gap-2.5 sm:flex-row">
+              <button
+                onClick={goRegister}
+                className="cta-btn flex flex-1 items-center justify-center gap-2 rounded-full px-5 py-3.5 text-sm font-black"
+                style={cta}
+              >
+                Create your free account <ArrowRight className="h-4 w-4" />
+              </button>
+              {/* "Nochmal ansehen" erst, wenn es etwas nochmal zu sehen gibt. */}
+              {pitchEnded && (
+                <button
+                  onClick={() => { const v = pitchRef.current; if (v) { v.currentTime = 0; void v.play(); } }}
+                  className="flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-3.5 text-sm font-semibold text-foreground/80 transition-colors hover:bg-white/10 sm:flex-none"
+                >
+                  <PlayCircle className="h-4 w-4" /> Watch again
+                </button>
+              )}
+            </div>
+          )}
       </Band>
       )}
 

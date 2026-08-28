@@ -19,15 +19,21 @@ export function SignalTutorialCard({
   accent,
   title = "Copy your first signal",
   subtitle = "Entry, stop-loss, take-profit — how to mirror a signal into your account.",
+  // Object + poster are parameters so the welcome video (and future mini
+  // tutorials) reuse this exact card instead of forking the player.
+  object = "signals-tutorial.mp4",
+  poster = "/posters/copysignals.jpg",
   className,
 }: {
   accent: string;
   title?: string;
   subtitle?: string;
+  object?: string;
+  poster?: string;
   className?: string;
 }) {
   const [playing, setPlaying] = useState(false);
-  const { url, loading, error, load } = useSignedVideoUrl("signals-tutorial.mp4");
+  const { url, loading, error, load } = useSignedVideoUrl(object);
 
   useEffect(() => { if (playing) load(); }, [playing, load]);
 
@@ -53,7 +59,7 @@ export function SignalTutorialCard({
             style={{ background: `linear-gradient(160deg, ${COSMO.bgFrom}, ${COSMO.bgTo})` }}
           >
             <img
-              src="/posters/copysignals.jpg"
+              src={poster}
               alt=""
               className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />

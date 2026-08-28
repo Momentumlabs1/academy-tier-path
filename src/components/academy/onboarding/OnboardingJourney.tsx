@@ -40,14 +40,18 @@ import { cn } from "@/lib/utils";
 const FOUNDATION_MIN = TIERS[0].minDeposit; // €100
 
 /* ── per-account persistence ────────────────────────────────────────────────── */
-const k = (email: string, what: string) => `onb_${what}:${email.toLowerCase()}`;
-const readFlag = (email: string, what: string) => {
+// k/readFlag/writeFlag/readSeen are exported: PostDepositWelcome and the
+// missions card key their state per ACCOUNT with the same convention — a
+// global localStorage key would kill onboarding for every account on the
+// browser the first time one person dismisses it.
+export const k = (email: string, what: string) => `onb_${what}:${email.toLowerCase()}`;
+export const readFlag = (email: string, what: string) => {
   try { return localStorage.getItem(k(email, what)) === "1"; } catch { return false; }
 };
-const writeFlag = (email: string, what: string) => {
+export const writeFlag = (email: string, what: string) => {
   try { localStorage.setItem(k(email, what), "1"); } catch { /* private mode */ }
 };
-const readSeen = (email: string) => {
+export const readSeen = (email: string) => {
   try { return Number(localStorage.getItem(k(email, "seen")) ?? 0) || 0; } catch { return 0; }
 };
 const writeSeen = (email: string, amount: number) => {
@@ -467,9 +471,20 @@ export function OnboardingJourney() {
   const onSaysDeposited = () => { markDepositClick(email); advance(); };
 
   if (stage === "loading" || stage === "done") return null;
-  if (stage === "video") {
-    return <WelcomeVideoCard accent={accent} onDone={() => { writeFlag(email, "video"); videoAck.current = true; advance(); }} />;
-  }
+  // DIE VIDEO-STUFE IST RAUS.
+  //
+  // Sie zeigte "Step 1 of 2 — Cosmo erklaert alles in 30 Sekunden" und lud
+  // /intro.mp4. Diese Datei hat es nie gegeben: jeder Neuregistrierte sah seit
+  // dem ersten Tag ausschliesslich den Ersatztext, den der onError-Zweig
+  // rendert. Der Film, der die Akademie erklaert, ist /pitch.mp4 und laeuft
+  // auf der Landingpage.
+  //
+  // Die Aufgabe dieser Stufe — "sag mir, wo ich gelandet bin" — uebernimmt
+  // jetzt WelcomeModal, und zwar mit zwei Fassungen je nachdem, ob jemand
+  // ueber einen Partner kam (hat unseren Film noch nicht gesehen) oder ueber
+  // uns (hat ihn gerade gesehen). Eine Stufe, die auf eine fehlende Datei
+  // zeigt, stehen zu lassen, waere die Sorte Leiche, die der Naechste fuer
+  // absichtlich haelt.
   // Mid-switch: "ignite" and "topup" are the two stages that hand a member off to
   // the broker, so they become the notice. "verifying" is left alone — that member
   // already deposited, and the existing sync still books it. See BROKER_SWITCH.

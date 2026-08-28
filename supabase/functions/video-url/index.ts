@@ -32,6 +32,7 @@ const TTL = 60 * 60 * 2; // 2h signed URL
 // tier floor. Keep this in sync with the lesson tiers in src/lib/academy-data.ts.
 const RULE: Record<string, "funded" | "foundation" | "operator" | "elite"> = {
   "signals-tutorial.mp4": "funded",   // post-deposit tutorial
+  "welcome.mp4": "funded",            // 20s post-deposit welcome (Cosmo)
   "lesson-01.mp4": "foundation",      // What Is Trading?
   "lesson-03.mp4": "foundation",      // Why 90% of Traders Lose
   "lesson-04.mp4": "operator",        // What Is Retail Money?

@@ -27,6 +27,10 @@ export interface MemberState {
   lifetimeDeposits: number;
   /** Wie viel Zugang gilt — inkl. Admin-Freibrief. NICHT anzeigen als Betrag. */
   accessDeposit: number;
+  /** Ueber welche Marke das Mitglied hereinkam (WelcomeModal entscheidet daran). */
+  referredBy: string | null;
+  /** NULL = Willkommens-Erklaerung noch nie weggeklickt. */
+  onboardingSeenAt: string | null;
   currentTier: Tier | undefined;
   nextTier: Tier | undefined;
   nextTierRemaining: number;
@@ -71,6 +75,12 @@ interface MemberInput {
    * Ausserdem soll ein geschenkter Zugang nirgends als Umsatz auftauchen.
    */
   tierOverride: string | null;
+  /** Ueber welche Marke das Mitglied hereinkam. Entscheidet, welche
+   *  Willkommens-Erklaerung es sieht: wer ueber einen Partner kam, hat DESSEN
+   *  Video gesehen und braucht unseres; wer ueber uns kam, hat unseres schon. */
+  referredBy: string | null;
+  /** NULL = Willkommens-Erklaerung noch nie weggeklickt. */
+  onboardingSeenAt: string | null;
   notifications: Notification[];
   loaded: boolean;
 }
@@ -83,6 +93,8 @@ const EMPTY_INPUT: MemberInput = {
   activityStatus: "active",
   disabled: false,
   tierOverride: null,
+  referredBy: null,
+  onboardingSeenAt: null,
   notifications: [],
   loaded: false,
 };
@@ -128,6 +140,8 @@ function deriveState(input: MemberInput): MemberState {
     // Nur fuers Aufsperren und die Fortschrittsanzeige — nie fuer eine Zahl,
     // die als "so viel wurde eingezahlt" gelesen wird.
     accessDeposit,
+    referredBy: input.referredBy,
+    onboardingSeenAt: input.onboardingSeenAt,
     currentTier,
     nextTier,
     nextTierRemaining: nextTier ? Math.max(0, nextTier.minDeposit - accessDeposit) : 0,
@@ -168,7 +182,7 @@ async function fetchMemberInput(): Promise<MemberInput> {
   };
 
   const [{ data: member }, { data: notifRows }] = await Promise.all([
-    client.from("members").select("id, name, email, telegram_handle, active, access_revoked, tier_override, deposit, monthly_lots, activity_status, joined_at, avatar_url").eq("auth_user_id", user.id).maybeSingle(),
+    client.from("members").select("id, name, email, telegram_handle, active, access_revoked, tier_override, referred_by_tenant, onboarding_seen_at, deposit, monthly_lots, activity_status, joined_at, avatar_url").eq("auth_user_id", user.id).maybeSingle(),
     client.from("notifications").select("id, type, title, body, link, read_at, created_at").order("created_at", { ascending: false }),
   ]);
 
@@ -207,6 +221,8 @@ async function fetchMemberInput(): Promise<MemberInput> {
     deposit: member?.access_revoked === true ? 0 : Number(member?.deposit ?? 0),
     disabled: member?.access_revoked === true,
     tierOverride: (member?.tier_override as string | null) ?? null,
+    referredBy: (member?.referred_by_tenant as string | null) ?? null,
+    onboardingSeenAt: (member?.onboarding_seen_at as string | null) ?? null,
     monthlyLots: Number(member?.monthly_lots ?? 0),
     activityStatus: ((member?.activity_status as string) ?? "active") as MemberInput["activityStatus"],
     notifications,

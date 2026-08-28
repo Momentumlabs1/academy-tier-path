@@ -11,6 +11,8 @@ import { Card } from "@/components/academy/primitives/Card";
 import { MemberAvatar } from "@/components/academy/primitives/MemberAvatar";
 import { LockedGate } from "@/components/academy/onboarding/LockedGate";
 import { OnboardingJourney } from "@/components/academy/onboarding/OnboardingJourney";
+import { WelcomeModal } from "@/components/academy/onboarding/WelcomeModal";
+import { FirstMissions } from "@/components/academy/onboarding/FirstMissions";
 import { PostDepositWelcome } from "@/components/academy/onboarding/PostDepositWelcome";
 import { LESSONS } from "@/lib/academy-data";
 import { useCompletedLessons } from "@/hooks/useCompletedLessons";
@@ -126,7 +128,13 @@ export function Dashboard() {
       <OnboardingJourney />
 
       {/* After the first deposit: the two Cosmo welcome videos light up here. */}
+      {/* Die Begruessung liegt VOR allem anderen: sie erklaert, wo man ist,
+          bevor das Dashboard etwas von einem will. */}
+      <WelcomeModal />
       <PostDepositWelcome />
+
+      {/* Freshly funded: three concrete first actions as a checklist. */}
+      <FirstMissions />
 
       {/* Greeting + action launcher — orientation only; tier/deposit/progress live in the Deposit Path card below */}
       <Card variant="hero" className="relative overflow-hidden px-5 py-6 sm:px-7 sm:py-7">
