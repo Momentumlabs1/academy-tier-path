@@ -42,6 +42,8 @@ export interface TenantConfig {
    * warb damit also unsere Marke. Ein fremdes Video ist schlimmer als kein
    * Video: der Besucher kam fuer Zeko und sieht uns.
    */
+  /** Portrait fuer die Kopfzeile. Fehlt es, stehen dort die Initialen. */
+  mascotHeadUrl?: string;
   pitchVideo?: string;
   pitchPoster?: string;
   affiliateEmail: string;
@@ -185,6 +187,7 @@ export const TENANTS: TenantConfig[] = [
     // Sein eigener Film, nicht unserer. Neu kodiert mit +faststart, damit der
     // Index vorne steht — sonst muss ein Handy die ganze Datei laden, bevor
     // ueberhaupt etwas zu sehen ist, und das sieht aus wie "laedt nicht".
+    mascotHeadUrl: "/zeko-hero.png",
     pitchVideo: "/zeko-pitch.mp4",
     pitchPoster: "/zeko-pitch-poster.jpg",
     affiliateEmail: "zekoglobalhq@gmail.com",

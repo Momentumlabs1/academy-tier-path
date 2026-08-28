@@ -91,7 +91,12 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
   const [pitchPlaying, setPitchPlaying] = useState(false);
 
   const showCosmo = tenant.slug === "cosmos-candles";
-  const heroHasMascot = tenant.mascot === "zeko" || showCosmo;
+  // Der Hero traegt das Maskottchen nur noch, wenn es KEIN Kopfzeilen-Portrait
+  // gibt. Zekos Bild sass vorher an beiden Stellen; im Hero fraß es auf dem
+  // Telefon die halbe erste Bildschirmhoehe und schob Ueberschrift, Knopf und
+  // Video unter die Kante. Cosmo bleibt dort — sein Kreis aus Kerzen IST der
+  // Hero unserer eigenen Seite, kein Profilbild.
+  const heroHasMascot = showCosmo || (tenant.mascot === "zeko" && !tenant.mascotHeadUrl);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -236,9 +241,24 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               <img src="/cosmos-logo.png" alt="Cosmos Candles Academy" className="h-9 w-auto" />
             ) : (
               <>
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl text-sm font-black text-black" style={{ background: primary }}>
-                  {tenant.logoInitials}
-                </span>
+                {/* Das Portrait gehoert HIERHIN, nicht in den Hero.
+                    Dort nahm es die halbe erste Bildschirmhoehe ein und
+                    schob Ueberschrift, Knopf und Video unter die Kante —
+                    also genau das weg, wofuer jemand die Seite oeffnet. Hier
+                    tut es, wofuer ein Profilbild da ist: den Namen an ein
+                    Gesicht binden, in der Groesse eines Logos. Ohne eigenes
+                    Bild bleiben die Initialen. */}
+                {tenant.mascotHeadUrl ? (
+                  <span className="h-9 w-9 shrink-0 overflow-hidden rounded-xl"
+                        style={{ border: `1.5px solid color-mix(in oklch, ${primary} 55%, transparent)` }}>
+                    <img src={tenant.mascotHeadUrl} alt={tenant.name}
+                         className="h-full w-full object-cover" style={{ objectPosition: "50% 22%" }} />
+                  </span>
+                ) : (
+                  <span className="flex h-9 w-9 items-center justify-center rounded-xl text-sm font-black text-black" style={{ background: primary }}>
+                    {tenant.logoInitials}
+                  </span>
+                )}
                 <span className="font-display text-lg font-bold tracking-tight">{tenant.name}</span>
               </>
             )}
@@ -265,7 +285,13 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         <div aria-hidden className="absolute inset-0 -z-10">
           <div className="absolute -top-40 left-[15%] h-[620px] w-[620px] rounded-full blur-[130px]" style={{ background: `color-mix(in oklch, ${accent} 26%, transparent)` }} />
           <div className="absolute top-10 right-[5%] h-[520px] w-[520px] rounded-full blur-[130px]" style={{ background: `color-mix(in oklch, ${primary} 16%, transparent)` }} />
-          {[["12%","18%"],["28%","62%"],["44%","28%"],["70%","70%"],["82%","20%"],["58%","48%"],["36%","82%"],["90%","54%"],["20%","40%"],["66%","14%"]].map(([t,l],i)=>(
+          {/* Sternenfeld NUR auf unserer eigenen Seite.
+              "Cosmos Candles" heisst Nachthimmel aus Kerzen — dort tragen die
+              Punkte die Idee. Auf Zekos gruener Seite sind es einfach
+              blinkende Punkte, die mit Trading nichts zu tun haben und die
+              Seite unruhig machen. Fuer Partner bleiben nur die weichen
+              Farbschleier, in IHRER Farbe. */}
+          {showCosmo && [["12%","18%"],["28%","62%"],["44%","28%"],["70%","70%"],["82%","20%"],["58%","48%"],["36%","82%"],["90%","54%"],["20%","40%"],["66%","12%"]].map(([t,l],i) => (
             <span key={i} className="twinkle absolute h-1 w-1 rounded-full bg-white" style={{ top:t, left:l, animationDelay:`${i*0.5}s` }} />
           ))}
         </div>
