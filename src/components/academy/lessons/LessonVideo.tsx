@@ -1,5 +1,5 @@
 import { Lock, Play, Loader2 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect , useState} from "react";
 import { Link } from "@tanstack/react-router";
 import { useSignedVideoUrl } from "@/hooks/useSignedVideoUrl";
 
@@ -31,6 +31,7 @@ export function LessonVideo({
   lockedTier?: string;
 }) {
   const { url, loading, error, load, retry } = useSignedVideoUrl(videoObject);
+  const [playbackError, setPlaybackError] = useState<string | null>(null);
   const brandedPoster = "radial-gradient(120% 120% at 50% 0%, oklch(0.22 0.06 260), oklch(0.1 0.03 260))";
 
   // Request the signed URL only once the (entitled) member presses play.
@@ -63,10 +64,39 @@ export function LessonVideo({
         </>
       ) : playing ? (
         <div className="absolute inset-0 flex items-center justify-center bg-black">
-          {url ? (
-            <video src={url} controls autoPlay playsInline preload="none" className="h-full w-full">
+          {url && !playbackError ? (
+            <video
+              src={url}
+              controls
+              autoPlay
+              playsInline
+              preload="none"
+              className="h-full w-full"
+              /* EIN ABSPIELFEHLER MUSS SICHTBAR WERDEN.
+                 Bisher gab es hier nichts: bekam der Player eine gueltige
+                 Adresse, konnte die Datei aber nicht abspielen — falscher
+                 Codec fuer das Geraet, Datei nicht zum Streamen vorbereitet,
+                 Verbindung weg —, drehte sich der Kreis endlos und niemand
+                 erfuhr warum. Genau so sah "die Videos laden nicht" aus,
+                 waehrend Server und Speicher durchgehend 200 lieferten. */
+              onError={(e) => {
+                const code = (e.currentTarget.error?.code ?? 0);
+                setPlaybackError(
+                  code === 4
+                    ? "This video will not play on this device or browser. Try another browser — we are looking into it."
+                    : code === 2
+                      ? "The connection dropped while loading. Check your internet and press play again."
+                      : "The video could not be played. Try again, or tell us which device you are on.",
+                );
+              }}
+            >
               Your browser does not support video.
             </video>
+          ) : playbackError ? (
+            <div className="flex flex-col items-center gap-2 px-6 text-center text-sm text-white/70">
+              <span>{playbackError}</span>
+              <button onClick={() => setPlaybackError(null)} className="text-primary hover:underline">Try again</button>
+            </div>
           ) : error ? (
             <div className="flex flex-col items-center gap-2 px-6 text-center text-sm text-white/70">
               <span>
