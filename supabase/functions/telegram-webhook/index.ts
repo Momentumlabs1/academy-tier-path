@@ -957,6 +957,86 @@ async function editInfoPost(db: SupabaseClient, msg: TgMessage, tenants: TenantR
     .eq("chat_id", msg.chat.id).eq("message_id", msg.message_id);
 }
 
+// ── Admin-Befehle ────────────────────────────────────────────────────────────
+//
+// Die private Gruppe "Cosmos Admin 🔔" (ADMIN_ALERT_CHAT_ID) empfaengt nicht
+// nur die Alerts aus den DB-Triggern — der Admin kann von unterwegs handeln:
+// /freigeben, /deposit, /wer. Autorisierung ist die Gruppen-Mitgliedschaft
+// selbst (privat, Invite-only, vom Reader-Account verwaltet); der Chat-Id-
+// Vergleich unten haelt jeden anderen Chat drausssen.
+
+async function handleAdminCommand(db: SupabaseClient, msg: TgMessage) {
+  const reply = (text: string) =>
+    tg("sendMessage", { chat_id: msg.chat.id, text, disable_web_page_preview: true });
+  const [cmd, ...args] = (msg.text ?? "").trim().split(/\s+/);
+
+  try {
+    if (cmd === "/hilfe" || cmd === "/start" || cmd === "/help") {
+      await reply(
+        "🔧 Admin-Befehle:\n\n" +
+        "/wer email@x.com — Mitglied nachschlagen (Deposit, seit wann)\n" +
+        "/deposit email@x.com 250 — Deposit manuell setzen (schaltet Stufe frei)\n" +
+        "/freigeben email@x.com — Partner-Bewerbung annehmen (Login + Marke + Einladungs-Mail)\n" +
+        "/hilfe — diese Liste",
+      );
+      return;
+    }
+
+    if (cmd === "/wer") {
+      const email = (args[0] ?? "").toLowerCase();
+      if (!email) { await reply("Nutzung: /wer email@x.com"); return; }
+      const { data: m } = await db.from("members")
+        .select("email, deposit, created_at").ilike("email", email).maybeSingle();
+      if (!m) { await reply(`Kein Mitglied mit ${email} gefunden.`); return; }
+      await reply(`👤 ${m.email}\nDeposit: ${m.deposit ?? 0} €\nRegistriert: ${String(m.created_at).slice(0, 16).replace("T", " ")}`);
+      return;
+    }
+
+    if (cmd === "/deposit") {
+      const email = (args[0] ?? "").toLowerCase();
+      const amount = Number(args[1]);
+      if (!email || !Number.isFinite(amount) || amount < 0) {
+        await reply("Nutzung: /deposit email@x.com 250"); return;
+      }
+      const { data: m } = await db.from("members")
+        .select("id, email, deposit").ilike("email", email).maybeSingle();
+      if (!m) { await reply(`Kein Mitglied mit ${email} gefunden.`); return; }
+      const { error } = await db.from("members").update({ deposit: amount }).eq("id", m.id);
+      if (error) { await reply(`Fehler: ${error.message}`); return; }
+      await reply(`✅ Deposit fuer ${m.email}: ${m.deposit ?? 0} € → ${amount} €. Stufe schaltet sich automatisch frei.\n(Mail an den Kunden geht dabei NICHT automatisch raus.)`);
+      return;
+    }
+
+    if (cmd === "/freigeben") {
+      const email = (args[0] ?? "").toLowerCase();
+      if (!email) { await reply("Nutzung: /freigeben email@x.com"); return; }
+      const { data: app } = await db.from("partner_applications")
+        .select("id, name, email, status").ilike("email", email)
+        .order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (!app) { await reply(`Keine Bewerbung mit ${email} gefunden.`); return; }
+      const sendSecret = await cfg("SEND_SECRET");
+      const res = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/partner-approve`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(sendSecret ? { "x-internal-secret": sendSecret } : {}),
+        },
+        body: JSON.stringify({ application_id: app.id }),
+      });
+      const out = await res.json().catch(() => ({}));
+      if (!res.ok) { await reply(`Freigabe fehlgeschlagen: ${out.error ?? res.status}`); return; }
+      await reply(`✅ ${app.name || app.email} freigegeben — Marke "${out.slug}".` +
+        (out.mailed ? " Einladungs-Mail ist raus." : " ⚠️ Mail konnte nicht gesendet werden."));
+      return;
+    }
+
+    await reply("Unbekannter Befehl. /hilfe zeigt alles.");
+  } catch (e) {
+    console.error("[telegram-webhook] admin command error:", e);
+    await reply(`Fehler: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
 // ── Router ───────────────────────────────────────────────────────────────────
 
 async function processUpdate(update: TgUpdate) {
@@ -964,6 +1044,14 @@ async function processUpdate(update: TgUpdate) {
 
   const mainChatId = Number(await cfg("MAIN_CHANNEL_ID") || 0);
   const infoId = Number(await cfg("INFO_CHANNEL_ID") || 0);
+  const adminChatId = Number(await cfg("ADMIN_ALERT_CHAT_ID") || 0);
+
+  // Admin-Gruppe zuerst: Befehle duerfen nie in den Signal-Umschreiber laufen.
+  const adminMsg = update.message ?? update.edited_message;
+  if (adminChatId !== 0 && adminMsg && adminMsg.chat.id === adminChatId) {
+    if ((adminMsg.text ?? "").startsWith("/")) await handleAdminCommand(db, adminMsg);
+    return;
+  }
 
   /**
    * Which chat is allowed to feed the relay.

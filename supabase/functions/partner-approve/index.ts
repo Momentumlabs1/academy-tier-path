@@ -88,23 +88,34 @@ Deno.serve(async (req) => {
 
   const db = admin();
 
-  // ── Wer ruft? Nur der Plattform-Admin darf Partner anlegen. ────────────────
-  const jwt = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
-  if (!jwt) return json({ error: "unauthorized" }, 401);
-  const { data: userRes } = await db.auth.getUser(jwt);
-  const callerEmail = (userRes?.user?.email ?? "").toLowerCase();
-  const adminEmail = (await secret(db, "ADMIN_EMAIL")) || "kontakt@momentumlabs.at";
-  const isAdmin = !!callerEmail && callerEmail === adminEmail.toLowerCase();
-  // Mitarbeiter aus dem Team-Bereich duerfen ebenfalls freigeben — die Tabelle
-  // pflegt nur der Admin, also bleibt die Entscheidung, WER das darf, bei ihm.
-  let isStaff = false;
-  if (!isAdmin && callerEmail) {
-    const { data: st } = await db.from("staff_members")
-      .select("email").eq("active", true).ilike("email", callerEmail).maybeSingle();
-    isStaff = !!st;
-  }
-  if (!callerEmail || (!isAdmin && !isStaff)) {
-    return json({ error: "unauthorized" }, 403);
+  // ── Wer ruft? Admin, Staff — oder der eigene Telegram-Befehls-Handler. ─────
+  //
+  // x-internal-secret: der telegram-webhook (Befehl /freigeben aus der privaten
+  // Admin-Gruppe) hat kein Nutzer-JWT. Er weist sich mit SEND_SECRET aus —
+  // demselben Geheimnis, das schon den Mailversand schuetzt und nur in
+  // app_secrets liegt. Ein leerer Schluessel heisst ZU, nie offen.
+  const internal = req.headers.get("x-internal-secret");
+  if (internal) {
+    const sendSecret = await secret(db, "SEND_SECRET");
+    if (!sendSecret || internal !== sendSecret) return json({ error: "unauthorized" }, 403);
+  } else {
+    const jwt = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+    if (!jwt) return json({ error: "unauthorized" }, 401);
+    const { data: userRes } = await db.auth.getUser(jwt);
+    const callerEmail = (userRes?.user?.email ?? "").toLowerCase();
+    const adminEmail = (await secret(db, "ADMIN_EMAIL")) || "kontakt@momentumlabs.at";
+    const isAdmin = !!callerEmail && callerEmail === adminEmail.toLowerCase();
+    // Mitarbeiter aus dem Team-Bereich duerfen ebenfalls freigeben — die Tabelle
+    // pflegt nur der Admin, also bleibt die Entscheidung, WER das darf, bei ihm.
+    let isStaff = false;
+    if (!isAdmin && callerEmail) {
+      const { data: st } = await db.from("staff_members")
+        .select("email").eq("active", true).ilike("email", callerEmail).maybeSingle();
+      isStaff = !!st;
+    }
+    if (!callerEmail || (!isAdmin && !isStaff)) {
+      return json({ error: "unauthorized" }, 403);
+    }
   }
 
   let body: { application_id?: string };

@@ -20,6 +20,7 @@ import { functionUrl } from "@/integrations/supabase/functions-url";
 import { FunnelShell } from "@/components/academy/onboarding/FunnelShell";
 import { usePartnerBrand, COSMO } from "@/lib/partner-brand";
 import { ADMIN_EMAIL } from "@/lib/admin-auth";
+import { captureSetterToken, readSetterToken } from "@/lib/setter-token";
 
 export const Route = createFileRoute("/signup")({
   head: () => ({ meta: [{ title: "Sign up for free — Cosmos Candles Academy" }] }),
@@ -65,6 +66,10 @@ function RegisterPage() {
     setResetSent(true);
   }
 
+  // Den Token aus dem Bot-Link sofort wegsichern — bevor irgendein Klick oder
+  // eine Weiterleitung die Adresszeile ueberschreibt.
+  useEffect(() => { captureSetterToken(); }, []);
+
   // Already signed in? Skip straight ahead — no reason to show a register form.
   useEffect(() => {
     let alive = true;
@@ -81,10 +86,14 @@ function RegisterPage() {
     setBusy(true);
     setError(null);
     const ref = readCookie("cosmo_ref"); // partner slug attribution
+    // Kam er ueber den Einzahlungs-Bot? Dann traegt der Link seinen Token, und
+    // der ist der belastbare Weg zur Broker-Einzahlung — nicht die Adresse, die
+    // er hier gleich tippt. Siehe lib/setter-token.ts.
+    const st = readSetterToken();
     const { data, error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
-      options: { data: { app: "academy", referred_by_tenant: ref } },
+      options: { data: { app: "academy", referred_by_tenant: ref, setter_token: st } },
     });
     // Existing account can surface two ways:
     //  (a) an explicit "already registered" error (Confirm-email OFF), or
