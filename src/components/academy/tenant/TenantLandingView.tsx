@@ -399,7 +399,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
       <Band tone="raised" max="max-w-4xl" className="py-8 sm:py-12">
         {/* Das Video laeuft 1:19 — "60 seconds" stand hier noch aus der Zeit
             vor dem fertigen Schnitt. */}
-        <SectionHead n="01" kicker="Watch first" title={showCosmo ? "The whole thing in 70 seconds" : "The whole thing in 80 seconds"} primary={primary} />
+        <SectionHead n="01" kicker="Watch first" title={showCosmo ? "The whole thing in 70 seconds" : "The whole thing in 73 seconds"} primary={primary} />
         <div className="relative mt-8">
           <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0c0f17] shadow-2xl">
             <div className="flex items-center gap-1.5 border-b border-white/8 px-4 py-2.5">
