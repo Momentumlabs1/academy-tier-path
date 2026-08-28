@@ -114,7 +114,14 @@ function RegisterPage() {
   }
 
   return (
-    <FunnelShell brand={brand}>
+    <>
+    <style>{`
+        @keyframes suRise { from { opacity:0; transform: translateY(14px); } to { opacity:1; transform:none; } }
+        .su-rise { animation: suRise .55s cubic-bezier(.22,1,.36,1) both; }
+        .su-d1 { animation-delay: .06s; } .su-d2 { animation-delay: .16s; } .su-d3 { animation-delay: .26s; }
+        @media (prefers-reduced-motion: reduce) { .su-rise { animation: none; } }
+      `}</style>
+      <FunnelShell brand={brand}>
       {resetSent ? (
         <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/[0.04] p-7 text-center shadow-2xl backdrop-blur-sm">
           <div className="relative mx-auto mb-4 flex h-20 w-20 items-center justify-center">
@@ -179,7 +186,7 @@ function RegisterPage() {
             </p>
           </div>
 
-          <div className="w-full">
+          <div className="su-rise su-d2 w-full">
           <form onSubmit={submit} className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 shadow-2xl backdrop-blur-sm sm:p-7">
             <label className="mb-4 block">
               <span className="mb-1.5 block text-xs font-semibold text-muted-foreground">Email address</span>
@@ -204,10 +211,13 @@ function RegisterPage() {
 
             <button
               type="submit" disabled={busy}
-              className="flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-bold text-black transition-opacity hover:opacity-90 disabled:opacity-60"
-              style={{ background: COSMO.primaryColor }}
+              className="group flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-black text-black transition-all duration-200 hover:-translate-y-px hover:brightness-110 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+              style={{
+                background: `linear-gradient(180deg, color-mix(in oklch, ${COSMO.primaryColor} 88%, white), ${COSMO.primaryColor})`,
+                boxShadow: `0 8px 24px -12px ${COSMO.primaryColor}, inset 0 1px 0 rgba(255,255,255,0.45)`,
+              }}
             >
-              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />}
               Sign up for free
             </button>
 
@@ -229,5 +239,6 @@ function RegisterPage() {
         </div>
       )}
     </FunnelShell>
+    </>
   );
 }

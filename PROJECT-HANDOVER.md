@@ -204,14 +204,28 @@ that belong to a **different** product sharing this project — ignore them.)
   imports trades. **Matches member ↔ broker_client by tracking token first**
   (member id carried in `utm_campaign`/`utm_uri`), email as fallback.
 - pg_net and pg_cron extensions are installed.
-- **Trigger `members_guard_standing()` (migration 024) — do not remove.** RLS can
-  scope *rows* but not *columns*, so the member-facing update policy on `members`
-  let a signed-in member set their own `deposit` and `tier` — i.e. award themselves
-  Elite. This BEFORE INSERT/UPDATE trigger pins `deposit`, `tier`, `active`,
-  `activity_status`, `monthly_lots`, `referred_by_tenant`, `auth_user_id`, `email`
-  and `joined_at` back to their old values for everyone except the platform admin
-  and server-side callers (`auth.uid()` null). If you add a protected column to
-  `members`, add it here too.
+- **Trigger `members_guard_standing()` (migrations 024 → 061 → 062) — do not
+  remove.** RLS can scope *rows* but not *columns*, so the member-facing update
+  policy on `members` let a signed-in member set their own `deposit` and `tier` —
+  i.e. award themselves Elite. This BEFORE INSERT/UPDATE trigger pins `deposit`,
+  `tier`, `active`, `activity_status`, `monthly_lots`, `referred_by_tenant`,
+  `auth_user_id`, `email`, `joined_at`, `tier_override` (added 061),
+  `access_revoked` (added 061) and `broker_email` (added 062) back to their old
+  values for everyone except the platform admin and server-side callers
+  (`auth.uid()` null).
+  **The list does not grow by itself — that is the recurring bug.** `tier_override`
+  (055) and `access_revoked` (054) were added to `members` without being added
+  here, which reopened exactly the hole 024 closed: any member could
+  `update members set tier_override = 'elite'` and unlock everything with a EUR 0
+  deposit, or clear their own admin ban. `broker_email` (036) was open the same
+  way and let a member point their row at someone else's broker account, so a
+  stranger's deposit counted as theirs. **If you add a column to `members` that
+  decides money, tier or access, add it to this trigger in the same migration.**
+  Deliberately *not* pinned, both member-writable by design: `broker_email_claim`
+  (050, the unconfirmed wish — an admin promotes it with `confirm_broker_email()`)
+  and `onboarding_seen_at` (060, written from the browser by the welcome modal;
+  pinning it would make the greeting reappear on every login with no error, since
+  the trigger deliberately does not raise).
 - **Admin write policies (migration 025).** There was no admin UPDATE/DELETE policy
   on `members` at all, so the admin member dialog had never actually written
   anything — it failed silently. `members_admin_update` / `members_admin_delete`
