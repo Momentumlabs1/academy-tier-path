@@ -415,7 +415,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                 // (faststart legt ihn an den Dateianfang, wenige hundert KB) —
                 // der Klick startet dadurch sofort, gestreamt wird progressiv.
                 preload="metadata"
-                poster={tenant.pitchPoster ?? "/pitch-poster.jpg"}
+                poster={tenant.pitchPoster ?? "/pitch-poster.jpg?v=2"}
                 onPlay={() => setPitchPlaying(true)}
                 onEnded={() => setPitchPlaying(false)}
                 // object-contain, nicht cover: im Vollbild (16:10-Displays)
