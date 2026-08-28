@@ -411,7 +411,10 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                 ref={pitchRef}
                 controls
                 playsInline
-                preload="none"
+                // metadata statt none: laedt beim Seitenaufruf NUR den Video-Index
+                // (faststart legt ihn an den Dateianfang, wenige hundert KB) —
+                // der Klick startet dadurch sofort, gestreamt wird progressiv.
+                preload="metadata"
                 poster={tenant.pitchPoster ?? "/pitch-poster.jpg"}
                 onPlay={() => setPitchPlaying(true)}
                 onEnded={() => setPitchPlaying(false)}
