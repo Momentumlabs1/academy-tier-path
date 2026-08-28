@@ -142,11 +142,6 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
      unveraendertes Framework-Standardteil. Der leichte Verlauf und die helle
      Innenkante geben der Flaeche eine Oberflaeche; der Schatten wird dafuer
      kleiner, damit der Knopf nicht schwebt. */
-  /* Nach dem Mount die echte Adresse, davor die des Hauptauftritts — sonst
-     weicht der servergerenderte Text vom ersten Client-Render ab. */
-  const [siteHost, setSiteHost] = useState("cosmos-candles.com");
-  useEffect(() => { setSiteHost(window.location.host.replace(/^www\./, "")); }, []);
-
   const cta = {
     background: `linear-gradient(180deg, color-mix(in oklch, ${primary} 86%, white), ${primary})`,
     boxShadow: `0 8px 22px -12px ${primary}, inset 0 1px 0 rgba(255,255,255,0.45)`,
@@ -401,16 +396,13 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
             vor dem fertigen Schnitt. */}
         <SectionHead n="01" kicker="Watch first" title={showCosmo ? "The whole thing in 70 seconds" : "The whole thing in 73 seconds"} primary={primary} />
         <div className="relative mt-8">
-          <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0c0f17] shadow-2xl">
-            <div className="flex items-center gap-1.5 border-b border-white/8 px-4 py-2.5">
-              <span className="h-3 w-3 rounded-full bg-[#ff5f57]" /><span className="h-3 w-3 rounded-full bg-[#febc2e]" /><span className="h-3 w-3 rounded-full bg-[#28c840]" />
-              {/* Die Adresszeile setzte sich aus dem Markennamen plus ".academy"
-                  zusammen und zeigte damit auf einer echten Seite eine frei
-                  erfundene Domain — cosmoscandlesacademy.academy gibt es nicht.
-                  Jetzt steht dort die Adresse, unter der die Seite wirklich
-                  laeuft; vor der Hydration die des Hauptauftritts. */}
-              <span className="ml-3 flex-1 truncate rounded-md bg-white/5 px-3 py-1 text-center text-[11px] text-white/40">{siteHost} — welcome</span>
-            </div>
+          {/* KEIN nachgebautes Browserfenster mehr.
+              Hier sassen Ampelpunkte und eine Adresszeile — die Seite tat so,
+              als zeige sie einen Screenshot von sich selbst. Auf der echten
+              Seite ist das eine Attrappe: sie kostet oben Hoehe, verkleinert
+              das Bild, und jeder sieht sofort, dass das Fenster keins ist.
+              Das Video traegt sich allein. */}
+          <div className="overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl">
             <div className="relative aspect-video bg-black">
               {/* Der Platzhalter lag mit `pointer-events-none absolute inset-0`
                   dauerhaft ueber dem Player — das Video war auch mit Datei nie
@@ -424,7 +416,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                 // (faststart legt ihn an den Dateianfang, wenige hundert KB) —
                 // der Klick startet dadurch sofort, gestreamt wird progressiv.
                 preload="metadata"
-                poster={tenant.pitchPoster ?? "/pitch-poster.jpg?v=2"}
+                poster={tenant.pitchPoster ?? "/pitch-poster.jpg?v=6"}
                 onPlay={() => { setPitchPlaying(true); setPitchStarted(true); setPitchEnded(false); }}
                 onEnded={() => { setPitchPlaying(false); setPitchEnded(true); }}
                 // object-contain, nicht cover: im Vollbild (16:10-Displays)
