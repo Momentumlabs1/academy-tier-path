@@ -17,6 +17,7 @@ import { functionUrl } from "@/integrations/supabase/functions-url";
 import { type PartnerProfile } from "@/components/academy/partner/PartnerProfileCard";
 import { PartnerPrimer } from "@/components/academy/partner/PartnerPrimer";
 import { PartnerIbSetup } from "@/components/academy/partner/PartnerIbSetup";
+import { PartnerBrokerLinks } from "@/components/academy/partner/PartnerBrokerLinks";
 import { PartnerOnboarding } from "@/components/academy/partner/PartnerOnboarding";
 import { ADMIN_EMAIL } from "@/lib/admin-auth";
 import { COMMISSION_LADDER, levelForVolume, volumeToNextLevel } from "@/lib/commission";
@@ -296,6 +297,7 @@ export function PartnerCard({ row }: { row: PartnerRow }) {
         <>
           {/* Tag-1-Reihenfolge: erst die zwei Dinge, die der Partner selbst tun
               kann (Broker-Konto + Profil), dann das Gesperrte MIT Grund. */}
+          <PartnerBrokerLinks slug={row.slug} />
           <PartnerIbSetup slug={row.slug} />
           <PartnerPrimer name={row.name} />
 
@@ -399,6 +401,7 @@ export function PartnerCard({ row }: { row: PartnerRow }) {
               bestaetigt ist: ohne sie wird kein Lot gutgeschrieben, egal wie
               viel seine Leute handeln. Ist sie bestaetigt, schrumpft die
               Komponente von selbst auf eine Zeile. */}
+          <PartnerBrokerLinks slug={row.slug} />
           <PartnerIbSetup slug={row.slug} />
         </>
       )}
