@@ -22,6 +22,7 @@ import { Route as PartnerProgramRouteImport } from './routes/partner-program'
 import { Route as PartnerProgrammRouteImport } from './routes/partner-programm'
 import { Route as RegistrierenRouteImport } from './routes/registrieren'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as ScratchSignalcheckRouteImport } from './routes/scratch-signalcheck'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as TeamRouteImport } from './routes/team'
 import { Route as WelcomeRouteImport } from './routes/welcome'
@@ -112,6 +113,11 @@ const RegistrierenRoute = RegistrierenRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScratchSignalcheckRoute = ScratchSignalcheckRouteImport.update({
+  id: '/scratch-signalcheck',
+  path: '/scratch-signalcheck',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignupRoute = SignupRouteImport.update({
@@ -264,6 +270,7 @@ export interface FileRoutesByFullPath {
   '/partner-programm': typeof PartnerProgrammRoute
   '/registrieren': typeof RegistrierenRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/scratch-signalcheck': typeof ScratchSignalcheckRoute
   '/signup': typeof SignupRoute
   '/team': typeof TeamRoute
   '/welcome': typeof WelcomeRoute
@@ -303,6 +310,7 @@ export interface FileRoutesByTo {
   '/partner-programm': typeof PartnerProgrammRoute
   '/registrieren': typeof RegistrierenRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/scratch-signalcheck': typeof ScratchSignalcheckRoute
   '/signup': typeof SignupRoute
   '/team': typeof TeamRoute
   '/welcome': typeof WelcomeRoute
@@ -345,6 +353,7 @@ export interface FileRoutesById {
   '/partner-programm': typeof PartnerProgrammRoute
   '/registrieren': typeof RegistrierenRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/scratch-signalcheck': typeof ScratchSignalcheckRoute
   '/signup': typeof SignupRoute
   '/team': typeof TeamRoute
   '/welcome': typeof WelcomeRoute
@@ -389,6 +398,7 @@ export interface FileRouteTypes {
     | '/partner-programm'
     | '/registrieren'
     | '/reset-password'
+    | '/scratch-signalcheck'
     | '/signup'
     | '/team'
     | '/welcome'
@@ -428,6 +438,7 @@ export interface FileRouteTypes {
     | '/partner-programm'
     | '/registrieren'
     | '/reset-password'
+    | '/scratch-signalcheck'
     | '/signup'
     | '/team'
     | '/welcome'
@@ -469,6 +480,7 @@ export interface FileRouteTypes {
     | '/partner-programm'
     | '/registrieren'
     | '/reset-password'
+    | '/scratch-signalcheck'
     | '/signup'
     | '/team'
     | '/welcome'
@@ -512,6 +524,7 @@ export interface RootRouteChildren {
   PartnerProgrammRoute: typeof PartnerProgrammRoute
   RegistrierenRoute: typeof RegistrierenRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ScratchSignalcheckRoute: typeof ScratchSignalcheckRoute
   SignupRoute: typeof SignupRoute
   TeamRoute: typeof TeamRoute
   WelcomeRoute: typeof WelcomeRoute
@@ -611,6 +624,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scratch-signalcheck': {
+      id: '/scratch-signalcheck'
+      path: '/scratch-signalcheck'
+      fullPath: '/scratch-signalcheck'
+      preLoaderRoute: typeof ScratchSignalcheckRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signup': {
@@ -887,6 +907,7 @@ const rootRouteChildren: RootRouteChildren = {
   PartnerProgrammRoute: PartnerProgrammRoute,
   RegistrierenRoute: RegistrierenRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ScratchSignalcheckRoute: ScratchSignalcheckRoute,
   SignupRoute: SignupRoute,
   TeamRoute: TeamRoute,
   WelcomeRoute: WelcomeRoute,

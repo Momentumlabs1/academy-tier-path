@@ -251,7 +251,10 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         /* 3D orbit — one GPU transform drives the whole ring, no z-index/repaint */
         @keyframes cosmoRingSpin { to { transform: rotateY(360deg); } }
         @keyframes cosmoRingSpinRev { to { transform: rotateY(-360deg); } }
-        @keyframes cosmoLotusFloat { 0%,100% { transform: translate(-50%,-50%) translateZ(0.01px) translateY(0); } 50% { transform: translate(-50%,-50%) translateZ(0.01px) translateY(-14px); } }
+        /* Kein left/top+translate(-50%) mehr: auf dem iPhone schob genau diese
+           Kette Cosmo aus der Ringmitte nach rechts. Grid zentriert ihn
+           layoutseitig; die Animation traegt nur noch Schwebeweg + Z-Tiefe. */
+        @keyframes cosmoLotusFloat { 0%,100% { transform: translateZ(0.01px) translateY(0); } 50% { transform: translateZ(0.01px) translateY(-14px); } }
         /* Radius des Kerzenrings.
            Stand vorher als 30cqw direkt im translateZ(). Container-Einheiten
            INNERHALB einer 3D-Transformation loest iOS-Safari unzuverlässig auf:
@@ -263,7 +266,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         .orbit-stage { perspective: 640px; --orbit-r: 87px; }
         @media (min-width: 640px)  { .orbit-stage { --orbit-r: 126px; } }
         @media (min-width: 1024px) { .orbit-stage { --orbit-r: 150px; } }
-        .orbit-scene { position:absolute; inset:0; transform-style:preserve-3d; }
+        .orbit-scene { position:absolute; inset:0; transform-style:preserve-3d; display:grid; place-items:center; }
         .orbit-ring { position:absolute; inset:0; transform-style:preserve-3d; animation: cosmoRingSpin ${ORBIT_DUR}s linear infinite; will-change: transform; }
         .orbit-pos { position:absolute; left:50%; top:50%; transform-style:preserve-3d; }
         /* Depth cue: a candle passing behind Cosmo dims and desaturates. The
@@ -274,7 +277,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         .orbit-bill { transform-style:preserve-3d; }
         .orbit-depth { animation: orbitDepth ${ORBIT_DUR}s linear infinite; }
         .orbit-spin { animation: cosmoRingSpinRev ${ORBIT_DUR}s linear infinite; will-change: transform; }
-        .cosmo-lotus { position:absolute; left:50%; top:50%; transform: translate(-50%,-50%); animation: cosmoLotusFloat 6s ease-in-out infinite; transition: filter .4s ease; backface-visibility:hidden; }
+        .cosmo-lotus { position:relative; transform: translateZ(0.01px); animation: cosmoLotusFloat 6s ease-in-out infinite; transition: filter .4s ease; backface-visibility:hidden; }
         /* hover: Cosmo brightens, candles speed up — cheap filter/timing only */
         .orbit-stage:hover .cosmo-lotus { filter: brightness(1.05) drop-shadow(0 0 26px color-mix(in oklch, ${accent} 45%, transparent)); }
         .orbit-stage:hover .orbit-ring, .orbit-stage:hover .orbit-spin, .orbit-stage:hover .orbit-depth { animation-duration: ${Math.round(ORBIT_DUR * 0.6)}s; }
@@ -349,10 +352,16 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         <div className="mx-auto grid max-w-6xl items-center gap-6 px-4 pb-8 pt-6 sm:gap-10 sm:pb-16 sm:px-8 sm:pt-12 lg:grid-cols-[1.02fr_0.98fr] lg:gap-14 lg:pb-24 lg:pt-16">
           {/* Left: copy */}
           <div className="hero-exit relative z-20 text-center lg:text-left">
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 sm:mb-6 bg-white/[0.04] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
-              <span className="relative flex h-1.5 w-1.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-70" style={{ background: primary }} /><span className="relative inline-flex h-1.5 w-1.5 rounded-full" style={{ background: primary }} /></span>
-              {showCosmo ? "Cosmos Candles Academy" : `Powered by Cosmos Candles`}
-            </div>
+            {/* Auf der EIGENEN Seite keine Namens-Pille: Logo oben links sagt
+                es schon, und zwischen Cosmo und der Headline war sie nur ein
+                Stolperstein ("macht keinen Sinn"). Partner-Seiten behalten die
+                Powered-by-Attribution — dort ist sie Information. */}
+            {!showCosmo && (
+              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 sm:mb-6 bg-white/[0.04] px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-white/70">
+                <span className="relative flex h-1.5 w-1.5"><span className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-70" style={{ background: primary }} /><span className="relative inline-flex h-1.5 w-1.5 rounded-full" style={{ background: primary }} /></span>
+                Powered by Cosmos Candles
+              </div>
+            )}
 
             <h1 className="lv-in2 apl-sheen font-display text-[2.1rem] font-black leading-[1.02] tracking-tight [text-wrap:balance] sm:text-5xl sm:leading-[0.98] lg:text-6xl xl:text-[4.25rem] lg:leading-[0.95]">
               {showCosmo ? (
@@ -440,7 +449,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
       <Band tone="raised" max="max-w-4xl" className="py-8 sm:py-12">
         {/* Das Video laeuft 1:19 — "60 seconds" stand hier noch aus der Zeit
             vor dem fertigen Schnitt. */}
-        <SectionHead n="01" kicker="Watch first" title={showCosmo ? "The whole thing in 70 seconds" : "The whole thing in 73 seconds"} primary={primary} />
+        <SectionHead kicker="Watch first" title={showCosmo ? "The whole thing in 70 seconds" : "The whole thing in 73 seconds"} primary={primary} />
         <div className="relative mt-8">
           {/* KEIN nachgebautes Browserfenster mehr.
               Hier sassen Ampelpunkte und eine Adresszeile — die Seite tat so,
@@ -555,7 +564,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           Flaechen alternieren, der Marken-Wash springt mit der Preview-Seite. */}
       <Band className="pb-2 sm:pb-4">
         <div className="mx-auto max-w-2xl text-center">
-          <SectionHead n="02" kicker="Everything included · free" title="Signals, academy, tools. One platform, free." primary={primary} center />
+          <SectionHead kicker="Everything included · free" title="Signals, academy, tools. One platform, free." primary={primary} center />
         </div>
       </Band>
 
@@ -614,7 +623,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               <img src="/cosmo/cosmo-avatar.png" alt="Cosmo" className="cosmo-float relative h-16 w-16 rounded-full object-cover ring-2 ring-white/10" />
             </div>
           )}
-          <SectionHead n="03" kicker="Three steps" title="How it works" primary={primary} center />
+          <SectionHead kicker="Three steps" title="How it works" primary={primary} center />
         </div>
         {/* A descending staircase instead of three identical boxes: each card
             steps down (lg), a gradient line runs through the numbered nodes,
@@ -645,7 +654,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
       </Band>
 
       <Band>
-        <SectionHead n="04" kicker="How far you can go" title="Member tiers" primary={primary} />
+        <SectionHead kicker="How far you can go" title="Member tiers" primary={primary} />
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
           {TIERS.map((t, idx) => (
             <div key={t.key} className={"apl-card relative flex flex-col overflow-hidden rounded-3xl border border-white/[0.07] p-6" + (idx === 1 ? " sm:-translate-y-2" : "")}
@@ -671,7 +680,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
       {/* ─────────────────────── TESTIMONIALS ─────────────────────── */}
       {tenant.testimonials && tenant.testimonials.length > 0 && (
         <Band tone="raised">
-          <SectionHead n="05" kicker="Proof" title="Real members, real results" primary={primary} />
+          <SectionHead kicker="Proof" title="Real members, real results" primary={primary} />
           <div className="mt-8 grid gap-4 sm:grid-cols-3">
             {tenant.testimonials.map((t) => (
               <div key={t.handle} className="flex flex-col rounded-3xl border border-white/[0.07] bg-white/[0.04] p-6">
@@ -690,7 +699,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
       {/* ─────────────────────── FAQ ─────────────────────── */}
       {tenant.faq && tenant.faq.length > 0 && (
         <Band tone="raised" max="max-w-3xl">
-          <SectionHead n="06" kicker="Questions" title="Good to know" primary={primary} />
+          <SectionHead kicker="Questions" title="Good to know" primary={primary} />
           <div className="mt-8 space-y-3">
             {tenant.faq.map((f) => (
               <details key={f.q} className="apl-card group rounded-2xl border border-white/[0.07] px-5 py-4">
@@ -916,19 +925,22 @@ function ChapterZone({ tone = "base", washSide, strength, primary, children }: {
 /* Number, kicker, title — and nothing else. Same head as /partner-program:
    the optional `sub` lead paragraph is gone, because a title that needs
    restating below itself is a title that isn't doing its job. */
-function SectionHead({ n, kicker, title, primary, center }: { n: string; kicker: string; title: string; primary: string; center?: boolean }) {
+/**
+ * Kicker + Titel — OHNE Nummer.
+ *
+ * Vorher trugen auch diese Koepfe Nummern und Watermark-Ziffern; zusammen mit
+ * den fuenf Produkt-Kapiteln ergab das ZWEI konkurrierende Zaehlungen auf einer
+ * Seite ("dann faengt aber nochmal Punkt eins an ... komplett ueberlappend und
+ * doppelt"). Die grosse Ziffern-Illustration gehoert jetzt EXKLUSIV den
+ * Kapiteln 01-05; alle anderen Sektionen sprechen nur mit Kicker und Titel.
+ */
+function SectionHead({ kicker, title, primary, center }: { kicker: string; title: string; primary: string; center?: boolean }) {
   return (
-    // Watermark numeral + sheen: the same head language the chapters and the
-    // partner page already speak — these were the last bare titles on the site.
     <div className={cn("relative", center && "text-center")}>
-      <span aria-hidden className={cn(
-        "pointer-events-none absolute -top-9 select-none font-display text-[5rem] font-black leading-none text-white/[0.045] sm:-top-12 sm:text-[6.5rem]",
-        center ? "left-1/2 -translate-x-1/2" : "right-0",
-      )}>{n}</span>
       <div className={cn("relative flex items-center gap-3", center && "justify-center")}>
-        <span className="font-mono text-[11px] font-bold tabular-nums" style={{ color: primary }}>{n}</span>
-        <span className="h-px w-6" style={{ background: `color-mix(in oklch, ${primary} 40%, transparent)` }} aria-hidden />
-        <span className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/45">{kicker}</span>
+        <span className="h-px w-6" style={{ background: `color-mix(in oklch, ${primary} 55%, transparent)` }} aria-hidden />
+        <span className="text-[11px] font-semibold uppercase tracking-[0.18em]" style={{ color: primary }}>{kicker}</span>
+        {center && <span className="h-px w-6" style={{ background: `color-mix(in oklch, ${primary} 55%, transparent)` }} aria-hidden />}
       </div>
       <h2 className="apl-sheen relative mt-3 font-display text-3xl font-black leading-tight sm:text-4xl">{title}</h2>
     </div>
@@ -974,6 +986,9 @@ function Showcase({ n, tag, title, body, points, preview, primary, icon: Icon, r
         {/* Nur Nummer und Linie. Der Name steht direkt darunter im Chip — ihn
             hier zu wiederholen las sich wie ein Fehler, nicht wie Gestaltung. */}
         <span className="h-px flex-1" style={{ background: `linear-gradient(to right, color-mix(in oklch, ${primary} 45%, transparent), transparent)` }} />
+        {/* Mobil lebt die grosse Ziffer HIER, rechtsbuendig — Illustration
+            ohne Ueberlagerung. Ab sm uebernimmt das grosse Watermark unten. */}
+        <span className="select-none font-display text-[2.6rem] font-black leading-none sm:hidden" style={{ color: "transparent", WebkitTextStroke: `1.5px color-mix(in oklch, ${primary} 40%, transparent)` }}>{n}</span>
       </div>
 
       <div className={cn("sc-copy relative", reversed && "lg:order-2")}>
@@ -982,9 +997,12 @@ function Showcase({ n, tag, title, body, points, preview, primary, icon: Icon, r
             quer auf der Produktkachel, weil dort die Vorschau zuerst kommt.
             Hier ist immer Platz, und die Zahl liest sich als Hintergrund der
             Kapitelüberschrift — was sie ja sein soll. */}
+        {/* Nur ab sm: bei 7rem lag die Ziffer auf dem Handy quer UEBER Chip
+            und Headline — unlesbares Ineinander. Mobil sitzt sie stattdessen
+            klein in der Kapitelmarken-Zeile (siehe oben). */}
         <span
           aria-hidden
-          className="sc-num pointer-events-none absolute -top-10 -z-10 select-none font-display text-[7rem] font-black leading-none sm:-top-14 sm:text-[10rem]"
+          className="sc-num pointer-events-none absolute -z-10 hidden select-none font-display font-black leading-none sm:-top-14 sm:block sm:text-[10rem]"
           style={{
             [reversed ? "right" : "left"]: "-0.06em",
             color: "transparent",
