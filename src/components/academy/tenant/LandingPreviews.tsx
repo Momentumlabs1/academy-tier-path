@@ -62,19 +62,26 @@ function PreviewStyles() {
       .lp-eq     { animation: lpDrawLoop 12s ease-in-out infinite; }
       .lp-eqfill { animation: lpCountLoop 12s ease-in-out infinite; }
       @supports (animation-timeline: view()) {
-        /* Fenster spaet gelegt (entry 35%+): frueher war der Scrub fertig,
-           bevor die Karte im Blickfeld ankam — sah aus wie "keine Animation". */
-        .lp-eq     { animation: scDraw linear both; animation-timeline: view(); animation-range: entry 40% entry 100%; }
-        .lp-eqfill { animation: scFade linear both; animation-timeline: view(); animation-range: entry 70% entry 100%; }
-        .lp-chat > :nth-child(2) { animation: scBub cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 35% entry 62%; }
-        .lp-chat > :nth-child(3) { animation: scBub cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 52% entry 79%; }
-        .lp-chat > :nth-child(4) { animation: scBub cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 69% entry 96%; }
-        .lp-prog   { transform-origin: left; animation: scFillX linear both; animation-timeline: view(); animation-range: entry 45% entry 100%; }
-        .lp-ring   { animation: scRing linear both; animation-timeline: view(); animation-range: entry 40% entry 100%; }
-        .lp-stack-a { animation: scUnstack linear both; animation-timeline: view(); animation-range: entry 30% entry 80%; }
-        .lp-stack-b { animation: scUnstack linear both; animation-timeline: view(); animation-range: entry 40% entry 90%; }
-        .lp-skin-l { animation: scGatherL cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 35% entry 90%; }
-        .lp-skin-r { animation: scGatherR cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 35% entry 90%; }
+        /* WICHTIG: benannte Timeline statt view() direkt. view() bindet an den
+           NAECHSTEN Scroll-Container — und die Scrub-Elemente stecken in
+           overflow-hidden-Wrappern (Chart-Div, PhoneFrame, Fortschrittsbalken).
+           Ein overflow-hidden-Div IST ein Scroll-Container, nur ohne Scrollweg:
+           die Timeline blieb fuer immer inaktiv, nichts bewegte sich. Die
+           Karten-WURZEL (.lp-scope, ohne hidden-Vorfahren) definiert deshalb
+           --scv, und alle inneren Scrubs folgen ihr — gestaffelt ueber den
+           Eintritt der ganzen Karte, spaet genug, dass der Blick dabei ist. */
+        .lp-scope  { view-timeline: --scv block; }
+        .lp-eq     { animation: scDraw linear both; animation-timeline: --scv; animation-range: entry 40% entry 100%; }
+        .lp-eqfill { animation: scFade linear both; animation-timeline: --scv; animation-range: entry 70% entry 100%; }
+        .lp-chat > :nth-child(2) { animation: scBub cubic-bezier(.22,1,.36,1) both; animation-timeline: --scv; animation-range: entry 35% entry 62%; }
+        .lp-chat > :nth-child(3) { animation: scBub cubic-bezier(.22,1,.36,1) both; animation-timeline: --scv; animation-range: entry 52% entry 79%; }
+        .lp-chat > :nth-child(4) { animation: scBub cubic-bezier(.22,1,.36,1) both; animation-timeline: --scv; animation-range: entry 69% entry 96%; }
+        .lp-prog   { transform-origin: left; animation: scFillX linear both; animation-timeline: --scv; animation-range: entry 45% entry 100%; }
+        .lp-ring   { animation: scRing linear both; animation-timeline: --scv; animation-range: entry 40% entry 100%; }
+        .lp-stack-a { animation: scUnstack linear both; animation-timeline: --scv; animation-range: entry 30% entry 80%; }
+        .lp-stack-b { animation: scUnstack linear both; animation-timeline: --scv; animation-range: entry 40% entry 90%; }
+        .lp-skin-l { animation: scGatherL cubic-bezier(.22,1,.36,1) both; animation-timeline: --scv; animation-range: entry 35% entry 90%; }
+        .lp-skin-r { animation: scGatherR cubic-bezier(.22,1,.36,1) both; animation-timeline: --scv; animation-range: entry 35% entry 90%; }
       }
       @media (prefers-reduced-motion: reduce) {
         .lp-draw,.lp-rise,.lp-fill,.lp-pulse,.lp-pop,.lp-slide,.lp-flash,.lp-count,.lp-flame,.lp-ken,.lp-hit,.lp-sheen,.lp-bob,.lp-dot,.lp-glow,.lp-eq,.lp-eqfill,.lp-chat > *,.lp-prog,.lp-ring,.lp-stack-a,.lp-stack-b,.lp-skin-l,.lp-skin-r,.lp-beam { animation: none !important; }
@@ -102,7 +109,7 @@ function ChromeStrap({ label, primary, className }: { label: string; primary: st
 
 function Frame({ label, children, primary }: { label: string; children: React.ReactNode; primary: string }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0a0d16] shadow-2xl">
+    <div className="lp-scope relative overflow-hidden rounded-2xl border border-white/10 bg-[#0a0d16] shadow-2xl">
       <div className="flex items-center gap-1.5 border-b border-white/8 px-3.5 py-2.5">
         <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" /><span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" /><span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
         <ChromeStrap label={label} primary={primary} className="ml-2" />
@@ -116,7 +123,7 @@ function Frame({ label, children, primary }: { label: string; children: React.Re
  *  die Vorschau ein Telefon — nicht ein weiteres Desktop-Fenster. */
 function PhoneFrame({ label, children, primary }: { label: string; children: React.ReactNode; primary: string }) {
   return (
-    <div className="relative mx-auto w-full max-w-[300px] overflow-hidden rounded-[2rem] border border-white/12 bg-[#0a0d16] shadow-2xl">
+    <div className="lp-scope relative mx-auto w-full max-w-[300px] overflow-hidden rounded-[2rem] border border-white/12 bg-[#0a0d16] shadow-2xl">
       {/* Notch-Pille */}
       <div className="flex items-center justify-center pt-2.5">
         <span className="h-[18px] w-24 rounded-full bg-black/80 ring-1 ring-white/10" />
@@ -132,7 +139,7 @@ function PhoneFrame({ label, children, primary }: { label: string; children: Rea
 /** Kursplayer-Rahmen fuer die Academy: kein Fenster-Chrome, das Video ist der Star. */
 function PlayerFrame({ label, children, primary }: { label: string; children: React.ReactNode; primary: string }) {
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0a0d16] shadow-2xl">
+    <div className="lp-scope relative overflow-hidden rounded-2xl border border-white/10 bg-[#0a0d16] shadow-2xl">
       <div className="flex items-center justify-between border-b border-white/8 px-3.5 py-2.5">
         <ChromeStrap label={label} primary={primary} />
       </div>
@@ -483,7 +490,7 @@ export function QuizPreview({ primary }: { primary: string }) {
   function reset() { setStep(0); setPicked(null); setXp(0); setRight(0); }
 
   return (
-    <div className="relative">
+    <div className="lp-scope relative">
       <PreviewStyles />
       {/* Karten-Stapel: zwei Blanko-Karten faechern beim Scrollen hinter der
           echten auf — Quiz-Sprache statt Fenster-Sprache. aria-hidden und
@@ -588,7 +595,7 @@ export function RewardsPreview({ primary, accent, showCosmo }: { primary: string
   const tiers = [{ n: "Foundation", on: true }, { n: "Operator", on: true }, { n: "Elite", on: false }];
   // Ringumfang 2πr bei r=52 ≈ 326.7; 72 % gefuellt heisst Offset 326.7 · 0.28.
   return (
-    <div className="relative rounded-2xl border border-white/10 bg-[#0a0d16] p-4 shadow-2xl">
+    <div className="lp-scope relative rounded-2xl border border-white/10 bg-[#0a0d16] p-4 shadow-2xl">
       <PreviewStyles />
       <div className="flex items-center justify-between">
         <ChromeStrap label="Rewards · your progress" primary={primary} />
@@ -646,7 +653,7 @@ export function WhitelabelPreview({ primary }: { primary: string }) {
     { name: "FX Elite", c: "oklch(0.75 0.18 250)", a: "oklch(0.65 0.2 200)" },
   ];
   return (
-    <div className="relative rounded-2xl border border-white/10 bg-[#0a0d16] p-4 shadow-2xl">
+    <div className="lp-scope relative rounded-2xl border border-white/10 bg-[#0a0d16] p-4 shadow-2xl">
       <PreviewStyles />
       <ChromeStrap label="White-label · your brand" primary={primary} />
       {/* Die drei Marken liegen anfangs gestapelt in der Mitte und FAECHERN
