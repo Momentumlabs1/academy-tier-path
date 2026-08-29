@@ -194,14 +194,14 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         @media (prefers-reduced-motion: reduce) { .cta-arrow { transition: none; } }
         @keyframes heroExit { to { opacity:.3; transform: translateY(-28px) scale(.985); } }
         @supports (animation-timeline: scroll()) {
-          .hero-exit { animation: heroExit linear both; animation-timeline: scroll(); animation-range: 0 70vh; }
+          .hero-exit { animation: heroExit linear both; animation-timeline: scroll(root); animation-range: 0 70vh; }
         }
         /* Most visitors are on phones: one thumb-height CTA that slides in
            once the hero's own buttons have scrolled away. Scroll-driven, so
            it arrives exactly when the hero CTA leaves — not on a timer. */
         @keyframes mCtaIn { from { opacity:0; transform: translateY(110%); } to { opacity:1; transform: translateY(0); } }
         @supports (animation-timeline: scroll()) {
-          .m-cta { animation: mCtaIn linear both; animation-timeline: scroll(); animation-range: 55vh 85vh; }
+          .m-cta { animation: mCtaIn linear both; animation-timeline: scroll(root); animation-range: 55vh 85vh; }
         }
         @keyframes twinkle { 0%,100% { opacity:.15; } 50% { opacity:.8; } }
         .twinkle { animation: twinkle 4s ease-in-out infinite; }

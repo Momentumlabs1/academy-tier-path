@@ -333,5 +333,11 @@
    in einem spaeteren Abschnitt wuerde reichen, damit sich die ganze Seite
    seitlich schieben laesst. `clip` statt `hidden`, weil `hidden` auf dem
    Wurzelelement position:sticky im Inneren kaputtmacht. */
-html { overflow-x: clip; }
+/* NUR auf body, NICHT auf html: overflow-x auf dem Wurzelelement macht per
+   CSS-Achsenregel beide Achsen zu clip — und damit ist fuer alle
+   CSS-deklarierten Scroll-Timelines (animation-timeline: view()/scroll())
+   kein Scrollport mehr auffindbar: JEDE Scroll-Animation der Seite war
+   still inaktiv (Timeline currentTime null), waehrend per JS erzeugte
+   Timelines liefen. body clippt horizontal genauso zuverlaessig, ohne den
+   Dokument-Scroller zu vergiften. */
 body { overflow-x: clip; -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
