@@ -264,10 +264,14 @@ function TeaserCard({ s, locked, now }: { s: Teaser; locked: boolean; now: numbe
   const body = (
     <>
       {/* Farbkante links: SHORT rot, LONG gruen. Die Richtung ist die erste
-          Information, die jemand sucht — sie soll ohne Lesen ankommen. */}
+          Information, die jemand sucht — sie soll ohne Lesen ankommen.
+          Sie wird bei alten Rufen nur leicht zurueckgenommen, nicht
+          weggedimmt: ob der Desk long oder short war, bleibt wahr, egal wie
+          alt der Ruf ist. Auf 25 % war sie schlicht unsichtbar — dann kann
+          man sie auch weglassen. */}
       <span
         aria-hidden
-        className={cn("absolute inset-y-0 left-0 w-[3px] rounded-l-2xl transition-opacity", accent, stale ? "opacity-25" : "opacity-90")}
+        className={cn("absolute inset-y-0 left-0 w-[3px] transition-opacity", accent, stale ? "opacity-60" : "opacity-100")}
       />
       <div className="flex items-center gap-2">
         <span className="font-display text-base font-black tracking-tight">{s.asset}</span>
@@ -276,22 +280,28 @@ function TeaserCard({ s, locked, now }: { s: Teaser; locked: boolean; now: numbe
             <Icon className="h-3 w-3" /> {s.side}
           </span>
         )}
-        {/* Der Zustand steht neben dem Instrument, nicht im Kleingedruckten:
-            "laeuft gerade" und "vorbei" sind zwei verschiedene Angebote. */}
-        {stale ? (
-          <span className="inline-flex items-center gap-1 rounded-full border border-white/12 bg-white/[0.04] px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.1em] text-muted-foreground">
-            Inactive
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.1em] text-primary">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70" />
-              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
+        {/* Zustand und Zeitpunkt gehoeren zusammen und stehen rechts.
+            Vorher sass der Zustand direkt hinter dem Instrument — drei Chips
+            in einer Reihe (GOLD / SELL / INACTIVE), und weil gerade alle Rufe
+            aelter als zehn Minuten sind, stand auf jeder Karte dasselbe graue
+            Wort an der auffaelligsten Stelle. Links steht jetzt, WAS gerufen
+            wurde; rechts, WANN und ob es noch laeuft. */}
+        <span className="ml-auto flex shrink-0 items-center gap-1.5">
+          {stale ? (
+            <span className="inline-flex items-center rounded-full border border-white/10 bg-white/[0.03] px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] text-muted-foreground/70">
+              Inactive
             </span>
-            Live
-          </span>
-        )}
-        <span className="ml-auto shrink-0 text-[10px] font-medium tabular-nums text-muted-foreground">{ago(s.created_at)}</span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.1em] text-primary">
+              <span className="relative flex h-1.5 w-1.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70" />
+                <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
+              </span>
+              Live
+            </span>
+          )}
+          <span className="text-[10px] font-medium tabular-nums text-muted-foreground">{ago(s.created_at)}</span>
+        </span>
       </div>
 
       {locked ? (
@@ -342,7 +352,7 @@ function TeaserCard({ s, locked, now }: { s: Teaser; locked: boolean; now: numbe
           Zeigen, damit die Liste im Ruhezustand ruhig bleibt. */}
       <ArrowRight
         aria-hidden
-        className="pointer-events-none absolute right-3 top-3.5 h-3.5 w-3.5 -translate-x-1 text-muted-foreground opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-70"
+        className="pointer-events-none absolute bottom-3 right-3 h-3.5 w-3.5 -translate-x-1 text-muted-foreground opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-70"
       />
     </>
   );
