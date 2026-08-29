@@ -34,6 +34,22 @@ interface Teaser {
 
 const SHORT_SIDES = new Set(["SELL", "SHORT"]);
 
+/**
+ * WIE LANGE EIN RUF ALS LEBEND GILT.
+ *
+ * Der Desk handelt kurzfristig; nach zehn Minuten ist der Trade durch. Bis
+ * hierher stand auf einer Karte von GESTERN trotzdem "Running" — die Seite
+ * behauptete damit einen offenen Trade, den es nicht mehr gibt. Das ist die
+ * eine Sorte Fehler, die man auf einer Signalseite nicht machen darf: wer
+ * darauf aufspringt, springt auf etwas Vergangenes.
+ *
+ * Ab hier gilt: aelter als zehn Minuten -> die Karte sagt "Inactive" und
+ * nimmt sich optisch zurueck. Was der Desk GEMELDET hat (Ziele getroffen,
+ * ausgestoppt, auf Einstand gezogen), bleibt stehen — das ist Vergangenheit
+ * und bleibt wahr. Nur die Behauptung "laeuft gerade" verfaellt.
+ */
+const LIVE_WINDOW_MS = 10 * 60 * 1000;
+
 /** "2h ago" beats a timestamp here: the point is that this is recent. */
 function ago(iso: string) {
   const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
@@ -57,6 +73,18 @@ const db = () =>
 
 export function SignalTeaserRail({ locked }: { locked: boolean }) {
   const [rows, setRows] = useState<Teaser[] | null>(null);
+  /* Eine tickende Uhr, damit eine Karte VOR den Augen des Besuchers auf
+     "Inactive" umspringt. Ohne sie bliebe ein Ruf, der beim Seitenaufruf noch
+     jung war, den ganzen Besuch lang "live" — und das Panel wuerde genau in
+     dem Moment falsch, in dem jemand laenger hinsieht. Alle 30 Sekunden
+     reicht: die Grenze liegt bei zehn Minuten, nicht bei Sekunden. */
+  const [now, setNow] = useState<number | null>(null);
+
+  useEffect(() => {
+    setNow(Date.now());
+    const t = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -70,6 +98,12 @@ export function SignalTeaserRail({ locked }: { locked: boolean }) {
   }, []);
 
   const live = rows && rows.length > 0;
+  /* Der pulsende Punkt in der Ueberschrift ist ein Versprechen: "gerade
+     passiert etwas". Er pulste bisher immer — auch wenn der juengste Ruf
+     einen Tag alt war. Jetzt pulst er nur, wenn wirklich einer im
+     Zehn-Minuten-Fenster liegt; sonst steht er ruhig. */
+  const anyLive =
+    now !== null && !!rows?.some((r) => now - new Date(r.created_at).getTime() <= LIVE_WINDOW_MS);
 
   return (
     <div
@@ -86,8 +120,10 @@ export function SignalTeaserRail({ locked }: { locked: boolean }) {
       <div className="relative flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70" />
-            <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+            {anyLive && (
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70" />
+            )}
+            <span className={cn("relative inline-flex h-2 w-2 rounded-full", anyLive ? "bg-primary" : "bg-white/25")} />
           </span>
           <h3 className="font-display text-lg font-bold leading-none">Live signals</h3>
         </div>
@@ -118,7 +154,17 @@ export function SignalTeaserRail({ locked }: { locked: boolean }) {
             {rows.map((r) => (
               <span
                 key={r.id}
-                title={r.stopped_out ? "stopped out" : r.targets_hit > 0 ? `${r.targets_hit} targets` : "running"}
+                title={
+                  r.stopped_out
+                    ? "stopped out"
+                    : r.targets_hit > 0
+                      ? `${r.targets_hit} targets`
+                      // Auch hier: nach dem Zeitfenster nicht mehr "running"
+                      // behaupten. Dieselbe Regel wie auf den Karten.
+                      : now !== null && now - new Date(r.created_at).getTime() > LIVE_WINDOW_MS
+                        ? "closed"
+                        : "running"
+                }
                 className={cn(
                   "h-1.5 flex-1 rounded-full",
                   r.stopped_out ? "bg-red-400/70" : r.targets_hit > 0 ? "bg-emerald-400/80" : "bg-white/15",
@@ -137,7 +183,7 @@ export function SignalTeaserRail({ locked }: { locked: boolean }) {
         {rows === null
           ? [0, 1, 2].map((i) => <div key={i} className="h-[104px] animate-pulse rounded-2xl bg-white/[0.04]" />)
           : live
-            ? rows.map((s) => <TeaserCard key={s.id} s={s} locked={locked} />)
+            ? rows.map((s) => <TeaserCard key={s.id} s={s} locked={locked} now={now} />)
             : (
               <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-xs leading-relaxed text-muted-foreground">
                 The desk posts every call in the private Telegram channel — instrument,
@@ -173,11 +219,17 @@ export function SignalTeaserRail({ locked }: { locked: boolean }) {
   );
 }
 
-function TeaserCard({ s, locked }: { s: Teaser; locked: boolean }) {
+function TeaserCard({ s, locked, now }: { s: Teaser; locked: boolean; now: number | null }) {
   const short = SHORT_SIDES.has(s.side);
   const Icon = short ? TrendingDown : TrendingUp;
   const tone = short ? "text-red-400" : "text-emerald-400";
   const toneBg = short ? "bg-red-400/10 border-red-400/25" : "bg-emerald-400/10 border-emerald-400/25";
+  const accent = short ? "bg-red-400" : "bg-emerald-400";
+
+  /* Solange die Uhr noch nicht steht (erster Frame), gilt der Ruf als lebend —
+     lieber einmal zu frisch als ein falsches "Inactive" auf einem Ruf, der
+     gerade erst reinkam. */
+  const stale = now !== null && now - new Date(s.created_at).getTime() > LIVE_WINDOW_MS;
 
   /**
    * DER AUSGANG IST DIE NACHRICHT.
@@ -203,10 +255,20 @@ function TeaserCard({ s, locked }: { s: Teaser; locked: boolean }) {
         }
       : s.moved_to_be
         ? { text: "Moved to break-even", cls: "text-foreground/70", dot: "bg-white/40" }
-        : { text: "Running", cls: "text-foreground/55", dot: "bg-white/30" };
+        // Ein alter Ruf ohne gemeldetes Ergebnis "laeuft" nicht mehr. Das
+        // Wort waere schlicht falsch, siehe LIVE_WINDOW_MS.
+        : stale
+          ? { text: "Closed — no target reported", cls: "text-foreground/45", dot: "bg-white/25" }
+          : { text: "Running", cls: "text-foreground/55", dot: "bg-white/30" };
 
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-3.5">
+  const body = (
+    <>
+      {/* Farbkante links: SHORT rot, LONG gruen. Die Richtung ist die erste
+          Information, die jemand sucht — sie soll ohne Lesen ankommen. */}
+      <span
+        aria-hidden
+        className={cn("absolute inset-y-0 left-0 w-[3px] rounded-l-2xl transition-opacity", accent, stale ? "opacity-25" : "opacity-90")}
+      />
       <div className="flex items-center gap-2">
         <span className="font-display text-base font-black tracking-tight">{s.asset}</span>
         {s.side && (
@@ -214,7 +276,22 @@ function TeaserCard({ s, locked }: { s: Teaser; locked: boolean }) {
             <Icon className="h-3 w-3" /> {s.side}
           </span>
         )}
-        <span className="ml-auto text-[10px] font-medium text-muted-foreground">{ago(s.created_at)}</span>
+        {/* Der Zustand steht neben dem Instrument, nicht im Kleingedruckten:
+            "laeuft gerade" und "vorbei" sind zwei verschiedene Angebote. */}
+        {stale ? (
+          <span className="inline-flex items-center gap-1 rounded-full border border-white/12 bg-white/[0.04] px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.1em] text-muted-foreground">
+            Inactive
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.1em] text-primary">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
+            </span>
+            Live
+          </span>
+        )}
+        <span className="ml-auto shrink-0 text-[10px] font-medium tabular-nums text-muted-foreground">{ago(s.created_at)}</span>
       </div>
 
       {locked ? (
@@ -260,7 +337,45 @@ function TeaserCard({ s, locked }: { s: Teaser; locked: boolean }) {
           </div>
         </>
       )}
-    </div>
+
+      {/* Der Pfeil sagt, dass die Karte irgendwohin fuehrt. Er kommt beim
+          Zeigen, damit die Liste im Ruhezustand ruhig bleibt. */}
+      <ArrowRight
+        aria-hidden
+        className="pointer-events-none absolute right-3 top-3.5 h-3.5 w-3.5 -translate-x-1 text-muted-foreground opacity-0 transition-all duration-200 group-hover:translate-x-0 group-hover:opacity-70"
+      />
+    </>
+  );
+
+  /**
+   * DIE KARTE FUEHRT DORTHIN, WO DER RUF WIRKLICH STEHT.
+   *
+   * Vorher war sie ein totes Rechteck: man las "GOLD SELL", tippte drauf, und
+   * nichts passierte. Auf dem Handy ist eine Kachel, die aussieht wie ein
+   * Knopf und keiner ist, die haeufigste Sackgasse ueberhaupt.
+   * Gesperrt fuehrt sie zur Freischaltung, freigeschaltet in den Kanal — also
+   * genau an die Stelle, an der die Zahlen stehen, die auf der Karte fehlen.
+   */
+  const shell = cn(
+    "group relative block overflow-hidden rounded-2xl border p-3.5 text-left transition-all duration-200",
+    "hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.06] active:translate-y-0 active:scale-[0.995]",
+    stale ? "border-white/8 bg-white/[0.025]" : "border-white/12 bg-white/[0.045]",
+  );
+
+  return locked ? (
+    <Link to="/tier" className={shell} aria-label={`${s.asset} ${s.side} — unlock the entries`}>
+      {body}
+    </Link>
+  ) : (
+    <a
+      href={TELEGRAM_ENTRY.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={shell}
+      aria-label={`${s.asset} ${s.side} — open in the signal channel`}
+    >
+      {body}
+    </a>
   );
 }
 
