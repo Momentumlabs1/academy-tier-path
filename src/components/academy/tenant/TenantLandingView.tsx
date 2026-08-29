@@ -181,7 +181,16 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
            statt sie zu unterbrechen. Der zweite folgt einen Hauch spaeter,
            damit es eine Geste ist und kein Umschalten. */
         @keyframes pitchCtaIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-        .pitch-cta { animation: pitchCtaIn .55s cubic-bezier(.22,1,.36,1) both; }
+        /* `backwards`, NICHT `both`: der Ruhezustand des Knopfes ist sichtbar.
+           Mit `both` haelt die Fuellung nach dem Lauf den Endwert fest — und
+           solange die Animation noch nicht gestartet ist (Verzoegerung, ein
+           gedrosselter Hintergrund-Tab, eine Engine die sie gar nicht
+           ausfuehrt), steht der Knopf auf opacity 0. Live nachgemessen: genau
+           dieser Fall, der Knopf war unsichtbar. Mit `backwards` gilt der
+           Startwert nur waehrend der Verzoegerung; laeuft die Animation nie,
+           ist der Knopf einfach da. Ein Effekt darf nie der Grund sein,
+           warum jemand den einzigen Knopf nicht sieht. */
+        .pitch-cta { animation: pitchCtaIn .55s cubic-bezier(.22,1,.36,1) backwards; }
         .pitch-cta-1 { animation-delay: .45s; }
         .pitch-cta-2 { animation-delay: .62s; }
         .cta-arrow { transition: transform .25s cubic-bezier(.22,1,.36,1); }
@@ -214,6 +223,26 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         @supports (animation-timeline: view()) {
           .lv-reveal { animation: lvRise .8s cubic-bezier(.22,1,.36,1) both;
                        animation-timeline: view(); animation-range: entry 0% entry 38%; }
+        }
+        /* ── Kapitel-Choreografie (Scroll-gescrubbt) ─────────────────────
+           Jedes Showcase-Kapitel baut sich beim Reinscrollen auf: das
+           Watermark-Numeral driftet langsamer als der Inhalt (Parallax ueber
+           die gesamte Sichtbarkeit), das Vorschau-Fenster kippt aus einer
+           leichten 3D-Neigung ein, Text und Punkte-Chips folgen gestaffelt.
+           Alles endet auf transform:none, damit nach dem Aufbau KEINE
+           Transform-Reste auf interaktiven Kindern (Video, Quiz) liegen.
+           Nur innerhalb @supports — ohne view()-Unterstuetzung steht sofort
+           der Endzustand, exakt wie beim lv-reveal-System darueber. */
+        @keyframes scNum   { from { transform: translateY(42px); } to { transform: translateY(-26px); } }
+        @keyframes scFrame { from { opacity: 0; transform: perspective(900px) rotateX(5deg) translateY(34px) scale(.97); } }
+        @keyframes scCopy  { from { opacity: 0; transform: translateY(26px); } }
+        @supports (animation-timeline: view()) {
+          .sc-num   { animation: scNum linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
+          .sc-frame { animation: scFrame cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 0% entry 50%; }
+          .sc-copy  { animation: scCopy  cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 10% entry 60%; }
+          .sc-chips > :nth-child(1) { animation: scCopy cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 15% entry 62%; }
+          .sc-chips > :nth-child(2) { animation: scCopy cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 24% entry 71%; }
+          .sc-chips > :nth-child(3) { animation: scCopy cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 33% entry 80%; }
         }
         @keyframes spinSlow { to { transform: rotate(360deg); } }
         .spin-slow { animation: spinSlow 48s linear infinite; }
@@ -251,7 +280,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         .orbit-stage:hover .cosmo-lotus { filter: brightness(1.05) drop-shadow(0 0 26px color-mix(in oklch, ${accent} 45%, transparent)); }
         .orbit-stage:hover .orbit-ring, .orbit-stage:hover .orbit-spin, .orbit-stage:hover .orbit-depth { animation-duration: ${Math.round(ORBIT_DUR * 0.6)}s; }
         @media (prefers-reduced-motion: reduce) {
-          .cosmo-float,.cosmo-bob,.chip-float,.candle-grow,.twinkle,.spin-slow,.spin-rev,.aura-pulse,.orbit-ring,.orbit-spin,.orbit-depth,.cosmo-lotus,.lv-in,.lv-in2,.lv-in3,.lv-in4,.lv-reveal,.hero-exit,.m-cta { animation: none !important; }
+          .cosmo-float,.cosmo-bob,.chip-float,.candle-grow,.twinkle,.spin-slow,.spin-rev,.aura-pulse,.orbit-ring,.orbit-spin,.orbit-depth,.cosmo-lotus,.lv-in,.lv-in2,.lv-in3,.lv-in4,.lv-reveal,.hero-exit,.m-cta,.sc-num,.sc-frame,.sc-copy,.sc-chips > * { animation: none !important; }
         }
       `}</style>
 
@@ -509,44 +538,54 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
 
 
 
-      {/* ─────────────────── CAPABILITIES SHOWCASE ─────────────────── */}
-      <Band>
+      {/* ─────────────────── CAPABILITIES SHOWCASE ───────────────────
+          Fuenf eigenstaendige Kapitel-Zonen statt einer Band mit Abstaenden:
+          Flaechen alternieren, der Marken-Wash springt mit der Preview-Seite. */}
+      <Band className="pb-2 sm:pb-4">
         <div className="mx-auto max-w-2xl text-center">
           <SectionHead n="02" kicker="Everything included · free" title="Signals, academy, tools. One platform, free." primary={primary} center />
         </div>
-
-        <div className="mt-10 space-y-20 sm:mt-14 sm:space-y-32">
-          <Showcase n="01" primary={primary} icon={Radio} tag="Live signals"
-            title="Every call from the desk — on your phone in seconds"
-            body="Entry, stop-loss and targets, pushed the moment the desk fires them."
-            points={["Real-time Telegram delivery", "Entry · SL · multiple targets", "Win/loss tracked openly"]}
-            preview={<SignalsPreview primary={primary} showCosmo={showCosmo} />} />
-
-          <Showcase n="02" primary={primary} reversed icon={Bot} tag="Auto-Trader"
-            title="Copy the master account — hands-off"
-            body="Mirror the desk's trades automatically into your own broker account. Switch it off anytime."
-            points={["One-tap copy of the master desk", "Risk scaled to your account", "Full transparency on every position"]}
-            preview={<BotPreview primary={primary} />} />
-
-          <Showcase n="03" primary={primary} icon={GraduationCap} tag="The Academy"
-            title="From your first candle to a funded month"
-            body={`${LESSONS.length} structured video lessons that take you from zero to a repeatable edge.`}
-            points={[`${LESSONS.length} video lessons, zero to pro`, "Progress + completion tracking", "Orderflow tools most traders never see"]}
-            preview={<AcademyPreview primary={primary} accent={accent} />} />
-
-          <Showcase n="04" primary={primary} reversed icon={ListChecks} tag="Live quizzes"
-            title="Learn it, then prove it — and get paid XP"
-            body="Short quizzes lock in each lesson — answer right, bank XP, climb the ladder."
-            points={["Quiz after every lesson", "Instant XP on correct answers", "Reinforces the exact rules that matter"]}
-            preview={<QuizPreview primary={primary} />} />
-
-          <Showcase n="05" primary={primary} icon={Trophy} tag="Earn & level up"
-            title="Every action earns — every level unlocks"
-            body="XP, streaks and levels keep you coming back."
-            points={["XP, streaks & levels", "Tier ladder tied to real progress", "Unlock the live room, auto-trader & more"]}
-            preview={<RewardsPreview primary={primary} accent={accent} />} />
-        </div>
       </Band>
+
+      <ChapterZone tone="base" washSide="right" strength={7} primary={primary}>
+        <Showcase n="01" primary={primary} icon={Radio} tag="Live signals"
+          title="Every call from the desk — on your phone in seconds"
+          body="Entry, stop-loss and targets, pushed the moment the desk fires them."
+          points={["Real-time Telegram delivery", "Entry · SL · multiple targets", "Win/loss tracked openly"]}
+          preview={<SignalsPreview primary={primary} showCosmo={showCosmo} />} />
+      </ChapterZone>
+
+      <ChapterZone tone="raised" washSide="left" strength={9} primary={primary}>
+        <Showcase n="02" primary={primary} reversed icon={Bot} tag="Auto-Trader"
+          title="Copy the master account — hands-off"
+          body="Mirror the desk's trades automatically into your own broker account. Switch it off anytime."
+          points={["One-tap copy of the master desk", "Risk scaled to your account", "Full transparency on every position"]}
+          preview={<BotPreview primary={primary} />} />
+      </ChapterZone>
+
+      <ChapterZone tone="base" washSide="right" strength={7} primary={primary}>
+        <Showcase n="03" primary={primary} icon={GraduationCap} tag="The Academy"
+          title="From your first candle to a funded month"
+          body={`${LESSONS.length} structured video lessons that take you from zero to a repeatable edge.`}
+          points={[`${LESSONS.length} video lessons, zero to pro`, "Progress + completion tracking", "Orderflow tools most traders never see"]}
+          preview={<AcademyPreview primary={primary} accent={accent} />} />
+      </ChapterZone>
+
+      <ChapterZone tone="raised" washSide="left" strength={10} primary={primary}>
+        <Showcase n="04" primary={primary} reversed icon={ListChecks} tag="Live quizzes"
+          title="Learn it, then prove it — and get paid XP"
+          body="Short quizzes lock in each lesson — answer right, bank XP, climb the ladder."
+          points={["Quiz after every lesson", "Instant XP on correct answers", "Reinforces the exact rules that matter"]}
+          preview={<QuizPreview primary={primary} />} />
+      </ChapterZone>
+
+      <ChapterZone tone="base" washSide="right" strength={8} primary={primary}>
+        <Showcase n="05" primary={primary} icon={Trophy} tag="Earn & level up"
+          title="Every action earns — every level unlocks"
+          body="XP, streaks and levels keep you coming back."
+          points={["XP, streaks & levels", "Tier ladder tied to real progress", "Unlock the live room, auto-trader & more"]}
+          preview={<RewardsPreview primary={primary} accent={accent} showCosmo={showCosmo} />} />
+      </ChapterZone>
 
       {/* ───────────────── BEWEIS: echte Ergebnisse ─────────────────
           Zahlen vor Preisen. Rendert nichts, wenn keine Daten da sind — darum
@@ -835,6 +874,33 @@ function Band({ tone = "base", max = "max-w-6xl", className, children }: {
   );
 }
 
+/**
+ * Eine Kapitel-Zone: eigene Flaeche + Richtungs-Wash in Markenfarbe.
+ *
+ * Vorher sassen alle fuenf Showcases in EINER base-Band, getrennt nur durch
+ * Abstand — "die Komponenten sehen zu gleich aus, Trennung zu schwach". Jetzt
+ * ist jedes Kapitel eine eigene Full-Bleed-Sektion: die Flaeche alterniert
+ * (base/raised), und ein radialer Wash in der Markenfarbe sitzt auf der Seite,
+ * auf der die Preview liegt — die Lichtquelle springt beim Scrollen von Seite
+ * zu Seite. White-Label-sicher: nur primary-Prop + Transparenz.
+ */
+function ChapterZone({ tone = "base", washSide, strength, primary, children }: {
+  tone?: "base" | "raised"; washSide: "left" | "right"; strength: number;
+  primary: string; children: React.ReactNode;
+}) {
+  return (
+    <section className={cn(
+      "relative overflow-clip px-4 py-16 sm:px-8 sm:py-24",
+      tone === "raised" && "border-y border-white/[0.07] bg-white/[0.022]",
+    )}>
+      <div aria-hidden className="pointer-events-none absolute inset-0" style={{
+        background: `radial-gradient(80% 65% at ${washSide === "left" ? "8%" : "92%"} 18%, color-mix(in oklch, ${primary} ${strength}%, transparent), transparent 62%)`,
+      }} />
+      <div className="relative mx-auto max-w-6xl">{children}</div>
+    </section>
+  );
+}
+
 /* Number, kicker, title — and nothing else. Same head as /partner-program:
    the optional `sub` lead paragraph is gone, because a title that needs
    restating below itself is a title that isn't doing its job. */
@@ -892,13 +958,13 @@ function Showcase({ n, tag, title, body, points, preview, primary, icon: Icon, r
           kein Anfang. Diese Zeile ist der Schnitt dazwischen: Nummer, Linie,
           Name. Man erkennt sie im Vorbeiscrollen, ohne ein Wort zu lesen. */}
       <div aria-hidden className="flex items-center gap-3 lg:col-span-2">
-        <span className="font-mono text-[13px] font-black tabular-nums" style={{ color: primary }}>{n}</span>
+        <span className="font-mono text-[15px] font-black tabular-nums" style={{ color: primary }}>{n}</span>
         {/* Nur Nummer und Linie. Der Name steht direkt darunter im Chip — ihn
             hier zu wiederholen las sich wie ein Fehler, nicht wie Gestaltung. */}
         <span className="h-px flex-1" style={{ background: `linear-gradient(to right, color-mix(in oklch, ${primary} 45%, transparent), transparent)` }} />
       </div>
 
-      <div className={cn("relative", reversed && "lg:order-2")}>
+      <div className={cn("sc-copy relative", reversed && "lg:order-2")}>
         {/* Die Kapitelzahl liegt HINTER der Überschrift, nicht über dem
             Vorschaufenster. Am Raster aufgehängt landete sie auf dem Telefon
             quer auf der Produktkachel, weil dort die Vorschau zuerst kommt.
@@ -906,7 +972,7 @@ function Showcase({ n, tag, title, body, points, preview, primary, icon: Icon, r
             Kapitelüberschrift — was sie ja sein soll. */}
         <span
           aria-hidden
-          className="pointer-events-none absolute -top-10 -z-10 select-none font-display text-[7rem] font-black leading-none sm:-top-14 sm:text-[10rem]"
+          className="sc-num pointer-events-none absolute -top-10 -z-10 select-none font-display text-[7rem] font-black leading-none sm:-top-14 sm:text-[10rem]"
           style={{
             [reversed ? "right" : "left"]: "-0.06em",
             color: "transparent",
@@ -920,7 +986,7 @@ function Showcase({ n, tag, title, body, points, preview, primary, icon: Icon, r
         </span>
         <h3 className="apl-sheen mt-4 font-display text-2xl font-black leading-tight sm:text-3xl">{title}</h3>
         <p className="mt-3 max-w-md text-sm leading-relaxed text-white/65">{body}</p>
-        <div className="mt-5 flex flex-wrap gap-2">
+        <div className="sc-chips mt-5 flex flex-wrap gap-2">
           {points.map((p) => (
             <span key={p} className="apl-card inline-flex items-center gap-1.5 rounded-full border border-white/[0.08] px-3 py-1.5 text-[12px] font-medium text-white/80">
               <CheckCircle2 className="h-3.5 w-3.5 shrink-0" style={{ color: primary }} /> {p}
@@ -934,7 +1000,7 @@ function Showcase({ n, tag, title, body, points, preview, primary, icon: Icon, r
           the traffic lights. This wrapper only adds what the Frame lacks: the
           brand glow, and preview-first order on the phone. */}
       <div className={cn("order-first lg:order-none", reversed && "lg:order-1")}>
-        <div className="relative">
+        <div className="sc-frame relative">
           <div aria-hidden className="absolute -inset-4 rounded-[2rem] blur-2xl" style={{ background: `color-mix(in oklch, ${primary} 12%, transparent)` }} />
           <div className="relative">{preview}</div>
         </div>

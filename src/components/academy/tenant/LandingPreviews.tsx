@@ -45,11 +45,57 @@ function PreviewStyles() {
       @keyframes lpSheen { 0%,55% { transform: translateX(-120%); } 90%,100% { transform: translateX(340%); } }
       @keyframes lpBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
       @keyframes lpGlow { 0%,100% { box-shadow: 0 0 0 3px rgba(0,0,0,.45), 0 0 16px -2px var(--lp-glow), 0 0 32px -8px var(--lp-glow); } 50% { box-shadow: 0 0 0 3px rgba(0,0,0,.45), 0 0 26px 0px var(--lp-glow), 0 0 52px -4px var(--lp-glow); } }
+      /* ── Scroll-Scrub (Progressive Enhancement) ─────────────────────────
+         Die Basisklassen unten tragen den Zeit-Loop als Fallback; wo der
+         Browser animation-timeline: view() kann, uebernimmt der Scrub: die
+         Kurve zeichnet sich MIT dem Scrollen, Bubbles/Balken/Ring/Faecher
+         bauen sich auf. Keyframes lassen das `to` weg, wo der Endzustand
+         der Inline-Basis-Stil ist — so animiert CSS automatisch dorthin. */
+      @keyframes scDraw    { from { stroke-dashoffset: 620; } to { stroke-dashoffset: 0; } }
+      @keyframes scRing    { from { stroke-dashoffset: var(--ring-c); } }
+      @keyframes scFillX   { from { transform: scaleX(0); } }
+      @keyframes scFade    { from { opacity: 0; } }
+      @keyframes scBub     { from { opacity: 0; transform: translateY(12px) scale(.95); } }
+      @keyframes scGatherL { from { opacity: .35; transform: translateX(78%) scale(.9) rotate(-3deg); } }
+      @keyframes scGatherR { from { opacity: .35; transform: translateX(-78%) scale(.9) rotate(3deg); } }
+      @keyframes scUnstack { from { opacity: 0; transform: none; } }
+      @keyframes lpDash    { to { stroke-dashoffset: -14; } }
+      .lp-eq     { animation: lpDrawLoop 12s ease-in-out infinite; }
+      .lp-eqfill { animation: lpCountLoop 12s ease-in-out infinite; }
+      @supports (animation-timeline: view()) {
+        .lp-eq     { animation: scDraw linear both; animation-timeline: view(); animation-range: entry 15% contain 55%; }
+        .lp-eqfill { animation: scFade linear both; animation-timeline: view(); animation-range: entry 35% contain 55%; }
+        .lp-chat > :nth-child(2) { animation: scBub cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 15% entry 55%; }
+        .lp-chat > :nth-child(3) { animation: scBub cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 28% entry 68%; }
+        .lp-chat > :nth-child(4) { animation: scBub cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 41% entry 81%; }
+        .lp-prog   { transform-origin: left; animation: scFillX linear both; animation-timeline: view(); animation-range: entry 20% contain 50%; }
+        .lp-ring   { animation: scRing linear both; animation-timeline: view(); animation-range: entry 15% contain 55%; }
+        .lp-stack-a { animation: scUnstack linear both; animation-timeline: view(); animation-range: entry 5% entry 45%; }
+        .lp-stack-b { animation: scUnstack linear both; animation-timeline: view(); animation-range: entry 12% entry 52%; }
+        .lp-skin-l { animation: scGatherL cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 8% entry 55%; }
+        .lp-skin-r { animation: scGatherR cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 8% entry 55%; }
+      }
       @media (prefers-reduced-motion: reduce) {
-        .lp-draw,.lp-rise,.lp-fill,.lp-pulse,.lp-pop,.lp-slide,.lp-flash,.lp-count,.lp-flame,.lp-ken,.lp-hit,.lp-sheen,.lp-bob,.lp-dot,.lp-glow { animation: none !important; }
-        .lp-draw { stroke-dashoffset: 0 !important; } .lp-fill span { width: var(--w) !important; }
+        .lp-draw,.lp-rise,.lp-fill,.lp-pulse,.lp-pop,.lp-slide,.lp-flash,.lp-count,.lp-flame,.lp-ken,.lp-hit,.lp-sheen,.lp-bob,.lp-dot,.lp-glow,.lp-eq,.lp-eqfill,.lp-chat > *,.lp-prog,.lp-ring,.lp-stack-a,.lp-stack-b,.lp-skin-l,.lp-skin-r,.lp-beam { animation: none !important; }
+        .lp-draw,.lp-eq { stroke-dashoffset: 0 !important; } .lp-fill span { width: var(--w) !important; }
       }
     `}</style>
+  );
+}
+
+/**
+ * Der Wiedererkennungs-Anker aller Rahmen-Typen: Pulspunkt + Uppercase-Label.
+ *
+ * Vorher trugen alle sechs Previews dasselbe Mac-Fenster — "die Illustrationen
+ * sehen zu gleich aus". Jetzt bekommt jede Karte den Rahmen ihres Mediums
+ * (Handy, Terminal-Fenster, Kursplayer, Kartenstapel, offene Komposition,
+ * Skin-Faecher); dieses eine Element stiftet die gemeinsame Handschrift.
+ */
+function ChromeStrap({ label, primary, className }: { label: string; primary: string; className?: string }) {
+  return (
+    <span className={cn("inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/40", className)}>
+      <span className="lp-pulse h-1.5 w-1.5 rounded-full" style={{ background: primary, animation: "lpPulse 2s ease-in-out infinite" }} />{label}
+    </span>
   );
 }
 
@@ -58,11 +104,38 @@ function Frame({ label, children, primary }: { label: string; children: React.Re
     <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0a0d16] shadow-2xl">
       <div className="flex items-center gap-1.5 border-b border-white/8 px-3.5 py-2.5">
         <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" /><span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" /><span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-        <span className="ml-2 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/40">
-          <span className="lp-pulse h-1.5 w-1.5 rounded-full" style={{ background: primary }} />{label}
-        </span>
+        <ChromeStrap label={label} primary={primary} className="ml-2" />
       </div>
       <div className="p-4">{children}</div>
+    </div>
+  );
+}
+
+/** Handy-Rahmen fuer die Signal-Karte: Signale leben in Telegram, also zeigt
+ *  die Vorschau ein Telefon — nicht ein weiteres Desktop-Fenster. */
+function PhoneFrame({ label, children, primary }: { label: string; children: React.ReactNode; primary: string }) {
+  return (
+    <div className="relative mx-auto w-full max-w-[300px] overflow-hidden rounded-[2rem] border border-white/12 bg-[#0a0d16] shadow-2xl">
+      {/* Notch-Pille */}
+      <div className="flex items-center justify-center pt-2.5">
+        <span className="h-[18px] w-24 rounded-full bg-black/80 ring-1 ring-white/10" />
+      </div>
+      <div className="flex items-center justify-between border-b border-white/8 px-4 pb-2.5 pt-2">
+        <ChromeStrap label={label} primary={primary} />
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/** Kursplayer-Rahmen fuer die Academy: kein Fenster-Chrome, das Video ist der Star. */
+function PlayerFrame({ label, children, primary }: { label: string; children: React.ReactNode; primary: string }) {
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#0a0d16] shadow-2xl">
+      <div className="flex items-center justify-between border-b border-white/8 px-3.5 py-2.5">
+        <ChromeStrap label={label} primary={primary} />
+      </div>
+      {children}
     </div>
   );
 }
@@ -218,10 +291,16 @@ export function BotPreview({ primary }: { primary: string }) {
   return (
     <Frame label="Auto-Trader · copying desk" primary={primary}>
       <PreviewStyles />
-      <div className="mb-2.5 flex items-center justify-between">
-        <div className="inline-flex items-center gap-2 text-xs font-semibold text-white/80"><Bot className="h-4 w-4" style={{ color: primary }} /> Master account</div>
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-bold text-white/70">
-          <span className="lp-pulse h-1.5 w-1.5 rounded-full" style={{ background: UP }} /> Copying ON
+      {/* Master → Dein Konto: der marschierende Strahl IST die Produktaussage
+          — Trades fliessen vom Desk in dein Konto. Nur stroke-dashoffset. */}
+      <div className="mb-2.5 flex items-center gap-2">
+        <div className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1 text-[10px] font-bold text-white/80"><Bot className="h-3.5 w-3.5" style={{ color: primary }} /> Master</div>
+        <svg aria-hidden className="h-3 min-w-0 flex-1" preserveAspectRatio="none" viewBox="0 0 100 12">
+          <line className="lp-beam" x1="0" y1="6" x2="100" y2="6" stroke={primary} strokeWidth="1.5" strokeDasharray="5 9" style={{ animation: "lpDash 1.1s linear infinite" }} />
+        </svg>
+        <div className="inline-flex shrink-0 items-center rounded-lg px-2 py-1 text-[10px] font-bold" style={{ border: `1px solid color-mix(in oklch, ${primary} 45%, transparent)`, color: primary, background: `color-mix(in oklch, ${primary} 10%, transparent)` }}>Your account</div>
+        <div className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-bold text-white/70">
+          <span className="lp-pulse h-1.5 w-1.5 rounded-full" style={{ background: UP, animation: "lpPulse 2s ease-in-out infinite" }} /> ON
         </div>
       </div>
       {/* Das Zahlengitter des Master-Kontos — rechter Bildausschnitt, kein Branding. */}
@@ -234,12 +313,15 @@ export function BotPreview({ primary }: { primary: string }) {
           {/* Loop statt One-Shot: zeichnen (3s), lange stehen lassen, weich
               raus, von vorn — so ist die Kurve IMMER in Bewegung, egal wann
               der Besucher hinscrollt. */}
-          <path d="M0,80 L40,72 L80,76 L120,58 L160,62 L200,40 L240,44 L280,22 L320,10 L320,96 L0,96 Z" fill="url(#lpArea)" style={{ animation: "lpCountLoop 12s ease-in-out infinite" }} />
-          <path className="lp-draw" d="M0,80 L40,72 L80,76 L120,58 L160,62 L200,40 L240,44 L280,22 L320,10" fill="none" stroke={primary} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" style={{ strokeDasharray: 620, animation: "lpDrawLoop 12s ease-in-out infinite" }} />
+          {/* Scrub: die Kurve zeichnet sich MIT dem Scrollen (Klasse .lp-eq,
+              Fallback = Zeit-Loop). Inline steht bewusst KEINE animation mehr
+              — Inline wuerde die Scrub-Klasse ueberstimmen. */}
+          <path className="lp-eqfill" d="M0,80 L40,72 L80,76 L120,58 L160,62 L200,40 L240,44 L280,22 L320,10 L320,96 L0,96 Z" fill="url(#lpArea)" />
+          <path className="lp-eq" d="M0,80 L40,72 L80,76 L120,58 L160,62 L200,40 L240,44 L280,22 L320,10" fill="none" stroke={primary} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" style={{ strokeDasharray: 620 }} />
           {/* Pulsierender Endpunkt: die Kurve lebt am aktuellen Kurs. */}
-          <circle className="lp-dot" cx="316" cy="12" r="3.5" fill={primary} style={{ transformOrigin: "316px 12px", animation: "lpDot 1.8s ease-in-out infinite, lpCountLoop 12s ease-in-out infinite" }} />
+          <circle className="lp-dot" cx="316" cy="12" r="3.5" fill={primary} style={{ transformOrigin: "316px 12px", animation: "lpDot 1.8s ease-in-out infinite" }} />
         </svg>
-        <div className="lp-count absolute right-2 top-2 rounded-md bg-black/60 px-1.5 py-0.5 font-mono text-[11px] font-bold backdrop-blur-sm" style={{ color: UP, animation: "lpCountLoop 12s ease-in-out infinite" }}>+18.4%</div>
+        <div className="lp-eqfill absolute right-2 top-2 rounded-md bg-black/60 px-1.5 py-0.5 font-mono text-[11px] font-bold backdrop-blur-sm" style={{ color: UP }}>+18.4%</div>
       </div>
       <div className="mt-2.5 space-y-1.5">
         {/* Gespiegelte Trades blitzen versetzt auf — der Bot arbeitet sichtbar. */}
@@ -274,9 +356,10 @@ export function AcademyPreview({ primary, accent }: { primary: string; accent: s
   const vid = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
   return (
-    <Frame label="Academy · Lesson 06" primary={primary}>
+    <PlayerFrame label="Academy · Lesson 06" primary={primary}>
       <PreviewStyles />
-      <div className="relative mb-3 aspect-video overflow-hidden rounded-xl border border-white/8 bg-black">
+      {/* Video randlos im Player — es ist der Star, kein Fenster-Inhalt. */}
+      <div className="relative aspect-video overflow-hidden bg-black">
         <video
           ref={vid}
           controls
@@ -311,19 +394,22 @@ export function AcademyPreview({ primary, accent }: { primary: string; accent: s
           </>
         )}
       </div>
-      <div className="flex items-center justify-between text-[11px] text-white/60"><span className="font-semibold text-white/85">Lesson 06 · Copy signals like a pro</span><span>6 / 12</span></div>
-      <div className="relative mt-1.5 h-2 overflow-hidden rounded-full bg-white/8">
-        <span className="lp-fill block h-full rounded-full" style={{ ["--w" as string]: "50%", width: "50%", background: primary, animation: "lpFill 1.6s ease-out" }} />
-        {/* Sheen-Lauf: der Balken glaenzt periodisch durch — lebendig, ohne
-            dass sich der Fortschritt luegnerisch bewegt. */}
-        <span aria-hidden className="lp-sheen pointer-events-none absolute inset-y-0 left-0 w-1/3 rounded-full" style={{ background: "linear-gradient(100deg, transparent, rgba(255,255,255,.35), transparent)", animation: "lpSheen 4.6s ease-in-out infinite" }} />
+      {/* Playlist-Leiste — die Sprache eines Kursplayers, nicht eines Fensters. */}
+      <div className="border-t border-white/8 px-3.5 py-3">
+        <div className="flex items-center justify-between text-[11px] text-white/60"><span className="font-semibold text-white/85">Lesson 06 · Copy signals like a pro</span><span>6 / 12</span></div>
+        <div className="relative mt-1.5 h-2 overflow-hidden rounded-full bg-white/8">
+          {/* Scrub via scaleX (Klasse .lp-prog): fuellt sich beim Scrollen,
+              ohne Layout-Thrash; der statische width-Wert ist der Endzustand. */}
+          <span className="lp-prog block h-full rounded-full" style={{ width: "50%", background: primary }} />
+          <span aria-hidden className="lp-sheen pointer-events-none absolute inset-y-0 left-0 w-1/3 rounded-full" style={{ background: "linear-gradient(100deg, transparent, rgba(255,255,255,.35), transparent)", animation: "lpSheen 4.6s ease-in-out infinite" }} />
+        </div>
+        <div className="mt-3 flex gap-1.5">
+          {[true, true, true, true, true, false].map((done, i) => (
+            <span key={i} className="flex h-6 flex-1 items-center justify-center rounded-md text-[10px] font-bold" style={done ? { background: `color-mix(in oklch, ${primary} 22%, transparent)`, color: primary } : { background: "rgba(255,255,255,.04)", color: "rgba(255,255,255,.3)" }}>{done ? <Check className="h-3 w-3" /> : <Lock className="h-2.5 w-2.5" />}</span>
+          ))}
+        </div>
       </div>
-      <div className="mt-3 flex gap-1.5">
-        {[true, true, true, true, true, false].map((done, i) => (
-          <span key={i} className="flex h-6 flex-1 items-center justify-center rounded-md text-[10px] font-bold" style={done ? { background: `color-mix(in oklch, ${primary} 22%, transparent)`, color: primary } : { background: "rgba(255,255,255,.04)", color: "rgba(255,255,255,.3)" }}>{done ? <Check className="h-3 w-3" /> : <Lock className="h-2.5 w-2.5" />}</span>
-        ))}
-      </div>
-    </Frame>
+    </PlayerFrame>
   );
 }
 
@@ -381,8 +467,15 @@ export function QuizPreview({ primary }: { primary: string }) {
   function reset() { setStep(0); setPicked(null); setXp(0); setRight(0); }
 
   return (
-    <Frame label="Live quiz · try it" primary={primary}>
+    <div className="relative">
       <PreviewStyles />
+      {/* Karten-Stapel: zwei Blanko-Karten faechern beim Scrollen hinter der
+          echten auf — Quiz-Sprache statt Fenster-Sprache. aria-hidden und
+          unter der Top-Karte, also nie im Weg der Klicks. */}
+      <div aria-hidden className="lp-stack-a absolute inset-0 rounded-2xl border border-white/8 bg-white/[0.03]" style={{ transform: "rotate(-3deg) translate(-7px, 9px)" }} />
+      <div aria-hidden className="lp-stack-b absolute inset-0 rounded-2xl border border-white/8 bg-white/[0.02]" style={{ transform: "rotate(2deg) translate(8px, 5px)" }} />
+      <div className="relative rounded-2xl border border-white/12 bg-[#0a0d16] p-4 shadow-2xl">
+      <ChromeStrap label="Live quiz · try it" primary={primary} className="mb-3" />
 
       {/* Kopf: Fortschritt + laufende XP */}
       <div className="mb-3 flex items-center justify-between">
@@ -474,60 +567,96 @@ export function QuizPreview({ primary }: { primary: string }) {
 }
 
 /* ── 5. Rewards / earning — level bar, streak, tier ladder, unlock ── */
-export function RewardsPreview({ primary, accent }: { primary: string; accent: string }) {
+export function RewardsPreview({ primary, accent, showCosmo }: { primary: string; accent: string; showCosmo?: boolean }) {
   const tiers = [{ n: "Foundation", on: true }, { n: "Operator", on: true }, { n: "Elite", on: false }];
+  // Ringumfang 2πr bei r=52 ≈ 326.7; 72 % gefuellt heisst Offset 326.7 · 0.28.
   return (
-    <Frame label="Rewards · your progress" primary={primary}>
+    <div className="relative rounded-2xl border border-white/10 bg-[#0a0d16] p-4 shadow-2xl">
       <PreviewStyles />
       <div className="flex items-center justify-between">
-        <div className="inline-flex items-center gap-2"><Trophy className="h-4 w-4" style={{ color: primary }} /><span className="text-sm font-bold text-white/90">Level 7</span></div>
+        <ChromeStrap label="Rewards · your progress" primary={primary} />
         <span className="lp-flame inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] font-bold text-white/80" style={{ animation: "lpFlame 2.2s ease-in-out infinite" }}><Flame className="h-3.5 w-3.5" style={{ color: accent }} /> 12-day streak</span>
       </div>
-      <div className="mt-2 flex items-center justify-between text-[11px] text-white/50"><span>1,840 XP</span><span>2,000 XP → Level 8</span></div>
-      <div className="relative mt-1.5 h-2.5 overflow-hidden rounded-full bg-white/8">
-        <span className="lp-fill block h-full rounded-full" style={{ ["--w" as string]: "72%", width: "72%", background: `linear-gradient(90deg, ${accent}, ${primary})`, animation: "lpFill 1.8s ease-out" }} />
-        <span aria-hidden className="lp-sheen pointer-events-none absolute inset-y-0 left-0 w-1/3 rounded-full" style={{ background: "linear-gradient(100deg, transparent, rgba(255,255,255,.35), transparent)", animation: "lpSheen 5.2s ease-in-out 1s infinite" }} />
-      </div>
-      <div className="mt-4 flex items-center gap-1.5">
-        {tiers.map((t, i) => (
-          <div key={i} className="flex flex-1 items-center gap-1.5">
-            <div className="flex-1 rounded-lg px-2 py-1.5 text-center text-[10px] font-bold" style={t.on ? { background: `color-mix(in oklch, ${primary} 20%, transparent)`, color: primary } : { background: "rgba(255,255,255,.04)", color: "rgba(255,255,255,.35)" }}>{t.n}</div>
-            {i < tiers.length - 1 && <span className="text-white/20">›</span>}
+      <div className="mt-3 flex items-center gap-4">
+        {/* XP-Ring: fuellt sich beim Scrollen von leer auf 72 % (Scrub). */}
+        <div className="relative h-[110px] w-[110px] shrink-0">
+          <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
+            <defs><linearGradient id="lpRingGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor={accent} /><stop offset="100%" stopColor={primary} /></linearGradient></defs>
+            <circle cx="60" cy="60" r="52" stroke="rgba(255,255,255,.08)" strokeWidth="9" fill="none" />
+            <circle className="lp-ring" cx="60" cy="60" r="52" stroke="url(#lpRingGrad)" strokeWidth="9" fill="none"
+              strokeLinecap="round" strokeDasharray="326.7" strokeDashoffset="91.5"
+              style={{ ["--ring-c" as string]: "326.7" }} />
+          </svg>
+          <div className="absolute inset-0 grid place-items-center text-center">
+            <div>
+              <div className="font-display text-lg font-black leading-none text-white/95">Lv 7</div>
+              <div className="mt-0.5 text-[10px] font-bold text-white/45">72%</div>
+            </div>
           </div>
-        ))}
+          {showCosmo && (
+            <img src="/cosmo/cosmo-head.png" alt="" loading="lazy" decoding="async"
+              className="cosmo-float absolute -right-2 -top-2 h-10 w-10" />
+          )}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="inline-flex items-center gap-2"><Trophy className="h-4 w-4" style={{ color: primary }} /><span className="text-sm font-bold text-white/90">Level 7</span></div>
+          <div className="mt-1.5 text-[11px] text-white/50">1,840 / 2,000 XP → Level 8</div>
+          <div className="mt-3 flex items-center gap-1.5">
+            {tiers.map((t, i) => (
+              <div key={i} className="flex flex-1 items-center gap-1.5">
+                <div className="flex-1 rounded-lg px-2 py-1.5 text-center text-[10px] font-bold" style={t.on ? { background: `color-mix(in oklch, ${primary} 20%, transparent)`, color: primary } : { background: "rgba(255,255,255,.04)", color: "rgba(255,255,255,.35)" }}>{t.n}</div>
+                {i < tiers.length - 1 && <span className="text-white/20">›</span>}
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
       <div className="lp-rise mt-3 flex items-center gap-2 rounded-xl border px-3 py-2" style={{ borderColor: `color-mix(in oklch, ${primary} 30%, transparent)`, background: `color-mix(in oklch, ${primary} 8%, transparent)`, animation: "lpRise 1s ease-out .6s both" }}>
         <CheckCircle2 className="h-4 w-4" style={{ color: primary }} /><span className="text-[11px] font-semibold text-white/85">Unlocked: Live trading room</span>
       </div>
-    </Frame>
+    </div>
   );
 }
 
 /* ── 6. White-label — the same academy, three partner skins ── */
 export function WhitelabelPreview({ primary }: { primary: string }) {
+  // Mitte = die EIGENE Marke der aktuellen Seite (primary-Prop) — auf einer
+  // Partner-Seite ist "Yours" also wirklich seine Farbe, links/rechts zwei
+  // Beispiel-Marken als Kontrast.
   const skins = [
-    { name: "Cosmos", c: BRAND.primary, a: BRAND.accent },
     { name: "Crypto Masters", c: "oklch(0.82 0.2 60)", a: "oklch(0.72 0.16 30)" },
+    { name: "Yours", c: primary, a: primary },
     { name: "FX Elite", c: "oklch(0.75 0.18 250)", a: "oklch(0.65 0.2 200)" },
   ];
   return (
-    <Frame label="White-label · your brand" primary={primary}>
+    <div className="relative rounded-2xl border border-white/10 bg-[#0a0d16] p-4 shadow-2xl">
       <PreviewStyles />
-      <div className="grid grid-cols-3 gap-2.5">
+      <ChromeStrap label="White-label · your brand" primary={primary} />
+      {/* Die drei Marken liegen anfangs gestapelt in der Mitte und FAECHERN
+          beim Scrollen auf — dieselbe Plattform, drei Haendeschriften. Die
+          mittlere Karte ist "deine" (primary-Ring). */}
+      <div className="mt-3 grid grid-cols-3 gap-2.5">
         {skins.map((s, i) => (
-          <div key={i} className="lp-rise overflow-hidden rounded-xl border border-white/10 bg-[#070a13]" style={{ animation: `lpRise .8s ease-out ${i * 0.15}s both, lpBob 5s ease-in-out ${1 + i * 0.6}s infinite` }}>
+          <div key={i}
+            className={cn("overflow-hidden rounded-xl border bg-[#070a13]",
+              i === 0 && "lp-skin-l", i === 2 && "lp-skin-r",
+              i === 1 ? "border-transparent" : "border-white/10")}
+            style={{
+              ...(i === 1 ? { boxShadow: `0 0 0 1.5px ${primary}, 0 0 18px -6px ${primary}` } : {}),
+              animation: `lpBob 5s ease-in-out ${1 + i * 0.6}s infinite`,
+            }}>
             <div className="h-8" style={{ background: `linear-gradient(135deg, color-mix(in oklch, ${s.a} 45%, #070a13), #070a13)` }} />
             <div className="space-y-1.5 p-2">
               <div className="h-1.5 w-2/3 rounded-full" style={{ background: s.c }} />
               <div className="h-1 w-full rounded-full bg-white/10" />
               <div className="h-1 w-4/5 rounded-full bg-white/10" />
               <div className="mt-1.5 h-3 w-full rounded" style={{ background: `color-mix(in oklch, ${s.c} 30%, transparent)` }} />
-              <div className="pt-0.5 text-center text-[8px] font-bold text-white/50">{s.name}</div>
+              <div className="pt-0.5 text-center text-[8px] font-bold" style={i === 1 ? { color: primary } : { color: "rgba(255,255,255,.5)" }}>{s.name}</div>
             </div>
           </div>
         ))}
       </div>
       <p className="mt-3 text-center text-[11px] text-white/50">One platform · every partner their own colours, broker & mascot</p>
-    </Frame>
+    </div>
   );
 }
