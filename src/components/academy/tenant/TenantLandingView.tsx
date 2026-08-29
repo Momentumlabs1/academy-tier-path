@@ -226,16 +226,22 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
            Transform-Reste auf interaktiven Kindern (Video, Quiz) liegen.
            Nur innerhalb @supports — ohne view()-Unterstuetzung steht sofort
            der Endzustand, exakt wie beim lv-reveal-System darueber. */
-        @keyframes scNum   { from { transform: translateY(42px); } to { transform: translateY(-26px); } }
-        @keyframes scFrame { from { opacity: 0; transform: perspective(900px) rotateX(5deg) translateY(34px) scale(.97); } }
-        @keyframes scCopy  { from { opacity: 0; transform: translateY(26px); } }
+        /* Die Fenster sind bewusst SPAET gelegt (entry 25%+): frueher lagen
+           sie bei entry 0-50%, und auf einem grossen Monitor war der Aufbau
+           fertig, waehrend die Karte noch am unteren Bildrand klebte — beim
+           Hinschauen stand alles, "keine Animationen beim Scrollen". Jetzt
+           passiert die Bewegung dort, wo der Blick ist, und die Wege sind
+           gross genug, um unuebersehbar zu sein. */
+        @keyframes scNum   { from { transform: translateY(72px); } to { transform: translateY(-48px); } }
+        @keyframes scFrame { from { opacity: 0; transform: perspective(900px) rotateX(7deg) translateY(64px) scale(.95); } }
+        @keyframes scCopy  { from { opacity: 0; transform: translateY(42px); } }
         @supports (animation-timeline: view()) {
           .sc-num   { animation: scNum linear both; animation-timeline: view(); animation-range: cover 0% cover 100%; }
-          .sc-frame { animation: scFrame cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 0% entry 50%; }
-          .sc-copy  { animation: scCopy  cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 10% entry 60%; }
-          .sc-chips > :nth-child(1) { animation: scCopy cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 15% entry 62%; }
-          .sc-chips > :nth-child(2) { animation: scCopy cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 24% entry 71%; }
-          .sc-chips > :nth-child(3) { animation: scCopy cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 33% entry 80%; }
+          .sc-frame { animation: scFrame cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 20% entry 75%; }
+          .sc-copy  { animation: scCopy  cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 30% entry 82%; }
+          .sc-chips > :nth-child(1) { animation: scCopy cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 38% entry 88%; }
+          .sc-chips > :nth-child(2) { animation: scCopy cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 46% entry 94%; }
+          .sc-chips > :nth-child(3) { animation: scCopy cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 54% entry 100%; }
         }
         @keyframes spinSlow { to { transform: rotate(360deg); } }
         .spin-slow { animation: spinSlow 48s linear infinite; }

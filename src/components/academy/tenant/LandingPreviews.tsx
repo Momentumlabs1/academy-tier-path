@@ -62,17 +62,19 @@ function PreviewStyles() {
       .lp-eq     { animation: lpDrawLoop 12s ease-in-out infinite; }
       .lp-eqfill { animation: lpCountLoop 12s ease-in-out infinite; }
       @supports (animation-timeline: view()) {
-        .lp-eq     { animation: scDraw linear both; animation-timeline: view(); animation-range: entry 15% contain 55%; }
-        .lp-eqfill { animation: scFade linear both; animation-timeline: view(); animation-range: entry 35% contain 55%; }
-        .lp-chat > :nth-child(2) { animation: scBub cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 15% entry 55%; }
-        .lp-chat > :nth-child(3) { animation: scBub cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 28% entry 68%; }
-        .lp-chat > :nth-child(4) { animation: scBub cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 41% entry 81%; }
-        .lp-prog   { transform-origin: left; animation: scFillX linear both; animation-timeline: view(); animation-range: entry 20% contain 50%; }
-        .lp-ring   { animation: scRing linear both; animation-timeline: view(); animation-range: entry 15% contain 55%; }
-        .lp-stack-a { animation: scUnstack linear both; animation-timeline: view(); animation-range: entry 5% entry 45%; }
-        .lp-stack-b { animation: scUnstack linear both; animation-timeline: view(); animation-range: entry 12% entry 52%; }
-        .lp-skin-l { animation: scGatherL cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 8% entry 55%; }
-        .lp-skin-r { animation: scGatherR cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 8% entry 55%; }
+        /* Fenster spaet gelegt (entry 35%+): frueher war der Scrub fertig,
+           bevor die Karte im Blickfeld ankam — sah aus wie "keine Animation". */
+        .lp-eq     { animation: scDraw linear both; animation-timeline: view(); animation-range: entry 40% entry 100%; }
+        .lp-eqfill { animation: scFade linear both; animation-timeline: view(); animation-range: entry 70% entry 100%; }
+        .lp-chat > :nth-child(2) { animation: scBub cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 35% entry 62%; }
+        .lp-chat > :nth-child(3) { animation: scBub cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 52% entry 79%; }
+        .lp-chat > :nth-child(4) { animation: scBub cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 69% entry 96%; }
+        .lp-prog   { transform-origin: left; animation: scFillX linear both; animation-timeline: view(); animation-range: entry 45% entry 100%; }
+        .lp-ring   { animation: scRing linear both; animation-timeline: view(); animation-range: entry 40% entry 100%; }
+        .lp-stack-a { animation: scUnstack linear both; animation-timeline: view(); animation-range: entry 30% entry 80%; }
+        .lp-stack-b { animation: scUnstack linear both; animation-timeline: view(); animation-range: entry 40% entry 90%; }
+        .lp-skin-l { animation: scGatherL cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 35% entry 90%; }
+        .lp-skin-r { animation: scGatherR cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 35% entry 90%; }
       }
       @media (prefers-reduced-motion: reduce) {
         .lp-draw,.lp-rise,.lp-fill,.lp-pulse,.lp-pop,.lp-slide,.lp-flash,.lp-count,.lp-flame,.lp-ken,.lp-hit,.lp-sheen,.lp-bob,.lp-dot,.lp-glow,.lp-eq,.lp-eqfill,.lp-chat > *,.lp-prog,.lp-ring,.lp-stack-a,.lp-stack-b,.lp-skin-l,.lp-skin-r,.lp-beam { animation: none !important; }
