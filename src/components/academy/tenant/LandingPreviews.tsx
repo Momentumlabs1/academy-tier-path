@@ -49,7 +49,7 @@ function PreviewStyles() {
          Die Basisklassen unten tragen den Zeit-Loop als Fallback; wo der
          Browser animation-timeline: view() kann, uebernimmt der Scrub: die
          Kurve zeichnet sich MIT dem Scrollen, Bubbles/Balken/Ring/Faecher
-         bauen sich auf. Keyframes lassen das `to` weg, wo der Endzustand
+         bauen sich auf. Keyframes lassen das "to" weg, wo der Endzustand
          der Inline-Basis-Stil ist — so animiert CSS automatisch dorthin. */
       @keyframes scDraw    { from { stroke-dashoffset: 620; } to { stroke-dashoffset: 0; } }
       @keyframes scRing    { from { stroke-dashoffset: var(--ring-c); } }
@@ -245,18 +245,21 @@ function CosmoCam({ primary, className }: { primary: string; className?: string 
 /* ── 1. Live signals — echter Chart, darauf der Ruf, der gerade reinkam ── */
 export function SignalsPreview({ primary, showCosmo }: { primary: string; showCosmo?: boolean }) {
   return (
-    <Frame label="Signals · live" primary={primary}>
+    <PhoneFrame label="Signals · live" primary={primary}>
       <PreviewStyles />
-      {/* Der Chart, den der Desk liest — linker Bildausschnitt, kein Branding. */}
-      <div className="relative mb-2.5 aspect-[16/9] overflow-hidden rounded-xl border border-white/10">
-        <Shot src="/partner/footprint.jpg" pos="18% 50%" primary={primary} />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0d16] via-[#0a0d16]/20 to-transparent" />
-        {showCosmo && <CosmoCam primary={primary} className="bottom-2 right-2 h-14 w-14" />}
-        {/* Der Ruf legt sich auf den Chart, als käme er gerade rein. */}
-        <div
-          className="lp-slide absolute inset-x-2 top-2 rounded-xl border border-white/15 bg-black/70 p-2.5 backdrop-blur-md"
-          style={{ animation: "lpSlide 7s ease-in-out infinite" }}
-        >
+      {/* Signale leben in Telegram — die Vorschau ist der Chat selbst. Die
+          Bubbles (Kinder 2–4 von .lp-chat) poppen beim Scrollen nacheinander
+          rein, als kaeme die Nachricht gerade an. */}
+      <div className="lp-chat relative space-y-2 p-3 pb-4">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-black text-black" style={{ background: primary }}>S</span>
+          <div className="min-w-0">
+            <div className="text-[12px] font-bold text-white/90">Signal Desk</div>
+            <div className="text-[10px] text-white/40">channel</div>
+          </div>
+        </div>
+        {/* Bubble 1: der Ruf, komplett mit Entry/SL/TP. */}
+        <div className="rounded-2xl rounded-tl-md border border-white/12 bg-white/[0.05] p-2.5">
           <div className="flex items-center justify-between">
             <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-bold" style={{ color: UP }}>
               <TrendingUp className="h-3.5 w-3.5" /> LONG · XAU/USD
@@ -269,20 +272,25 @@ export function SignalsPreview({ primary, showCosmo }: { primary: string; showCo
             <div><div className="text-white/40">TP</div><div style={{ color: UP }}>2,334.0</div></div>
           </div>
         </div>
-      </div>
-      {/* Die Treffer-Zeilen blitzen abwechselnd auf, als kaeme der TP gerade
-          rein — synchron zum 7s-Takt der Signal-Karte darueber. */}
-      <div className="space-y-1.5">
-        <div className="lp-hit flex items-center justify-between rounded-lg border border-white/8 px-3 py-2 opacity-90" style={{ animation: "lpHit 7s ease-in-out infinite" }}>
+        {/* Bubble 2: der Treffer — blitzt zusaetzlich im Zeit-Takt auf. */}
+        <div className="lp-hit flex items-center justify-between rounded-2xl rounded-tl-md border border-white/10 px-3 py-2" style={{ animation: "lpHit 7s ease-in-out 1.5s infinite" }}>
           <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-bold" style={{ color: DOWN }}><TrendingDown className="h-3.5 w-3.5" /> SHORT · NAS100</span>
-          <span className="lp-pop inline-block font-mono text-[10px]" style={{ color: UP, animation: "lpHitCheck 7s ease-in-out infinite" }}>✓ TP1 hit</span>
+          <span className="lp-pop inline-block font-mono text-[10px]" style={{ color: UP, animation: "lpHitCheck 7s ease-in-out 1.5s infinite" }}>✓ TP1 hit</span>
         </div>
-        <div className="lp-hit flex items-center justify-between rounded-lg border border-white/8 px-3 py-2 opacity-70" style={{ animation: "lpHit 7s ease-in-out 3.2s infinite" }}>
-          <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-bold" style={{ color: UP }}><TrendingUp className="h-3.5 w-3.5" /> LONG · BTC/USDT</span>
-          <span className="lp-pop inline-block font-mono text-[10px]" style={{ color: UP, animation: "lpHitCheck 7s ease-in-out 3.2s infinite" }}>✓ TP2 hit</span>
+        {/* Bubble 3: Chart-Foto, wie der Desk es postet. */}
+        <div className="relative aspect-[16/8] overflow-hidden rounded-2xl rounded-tl-md border border-white/10">
+          <Shot src="/partner/footprint.jpg" pos="18% 50%" primary={primary} />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0d16]/70 via-transparent to-transparent" />
         </div>
+        {/* Tipp-Indikator = Zeit-Leben: der Desk schreibt weiter. */}
+        <div className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1">
+          {[0, 1, 2].map((i) => (
+            <span key={i} className="lp-pulse h-1 w-1 rounded-full bg-white/60" style={{ animation: `lpPulse 1.2s ease-in-out ${i * 0.2}s infinite` }} />
+          ))}
+        </div>
+        {showCosmo && <CosmoCam primary={primary} className="bottom-3 right-3 h-12 w-12" />}
       </div>
-    </Frame>
+    </PhoneFrame>
   );
 }
 
@@ -562,7 +570,8 @@ export function QuizPreview({ primary }: { primary: string }) {
           </div>
         </>
       )}
-    </Frame>
+      </div>
+    </div>
   );
 }
 

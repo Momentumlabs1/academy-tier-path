@@ -181,12 +181,12 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
            statt sie zu unterbrechen. Der zweite folgt einen Hauch spaeter,
            damit es eine Geste ist und kein Umschalten. */
         @keyframes pitchCtaIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-        /* `backwards`, NICHT `both`: der Ruhezustand des Knopfes ist sichtbar.
-           Mit `both` haelt die Fuellung nach dem Lauf den Endwert fest — und
+        /* "backwards", NICHT "both": der Ruhezustand des Knopfes ist sichtbar.
+           Mit "both" haelt die Fuellung nach dem Lauf den Endwert fest — und
            solange die Animation noch nicht gestartet ist (Verzoegerung, ein
            gedrosselter Hintergrund-Tab, eine Engine die sie gar nicht
            ausfuehrt), steht der Knopf auf opacity 0. Live nachgemessen: genau
-           dieser Fall, der Knopf war unsichtbar. Mit `backwards` gilt der
+           dieser Fall, der Knopf war unsichtbar. Mit "backwards" gilt der
            Startwert nur waehrend der Verzoegerung; laeuft die Animation nie,
            ist der Knopf einfach da. Ein Effekt darf nie der Grund sein,
            warum jemand den einzigen Knopf nicht sieht. */
