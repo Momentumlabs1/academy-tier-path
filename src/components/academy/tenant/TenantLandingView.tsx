@@ -98,6 +98,18 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
   // jetzt sichtbar.
   const [pitchStarted, setPitchStarted] = useState(false);
   const [pitchEnded, setPitchEnded] = useState(false);
+  /* Die weiche Einblendung der Knoepfe haengt an DIESEM Zustand, nicht an
+     einer CSS-Animation.
+     Erst lief sie ueber `animation` mit Verzoegerung und fill-mode. Live
+     nachgemessen war der Knopf zwei Sekunden nach dem Start immer noch auf
+     opacity 0: laeuft die Animation gar nicht erst an — gedrosselter Tab,
+     Seite im Hintergrund, Engine fuehrt sie nicht aus —, haelt die Fuellung
+     den Startwert fest und der einzige Knopf unter dem Film bleibt
+     unsichtbar. Auch `backwards` hilft da nicht.
+     Jetzt schaltet ein Timer nach 450 ms den Zustand um, und die Klassen
+     tragen den Ruhezustand SICHTBAR. Bleibt der Uebergang aus, springt der
+     Knopf einfach hin — nie weg. */
+  const [ctaIn, setCtaIn] = useState(false);
 
   const showCosmo = tenant.slug === "cosmos-candles";
   // Der Hero traegt das Maskottchen nur noch, wenn es KEIN Kopfzeilen-Portrait
@@ -464,7 +476,12 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                 // der Klick startet dadurch sofort, gestreamt wird progressiv.
                 preload="metadata"
                 poster={tenant.pitchPoster ?? "/pitch-poster.jpg?v=7"}
-                onPlay={() => { setPitchPlaying(true); setPitchStarted(true); setPitchEnded(false); }}
+                onPlay={() => {
+                  setPitchPlaying(true); setPitchStarted(true); setPitchEnded(false);
+                  // Kurz warten, damit die Knoepfe in die Aufmerksamkeit
+                  // hineinwachsen statt sie im selben Bild zu unterbrechen.
+                  setTimeout(() => setCtaIn(true), 450);
+                }}
                 onEnded={() => { setPitchPlaying(false); setPitchEnded(true); }}
                 // object-contain, nicht cover: im Vollbild (16:10-Displays)
                 // schnitt cover links und rechts ab — genau dort sitzen im
@@ -500,7 +517,12 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               {/* Der Schein unter dem Knopf sitzt hinter ihm, nicht auf ihm:
                   eine weich ausgelaufene Flaeche in Markenfarbe, die ihn vom
                   dunklen Grund abhebt, ohne dass der Knopf selbst leuchtet. */}
-              <div className="pitch-cta pitch-cta-1 relative flex-1">
+              <div
+                className={cn(
+                  "relative flex-1 transition-all duration-500 ease-out",
+                  ctaIn ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0",
+                )}
+              >
                 <span
                   aria-hidden
                   className="pointer-events-none absolute inset-x-6 -bottom-1 h-7 rounded-full blur-2xl"
@@ -518,7 +540,10 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               {pitchEnded && (
                 <button
                   onClick={() => { const v = pitchRef.current; if (v) { v.currentTime = 0; void v.play(); } }}
-                  className="pitch-cta pitch-cta-2 flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-3.5 text-sm font-semibold text-foreground/80 transition-colors hover:bg-white/10 sm:flex-none"
+                  className={cn(
+                    "flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-3.5 text-sm font-semibold text-foreground/80 transition-all duration-500 ease-out hover:bg-white/10 sm:flex-none",
+                    ctaIn ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0",
+                  )}
                 >
                   <PlayCircle className="h-4 w-4" /> Watch again
                 </button>

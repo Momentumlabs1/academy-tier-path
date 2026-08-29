@@ -276,9 +276,16 @@ export function SignalsPreview({ primary, showCosmo }: { primary: string; showCo
           <span className="inline-flex items-center gap-1.5 font-mono text-[11px] font-bold" style={{ color: DOWN }}><TrendingDown className="h-3.5 w-3.5" /> SHORT · NAS100</span>
           <span className="lp-pop inline-block font-mono text-[10px]" style={{ color: UP, animation: "lpHitCheck 7s ease-in-out 1.5s infinite" }}>✓ TP1 hit</span>
         </div>
-        {/* Bubble 3: Chart-Foto, wie der Desk es postet. */}
-        <div className="relative aspect-[16/8] overflow-hidden rounded-2xl rounded-tl-md border border-white/10">
-          <Shot src="/partner/footprint.jpg" pos="18% 50%" primary={primary} />
+        {/* Bubble 3: Chart-Foto, wie der Desk es postet. Rechts unten im
+            Rohbild sitzt die Cosmo-Sprechblase — object-position kann sie
+            nicht verstecken, weil das Bild horizontal gar nicht beschnitten
+            wird. Deshalb: innerer Traeger auf 140 % Breite, links verankert,
+            aussen geclippt — das rechte Viertel (mit der Blase) faellt raus.
+            Auf Partner-Seiten darf unsere Figur NIE auftauchen. */}
+        <div className="relative aspect-[16/9] overflow-hidden rounded-2xl rounded-tl-md border border-white/10">
+          <div className="absolute inset-y-0 left-0 w-[140%]">
+            <Shot src="/partner/footprint.jpg" pos="0% 50%" primary={primary} />
+          </div>
           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0d16]/70 via-transparent to-transparent" />
         </div>
         {/* Tipp-Indikator = Zeit-Leben: der Desk schreibt weiter. */}
