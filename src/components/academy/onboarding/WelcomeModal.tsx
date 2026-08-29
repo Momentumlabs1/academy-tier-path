@@ -138,12 +138,12 @@ export function WelcomeModal() {
                   controls
                   playsInline
                   preload="metadata"
-                  poster="/pitch-poster.jpg?v=6"
+                  poster="/pitch-poster.jpg?v=7"
                   className="aspect-video h-full w-full object-contain"
                   onPlay={() => setWatched(true)}
                   onEnded={() => setWatched(true)}
                 >
-                  <source src="/pitch.mp4?v=2" type="video/mp4" />
+                  <source src="/pitch.mp4?v=3" type="video/mp4" />
                 </video>
               </div>
 

@@ -250,8 +250,8 @@ export const COSMOS_MASTER: TenantConfig = {
   telegramChannel: TELEGRAM_ENTRY.url,
   // Nur unsere eigene Marke. In diesem Film spricht Cosmo vor der
   // Cosmos-Candles-Seite — auf einer Partnerseite waere das unsere Werbung.
-  pitchVideo: "/pitch.mp4?v=2",
-  pitchPoster: "/pitch-poster.jpg?v=6",
+  pitchVideo: "/pitch.mp4?v=3",
+  pitchPoster: "/pitch-poster.jpg?v=7",
   affiliateEmail: "kontakt@momentumlabs.at",
   headline: "Learn to trade — for free, with Cosmo",
   subhead:

@@ -172,6 +172,24 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         .apl-card { background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.02)); box-shadow: inset 0 1px 0 rgba(255,255,255,.07); }
         .cta-btn { transition: transform .35s cubic-bezier(.22,1,.36,1), box-shadow .35s cubic-bezier(.22,1,.36,1); }
         .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 44px -12px color-mix(in oklch, ${primary} 65%, transparent); }
+        /* ── Die Knoepfe unter dem Film ───────────────────────────────────
+           Sie erschienen im selben Bild, in dem man Play drueckt — hart
+           eingeblendet, waehrend der Blick noch oben im Video ist. Das las
+           sich wie ein Fehler, nicht wie eine Einladung.
+           Jetzt steigen sie kurz nach dem Start weich auf: knapp eine halbe
+           Sekunde spaeter, damit sie in die Aufmerksamkeit hineinwachsen
+           statt sie zu unterbrechen. Der zweite folgt einen Hauch spaeter,
+           damit es eine Geste ist und kein Umschalten. */
+        @keyframes pitchCtaIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+        .pitch-cta { animation: pitchCtaIn .55s cubic-bezier(.22,1,.36,1) both; }
+        .pitch-cta-1 { animation-delay: .45s; }
+        .pitch-cta-2 { animation-delay: .62s; }
+        .cta-arrow { transition: transform .25s cubic-bezier(.22,1,.36,1); }
+        .cta-btn:hover .cta-arrow { transform: translateX(3px); }
+        @media (prefers-reduced-motion: reduce) {
+          .pitch-cta { animation: none; }
+          .cta-arrow { transition: none; }
+        }
         @keyframes heroExit { to { opacity:.3; transform: translateY(-28px) scale(.985); } }
         @supports (animation-timeline: scroll()) {
           .hero-exit { animation: heroExit linear both; animation-timeline: scroll(); animation-range: 0 70vh; }
@@ -416,7 +434,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                 // (faststart legt ihn an den Dateianfang, wenige hundert KB) —
                 // der Klick startet dadurch sofort, gestreamt wird progressiv.
                 preload="metadata"
-                poster={tenant.pitchPoster ?? "/pitch-poster.jpg?v=6"}
+                poster={tenant.pitchPoster ?? "/pitch-poster.jpg?v=7"}
                 onPlay={() => { setPitchPlaying(true); setPitchStarted(true); setPitchEnded(false); }}
                 onEnded={() => { setPitchPlaying(false); setPitchEnded(true); }}
                 // object-contain, nicht cover: im Vollbild (16:10-Displays)
@@ -449,19 +467,29 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               Film nicht zu Ende, und wer nach dreissig Sekunden ueberzeugt ist,
               soll nicht warten muessen. Einmal sichtbar, bleiben sie sichtbar. */}
           {pitchStarted && (
-            <div className="mt-4 flex flex-col gap-2.5 sm:flex-row">
-              <button
-                onClick={goRegister}
-                className="cta-btn flex flex-1 items-center justify-center gap-2 rounded-full px-5 py-3.5 text-sm font-black"
-                style={cta}
-              >
-                Create your free account <ArrowRight className="h-4 w-4" />
-              </button>
+            <div className="mt-5 flex flex-col gap-2.5 sm:flex-row">
+              {/* Der Schein unter dem Knopf sitzt hinter ihm, nicht auf ihm:
+                  eine weich ausgelaufene Flaeche in Markenfarbe, die ihn vom
+                  dunklen Grund abhebt, ohne dass der Knopf selbst leuchtet. */}
+              <div className="pitch-cta pitch-cta-1 relative flex-1">
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-x-6 -bottom-1 h-7 rounded-full blur-2xl"
+                  style={{ background: primary, opacity: 0.35 }}
+                />
+                <button
+                  onClick={goRegister}
+                  className="cta-btn relative flex w-full items-center justify-center gap-2 rounded-full px-5 py-3.5 text-sm font-black"
+                  style={cta}
+                >
+                  Create your free account <ArrowRight className="cta-arrow h-4 w-4" />
+                </button>
+              </div>
               {/* "Nochmal ansehen" erst, wenn es etwas nochmal zu sehen gibt. */}
               {pitchEnded && (
                 <button
                   onClick={() => { const v = pitchRef.current; if (v) { v.currentTime = 0; void v.play(); } }}
-                  className="flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-3.5 text-sm font-semibold text-foreground/80 transition-colors hover:bg-white/10 sm:flex-none"
+                  className="pitch-cta pitch-cta-2 flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-3.5 text-sm font-semibold text-foreground/80 transition-colors hover:bg-white/10 sm:flex-none"
                 >
                   <PlayCircle className="h-4 w-4" /> Watch again
                 </button>
