@@ -16,10 +16,11 @@
  */
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ArrowRight, Lock, TrendingDown, TrendingUp } from "lucide-react";
+import { ArrowRight, Loader2, Lock, TrendingDown, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { TELEGRAM_ENTRY } from "@/lib/broker";
 import { cn } from "@/lib/utils";
+import { openPersonalSignalChannel } from "@/lib/signal-channel";
+import { SignalDetailSheet } from "./SignalDetailSheet";
 
 interface Teaser {
   id: string;
@@ -79,6 +80,19 @@ export function SignalTeaserRail({ locked }: { locked: boolean }) {
      dem Moment falsch, in dem jemand laenger hinsieht. Alle 30 Sekunden
      reicht: die Grenze liegt bei zehn Minuten, nicht bei Sekunden. */
   const [now, setNow] = useState<number | null>(null);
+  /* Welcher Ruf gerade gross offen ist. Der Zustand liegt hier und nicht in
+     der Karte, damit immer nur EIN Fenster offen sein kann. */
+  const [open, setOpen] = useState<{ s: Teaser; stale: boolean } | null>(null);
+  const [channelBusy, setChannelBusy] = useState(false);
+  const [channelFailed, setChannelFailed] = useState(false);
+
+  async function openChannel() {
+    setChannelBusy(true);
+    setChannelFailed(false);
+    const r = await openPersonalSignalChannel();
+    if (!r.ok) setChannelFailed(true);
+    setChannelBusy(false);
+  }
 
   useEffect(() => {
     setNow(Date.now());
@@ -183,7 +197,15 @@ export function SignalTeaserRail({ locked }: { locked: boolean }) {
         {rows === null
           ? [0, 1, 2].map((i) => <div key={i} className="h-[104px] animate-pulse rounded-2xl bg-white/[0.04]" />)
           : live
-            ? rows.map((s) => <TeaserCard key={s.id} s={s} locked={locked} now={now} />)
+            ? rows.map((s) => (
+                <TeaserCard
+                  key={s.id}
+                  s={s}
+                  locked={locked}
+                  now={now}
+                  onOpen={(stale) => setOpen({ s, stale })}
+                />
+              ))
             : (
               <p className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-xs leading-relaxed text-muted-foreground">
                 The desk posts every call in the private Telegram channel — instrument,
@@ -200,14 +222,27 @@ export function SignalTeaserRail({ locked }: { locked: boolean }) {
           Unlock the entries <ArrowRight className="h-4 w-4" />
         </Link>
       ) : (
-        <a
-          href={TELEGRAM_ENTRY.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="relative mt-4 flex items-center justify-center gap-1.5 rounded-full border border-white/12 bg-white/5 px-4 py-3 text-sm font-bold transition-colors hover:bg-white/10"
+        /* DERSELBE FEHLER WIE AUF DEN KARTEN, nur groesser: dieser Knopf
+           zeigte auf TELEGRAM_ENTRY — die oeffentliche INFO-Gruppe. Wer
+           eingezahlt und seine Stufe freigeschaltet hat, landete damit genau
+           dort, wo die Zahlen NICHT stehen. Er heisst "Open the signal
+           channel" und muss auch dorthin fuehren: persoenlicher Zugang ueber
+           create-telegram-link. */
+        <button
+          type="button"
+          onClick={() => void openChannel()}
+          disabled={channelBusy}
+          className="relative mt-4 flex w-full items-center justify-center gap-1.5 rounded-full border border-white/12 bg-white/5 px-4 py-3 text-sm font-bold transition-colors hover:bg-white/10 disabled:opacity-60"
         >
+          {channelBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
           Open the signal channel <ArrowRight className="h-4 w-4" />
-        </a>
+        </button>
+      )}
+
+      {channelFailed && !locked && (
+        <p className="relative mt-2 text-center text-[11px] text-destructive">
+          Could not create your channel link. Try again in a moment.
+        </p>
       )}
 
       {locked && (
@@ -215,11 +250,22 @@ export function SignalTeaserRail({ locked }: { locked: boolean }) {
           Entries, stops and targets go out live in the channel — from €100 verified deposit.
         </p>
       )}
+
+      {open && (
+        <SignalDetailSheet
+          s={open.s}
+          locked={locked}
+          stale={open.stale}
+          onClose={() => setOpen(null)}
+        />
+      )}
     </div>
   );
 }
 
-function TeaserCard({ s, locked, now }: { s: Teaser; locked: boolean; now: number | null }) {
+function TeaserCard({
+  s, locked, now, onOpen,
+}: { s: Teaser; locked: boolean; now: number | null; onOpen: (stale: boolean) => void }) {
   const short = SHORT_SIDES.has(s.side);
   const Icon = short ? TrendingDown : TrendingUp;
   const tone = short ? "text-red-400" : "text-emerald-400";
@@ -358,34 +404,33 @@ function TeaserCard({ s, locked, now }: { s: Teaser; locked: boolean; now: numbe
   );
 
   /**
-   * DIE KARTE FUEHRT DORTHIN, WO DER RUF WIRKLICH STEHT.
+   * DIE KARTE OEFFNET DEN RUF, SIE SPRINGT NICHT WEG.
    *
    * Vorher war sie ein totes Rechteck: man las "GOLD SELL", tippte drauf, und
-   * nichts passierte. Auf dem Handy ist eine Kachel, die aussieht wie ein
-   * Knopf und keiner ist, die haeufigste Sackgasse ueberhaupt.
-   * Gesperrt fuehrt sie zur Freischaltung, freigeschaltet in den Kanal — also
-   * genau an die Stelle, an der die Zahlen stehen, die auf der Karte fehlen.
+   * nichts passierte. Der erste Versuch fuehrte direkt nach Telegram — ein
+   * harter Sprung aus der Akademie in eine fremde App, fuer etwas, das
+   * zunaechst nur eine Frage beantwortet: was war das fuer ein Ruf?
+   *
+   * Jetzt oeffnet der Tipp den Ruf in gross (SignalDetailSheet), mit Uhrzeit,
+   * Zielstand und Ausgang. Der Weg nach Telegram ist dort ein bewusster
+   * zweiter Schritt — und fuehrt fuer freigeschaltete Mitglieder in die
+   * SIGNALGRUPPE, nicht in die Info-Gruppe.
    */
   const shell = cn(
-    "group relative block overflow-hidden rounded-2xl border p-3.5 text-left transition-all duration-200",
+    "group relative block w-full overflow-hidden rounded-2xl border p-3.5 text-left transition-all duration-200",
     "hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.06] active:translate-y-0 active:scale-[0.995]",
     stale ? "border-white/8 bg-white/[0.025]" : "border-white/12 bg-white/[0.045]",
   );
 
-  return locked ? (
-    <Link to="/tier" className={shell} aria-label={`${s.asset} ${s.side} — unlock the entries`}>
-      {body}
-    </Link>
-  ) : (
-    <a
-      href={TELEGRAM_ENTRY.url}
-      target="_blank"
-      rel="noopener noreferrer"
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(stale)}
       className={shell}
-      aria-label={`${s.asset} ${s.side} — open in the signal channel`}
+      aria-label={`${s.asset} ${s.side} — show details`}
     >
       {body}
-    </a>
+    </button>
   );
 }
 
