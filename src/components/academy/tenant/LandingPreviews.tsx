@@ -13,7 +13,7 @@ import {
   Trophy, Zap, Sparkles, Lock, Check,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { BRAND } from "@/lib/tenants";
+
 
 const UP = "oklch(0.82 0.17 150)";
 const DOWN = "oklch(0.66 0.2 22)";
@@ -28,7 +28,6 @@ function PreviewStyles() {
       @keyframes lpFill { from { width: 0; } }
       @keyframes lpPulse { 0%,100% { opacity: .4; transform: scale(1); } 50% { opacity: 1; transform: scale(1.15); } }
       @keyframes lpPop { 0% { transform: scale(.6); opacity: 0; } 60% { transform: scale(1.12); } 100% { transform: scale(1); opacity: 1; } }
-      @keyframes lpSlide { 0% { transform: translateY(-120%); opacity: 0; } 12%,88% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(-120%); opacity: 0; } }
       @keyframes lpFlash { 0%,45% { background: rgba(255,255,255,.03); } 55%,100% { background: color-mix(in oklch, ${UP} 16%, transparent); } }
       @keyframes lpCount { 0%,40% { opacity:0; transform: translateY(6px);} 55%,100% { opacity:1; transform: translateY(0);} }
       @keyframes lpFlame { 0%,100% { transform: rotate(-4deg) scale(1);} 50% { transform: rotate(4deg) scale(1.08);} }
