@@ -184,33 +184,14 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         .apl-card { background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.02)); box-shadow: inset 0 1px 0 rgba(255,255,255,.07); }
         .cta-btn { transition: transform .35s cubic-bezier(.22,1,.36,1), box-shadow .35s cubic-bezier(.22,1,.36,1); }
         .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 44px -12px color-mix(in oklch, ${primary} 65%, transparent); }
-        /* ── Die Knoepfe unter dem Film ───────────────────────────────────
-           Sie erschienen im selben Bild, in dem man Play drueckt — hart
-           eingeblendet, waehrend der Blick noch oben im Video ist. Das las
-           sich wie ein Fehler, nicht wie eine Einladung.
-           Jetzt steigen sie kurz nach dem Start weich auf: knapp eine halbe
-           Sekunde spaeter, damit sie in die Aufmerksamkeit hineinwachsen
-           statt sie zu unterbrechen. Der zweite folgt einen Hauch spaeter,
-           damit es eine Geste ist und kein Umschalten. */
-        @keyframes pitchCtaIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-        /* "backwards", NICHT "both": der Ruhezustand des Knopfes ist sichtbar.
-           Mit "both" haelt die Fuellung nach dem Lauf den Endwert fest — und
-           solange die Animation noch nicht gestartet ist (Verzoegerung, ein
-           gedrosselter Hintergrund-Tab, eine Engine die sie gar nicht
-           ausfuehrt), steht der Knopf auf opacity 0. Live nachgemessen: genau
-           dieser Fall, der Knopf war unsichtbar. Mit "backwards" gilt der
-           Startwert nur waehrend der Verzoegerung; laeuft die Animation nie,
-           ist der Knopf einfach da. Ein Effekt darf nie der Grund sein,
-           warum jemand den einzigen Knopf nicht sieht. */
-        .pitch-cta { animation: pitchCtaIn .55s cubic-bezier(.22,1,.36,1) backwards; }
-        .pitch-cta-1 { animation-delay: .45s; }
-        .pitch-cta-2 { animation-delay: .62s; }
+        /* Die Einblendung der Knoepfe unter dem Film liegt NICHT hier, sondern
+           am Zustand "ctaIn" — siehe dort. Eine CSS-Animation mit Verzoegerung
+           hat den Knopf live nachweislich unsichtbar gelassen, wenn sie gar
+           nicht erst anlief. Hier bleibt nur der Pfeil, der beim Zeigen
+           mitgeht: ein Schmuck, dessen Ausfall niemandem etwas nimmt. */
         .cta-arrow { transition: transform .25s cubic-bezier(.22,1,.36,1); }
         .cta-btn:hover .cta-arrow { transform: translateX(3px); }
-        @media (prefers-reduced-motion: reduce) {
-          .pitch-cta { animation: none; }
-          .cta-arrow { transition: none; }
-        }
+        @media (prefers-reduced-motion: reduce) { .cta-arrow { transition: none; } }
         @keyframes heroExit { to { opacity:.3; transform: translateY(-28px) scale(.985); } }
         @supports (animation-timeline: scroll()) {
           .hero-exit { animation: heroExit linear both; animation-timeline: scroll(); animation-range: 0 70vh; }
