@@ -308,6 +308,15 @@ function Applications() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<Application | null>(null);
+  /* Rueckmeldung nach der Freigabe — inklusive der Frage, ob die Einladung
+     wirklich rausging. partner-approve legt Login und Marke an und versucht
+     ERST DANACH die Mail; scheitert sie, bricht der Vorgang bewusst nicht ab
+     (der Partner ist ja angelegt). Die Funktion meldet das als `mailed`
+     zurueck — der Adminbereich zeigt es an, dieser Bereich hat es bisher
+     verworfen. Der Mitarbeiter sah also "freigegeben" und konnte nicht
+     wissen, dass der Partner nie eine Einladung bekommen hat. Genau dieser
+     Fall ist am 30.08. aufgetreten. */
+  const [notice, setNotice] = useState<{ text: string; ok: boolean } | null>(null);
 
   const load = useCallback(async () => {
     const { data, error } = await db().from("partner_applications")
@@ -319,7 +328,7 @@ function Applications() {
   useEffect(() => { load(); }, [load]);
 
   const approve = async (app: Application) => {
-    setConfirming(null); setBusy(app.id); setError(null);
+    setConfirming(null); setBusy(app.id); setError(null); setNotice(null);
     const { data: session } = await supabase.auth.getSession();
     const token = session.session?.access_token;
     try {
@@ -331,6 +340,11 @@ function Applications() {
       const out = await res.json();
       if (!res.ok) throw new Error(out.error ?? `HTTP ${res.status}`);
       setError(null);
+      setNotice(
+        out.mailed
+          ? { ok: true, text: `${app.name || app.email} ist freigegeben — Marke „${out.slug}" angelegt, die Einladung ist unterwegs.` }
+          : { ok: false, text: `${app.name || app.email} ist freigegeben und die Marke „${out.slug}" steht — aber die Einladungs-E-Mail ging NICHT raus. Er kann sich noch nicht anmelden. Nochmal freigeben (der Vorgang ist wiederholbar) oder ihm den Link von Hand schicken.` },
+      );
     } catch (e) {
       setError(`Freigabe fehlgeschlagen: ${e instanceof Error ? e.message : String(e)}`);
     }
@@ -358,6 +372,17 @@ function Applications() {
         <h2 className="font-display text-lg font-bold">Partner-Bewerbungen</h2>
       </div>
       {error && <div className="mb-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">{error}</div>}
+      {notice && (
+        <div
+          className={
+            notice.ok
+              ? "mb-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs leading-relaxed text-emerald-200"
+              : "mb-3 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs leading-relaxed text-amber-200"
+          }
+        >
+          {notice.text}
+        </div>
+      )}
 
       {/* Bestaetigung nennt den NAMEN — ein Fehlklick hier legt Login, Marke
           und E-Mail-Versand an. Genau so ist ein echter Partner schon einmal
