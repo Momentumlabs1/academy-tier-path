@@ -37,3 +37,7 @@ END $$;
 DROP TRIGGER IF EXISTS trg_scout_leads_guard_released ON scout_leads;
 CREATE TRIGGER trg_scout_leads_guard_released BEFORE UPDATE ON scout_leads
   FOR EACH ROW EXECUTE FUNCTION scout_leads_guard_released();
+
+-- Nachtrag (Migration scout_leads_ig_followers): Instagram-Reichweite hat
+-- eine eigene Spalte — der Apify-Scout liefert IG- und TikTok-Leads.
+-- ALTER TABLE scout_leads ADD COLUMN IF NOT EXISTS ig_followers integer;

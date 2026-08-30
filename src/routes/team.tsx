@@ -43,6 +43,7 @@ const STATUS_TONE: Record<string, string> = {
 interface Lead {
   id: string; source: string; platform: string | null; handle: string; name: string | null;
   url: string | null; yt_subs: number | null; tg_subs: number | null; tt_followers: number | null;
+  ig_followers: number | null;
   sprache: string | null; score: number | null; fit: string | null; opener: string | null;
   status: string; notes: string | null; released: boolean;
 }
@@ -229,7 +230,11 @@ function ScoutLeads({ staffEmail, isAdmin }: { staffEmail: string; isAdmin: bool
                     {isAdmin && !l.released && <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-bold text-amber-300">Gesperrt</span>}
                   </div>
                   <div className="mt-1 flex flex-wrap gap-x-4 gap-y-0.5 font-mono text-[11px] tabular-nums text-muted-foreground">
-                    <span>YT {fmt(l.yt_subs)}</span><span>TG {fmt(l.tg_subs)}</span><span>TT {fmt(l.tt_followers)}</span>
+                    {l.yt_subs != null && <span>YT {fmt(l.yt_subs)}</span>}
+                    {l.tg_subs != null && <span>TG {fmt(l.tg_subs)}</span>}
+                    {l.tt_followers != null && <span>TT {fmt(l.tt_followers)}</span>}
+                    {l.ig_followers != null && <span>IG {fmt(l.ig_followers)}</span>}
+                    {l.yt_subs == null && l.tg_subs == null && l.tt_followers == null && l.ig_followers == null && <span>Reichweite unbekannt</span>}
                   </div>
                   {l.fit && <p className="mt-1.5 max-w-xl text-xs text-white/60">{l.fit}</p>}
                   {l.notes && <p className="mt-1 max-w-xl text-xs text-white/45">📝 {l.notes}</p>}
