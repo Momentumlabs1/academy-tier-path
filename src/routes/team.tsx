@@ -133,6 +133,9 @@ function ScoutLeads({ staffEmail, isAdmin }: { staffEmail: string; isAdmin: bool
   const [leads, setLeads] = useState<Lead[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("alle");
+  const [plattform, setPlattform] = useState<string>("alle");
+  const [suche, setSuche] = useState("");
+  const [sortier, setSortier] = useState<"score" | "reichweite">("score");
   const [adding, setAdding] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
 
@@ -171,7 +174,19 @@ function ScoutLeads({ staffEmail, isAdmin }: { staffEmail: string; isAdmin: bool
     try { await navigator.clipboard.writeText(l.opener ?? ""); setCopied(l.id); setTimeout(() => setCopied(null), 1500); } catch { /* egal */ }
   };
 
-  const shown = (leads ?? []).filter((l) => filter === "alle" || l.status === filter);
+  const reichweite = (l: Lead) =>
+    Math.max(l.yt_subs ?? 0, l.tg_subs ?? 0, l.tt_followers ?? 0, l.ig_followers ?? 0);
+  const shown = (leads ?? [])
+    .filter((l) => filter === "alle" || l.status === filter)
+    .filter((l) => plattform === "alle" || l.platform === plattform)
+    .filter((l) => {
+      const q = suche.trim().toLowerCase();
+      return !q || l.handle.toLowerCase().includes(q) || (l.name ?? "").toLowerCase().includes(q) || (l.notes ?? "").toLowerCase().includes(q);
+    })
+    .sort((a, b) => sortier === "score"
+      ? (b.score ?? 0) - (a.score ?? 0) || reichweite(b) - reichweite(a)
+      : reichweite(b) - reichweite(a));
+  const zaehl = (p: string) => (leads ?? []).filter((l) => p === "alle" || l.platform === p).length;
   const fmt = (n: number | null) => (n == null ? "–" : n >= 1000 ? `${(n / 1000).toFixed(n >= 100000 ? 0 : 1)}k` : String(n));
 
   return (
@@ -197,13 +212,33 @@ function ScoutLeads({ staffEmail, isAdmin }: { staffEmail: string; isAdmin: bool
       {adding && <AddLead staffEmail={staffEmail} onDone={() => { setAdding(false); load(); }} />}
       {error && <div className="mb-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-300">{error}</div>}
 
-      <div className="mb-3 flex flex-wrap gap-1.5">
+      {/* Zwei Filterebenen + Suche: bei ~180 Leads ist die flache Liste sonst
+          unbenutzbar. Plattform zuerst (der Editor arbeitet kanalweise),
+          Status fuer die Pipeline, Suche fuer den Rest. */}
+      <div className="mb-2 flex flex-wrap items-center gap-1.5">
+        {[["alle", "Alle"], ["tiktok", "TikTok"], ["instagram", "Instagram"], ["youtube", "YouTube"], ["telegram", "Telegram"]].map(([p, label]) => (
+          zaehl(p) > 0 || p === "alle" ? (
+            <button key={p} onClick={() => setPlattform(p)}
+              className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${plattform === p ? "border-primary/40 bg-primary/15 text-primary" : "border-white/10 bg-white/[0.03] text-muted-foreground hover:text-foreground"}`}>
+              {label} <span className="opacity-60">{zaehl(p)}</span>
+            </button>
+          ) : null
+        ))}
+        <span className="mx-1 h-4 w-px bg-white/10" />
+        <button onClick={() => setSortier(sortier === "score" ? "reichweite" : "score")}
+          className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground">
+          Sortiert: {sortier === "score" ? "Score" : "Reichweite"} ⇅
+        </button>
+      </div>
+      <div className="mb-3 flex flex-wrap items-center gap-1.5">
         {["alle", ...STATI].map((s) => (
           <button key={s} onClick={() => setFilter(s)}
             className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${filter === s ? "border-primary/40 bg-primary/15 text-primary" : "border-white/10 bg-white/[0.03] text-muted-foreground hover:text-foreground"}`}>
-            {s === "alle" ? "Alle" : STATUS_LABEL[s]}
+            {s === "alle" ? "Alle" : STATUS_LABEL[s]} <span className="opacity-60">{(leads ?? []).filter((l) => (s === "alle" || l.status === s) && (plattform === "alle" || l.platform === plattform)).length}</span>
           </button>
         ))}
+        <input value={suche} onChange={(e) => setSuche(e.target.value)} placeholder="Suchen…"
+          className="ml-auto w-36 rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] outline-none placeholder:text-muted-foreground focus:border-primary/40" />
       </div>
 
       {leads === null ? (
@@ -219,6 +254,11 @@ function ScoutLeads({ staffEmail, isAdmin }: { staffEmail: string; isAdmin: bool
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
+                    {l.platform && (
+                      <span className="rounded border border-white/10 bg-white/[0.05] px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wide text-white/60">
+                        {l.platform === "instagram" ? "IG" : l.platform === "tiktok" ? "TT" : l.platform === "youtube" ? "YT" : "TG"}
+                      </span>
+                    )}
                     <span className="font-display text-sm font-bold">{l.name || l.handle}</span>
                     {l.url && (
                       <a href={l.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-mono text-[11px] text-primary hover:underline">
