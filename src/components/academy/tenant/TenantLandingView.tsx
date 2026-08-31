@@ -19,7 +19,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
-  ArrowRight, ArrowUpRight, CheckCircle2, Lock, Shield, Star,
+  ArrowRight, CheckCircle2, Lock, Shield, Star,
   PlayCircle, BadgeCheck, Wallet, Building2, Radio, GraduationCap, LineChart, Zap,
   Bot, Trophy, ListChecks, Layers,
 } from "lucide-react";
@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 import { writePartnerBrand } from "@/lib/partner-brand";
 import { supabase } from "@/integrations/supabase/client";
 import type { TenantConfig } from "@/lib/tenants";
-import { BROKER, BROKER_SWITCH, TELEGRAM_ENTRY } from "@/lib/broker";
+import { BROKER, BROKER_SWITCH } from "@/lib/broker";
 import { RiskWarning } from "@/components/academy/legal/RiskWarning";
 import { CommissionDisclosure } from "@/components/academy/legal/CommissionDisclosure";
 import { DeskResults } from "@/components/academy/tenant/DeskResults";
@@ -380,20 +380,28 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                 style={cta}>
                 Start free — €0 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </button>
-              {/* ALLE zuerst in UNSEREN Info-Kanal — auch auf Partnerseiten.
-                  Hier stand tenant.telegramChannel: ein Besucher von Zekos
-                  Seite landete damit in "Zekoglobal Info", einem Kanal, in dem
-                  noch nichts steht. Wer neugierig genug ist zu klicken, sieht
-                  eine leere Seite und ist wieder weg. In t.me/cosmoscandles
-                  laufen die Nachrichten seit Monaten — das ist das einzige
-                  Fenster, das etwas zeigt. Der bezahlte SIGNAL-Kanal bleibt
-                  unberuehrt partnerweise (create-telegram-link); es geht hier
-                  nur um die oeffentliche Tuer. Hat ein Partner spaeter einen
-                  Kanal mit Inhalt, wird das hier wieder aufgemacht. */}
-              <a href={TELEGRAM_ENTRY.url} target="_blank" rel="noopener noreferrer"
+              {/* KEIN Weg von einer oeffentlichen Seite direkt nach Telegram.
+                  Weder hier noch auf einer Partnerseite — der Kanal kommt
+                  IMMER erst nach der Registrierung.
+
+                  Hier stand zuerst tenant.telegramChannel (Zekos leerer Info-
+                  Kanal), dann unser Kanal. Beides hatte dasselbe Loch: wer
+                  vor der Registrierung nach Telegram abbiegt, verlaesst den
+                  Browser, in dem sein cosmo_ref-Cookie liegt. Kommt er spaeter
+                  ueber einen Link IM Kanal zurueck, oeffnet Telegram seinen
+                  eigenen In-App-Browser — anderer Cookie-Topf, kein Cookie,
+                  keine Herkunft. Der Kunde zaehlt dann als Haus statt als
+                  Zekos, und zwar endgueltig (members.referred_by_tenant ist
+                  nach dem Anlegen gesperrt, Migration 024).
+
+                  Also: registrieren, dann Kanal. Nach der Anmeldung ist der
+                  Weg offen — /welcome, /signals und das Willkommensfenster
+                  fuehren dorthin, und der bezahlte Signalkanal kommt ohnehin
+                  partnerweise aus create-telegram-link. */}
+              <button onClick={goRegister}
                 className="inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-3.5 text-[13px] font-semibold hover:bg-white/10 sm:px-6 sm:py-3">
-                Watch the signals <ArrowUpRight className="h-4 w-4" />
-              </a>
+                Watch the signals <ArrowRight className="h-4 w-4" />
+              </button>
             </div>
 
             <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-[11px] text-white/50 sm:mt-7 sm:gap-x-6 sm:text-xs lg:justify-start">
@@ -788,12 +796,12 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                   diesen Wert als Vorgabe setzte. Hat ein Partner keinen Kanal,
                   gehoert hier nichts hin.
 
-                  ENTSCHEIDUNG 31.08.2026: doch wieder unser Kanal, fuer alle.
-                  Nicht als Rueckfall, sondern als Regel — siehe der Knopf im
-                  Hero. Die Partner-Kanaele sind leer; der einzige Kanal mit
-                  Inhalt ist unserer, und ein leerer Kanal kostet den Besucher.
+                  ENTSCHEIDUNG 31.08.2026, zweite Stufe: von hier fuehrt gar
+                  kein Weg mehr direkt nach Telegram — auf keiner Seite, auch
+                  nicht auf unserer eigenen. Erst Registrierung, dann Kanal.
+                  Begruendung steht beim Hero-Knopf (Cookie-Topf, Herkunft).
                   Der bezahlte Signalkanal bleibt partnerweise. */}
-              <a href={TELEGRAM_ENTRY.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center gap-1.5 py-3 text-xs font-medium text-white/60 underline-offset-4 hover:text-white hover:underline">{showCosmo ? TELEGRAM_ENTRY.label : "Join the channel"} <ArrowUpRight className="h-3.5 w-3.5" /></a>
+              <button onClick={goRegister} className="inline-flex min-h-[44px] items-center gap-1.5 py-3 text-xs font-medium text-white/60 underline-offset-4 hover:text-white hover:underline">Get the signals <ArrowRight className="h-3.5 w-3.5" /></button>
             </div>
           </div>
         </div>
