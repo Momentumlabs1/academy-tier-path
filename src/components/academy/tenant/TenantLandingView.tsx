@@ -380,12 +380,20 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                 style={cta}>
                 Start free — €0 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
               </button>
-              {tenant.telegramChannel && tenant.telegramChannel !== "#" && (
-                <a href={tenant.telegramChannel} target="_blank" rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-3.5 text-[13px] font-semibold hover:bg-white/10 sm:px-6 sm:py-3">
-                  Watch the signals <ArrowUpRight className="h-4 w-4" />
-                </a>
-              )}
+              {/* ALLE zuerst in UNSEREN Info-Kanal — auch auf Partnerseiten.
+                  Hier stand tenant.telegramChannel: ein Besucher von Zekos
+                  Seite landete damit in "Zekoglobal Info", einem Kanal, in dem
+                  noch nichts steht. Wer neugierig genug ist zu klicken, sieht
+                  eine leere Seite und ist wieder weg. In t.me/cosmoscandles
+                  laufen die Nachrichten seit Monaten — das ist das einzige
+                  Fenster, das etwas zeigt. Der bezahlte SIGNAL-Kanal bleibt
+                  unberuehrt partnerweise (create-telegram-link); es geht hier
+                  nur um die oeffentliche Tuer. Hat ein Partner spaeter einen
+                  Kanal mit Inhalt, wird das hier wieder aufgemacht. */}
+              <a href={TELEGRAM_ENTRY.url} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-3.5 text-[13px] font-semibold hover:bg-white/10 sm:px-6 sm:py-3">
+                Watch the signals <ArrowUpRight className="h-4 w-4" />
+              </a>
             </div>
 
             <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-[11px] text-white/50 sm:mt-7 sm:gap-x-6 sm:text-xs lg:justify-start">
@@ -778,10 +786,14 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                   beim echten Durchlauf von Louis' Seite fuehrten trotzdem BEIDE
                   Knoepfe zu t.me/cosmoscandles, weil buildTenantConfig genau
                   diesen Wert als Vorgabe setzte. Hat ein Partner keinen Kanal,
-                  gehoert hier nichts hin. */}
-              {tenant.telegramChannel && tenant.telegramChannel !== "#" && (
-              <a href={tenant.telegramChannel} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center gap-1.5 py-3 text-xs font-medium text-white/60 underline-offset-4 hover:text-white hover:underline">{showCosmo ? TELEGRAM_ENTRY.label : "Join the channel"} <ArrowUpRight className="h-3.5 w-3.5" /></a>
-              )}
+                  gehoert hier nichts hin.
+
+                  ENTSCHEIDUNG 31.08.2026: doch wieder unser Kanal, fuer alle.
+                  Nicht als Rueckfall, sondern als Regel — siehe der Knopf im
+                  Hero. Die Partner-Kanaele sind leer; der einzige Kanal mit
+                  Inhalt ist unserer, und ein leerer Kanal kostet den Besucher.
+                  Der bezahlte Signalkanal bleibt partnerweise. */}
+              <a href={TELEGRAM_ENTRY.url} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center gap-1.5 py-3 text-xs font-medium text-white/60 underline-offset-4 hover:text-white hover:underline">{showCosmo ? TELEGRAM_ENTRY.label : "Join the channel"} <ArrowUpRight className="h-3.5 w-3.5" /></a>
             </div>
           </div>
         </div>

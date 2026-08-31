@@ -38,10 +38,12 @@ export const Route = createFileRoute("/_app/signals")({
 export function SignalsPage() {
   const brand = usePartnerBrand();
   const accent = brand?.accentColor ?? COSMO.accentColor;
-  const telegramUrl =
-    brand?.telegramChannel && brand.telegramChannel !== "#"
-      ? brand.telegramChannel
-      : TELEGRAM_ENTRY.url;
+  // Unser Kanal, auch fuer Partner-Mitglieder (31.08.2026). Dieser Knopf ist
+  // NICHT der persoenliche Signalzugang — der laeuft eine Karte tiefer ueber
+  // TelegramConnectCard/create-telegram-link und bleibt partnerweise. Er ist
+  // eine geteilte Kanaladresse, und die des Partners ist leer: ein
+  // Zeko-Mitglied landete in "Zekoglobal Info" ohne eine einzige Nachricht.
+  const telegramUrl = TELEGRAM_ENTRY.url;
   const state = useMemberState();
   const hasAccess = !!state.currentTier;
   // Locked until the first deposit clears — and while the member state is still

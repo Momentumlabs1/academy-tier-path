@@ -71,8 +71,12 @@ export function WelcomeModal() {
 
   if (!open || closing) return null;
 
-  const telegramUrl =
-    brand?.telegramChannel && brand.telegramChannel !== "#" ? brand.telegramChannel : TELEGRAM_ENTRY.url;
+  // Unser Info-Kanal, auch fuer Partner-Kunden. Hier stand der Kanal der
+  // Partnermarke; bei Zeko ist das ein Kanal ohne eine einzige Nachricht, und
+  // das ist das erste Fenster, das ein frisch registriertes Mitglied oeffnet.
+  // Die Signale bekommt es ohnehin ueber den persoenlichen Zugang
+  // (create-telegram-link), nicht ueber diesen Link.
+  const telegramUrl = TELEGRAM_ENTRY.url;
 
   return (
     <div
