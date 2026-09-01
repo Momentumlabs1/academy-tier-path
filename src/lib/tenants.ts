@@ -1,4 +1,4 @@
-import { BROKER, TELEGRAM_ENTRY } from "./broker";
+import { BROKER, BROKERS, TELEGRAM_ENTRY } from "./broker";
 import { LESSONS } from "./academy-data";
 
 /**
@@ -33,6 +33,17 @@ export interface TenantConfig {
   bgTo: string;
   brokerName: string;
   brokerUrl: string;
+  /**
+   * Welcher Broker fuer DIESE Marke gilt — unabhaengig vom Land des Besuchers.
+   *
+   * Ohne Angabe entscheidet das Land (brokerForCountry): USA -> HeroFX, alles
+   * andere -> VT Markets. Fuer einen Partner, dessen Publikum ohnehin in den
+   * USA sitzt, ist diese Regel falsch herum: sein Bot verschickt bereits den
+   * Hero-Link mit SEINEM Partner-Code, waehrend die Akademie daneben VT
+   * nannte. Zwei Broker in einem Ablauf sind kein Detail — der Kunde eroeffnet
+   * beim einen und zahlt beim anderen ein, und die Zuordnung greift nie.
+   */
+  broker?: "hero" | "vt";
   telegramChannel: string;
   /**
    * Eigenes Vorstellungsvideo. FEHLT ES, ENTFAELLT DER ABSCHNITT.
@@ -181,8 +192,13 @@ export const TENANTS: TenantConfig[] = [
     // Follows the broker we actually link to. Hardcoding it produced a button
     // reading "Visit VT Markets" that opened HeroFX — the name and the
     // destination have to come from the same place or they drift apart silently.
-    brokerName: BROKER.name,
-    brokerUrl: BROKER.url,
+    // Zekos Publikum sitzt in den USA, und sein Setter-Bot verschickt bereits
+    // den Hero-Link mit seinem eigenen Partner-Code. Die Akademie muss
+    // denselben Broker nennen, sonst laufen Anmeldung und Einzahlung
+    // auseinander.
+    broker: "hero",
+    brokerName: BROKERS.hero.name,
+    brokerUrl: BROKERS.hero.url,
     // Sein INFO-Kanal ("Zekoglobal Info"), nicht sein Bot.
     //
     // Hier stand t.me/zekoglobal — darunter antwortet sein Bot, und ein

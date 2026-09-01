@@ -155,6 +155,23 @@ export const BROKER = {
  * Hero is the exception granted by where the visitor already is, never the
  * fallback we push people toward.
  */
+/**
+ * Der Broker fuer EINE Marke — Partner schlaegt Land.
+ *
+ * brokerForCountry entscheidet nach Herkunft des Besuchers, und fuer die
+ * Hausmarke ist das richtig. Fuer einen Partner, dessen Publikum ohnehin in
+ * den USA sitzt, ist es falsch herum: sein Setter-Bot verschickt den
+ * Hero-Link mit seinem eigenen Partner-Code, waehrend die Akademie daneben VT
+ * nannte. Der Kunde eroeffnet dann beim einen und zahlt beim anderen ein —
+ * und die Zuordnung greift nie, weil der Broker den Kunden gar nicht kennt.
+ *
+ * Ist am Mandanten ein Broker hinterlegt, gilt der. Sonst wie bisher das Land.
+ */
+export function brokerFor(preferred?: BrokerKey | null, countryCode?: string | null): BrokerConfig {
+  if (preferred && BROKERS[preferred]?.url) return BROKERS[preferred];
+  return brokerForCountry(countryCode);
+}
+
 export function brokerForCountry(countryCode?: string | null): BrokerConfig {
   // VT has no registration URL yet, and a broker with no URL is not a fallback —
   // it is a dead button. Until it is configured, everyone goes to Hero.

@@ -24,6 +24,8 @@ export interface PartnerBrand {
   accentColor: string;
   primaryColor: string;
   telegramChannel: string;
+  /** Broker dieser Marke; leer = nach Land entscheiden. Siehe brokerFor(). */
+  broker?: "hero" | "vt";
   brokerName: string;
   /** "#" until the partner's broker link is configured. */
   brokerUrl: string;
@@ -59,6 +61,7 @@ export function writePartnerBrand(tenant: TenantConfig): void {
     accentColor: tenant.accentColor,
     primaryColor: tenant.primaryColor,
     telegramChannel: tenant.telegramChannel,
+    broker: tenant.broker,
     brokerName: tenant.brokerName,
     brokerUrl: tenant.brokerUrl,
   };

@@ -9,7 +9,7 @@
  * rail (vertical mini-card for the right rail).
  */
 import { ArrowUpRight, BadgeCheck, ShieldCheck, Star, Trophy } from "lucide-react";
-import { BROKER, BROKERS, BROKER_SWITCH, TELEGRAM_ENTRY, brokerForCountry } from "@/lib/broker";
+import { BROKER, BROKERS, BROKER_SWITCH, TELEGRAM_ENTRY, brokerFor } from "@/lib/broker";
 import { useVisitorCountry } from "@/hooks/useVisitorCountry";
 import { BrokerPausedNotice } from "@/components/academy/tier/BrokerPausedNotice";
 import { RiskWarning } from "@/components/academy/legal/RiskWarning";
@@ -55,7 +55,8 @@ function DepositCta({ className }: { className?: string }) {
   // down at the moment it is made. Reconstructing it later from a country and a
   // rule that may since have changed is guesswork.
   const country = useVisitorCountry();
-  const routedBroker = brokerForCountry(country);
+  // Partner schlaegt Land: steht am Mandanten ein Broker, gilt der.
+  const routedBroker = brokerFor(brand?.broker, country);
   // Mid-switch: never hand a member to a broker we are leaving. See BROKER_SWITCH.
   if (BROKER_SWITCH.paused) return <BrokerPausedNotice className={className} />;
   return (
@@ -153,7 +154,7 @@ export function BrokerTrustStrip({ cta = true, compact = false, className }: {
       <ol className="relative mt-5 grid gap-3 sm:grid-cols-3">
         <Step n={1} title="Join us on Telegram" body="We send you the broker link and walk you through the account opening." />
         {/* KEIN Broker-Name im Schritt.
-            Welcher Broker es wird, haengt vom Land ab (brokerForCountry) und
+            Welcher Broker es wird, entscheidet brokerFor: steht am Partner einer, gilt der; sonst das Land. Und
             wird ohnehin erst im Chat uebergeben — hier einen zu nennen legt
             etwas fest, was an dieser Stelle noch offen ist, und muss bei jedem
             Wechsel nachgezogen werden. Was zaehlt, steht ohnehin daneben: es
