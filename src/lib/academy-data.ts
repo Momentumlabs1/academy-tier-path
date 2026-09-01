@@ -11,7 +11,7 @@ export const TIERS: Tier[] = [
   // die Kette mit einer echten 10-Euro-Einzahlung durchlaeuft. ZURUECKSETZEN
   // auf 100, zusammen mit Migration 070 (recalculate_tier_after_deposit).
   // Beide Stellen, sonst rechnet die Oberflaeche anders als die Datenbank.
-  { key: "foundation", name: "Foundation", minDeposit: 10,
+  { key: "foundation", name: "Foundation", minDeposit: 100,
     color: "oklch(0.78 0.16 150)",
     perks: ["Telegram signal group access", "Foundation lessons", "Cosmo — your 24/7 AI mentor", "Weekly market recap", "Community chat"] },
   { key: "operator", name: "Operator", minDeposit: 2_000,

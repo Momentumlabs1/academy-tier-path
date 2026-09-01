@@ -173,6 +173,10 @@ export function brokerFor(preferred?: BrokerKey | null, countryCode?: string | n
 }
 
 export function brokerForCountry(countryCode?: string | null): BrokerConfig {
+  // TEMP (Ansage 01.09., Launch-Woche): ALLE Besucher gehen zu Hero, bis der
+  // VT-Partnerlink samt Auslesen steht. VTs Konfiguration bleibt unangetastet —
+  // zum Zurueckdrehen nur dieses eine return entfernen.
+  return BROKERS.hero;
   // VT has no registration URL yet, and a broker with no URL is not a fallback —
   // it is a dead button. Until it is configured, everyone goes to Hero.
   if (!BROKERS.vt.url) return BROKERS.hero;
