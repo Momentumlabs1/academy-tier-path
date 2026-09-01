@@ -160,6 +160,57 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
     color: "#000",
   } as const;
 
+  // Traegt der Hero kein Maskottchen, traegt er den Film. Zekos Portrait sitzt
+  // in der Kopfzeile, weshalb die rechte Hero-Spalte leer blieb und auf dem
+  // Desktop als schwarze Flaeche neben der Ueberschrift stand.
+  const heroHasVideo = !heroHasMascot && Boolean(tenant.pitchVideo);
+
+  const pitchPlayer = (
+      <div className="overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl">
+        <div className="relative aspect-video bg-black">
+          {/* Der Platzhalter lag mit `pointer-events-none absolute inset-0`
+              dauerhaft ueber dem Player — das Video war auch mit Datei nie
+              zu sehen. Jetzt traegt das Poster diese Rolle, und der
+              Play-Knopf verschwindet beim Start. */}
+          <video
+            ref={pitchRef}
+            controls
+            playsInline
+            // metadata statt none: laedt beim Seitenaufruf NUR den Video-Index
+            // (faststart legt ihn an den Dateianfang, wenige hundert KB) —
+            // der Klick startet dadurch sofort, gestreamt wird progressiv.
+            preload="metadata"
+            poster={tenant.pitchPoster ?? "/pitch-poster.jpg?v=7"}
+            onPlay={() => {
+              setPitchPlaying(true); setPitchStarted(true); setPitchEnded(false);
+              // Kurz warten, damit die Knoepfe in die Aufmerksamkeit
+              // hineinwachsen statt sie im selben Bild zu unterbrechen.
+              setTimeout(() => setCtaIn(true), 450);
+            }}
+            onEnded={() => { setPitchPlaying(false); setPitchEnded(true); }}
+            // object-contain, nicht cover: im Vollbild (16:10-Displays)
+            // schnitt cover links und rechts ab — genau dort sitzen im
+            // Video die Einblendungen.
+            className="h-full w-full object-contain"
+          >
+            <source src={tenant.pitchVideo} type="video/mp4" />
+          </video>
+          {!pitchPlaying && (
+            <button
+              type="button"
+              onClick={() => pitchRef.current?.play()}
+              aria-label="Play video"
+              className="group absolute inset-0 flex cursor-pointer items-center justify-center bg-black/25"
+            >
+              <span className="flex h-16 w-16 items-center justify-center rounded-full shadow-lg ring-1 ring-white/20 transition-transform duration-200 group-hover:scale-105" style={{ background: primary }}>
+                <PlayCircle className="h-8 w-8 text-black" />
+              </span>
+            </button>
+          )}
+        </div>
+      </div>
+  );
+
   return (
     <div className="relative min-h-screen overflow-clip bg-[#05070e] font-sans text-white">
       <style>{`
@@ -457,11 +508,23 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               )}
             </div>
           )}
+
+          {/* Rechte Hero-Spalte, wenn kein Maskottchen dort sitzt: der Film.
+              Zekos Portrait steht in der Kopfzeile, also rendete diese Spalte
+              gar nichts — auf dem Desktop lag neben der Ueberschrift eine leere
+              schwarze Haelfte. Der Player haengt an GENAU EINER Stelle (hier
+              oder unten im eigenen Abschnitt, nie beides): zwei <video>-Knoten
+              teilten sich sonst pitchRef und der zweite ueberschriebe den ersten. */}
+          {heroHasVideo && (
+            <div className="hero-exit lv-in relative z-10 mx-auto w-full max-w-[560px] lg:mx-0 lg:max-w-none">
+              {pitchPlayer}
+            </div>
+          )}
         </div>
       </section>
 
       {/* ─────────────────────── DEMO VIDEO ─────────────────────── */}
-      {tenant.pitchVideo && (
+      {tenant.pitchVideo && !heroHasVideo && (
       <Band tone="raised" max="max-w-4xl" className="py-8 sm:py-12">
         {/* Das Video laeuft 1:19 — "60 seconds" stand hier noch aus der Zeit
             vor dem fertigen Schnitt. */}
@@ -473,49 +536,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               Seite ist das eine Attrappe: sie kostet oben Hoehe, verkleinert
               das Bild, und jeder sieht sofort, dass das Fenster keins ist.
               Das Video traegt sich allein. */}
-          <div className="overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl">
-            <div className="relative aspect-video bg-black">
-              {/* Der Platzhalter lag mit `pointer-events-none absolute inset-0`
-                  dauerhaft ueber dem Player — das Video war auch mit Datei nie
-                  zu sehen. Jetzt traegt das Poster diese Rolle, und der
-                  Play-Knopf verschwindet beim Start. */}
-              <video
-                ref={pitchRef}
-                controls
-                playsInline
-                // metadata statt none: laedt beim Seitenaufruf NUR den Video-Index
-                // (faststart legt ihn an den Dateianfang, wenige hundert KB) —
-                // der Klick startet dadurch sofort, gestreamt wird progressiv.
-                preload="metadata"
-                poster={tenant.pitchPoster ?? "/pitch-poster.jpg?v=7"}
-                onPlay={() => {
-                  setPitchPlaying(true); setPitchStarted(true); setPitchEnded(false);
-                  // Kurz warten, damit die Knoepfe in die Aufmerksamkeit
-                  // hineinwachsen statt sie im selben Bild zu unterbrechen.
-                  setTimeout(() => setCtaIn(true), 450);
-                }}
-                onEnded={() => { setPitchPlaying(false); setPitchEnded(true); }}
-                // object-contain, nicht cover: im Vollbild (16:10-Displays)
-                // schnitt cover links und rechts ab — genau dort sitzen im
-                // Video die Einblendungen.
-                className="h-full w-full object-contain"
-              >
-                <source src={tenant.pitchVideo} type="video/mp4" />
-              </video>
-              {!pitchPlaying && (
-                <button
-                  type="button"
-                  onClick={() => pitchRef.current?.play()}
-                  aria-label="Play video"
-                  className="group absolute inset-0 flex cursor-pointer items-center justify-center bg-black/25"
-                >
-                  <span className="flex h-16 w-16 items-center justify-center rounded-full shadow-lg ring-1 ring-white/20 transition-transform duration-200 group-hover:scale-105" style={{ background: primary }}>
-                    <PlayCircle className="h-8 w-8 text-black" />
-                  </span>
-                </button>
-              )}
-            </div>
-          </div>
+          {pitchPlayer}
         </div>
 
           {/* DIE KNOEPFE, VON DENEN COSMO IM FILM SPRICHT.

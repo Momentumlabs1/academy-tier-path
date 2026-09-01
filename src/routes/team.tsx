@@ -44,6 +44,7 @@ interface Lead {
   id: string; source: string; platform: string | null; handle: string; name: string | null;
   url: string | null; yt_subs: number | null; tg_subs: number | null; tt_followers: number | null;
   ig_followers: number | null;
+  format: string | null; schwierigkeit: string | null;
   sprache: string | null; score: number | null; fit: string | null; opener: string | null;
   status: string; notes: string | null; released: boolean;
 }
@@ -134,6 +135,7 @@ function ScoutLeads({ staffEmail, isAdmin }: { staffEmail: string; isAdmin: bool
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("alle");
   const [plattform, setPlattform] = useState<string>("alle");
+  const [schwierig, setSchwierig] = useState<string>("alle");
   const [suche, setSuche] = useState("");
   const [sortier, setSortier] = useState<"score" | "reichweite">("score");
   const [adding, setAdding] = useState(false);
@@ -179,6 +181,7 @@ function ScoutLeads({ staffEmail, isAdmin }: { staffEmail: string; isAdmin: bool
   const shown = (leads ?? [])
     .filter((l) => filter === "alle" || l.status === filter)
     .filter((l) => plattform === "alle" || l.platform === plattform)
+    .filter((l) => schwierig === "alle" || l.schwierigkeit === schwierig)
     .filter((l) => {
       const q = suche.trim().toLowerCase();
       return !q || l.handle.toLowerCase().includes(q) || (l.name ?? "").toLowerCase().includes(q) || (l.notes ?? "").toLowerCase().includes(q);
@@ -225,6 +228,17 @@ function ScoutLeads({ staffEmail, isAdmin }: { staffEmail: string; isAdmin: bool
           ) : null
         ))}
         <span className="mx-1 h-4 w-px bg-white/10" />
+        {/* Schwierigkeit = wie realistisch die Partnerschaft ist. LEICHT =
+            Animations-/Faceless-Seite ohne eigene Monetarisierung — das
+            Wunschprofil, zuerst anschreiben. SCHWER = echte Person mit Links
+            und Reichweite — nur mit Plan. */}
+        {[["alle", "Alle"], ["leicht", "🟢 Leicht"], ["mittel", "🟡 Mittel"], ["schwer", "🔴 Schwer"]].map(([s, label]) => (
+          <button key={s} onClick={() => setSchwierig(s)}
+            className={`rounded-full border px-2.5 py-1 text-[11px] font-bold ${schwierig === s ? "border-primary/40 bg-primary/15 text-primary" : "border-white/10 bg-white/[0.03] text-muted-foreground hover:text-foreground"}`}>
+            {label}
+          </button>
+        ))}
+        <span className="mx-1 h-4 w-px bg-white/10" />
         <button onClick={() => setSortier(sortier === "score" ? "reichweite" : "score")}
           className="rounded-full border border-white/10 bg-white/[0.03] px-2.5 py-1 text-[11px] font-semibold text-muted-foreground hover:text-foreground">
           Sortiert: {sortier === "score" ? "Score" : "Reichweite"} ⇅
@@ -265,6 +279,9 @@ function ScoutLeads({ staffEmail, isAdmin }: { staffEmail: string; isAdmin: bool
                         @{l.handle} <ArrowUpRight className="h-3 w-3" />
                       </a>
                     )}
+                    {l.format === "animation" && <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-bold text-emerald-300">🎬 Animation</span>}
+                    {l.format === "faceless" && <span className="rounded-full border border-sky-400/25 bg-sky-400/10 px-2 py-0.5 text-[10px] font-bold text-sky-300">Faceless</span>}
+                    {l.schwierigkeit && <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${l.schwierigkeit === "leicht" ? "border-emerald-400/30 text-emerald-300" : l.schwierigkeit === "schwer" ? "border-red-400/30 text-red-300" : "border-amber-400/25 text-amber-300"}`}>{l.schwierigkeit}</span>}
                     {l.score != null && <span className="rounded-full border border-white/10 bg-white/[0.05] px-2 py-0.5 font-mono text-[10px] font-bold">{l.score}</span>}
                     {l.sprache && <span className="text-[10px] uppercase text-muted-foreground">{l.sprache}</span>}
                     {isAdmin && !l.released && <span className="rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] font-bold text-amber-300">Gesperrt</span>}
