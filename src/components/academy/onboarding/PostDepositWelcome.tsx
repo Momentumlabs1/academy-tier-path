@@ -22,7 +22,7 @@ import { Card } from "@/components/academy/primitives/Card";
 // Flip when welcome.mp4 is uploaded to the academy-videos bucket. Until then
 // only the signals tutorial shows — a play button on a missing file would
 // answer with an error, which is worse than one card fewer.
-const WELCOME_VIDEO_READY = false;
+const WELCOME_VIDEO_READY = true;
 
 export function PostDepositWelcome() {
   const state = useMemberState();
