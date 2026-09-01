@@ -198,7 +198,25 @@ export const TENANTS: TenantConfig[] = [
     // auseinander.
     broker: "hero",
     brokerName: BROKERS.hero.name,
-    brokerUrl: BROKERS.hero.url,
+    /**
+     * ZEKOS EIGENER PARTNER-CODE, nicht unserer.
+     *
+     * Hier stand BROKERS.hero.url — und das ist der Link der Hausmarke
+     * (partner_code=2248356). Damit haette sich JEDER Kunde, den Zeko schickt,
+     * beim Broker unter UNS eroeffnet: die Akademie haette ihn korrekt als
+     * Zekos Kunden gefuehrt, waehrend Hero ihn als unseren zaehlt. Zeko haette
+     * nie eine Provision gesehen, und niemandem waere es aufgefallen, weil
+     * unsere eigene Abrechnung ja stimmt.
+     *
+     * Am 01.09. im echten Testlauf genau so passiert: die Testkundin kam ueber
+     * zekoglobal herein und liegt bei Hero unter 2248356.
+     *
+     * Der Code hier ist derselbe, den Zekos Setter-Bot verschickt
+     * (zeko-setter, HANDOVER_LINK). Die beiden MUESSEN uebereinstimmen —
+     * laufen sie auseinander, haengt die Provision davon ab, auf welchem Weg
+     * der Kunde zufaellig hereinkam.
+     */
+    brokerUrl: "https://portal.herofx.co/auth/register?partner_code=8518942",
     // Sein INFO-Kanal ("Zekoglobal Info"), nicht sein Bot.
     //
     // Hier stand t.me/zekoglobal — darunter antwortet sein Bot, und ein
