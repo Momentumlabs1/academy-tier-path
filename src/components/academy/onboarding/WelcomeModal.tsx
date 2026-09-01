@@ -36,6 +36,11 @@ import { cn } from "@/lib/utils";
 
 const COSMO_HEAD = "/cosmo/cosmo-head.png";
 
+// Eine Quelle fuer Modal UND Dashboard-Karte — laufen sonst auseinander,
+// sobald jemand die Version nur an einer Stelle hochzaehlt.
+export const INTRO_VIDEO_SRC = "/pitch.mp4?v=3";
+export const INTRO_VIDEO_POSTER = "/pitch-poster.jpg?v=7";
+
 export function WelcomeModal() {
   const state = useMemberState();
   const brand = usePartnerBrand();
@@ -142,12 +147,12 @@ export function WelcomeModal() {
                   controls
                   playsInline
                   preload="metadata"
-                  poster="/pitch-poster.jpg?v=7"
+                  poster={INTRO_VIDEO_POSTER}
                   className="aspect-video h-full w-full object-contain"
                   onPlay={() => setWatched(true)}
                   onEnded={() => setWatched(true)}
                 >
-                  <source src="/pitch.mp4?v=3" type="video/mp4" />
+                  <source src={INTRO_VIDEO_SRC} type="video/mp4" />
                 </video>
               </div>
 

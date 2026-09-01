@@ -12,6 +12,7 @@ import { MemberAvatar } from "@/components/academy/primitives/MemberAvatar";
 import { LockedGate } from "@/components/academy/onboarding/LockedGate";
 import { OnboardingJourney } from "@/components/academy/onboarding/OnboardingJourney";
 import { WelcomeModal } from "@/components/academy/onboarding/WelcomeModal";
+import { IntroVideoCard } from "@/components/academy/onboarding/IntroVideoCard";
 import { FirstMissions } from "@/components/academy/onboarding/FirstMissions";
 import { PostDepositWelcome } from "@/components/academy/onboarding/PostDepositWelcome";
 import { LESSONS } from "@/lib/academy-data";
@@ -131,6 +132,10 @@ export function Dashboard() {
       {/* Die Begruessung liegt VOR allem anderen: sie erklaert, wo man ist,
           bevor das Dashboard etwas von einem will. */}
       <WelcomeModal />
+
+      {/* Bis zur Einzahlung: das Intro-Video bleibt im Dashboard sichtbar,
+          auch wenn das Modal weggedrueckt wurde. */}
+      <IntroVideoCard />
       <PostDepositWelcome />
 
       {/* Freshly funded: three concrete first actions as a checklist. */}
