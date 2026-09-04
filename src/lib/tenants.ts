@@ -196,6 +196,15 @@ export const TENANTS: TenantConfig[] = [
   {
     slug: "zekoglobal",
     name: "Zeko Global",
+    // Kurze Bruecke wie bei jedem Partner (Ansage 04.09., nachdem die Fassung
+    // ohne Film sichtbar besser lief). Er ist der einzige STATISCHE Eintrag,
+    // der sie bekommt — deshalb steht sie hier von Hand und nicht im Standard.
+    //
+    // Damit erscheint sein eigener Film (pitchVideo) auf der Landingpage nicht
+    // mehr. Die Felder bleiben absichtlich stehen: der Film ist gedreht und
+    // bezahlt, und sobald entschieden ist, wo er im neuen Ablauf sitzt,
+    // reicht das Entfernen dieser einen Zeile.
+    bridge: true,
     tagline: "Trading, explained by someone who actually does it.",
     description: "Live signals, a course that starts at zero, and the tools professionals use. No hype, no gurus.",
     logoInitials: "Z",

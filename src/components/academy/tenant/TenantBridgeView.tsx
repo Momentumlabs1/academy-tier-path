@@ -103,12 +103,25 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
         {/* Absender: wessen Seite das ist, und mit wem. Beides klein — der
             Besucher kennt den Partner schon, deshalb hat er geklickt. */}
         <div className="flex items-center gap-2.5">
-          <span
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[13px] font-black text-black"
-            style={{ background: primary }}
-          >
-            {tenant.logoInitials}
-          </span>
+          {/* Das Gesicht schlaegt die Initialen.
+              Wer ueber ein Partner-Reel kommt, hat gerade diese Person reden
+              sehen — ein Portrait sagt "du bist richtig", zwei Buchstaben
+              sagen gar nichts. Nur wer kein Bild hat, bekommt das Kuerzel. */}
+          {tenant.mascotHeadUrl ? (
+            <img
+              src={tenant.mascotHeadUrl}
+              alt={tenant.name}
+              className="h-9 w-9 shrink-0 rounded-xl object-cover"
+              style={{ boxShadow: `0 0 0 1.5px ${primary}` }}
+            />
+          ) : (
+            <span
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-[13px] font-black text-black"
+              style={{ background: primary }}
+            >
+              {tenant.logoInitials}
+            </span>
+          )}
           <span className="text-sm font-semibold">{tenant.name}</span>
           <span className="text-sm text-white/30">×</span>
           <span className="text-sm text-white/55">Cosmos Candles</span>
