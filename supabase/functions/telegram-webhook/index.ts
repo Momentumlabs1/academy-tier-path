@@ -859,6 +859,37 @@ async function handleJoinRequest(db: SupabaseClient, reqObj: { chat: TgChat; fro
 }
 
 /**
+ * Wohin ein Info-Post geht.
+ *
+ * Zwei Sorten Ziel, eine Liste: die Kanaele der Partner UND die Vorrats-Kanaele,
+ * die noch keinem gehoeren. Letztere werden mitbefuellt, damit ein startender
+ * Partner keinen leeren Raum uebernimmt, sondern einen mit Historie — ein leerer
+ * Kanal sieht aus wie ein aufgegebenes Projekt und kostet den Partner genau die
+ * Glaubwuerdigkeit, wegen der er zu uns kommt.
+ *
+ * Die Liste kommt aus der Datenbank (info_fanout_targets), weil sie an drei
+ * Stellen identisch sein muss — Erstzustellung, Korrektur und Nachfuellen. Stuende
+ * sie dreimal im Code, laufen die drei irgendwann auseinander, und es faellt
+ * niemandem auf: ein Kanal, der nie beliefert wurde, sieht genauso aus wie einer,
+ * in dem noch nichts geschrieben wurde.
+ */
+interface InfoTarget {
+  channel_id: number;
+  /** Schluessel in der delivered-Karte: Partner-slug oder "pool:<id>". */
+  key: string;
+  footer: string | null;
+}
+
+async function infoTargets(db: SupabaseClient, sourceChatId: number): Promise<InfoTarget[]> {
+  const { data, error } = await db.rpc("info_fanout_targets", { p_source_chat_id: sourceChatId });
+  if (error) {
+    console.error("[info] Zielliste nicht ladbar:", error.message);
+    return [];
+  }
+  return (data ?? []) as InfoTarget[];
+}
+
+/**
  * The info channel: mirrored to the website AND fanned out to every partner.
  *
  * This is the second half of the white-label structure. The signal relay copies
@@ -878,7 +909,7 @@ async function handleJoinRequest(db: SupabaseClient, reqObj: { chat: TgChat; fro
  * every copy — otherwise a corrected post stays wrong in every partner channel,
  * which is exactly the failure the signal relay already learned to avoid.
  */
-async function storeInfoPost(db: SupabaseClient, msg: TgMessage, tenants: TenantRow[]) {
+async function storeInfoPost(db: SupabaseClient, msg: TgMessage) {
   const raw = (msg.text ?? msg.caption ?? "").trim();
   const photo = msg.photo?.length ? msg.photo[msg.photo.length - 1].file_id : null;
   if (!raw && !photo) return;
@@ -886,30 +917,30 @@ async function storeInfoPost(db: SupabaseClient, msg: TgMessage, tenants: Tenant
   const body = raw ? await toEnglish(raw) : "";
   const delivered: Record<string, unknown> = {};
 
-  for (const t of tenants.filter((x) => x.telegram_info_channel_id)) {
+  for (const t of await infoTargets(db, msg.chat.id)) {
     try {
-      const text = t.info_footer ? `${body}\n\n${t.info_footer}` : body;
+      const text = t.footer ? `${body}\n\n${t.footer}` : body;
       if (msg.text) {
         const res = await tg<{ message_id: number }>("sendMessage", {
-          chat_id: t.telegram_info_channel_id,
+          chat_id: t.channel_id,
           text,
           disable_web_page_preview: true,
         });
         if (!res.ok) throw new Error(res.description ?? "sendMessage failed");
-        delivered[t.slug] = { ok: true, message_id: res.result?.message_id };
+        delivered[t.key] = { ok: true, message_id: res.result?.message_id };
       } else {
         const copy = await tg<{ message_id: number }>("copyMessage", {
-          chat_id: t.telegram_info_channel_id,
+          chat_id: t.channel_id,
           from_chat_id: msg.chat.id,
           message_id: msg.message_id,
           ...(raw ? { caption: text } : {}),
         });
         if (!copy.ok) throw new Error(copy.description ?? "copyMessage failed");
-        delivered[t.slug] = { ok: true, message_id: copy.result?.message_id };
+        delivered[t.key] = { ok: true, message_id: copy.result?.message_id };
       }
     } catch (e) {
-      console.error(`[info] → ${t.slug} failed:`, e);
-      delivered[t.slug] = { ok: false, error: String(e) };
+      console.error(`[info] → ${t.key} failed:`, e);
+      delivered[t.key] = { ok: false, error: String(e) };
     }
   }
 
@@ -931,7 +962,7 @@ async function storeInfoPost(db: SupabaseClient, msg: TgMessage, tenants: Tenant
 }
 
 /** An edit in the info channel → edit every copy, and the website row. */
-async function editInfoPost(db: SupabaseClient, msg: TgMessage, tenants: TenantRow[]) {
+async function editInfoPost(db: SupabaseClient, msg: TgMessage) {
   const { data: row } = await db
     .from("info_posts").select("delivered")
     .eq("chat_id", msg.chat.id).eq("message_id", msg.message_id).maybeSingle();
@@ -940,13 +971,17 @@ async function editInfoPost(db: SupabaseClient, msg: TgMessage, tenants: TenantR
   const body = raw ? await toEnglish(raw) : "";
   const delivered = (row?.delivered ?? null) as Record<string, DeliveredEntry> | null;
 
-  for (const t of tenants.filter((x) => x.telegram_info_channel_id)) {
-    const d = delivered?.[t.slug];
+  // Dieselbe Zielliste wie bei der Erstzustellung — sonst korrigiert sich ein
+  // Post nur in den Partner-Kanaelen und die Vorrats-Kanaele behalten den alten
+  // Text. Ein Partner uebernaehme dann eine Historie mit Fehlern, die laengst
+  // korrigiert sind.
+  for (const t of await infoTargets(db, msg.chat.id)) {
+    const d = delivered?.[t.key];
     if (!d?.ok || !d.message_id) continue;
-    const text = t.info_footer ? `${body}\n\n${t.info_footer}` : body;
+    const text = t.footer ? `${body}\n\n${t.footer}` : body;
     const isCaption = msg.text == null && msg.caption != null;
     await tg(isCaption ? "editMessageCaption" : "editMessageText", {
-      chat_id: t.telegram_info_channel_id,
+      chat_id: t.channel_id,
       message_id: d.message_id,
       ...(isCaption ? { caption: text } : { text, disable_web_page_preview: true }),
     });
@@ -1078,9 +1113,10 @@ async function processUpdate(update: TgUpdate) {
   // website. Never relayed as a signal.
   const ownChat = update.channel_post ?? update.edited_channel_post ?? update.message ?? update.edited_message;
   if (ownChat && infoId !== 0 && ownChat.chat.id === infoId) {
-    const tenants = await activeTenants(db);
-    if (update.edited_channel_post ?? update.edited_message) await editInfoPost(db, ownChat, tenants);
-    else await storeInfoPost(db, ownChat, tenants);
+    // Die Zielliste holen sich die beiden selbst — sie umfasst jetzt auch die
+    // Vorrats-Kanaele, die zu keinem Mandanten gehoeren.
+    if (update.edited_channel_post ?? update.edited_message) await editInfoPost(db, ownChat);
+    else await storeInfoPost(db, ownChat);
     return;
   }
 
