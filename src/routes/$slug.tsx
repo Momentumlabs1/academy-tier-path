@@ -12,6 +12,7 @@ import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { resolveTenant } from "@/lib/resolve-tenant";
 import { RESERVED_SLUGS } from "@/lib/tenants";
 import { TenantLandingView } from "@/components/academy/tenant/TenantLandingView";
+import { TenantBridgeView } from "@/components/academy/tenant/TenantBridgeView";
 
 export const Route = createFileRoute("/$slug")({
   loader: async ({ params }) => {
@@ -42,5 +43,8 @@ export const Route = createFileRoute("/$slug")({
 
 function SlugLanding() {
   const { tenant } = Route.useLoaderData();
+  // Partner mit eigenem Material (statischer Eintrag, eigener Film) behalten
+  // die lange Seite. Alle anderen bekommen die kurze Bruecke.
+  if (tenant.bridge) return <TenantBridgeView tenant={tenant} />;
   return <TenantLandingView tenant={tenant} />;
 }

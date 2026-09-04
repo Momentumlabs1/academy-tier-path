@@ -55,6 +55,20 @@ export interface TenantConfig {
    */
   /** Portrait fuer die Kopfzeile. Fehlt es, stehen dort die Initialen. */
   mascotHeadUrl?: string;
+  /**
+   * Kurze Brueckenseite statt der langen Partnerseite.
+   *
+   * Die lange Seite ist fuer jemanden geschrieben, der schon weiss, wonach er
+   * sucht. Ueber ein Partner-Reel kommt aber jemand, der gerade "TRADE" unter
+   * ein Video geschrieben hat — haeufig ohne Vorwissen. Fuer den ist jede
+   * zusaetzliche Zeile eine Huerde.
+   *
+   * Standard fuer JEDEN im Admin angelegten Partner (siehe buildTenantConfig):
+   * er hat kein eigenes Video und keine eigenen Texte, also traegt die lange
+   * Seite bei ihm ohnehin nur Vorgaben. Wer eigenes Material bekommt — heute
+   * nur Zeko —, steht als statischer Eintrag und bleibt unberuehrt.
+   */
+  bridge?: boolean;
   pitchVideo?: string;
   pitchPoster?: string;
   affiliateEmail: string;
@@ -359,6 +373,10 @@ export function buildTenantConfig(
     // leer und entfallen dann. Sobald sein Kanal eingerichtet ist, traegt der
     // Admin ihn ein (config.telegramChannel) und sie erscheinen.
     telegramChannel: "",
+    // Siehe `bridge` am Typ: ein Admin-Partner hat kein eigenes Material, die
+    // lange Seite zeigt bei ihm nur Vorgaben. Die kurze Bruecke fuehrt ihn
+    // dorthin, wo der Film wirklich liegt.
+    bridge: true,
     affiliateEmail: "kontakt@momentumlabs.at",
     // This is the default every NEW partner inherits, so anything invented here
     // propagates to every future partner page without anyone typing it again.
