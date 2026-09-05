@@ -25,8 +25,16 @@ export function RegistrationGate({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [phase, setPhase] = useState<Phase>("checking");
 
-  // Root path is public; anything deeper is a protected member area.
-  const isRoot = location.pathname === "/";
+  // Oeffentliche Seiten des Funnels. Alles andere ist Mitgliederbereich.
+  //
+  // /preview ist das gesperrte Dashboard: der Besucher SOLL es sehen, bevor er
+  // irgendetwas ausfuellt — das ist sein einziger Zweck. Stand es nicht hier,
+  // schob dieser Waechter ihn beim Klick von der Landingpage sofort nach
+  // /signup, also genau in das Formular, das wir gerade abgeschafft haben.
+  // Gemessen am 05.09.: Klick auf "Start free" landete auf /signup statt auf
+  // /preview, und zwar bevor die Seite ueberhaupt gerendert wurde.
+  const OEFFENTLICH = new Set(["/", "/preview"]);
+  const isRoot = OEFFENTLICH.has(location.pathname);
 
   useEffect(() => {
     let alive = true;

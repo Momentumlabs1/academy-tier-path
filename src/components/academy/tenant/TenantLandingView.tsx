@@ -29,7 +29,7 @@ import { cn } from "@/lib/utils";
 import { stampAttribution, usePartnerBrand } from "@/lib/partner-brand";
 import { supabase } from "@/integrations/supabase/client";
 import type { TenantConfig } from "@/lib/tenants";
-import { BROKER, BROKER_SWITCH, TELEGRAM_ENTRY } from "@/lib/broker";
+import { BROKER, BROKER_SWITCH } from "@/lib/broker";
 import { RiskWarning } from "@/components/academy/legal/RiskWarning";
 import { CommissionDisclosure } from "@/components/academy/legal/CommissionDisclosure";
 import { DeskResults } from "@/components/academy/tenant/DeskResults";
@@ -110,40 +110,25 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
      Knopf einfach hin — nie weg. */
   const [ctaIn, setCtaIn] = useState(false);
 
-  /**
-   * Wohin der Knopf unter dem Film fuehrt.
-   *
-   * NICHT mehr zur Registrierung. Der Besucher hat gerade den Film gesehen und
-   * ist so warm, wie er auf dieser Seite je wird — ihn jetzt ein Formular
-   * ausfuellen zu lassen, kostet genau an dieser Stelle. Ab hier laeuft alles
-   * ueber Telegram; das Konto entsteht spaeter aus der Einzahlung.
-   *
-   * Die Reihenfolge der Quellen ist die Herkunftskette:
-   *   1. Der Partner aus dem cosmo_brand-Cookie — er hat den Besucher gebracht,
-   *      und sein Einladungslink ist das, woran der Bot ihn spaeter erkennt.
-   *      Faellt der weg, gehoert der Kunde dem Haus statt dem Partner, und das
-   *      ist nach dem Anlegen nicht mehr zu reparieren.
-   *   2. Der Kanal des Mandanten, dessen Seite gerade laeuft.
-   *   3. Unser eigener Eingang.
-   */
-  const brand = usePartnerBrand();
-  const telegramZiel = brand?.telegramChannel || tenant.telegramChannel || TELEGRAM_ENTRY.url;
 
   /**
-   * JEDER Hauptknopf dieser Seite fuehrt nach Telegram, nicht in ein Formular.
+   * JEDER Hauptknopf dieser Seite fuehrt einen Schritt weiter — auf /preview,
+   * das gesperrte Dashboard. NICHT direkt nach Telegram.
    *
-   * Bis zum 05.09. musste man sich zuerst registrieren, damit man das gesperrte
-   * Dashboard sieht und dadurch Lust auf Telegram bekommt. Der Weg war: Video,
-   * Formular, nochmal Video, dann Telegram — vier Schritte fuer eine Sache, die
-   * einer ist. Das Konto entsteht jetzt am Ende von selbst, aus der Einzahlung
-   * (bot-unlock), und der Kunde wird genau einmal nach einer Adresse gefragt.
+   * Der Unterschied ist der ganze Trick. Direkt nach Telegram heisst: der
+   * Besucher verlaesst den Browser, ohne je gesehen zu haben, was ihn erwartet.
+   * Ueber /preview sieht er zuerst das fertige Ding mit einem Schloss davor —
+   * "ich bin schon drin, es fehlt ein Schritt". Genau dieses Bild war der
+   * einzige echte Nutzen der alten Registrierung; das Formular davor war der
+   * Preis. Jetzt gibt es das Bild ohne den Preis.
+   *
+   * Der Telegram-Knopf steht dort, eine Seite weiter, mit der Begruendung
+   * daneben.
    *
    * Anmelden koennen sich bestehende Mitglieder weiterhin — der "Sign in"-Link
-   * daneben bleibt. Nur der Weg HINEIN geht nicht mehr ueber ein Formular.
+   * bleibt. Nur der Weg HINEIN geht nicht mehr ueber ein Formular.
    */
-  const goTelegram = () => {
-    if (typeof window !== "undefined") window.open(telegramZiel, "_blank", "noopener,noreferrer");
-  };
+  const goTelegram = () => navigate({ to: "/preview" });
 
   const showCosmo = tenant.slug === "cosmos-candles";
   // Der Hero traegt das Maskottchen nur noch, wenn es KEIN Kopfzeilen-Portrait
@@ -595,15 +580,13 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                   className="pointer-events-none absolute inset-x-6 -bottom-1 h-7 rounded-full blur-2xl"
                   style={{ background: primary, opacity: 0.35 }}
                 />
-                <a
-                  href={telegramZiel}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={goTelegram}
                   className="cta-btn relative flex w-full items-center justify-center gap-2 rounded-full px-5 py-3.5 text-sm font-black"
                   style={cta}
                 >
-                  Unlock everything on Telegram <ArrowRight className="cta-arrow h-4 w-4" />
-                </a>
+                  See what's waiting for you <ArrowRight className="cta-arrow h-4 w-4" />
+                </button>
               </div>
               {/* "Nochmal ansehen" erst, wenn es etwas nochmal zu sehen gibt. */}
               {pitchEnded && (
@@ -619,22 +602,10 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               )}
             </div>
           )}
-          {/* WARUM TELEGRAM — als Satz, nicht als Fussnote.
-              "Alles laeuft ueber Telegram" ohne Grund liest sich wie eine
-              Huerde, die wir uns ausgedacht haben. Mit dem Grund ist es ein
-              Argument: ein Signal, das zehn Minuten alt ist, ist wertlos.
-              Deshalb steht der Satz in Lesegroesse unter dem Knopf und nicht
-              klein darunter — wer ihn ueberliest, klickt aus Misstrauen nicht. */}
-          {pitchStarted && (
-            <p className={cn(
-              "mt-4 max-w-xl text-sm leading-relaxed text-foreground/60 transition-all duration-500 ease-out",
-              ctaIn ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0",
-            )}>
-              Everything runs on Telegram — that's where a call lands the second our desk
-              makes it. A trade you see ten minutes late is a trade you missed. One tap and
-              you're in.
-            </p>
-          )}
+          {/* Die Begruendung "warum Telegram" stand hier und ist nach /preview
+              gewandert — dorthin, wo der Telegram-Knopf tatsaechlich sitzt. Ein
+              Grund, der eine Seite vor der Entscheidung steht, ist bis dahin
+              vergessen. */}
       </Band>
       )}
 
