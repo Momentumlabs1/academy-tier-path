@@ -1,57 +1,74 @@
 /**
- * Die Partner-Brücke — eine Bildschirmhöhe, ein Knopf, kein Scrollen.
+ * Die Partner-Brücke — die Seite, auf der ein Partner-Zuschauer landet.
  *
- * WARUM DIESE SEITE KURZ IST
- * Die lange Partnerseite erklärt, was Trading ist und was alles enthalten ist.
- * Das ist für jemanden geschrieben, der schon weiß, wonach er sucht. Über ein
- * Partner-Reel kommt aber jemand, der gerade "TRADE" unter ein Video
- * geschrieben hat — oft ohne Vorwissen, oft nicht auf Englisch zu Hause. Für
- * den ist jede zusätzliche Zeile eine Hürde, keine Information.
+ * WARUM SIE SO GEBAUT IST (Diego, 06.09.)
+ * Die erste Fassung war eine Bildschirmhöhe mit drei Sätzen und einem Knopf —
+ * "viel zu basic". Cosmos' eigene Seite bleibt die große Bühne; die
+ * Partnerseiten müssen dasselbe Niveau haben, nur verständlicher. Ein Mensch,
+ * der gerade "TRADE" unter ein Reel geschrieben hat, muss ohne Vorwissen vier
+ * Dinge sofort wissen:
  *
- * Also genau drei Aussagen und ein Knopf:
- *   1. Du musst Trading nicht können.
- *   2. Lernen kannst du es trotzdem, umsonst.
- *   3. Du zahlst uns nichts.
+ *   1. WAS IST HIER LOS      → Titel + ein Satz (der Titel bleibt: er sitzt)
+ *   2. WAS BEKOMME ICH       → die Signalvorschau als Telefon + drei Punkte
+ *   3. WAS PASSIERT ALS NÄCHSTES → drei Schritte, "du bist hier" markiert
+ *   4. BEWEISE               → die geprüften Desk-Zahlen der letzten Woche
  *
- * DIE REIHENFOLGE IST DIE BOTSCHAFT. Die Akademie steht bewusst an zweiter
- * Stelle: Vordergrund ist die Signalgruppe, weil das der Grund ist, aus dem
- * jemand klickt. Wer die Akademie nach vorne stellt, verkauft einen Kurs an
- * Leute, die keinen Kurs wollten.
+ * und dann genau EINEN Weg weiter. Die Reihenfolge ist die Botschaft:
+ * Vordergrund ist die Signalgruppe, weil das der Grund ist, aus dem jemand
+ * klickt. Die Akademie kommt mit, wird aber nicht verkauft.
  *
- * WARUM ES HIER KEINE EMOJI-LISTE MEHR GIBT (Ansage 05.09.)
- * Die erste Fassung hatte 📲 🎓 💸 vor den drei Punkten. Emoji als
- * Aufzählungszeichen sind das billigste verfügbare Signal — sie stehen in jeder
- * schnell zusammengeklickten Seite. Bei einem Angebot, bei dem es um Geld geht,
- * kostet das Vertrauen. Nummern mit Haarlinien tragen dieselbe Struktur und
- * sehen aus, als hätte jemand nachgedacht.
- *
- * DAS VIDEO läuft nur, wenn der Partner ein EIGENES hat. Cosmos' Film gehört
- * hier nicht hin — ihn hier zu zeigen hieße, ihn als den des Partners
- * auszugeben. Wer keins hat, bekommt die reine Typo-Fassung; die trägt sich.
- *
- * DIE HERKUNFT MUSS HIER GESETZT WERDEN. Der Besucher verlässt diese Seite
- * sofort. Passiert das Setzen erst eine Seite später, ist der Partner verloren —
- * und `members.referred_by_tenant` ist nach dem Anlegen gesperrt.
+ * Was sich NICHT geändert hat und nicht ändern darf:
+ * - Die Herkunft wird HIER gesetzt (stampAttribution + record_affiliate_click).
+ *   Der Besucher verlässt diese Seite sofort; eine Seite später ist der Partner
+ *   verloren, und members.referred_by_tenant ist nach dem Anlegen gesperrt.
+ * - Hell/dunkel folgt dem Partner (theme), die Knopfschrift der Knopffarbe.
+ * - Das Video läuft nur, wenn der Partner ein EIGENES hat.
+ * - Keine Emoji-Aufzählungen: Nummern und Haarlinien.
+ * - Kein overflow-hidden am Wurzelelement (schnitt am 05.09. die halbe Seite ab).
  */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ArrowRight, PlayCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { stampAttribution } from "@/lib/partner-brand";
+import { DESK_WEEK } from "@/lib/desk-results";
+import { SignalsPreview } from "./LandingPreviews";
 import type { TenantConfig } from "@/lib/tenants";
 
 const PUNKTE = [
   {
     title: "Every trade, as it happens",
-    body: "The moment our traders go in, it's on your phone — entry, stop and target. Nothing to work out yourself.",
+    body: "The moment our desk goes in, it's on your phone — entry, stop and targets. Nothing to work out yourself. 3–6 trades a day, Gold and NASDAQ.",
   },
   {
     title: "Learn it if you want to",
-    body: "A full academy comes with it, free. Most people just follow the calls. That works too.",
+    body: "A full academy comes with it, free — plus Cosmo, your mentor in the chat. Most people just follow the calls. That works too.",
   },
   {
     title: "Nothing to pay us",
-    body: "No fees, no subscription. You fund your own broker account and the money stays yours.",
+    body: "No fees, no subscription. You fund your own trading account and the money stays yours, in your name, the whole time.",
+  },
+];
+
+/**
+ * Der Weg von hier — in der Reihenfolge, in der er wirklich passiert.
+ * Schritt 1 ist der Knopf unten; deshalb steht er als "du bist hier".
+ */
+const SCHRITTE = [
+  {
+    you: "1 tap",
+    title: "See your academy",
+    body: "It's already set up for you — lessons, signal room, Cosmo. Locked until step 3.",
+  },
+  {
+    you: "2 minutes",
+    title: "Connect Telegram",
+    body: "You get your personal invite. From then on every trade lands on your phone.",
+  },
+  {
+    you: "5 minutes",
+    title: "Open your trading account",
+    body: "With our partner broker, from $100. That deposit stays in YOUR account — and it's what unlocks the signals and the academy.",
   },
 ];
 
@@ -60,48 +77,31 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
   const accent = tenant.accentColor;
 
   /**
-   * Hell oder dunkel — und zwar an EINER Stelle entschieden.
-   *
-   * Vorher war die Seite fest dunkel. Das ist unsere Buehne, nicht die des
-   * Partners: wer aus einem Reel mit cremefarbenem Papier kommt und auf
-   * Tiefschwarz landet, erlebt einen Bruch genau in dem Moment, in dem er
-   * entscheidet, ob das hier noch dieselbe Person ist.
-   *
-   * Die Werte stehen als Objekt und nicht als verstreute Bedingungen im JSX:
-   * ein Ton, den man an neun Stellen einzeln umschaltet, bleibt irgendwann an
-   * einer davon stehen, und genau die faellt niemandem auf.
-   */
-  /**
    * Die Schrift AUF dem Knopf folgt der Helligkeit der Knopffarbe.
-   *
-   * Vorher stand hier `text-black` fest. Das stimmte, solange jeder Partner
-   * eine helle Signalfarbe hatte. SmartEggface zeichnet mit schwarzer Tinte —
-   * sein Knopf ist tintenschwarz, und die Beschriftung waere unsichtbar
-   * gewesen. Ein Knopf ohne lesbare Beschriftung ist auf einer Seite, die genau
-   * einen Knopf hat, das Ende des Trichters.
-   *
-   * Grobe Helligkeit nach Rec.601 reicht: wir entscheiden nur zwischen zwei
-   * Textfarben, nicht ueber eine Palette.
+   * SmartEggface zeichnet mit schwarzer Tinte — sein Knopf ist tintenschwarz,
+   * `text-black` wäre unsichtbar. Grobe Helligkeit nach Rec.601 reicht.
    */
   const knopfText = (() => {
     const hex = (tenant.primaryColor || "").trim();
     const m = /^#?([0-9a-f]{6})$/i.exec(hex);
-    if (!m) return "#000";                       // oklch o.ae.: bisheriges Verhalten
+    if (!m) return "#000";
     const n = parseInt(m[1], 16);
     const helligkeit = (((n >> 16) & 255) * 299 + ((n >> 8) & 255) * 587 + (n & 255) * 114) / 1000;
     return helligkeit > 140 ? "#000" : "#fff";
   })();
 
+  /** Hell oder dunkel — an EINER Stelle entschieden, nicht an neun im JSX. */
   const hell = tenant.theme === "light";
   const t = hell
     ? {
-        grund: "#F3EFE4",          // sein Papier
+        grund: "#F3EFE4",
         text: "text-[#141210]",
         gedaempft: "text-[#141210]/65",
         leise: "text-[#141210]/45",
         linie: "border-[#141210]/12",
         teiler: "divide-[#141210]/10",
         rahmen: "border-[#141210]/12",
+        flaeche: "bg-[#141210]/[0.035]",
         koernung: 0.05,
         leuchten: 0.16,
       }
@@ -113,6 +113,7 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
         linie: "border-white/[0.07]",
         teiler: "divide-white/[0.06]",
         rahmen: "border-white/[0.09]",
+        flaeche: "bg-white/[0.025]",
         koernung: 0.05,
         leuchten: 0.22,
       };
@@ -140,32 +141,41 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
       .then(({ error }) => { if (error) console.warn("[click]", error.message); });
   }, [tenant]);
 
-  // KEIN overflow-hidden am Wurzelelement.
-  //
-  // Es stand hier, um das Leuchten am Rand abzuschneiden. Sobald der Inhalt
-  // hoeher wurde als der Bildschirm — mit dem Partnervideo ist er das —, schnitt
-  // es stattdessen die halbe Seite ab: der Knopf lag bei 2613px und die Seite
-  // liess sich ueberhaupt nicht scrollen. Gemessen am 05.09.
-  //
-  // Noetig ist es nicht mehr: die beiden Schmuckschichten sind `fixed` und
-  // haengen am Fenster, nicht an diesem Kasten.
+  /** Der einzige Weg von hier — einmal im Fluss, einmal als Leiste am Handy-Rand. */
+  const Knopf = ({ className }: { className?: string }) => (
+    <a
+      href="/preview"
+      className={cn(
+        "group relative inline-flex min-h-[56px] items-center justify-center gap-2.5 overflow-hidden rounded-full px-8 text-[15px] font-black transition-transform duration-200 active:scale-[0.985]",
+        className,
+      )}
+      style={{
+        color: knopfText,
+        background: `linear-gradient(180deg, color-mix(in oklch, ${primary} 90%, white), ${primary})`,
+        boxShadow: `0 14px 38px -16px ${primary}, inset 0 1px 0 rgba(255,255,255,0.5)`,
+      }}
+    >
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-y-0 -left-full w-1/2 skew-x-[-20deg] transition-all duration-700 ease-out group-hover:left-[150%]"
+        style={{ background: knopfText === "#fff" ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.28)" }}
+      />
+      <span className="relative">See what's waiting for you</span>
+      <ArrowRight className="relative h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+    </a>
+  );
+
+  const Kicker = ({ children }: { children: ReactNode }) => (
+    <div className="text-[11px] font-black uppercase tracking-[0.28em]" style={{ color: primary }}>
+      {children}
+    </div>
+  );
+
   return (
     <div className={cn("relative min-h-screen font-sans", t.text)} style={{ background: t.grund }}>
-      {/* ATMOSPHÄRE STATT FARBFLÄCHE.
-          Eine einzelne weiche Lichtquelle in der Partnerfarbe, dazu ein feines
-          Rauschen darüber. Das Rauschen ist der Unterschied zwischen "dunkler
-          Hintergrund" und "Oberfläche": ohne es wirkt jede dunkle Seite flach
-          und billig, und zwar auf jedem Bildschirm. */}
-      {/* FEST STATT MITSCROLLEND, UND OHNE MISCHMODUS.
-          Beide Schichten lagen vorher `absolute` im scrollenden Kasten, die
-          Koernung zusaetzlich mit mix-blend-overlay. Beim Scrollen zeichnete
-          Chromium daraus einen harten navyfarbenen Block ueber die halbe Seite
-          — ein Kompositions-Fehler, den Mischmodus plus grosse Weichzeichnung
-          zuverlaessig ausloesen. Am 05.09. auf Telefon UND Rechner gesehen.
-
-          `fixed` haelt die Atmosphaere ruhig stehen, waehrend der Inhalt
-          darueber laeuft; das sieht ohnehin besser aus als eine mitfahrende
-          Lichtquelle. Die Koernung traegt ihre Wirkung ueber Deckkraft allein. */}
+      {/* Atmosphäre: eine weiche Lichtquelle in Partnerfarbe + feines Rauschen,
+          beides `fixed` (mitscrollend + Mischmodus zeichnete Chromium am 05.09.
+          als harten Block über die halbe Seite). */}
       <div
         aria-hidden
         className="pointer-events-none fixed -top-52 left-1/2 h-[42rem] w-[42rem] -translate-x-1/2 rounded-full blur-[130px]"
@@ -181,161 +191,222 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
         }}
       />
 
-      {/* MITTIG NUR SOLANGE ES PASST.
-          Vorher stand hier `justify-center` auf einem min-h-screen-Kasten. Ist
-          der Inhalt hoeher als der Bildschirm — mit dem Partnervideo ist er das
-          —, schiebt zentriertes Flexbox den Ueberhang aus dem scrollbaren
-          Bereich heraus: Punkt 03 und der Knopf waren schlicht nicht mehr
-          erreichbar, obwohl die Seite bis zum Ende gescrollt war. Gemessen am
-          05.09. bei 375x812.
+      <div className="relative mx-auto max-w-xl sm:max-w-2xl">
+        <div className="w-full px-5 pb-32 pt-8 sm:px-8 sm:pb-24 sm:pt-12">
 
-          `my-auto` auf dem Inhalt macht dasselbe, ohne den Fehler: es zentriert,
-          wenn Platz ist, und faellt auf normalen Fluss zurueck, wenn nicht. */}
-      <div className="relative mx-auto flex min-h-screen max-w-xl flex-col sm:max-w-2xl">
-        <div className="my-auto w-full px-5 pb-44 pt-8 sm:px-8 sm:pb-24 sm:pt-12">
-
-        {/* ── Absender ────────────────────────────────────────────────────
-            Wessen Seite das ist, und mit wem. Eine Haarlinie darunter statt
-            einer Kastenfläche: sie trennt, ohne ein Element zu behaupten. */}
-        <div className={cn("flex items-center gap-3 border-b pb-5", t.linie)}>
-          {tenant.mascotHeadUrl ? (
-            <img
-              src={tenant.mascotHeadUrl}
-              alt={tenant.name}
-              className="h-10 w-10 shrink-0 rounded-full object-cover"
-              style={{ boxShadow: `0 0 0 1.5px ${primary}, 0 0 22px -6px ${primary}` }}
-            />
-          ) : (
-            <span
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-display text-[12px] font-black"
-              style={{ background: primary, color: knopfText }}
-            >
-              {tenant.logoInitials}
-            </span>
-          )}
-          <div className="min-w-0">
-            <div className="truncate text-[15px] font-semibold leading-tight">{tenant.name}</div>
-            <div className={cn("text-[11px] uppercase tracking-[0.16em]", t.leise)}>
-              with Cosmos Candles
-            </div>
-          </div>
-        </div>
-
-        {/* ── Die Aussage ─────────────────────────────────────────────────
-            Unbounded läuft breit; auf dem Telefon trägt die Zeile deshalb
-            weniger Wörter als man erwartet. Der zweite Teil steht in der
-            Partnerfarbe — EIN Akzent, nicht drei. */}
-        <h1 className="mt-9 font-display text-[1.75rem] font-black leading-[1.12] tracking-[-0.02em] sm:text-[2.4rem]">
-          You don't have to learn trading
-          <br />
-          <span style={{ color: primary }}>to make money from it.</span>
-        </h1>
-
-        {/* Die zweite Figur steht NEBEN dem Satz, nicht ueber ihm: sie ist der,
-            dem hier etwas erklaert wird. Bei Agent Stick ist das Bob — im
-            Format stellt er die Fragen, die dieser Absatz beantwortet. Fehlt
-            die Figur, steht der Satz allein und die Zeile bleibt ruhig. */}
-        <div className="mt-5 flex max-w-lg items-start gap-3.5">
-          {tenant.mascotAskUrl && (
-            <img
-              src={tenant.mascotAskUrl}
-              alt=""
-              aria-hidden
-              className="mt-0.5 h-9 w-9 shrink-0 opacity-90"
-            />
-          )}
-          <p className={cn("text-[15px] leading-relaxed", t.gedaempft)}>
-            Our desk trades live every day. You see every position the second it opens —
-            entry, stop, target. Follow it or don't. It costs you nothing.
-          </p>
-        </div>
-
-        {/* ── Sein Film, falls er einen hat ───────────────────────────────
-            Er steht NACH der Aussage, nicht davor: wer aus einem Reel kommt,
-            hat gerade ein Video gesehen und braucht erst einen Satz, der sagt,
-            worum es hier geht. Ein zweites Video als Erstes wäre eine Zumutung. */}
-        {tenant.pitchVideo && (
-          <div className={cn("mt-8 overflow-hidden rounded-xl border bg-black shadow-[0_24px_60px_-30px_rgba(0,0,0,0.55)]", t.rahmen)}>
-            <div className="relative aspect-video bg-black">
-              <video
-                ref={video}
-                controls
-                playsInline
-                preload="metadata"
-                poster={tenant.pitchPoster}
-                onPlay={() => setLaeuft(true)}
-                className="h-full w-full object-contain"
-              >
-                <source src={tenant.pitchVideo} type="video/mp4" />
-              </video>
-              {!laeuft && (
-                <button
-                  type="button"
-                  onClick={() => video.current?.play()}
-                  aria-label="Play video"
-                  className="group absolute inset-0 flex items-center justify-center bg-black/20 transition-colors hover:bg-black/10"
-                >
-                  <span
-                    className="flex h-14 w-14 items-center justify-center rounded-full ring-1 ring-white/25 transition-transform duration-200 group-hover:scale-105"
-                    style={{ background: primary, boxShadow: `0 12px 34px -12px ${primary}` }}
-                  >
-                    <PlayCircle className="h-7 w-7" style={{ color: knopfText }} />
-                  </span>
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ── Die drei Punkte ─────────────────────────────────────────────
-            Nummeriert, mit Haarlinien getrennt. Die Ziffer steht in der
-            Display-Schrift und in gedämpfter Partnerfarbe — sie ordnet, ohne
-            um Aufmerksamkeit zu bitten. */}
-        <ul className={cn("mt-9 divide-y border-y", t.teiler, t.linie)}>
-          {PUNKTE.map((p, i) => (
-            <li key={p.title} className="flex gap-4 py-4">
+          {/* ── Absender ─────────────────────────────────────────────── */}
+          <div className={cn("flex items-center gap-3 border-b pb-5", t.linie)}>
+            {tenant.mascotHeadUrl ? (
+              <img
+                src={tenant.mascotHeadUrl}
+                alt={tenant.name}
+                className="h-10 w-10 shrink-0 rounded-full object-cover"
+                style={{ boxShadow: `0 0 0 1.5px ${primary}, 0 0 22px -6px ${primary}` }}
+              />
+            ) : (
               <span
-                className="mt-[3px] font-display text-[11px] font-black tabular-nums"
-                style={{ color: primary, opacity: 0.55 }}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-display text-[12px] font-black"
+                style={{ background: primary, color: knopfText }}
               >
-                {String(i + 1).padStart(2, "0")}
+                {tenant.logoInitials}
               </span>
-              <div className="min-w-0">
-                <div className="text-[15px] font-bold leading-snug">{p.title}</div>
-                <div className={cn("mt-1 text-[13.5px] leading-relaxed", t.gedaempft)}>{p.body}</div>
+            )}
+            <div className="min-w-0">
+              <div className="truncate text-[15px] font-semibold leading-tight">{tenant.name}</div>
+              <div className={cn("text-[11px] uppercase tracking-[0.16em]", t.leise)}>
+                with Cosmos Candles
               </div>
-            </li>
-          ))}
-        </ul>
+            </div>
+          </div>
 
-        {/* ── Der einzige Weg von hier ────────────────────────────────────
-            Absichtlich ein <a> und keine Router-Navigation: ein voller
-            Seitenaufruf stellt sicher, dass /preview den gerade gesetzten
-            Cookie liest. */}
-        <a
-          href="/preview"
-          className="group relative mt-9 inline-flex min-h-[56px] items-center justify-center gap-2.5 overflow-hidden rounded-full px-8 text-[15px] font-black transition-transform duration-200 active:scale-[0.985]"
-          style={{
-            color: knopfText,
-            background: `linear-gradient(180deg, color-mix(in oklch, ${primary} 90%, white), ${primary})`,
-            boxShadow: `0 14px 38px -16px ${primary}, inset 0 1px 0 rgba(255,255,255,0.5)`,
-          }}
-        >
-          {/* Ein Lichtstreifen, der beim Überfahren einmal durchläuft. Eine
-              Bewegung auf der ganzen Seite, an der Stelle, auf die es ankommt. */}
-          <span
-            aria-hidden
-            className="pointer-events-none absolute inset-y-0 -left-full w-1/2 skew-x-[-20deg] transition-all duration-700 ease-out group-hover:left-[150%]"
-            style={{ background: knopfText === "#fff" ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.28)" }}
-          />
-          <span className="relative">See what's waiting for you</span>
-          <ArrowRight className="relative h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-        </a>
+          {/* ── 1 · Was ist hier los ─────────────────────────────────── */}
+          <h1 className="mt-9 font-display text-[1.75rem] font-black leading-[1.12] tracking-[-0.02em] sm:text-[2.4rem]">
+            You don't have to learn trading
+            <br />
+            <span style={{ color: primary }}>to make money from it.</span>
+          </h1>
 
-        <p className={cn("mt-4 text-[12.5px] leading-relaxed", t.leise)}>
-          {tenant.name} runs this with Cosmos Candles — that's where you get in.
-        </p>
+          <div className="mt-5 flex max-w-lg items-start gap-3.5">
+            {tenant.mascotAskUrl && (
+              <img src={tenant.mascotAskUrl} alt="" aria-hidden className="mt-0.5 h-9 w-9 shrink-0 opacity-90" />
+            )}
+            <p className={cn("text-[15px] leading-relaxed", t.gedaempft)}>
+              {tenant.name} teamed up with a real trading desk. It trades live every day, and
+              every position is on your phone the second it opens — entry, stop, targets.
+              Follow it or don't. It costs you nothing.
+            </p>
+          </div>
+
+          {/* ── Sein Film, falls er einen hat ─────────────────────────── */}
+          {tenant.pitchVideo && (
+            <div className={cn("mt-8 overflow-hidden rounded-xl border bg-black shadow-[0_24px_60px_-30px_rgba(0,0,0,0.55)]", t.rahmen)}>
+              <div className="relative aspect-video bg-black">
+                <video
+                  ref={video}
+                  controls
+                  playsInline
+                  preload="metadata"
+                  poster={tenant.pitchPoster}
+                  onPlay={() => setLaeuft(true)}
+                  className="h-full w-full object-contain"
+                >
+                  <source src={tenant.pitchVideo} type="video/mp4" />
+                </video>
+                {!laeuft && (
+                  <button
+                    type="button"
+                    onClick={() => video.current?.play()}
+                    aria-label="Play video"
+                    className="group absolute inset-0 flex items-center justify-center bg-black/20 transition-colors hover:bg-black/10"
+                  >
+                    <span
+                      className="flex h-14 w-14 items-center justify-center rounded-full ring-1 ring-white/25 transition-transform duration-200 group-hover:scale-105"
+                      style={{ background: primary, boxShadow: `0 12px 34px -12px ${primary}` }}
+                    >
+                      <PlayCircle className="h-7 w-7" style={{ color: knopfText }} />
+                    </span>
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── 2 · Was du bekommst ──────────────────────────────────────
+              Erst das Bild (so sieht es auf deinem Telefon aus), dann die
+              drei Punkte. Die Telefon-Vorschau ist dieselbe wie auf Cosmos'
+              Seite — die Partnerseite darf nicht ärmer aussehen. */}
+          <section className="mt-12">
+            <Kicker>What you get</Kicker>
+            <h2 className="mt-2 font-display text-[1.35rem] font-black leading-tight sm:text-[1.6rem]">
+              This is what lands on your phone.
+            </h2>
+            <div className={cn("mt-6 flex justify-center rounded-2xl border px-4 py-8", t.rahmen, t.flaeche)}>
+              <div className="w-full max-w-[300px]">
+                <SignalsPreview primary={primary} />
+              </div>
+            </div>
+            <ul className={cn("mt-6 divide-y border-y", t.teiler, t.linie)}>
+              {PUNKTE.map((p, i) => (
+                <li key={p.title} className="flex gap-4 py-4">
+                  <span
+                    className="mt-[3px] font-display text-[11px] font-black tabular-nums"
+                    style={{ color: primary, opacity: 0.55 }}
+                  >
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <div className="min-w-0">
+                    <div className="text-[15px] font-bold leading-snug">{p.title}</div>
+                    <div className={cn("mt-1 text-[13.5px] leading-relaxed", t.gedaempft)}>{p.body}</div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          {/* ── 3 · Was als Nächstes passiert ─────────────────────────────
+              Drei Schritte an einer Linie; der erste Punkt ist gefüllt und
+              heißt "you are here" — der Knopf unten IST dieser Schritt. */}
+          <section className="mt-12">
+            <Kicker>What happens next</Kicker>
+            <h2 className="mt-2 font-display text-[1.35rem] font-black leading-tight sm:text-[1.6rem]">
+              Three steps. No form, no card.
+            </h2>
+            <ol className="mt-6">
+              {SCHRITTE.map((s, i) => {
+                const hier = i === 0;
+                const letzter = i === SCHRITTE.length - 1;
+                return (
+                  <li key={s.title} className="relative flex gap-5 pb-7 last:pb-0">
+                    {!letzter && (
+                      <span
+                        aria-hidden
+                        className="absolute left-[13px] top-7 bottom-0 w-px"
+                        style={{ background: hell ? "rgba(20,18,16,0.14)" : "rgba(255,255,255,0.10)" }}
+                      />
+                    )}
+                    <span
+                      className="relative mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-display text-[11px] font-black tabular-nums"
+                      style={
+                        hier
+                          ? { background: primary, color: knopfText, boxShadow: `0 0 0 4px color-mix(in oklch, ${primary} 22%, transparent)` }
+                          : { border: `1.5px solid ${primary}`, color: primary, opacity: 0.8 }
+                      }
+                    >
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                        <div className="text-[15px] font-bold leading-snug">{s.title}</div>
+                        <div className={cn("text-[11px] uppercase tracking-[0.16em]", t.leise)}>{s.you}</div>
+                        {hier && (
+                          <div
+                            className="rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em]"
+                            style={{ background: `color-mix(in oklch, ${primary} 16%, transparent)`, color: primary }}
+                          >
+                            you are here
+                          </div>
+                        )}
+                      </div>
+                      <div className={cn("mt-1 text-[13.5px] leading-relaxed", t.gedaempft)}>{s.body}</div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
+          </section>
+
+          {/* ── 4 · Beweis ─────────────────────────────────────────────────
+              Die geprüften Zahlen der letzten Woche, inklusive der roten und
+              leeren Tage. Keine Gewinnversprechen, keine Trefferquote. */}
+          <section className="mt-12">
+            <Kicker>Proof</Kicker>
+            <h2 className="mt-2 font-display text-[1.35rem] font-black leading-tight sm:text-[1.6rem]">
+              Last week at the desk.
+            </h2>
+            <div className={cn("mt-6 rounded-2xl border p-5", t.rahmen, t.flaeche)}>
+              <div className={cn("flex items-baseline justify-between text-[11px] uppercase tracking-[0.16em]", t.leise)}>
+                <span>{DESK_WEEK.label} · {DESK_WEEK.instrument}</span>
+                <span>{DESK_WEEK.range}</span>
+              </div>
+              <div className="mt-4 grid grid-cols-3 gap-3">
+                {[
+                  { n: DESK_WEEK.signals, l: "signals" },
+                  { n: DESK_WEEK.tpPips, l: "pips at target" },
+                  { n: DESK_WEEK.slPips, l: "pips stopped" },
+                ].map((z) => (
+                  <div key={z.l}>
+                    <div className="font-display text-[1.7rem] font-black leading-none tabular-nums sm:text-[2rem]">{z.n}</div>
+                    <div className={cn("mt-1.5 text-[11.5px] leading-tight", t.gedaempft)}>{z.l}</div>
+                  </div>
+                ))}
+              </div>
+              <div className={cn("mt-5 border-t pt-4 text-[13px] leading-relaxed", t.linie, t.gedaempft)}>
+                {DESK_WEEK.note} Every entry was posted before it happened — that's the only
+                result we count.
+              </div>
+            </div>
+          </section>
+
+          {/* ── Der einzige Weg von hier ───────────────────────────────────
+              <a> statt Router: ein voller Seitenaufruf stellt sicher, dass
+              /preview den gerade gesetzten Cookie liest. */}
+          <div className="mt-12">
+            <Knopf />
+            <p className={cn("mt-4 text-[12.5px] leading-relaxed", t.leise)}>
+              {tenant.name} runs this with Cosmos Candles — that's where you get in. No account
+              needed to look around.
+            </p>
+          </div>
         </div>
+      </div>
+
+      {/* Am Handy bleibt der Knopf immer erreichbar — die Seite ist jetzt länger
+          als ein Bildschirm, und der Weg weiter darf nie außer Sicht sein. */}
+      <div
+        className="fixed inset-x-0 bottom-0 z-20 px-5 pb-5 pt-10 sm:hidden"
+        style={{ background: `linear-gradient(180deg, transparent, ${t.grund} 55%)` }}
+      >
+        <Knopf className="w-full" />
       </div>
     </div>
   );
