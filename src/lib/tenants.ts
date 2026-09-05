@@ -83,6 +83,22 @@ export interface TenantConfig {
    * der Besucher entscheidet, ob das hier noch dieselbe Person ist.
    */
   theme?: "dark" | "light";
+  /**
+   * Eine zweite Figur neben dem Einleitungssatz — die Figur, MIT DER geredet wird.
+   *
+   * Kein Schmuck. Das Versprechen dieser Seite ist "du musst nichts koennen";
+   * bei Agent Stick ist Bob genau der, der nichts weiss und dem es erklaert
+   * wird. Neben dem Satz zu stehen ist seine Rolle im Format, nicht eine
+   * Dekoration daneben — das Bild behauptet stumm dasselbe wie der Text.
+   *
+   * Wer keine solche Figur hat, laesst das Feld leer; dann steht der Satz
+   * allein, und das ist ebenfalls richtig. Eine erfundene Figur waere schlimmer
+   * als keine.
+   *
+   * Achtung bei dunklen Seiten: eine schwarze Strichfigur verschwindet dort.
+   * Das Feld gehoert zu einer Marke, nicht zu einem Layout.
+   */
+  mascotAskUrl?: string;
   pitchVideo?: string;
   pitchPoster?: string;
   affiliateEmail: string;

@@ -231,10 +231,24 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
           <span style={{ color: primary }}>to make money from it.</span>
         </h1>
 
-        <p className={cn("mt-5 max-w-lg text-[15px] leading-relaxed", t.gedaempft)}>
-          Our desk trades live every day. You see every position the second it opens —
-          entry, stop, target. Follow it or don't. It costs you nothing.
-        </p>
+        {/* Die zweite Figur steht NEBEN dem Satz, nicht ueber ihm: sie ist der,
+            dem hier etwas erklaert wird. Bei Agent Stick ist das Bob — im
+            Format stellt er die Fragen, die dieser Absatz beantwortet. Fehlt
+            die Figur, steht der Satz allein und die Zeile bleibt ruhig. */}
+        <div className="mt-5 flex max-w-lg items-start gap-3.5">
+          {tenant.mascotAskUrl && (
+            <img
+              src={tenant.mascotAskUrl}
+              alt=""
+              aria-hidden
+              className="mt-0.5 h-9 w-9 shrink-0 opacity-90"
+            />
+          )}
+          <p className={cn("text-[15px] leading-relaxed", t.gedaempft)}>
+            Our desk trades live every day. You see every position the second it opens —
+            entry, stop, target. Follow it or don't. It costs you nothing.
+          </p>
+        </div>
 
         {/* ── Sein Film, falls er einen hat ───────────────────────────────
             Er steht NACH der Aussage, nicht davor: wer aus einem Reel kommt,
