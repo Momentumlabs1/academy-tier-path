@@ -159,19 +159,26 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
           ))}
         </ul>
 
-        {/* Ein einziger Weg von dieser Seite. Absichtlich ein <a> auf "/" statt
-            einer Router-Navigation: der Wechsel soll sich wie ein Übergang zu
-            einer anderen Seite anfühlen, und ein voller Seitenaufruf stellt
-            sicher, dass die Cosmos-Seite den gerade gesetzten Cookie liest. */}
+        {/* Ein einziger Weg von dieser Seite — und er fuehrt NICHT auf die
+            Cosmos-Startseite, sondern in das gesperrte Dashboard.
+            
+            Die Startseite wuerde dasselbe nochmal erzaehlen, was hier schon
+            steht. Das gesperrte Dashboard erzaehlt nichts, es ZEIGT: alles ist
+            da, alles ist zu, ein Schritt fehlt. Genau dieses Bild war der
+            einzige echte Nutzen der alten Registrierung.
+
+            Absichtlich ein <a> und keine Router-Navigation: ein voller
+            Seitenaufruf stellt sicher, dass die naechste Seite den gerade
+            gesetzten Cookie liest. */}
         <a
-          href="/"
+          href="/preview"
           className="group mt-9 inline-flex min-h-[56px] items-center justify-center gap-2.5 rounded-full px-8 text-[15px] font-black text-black transition-transform active:scale-[0.98]"
           style={{
             background: `linear-gradient(180deg, color-mix(in oklch, ${primary} 88%, white), ${primary})`,
             boxShadow: `0 10px 30px -14px ${primary}, inset 0 1px 0 rgba(255,255,255,0.45)`,
           }}
         >
-          Continue to Cosmos Candles
+          See what's waiting for you
           <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
         </a>
 

@@ -363,7 +363,7 @@ export const RESERVED_SLUGS = new Set([
   "admin", "partner", "partner-programm", "partner-program", "login", "signals", "lessons", "tools", "tier", "unlocks",
   "notifications", "settings", "t", "api", "assets", "hegemony", "auth", "dashboard",
   "registrieren", "willkommen", "signup", "welcome", "reset-password", "team",
-  "impressum", "datenschutz",
+  "impressum", "datenschutz", "preview",
 ]);
 
 // A complete, on-brand default landing built from just a slug + name, so any

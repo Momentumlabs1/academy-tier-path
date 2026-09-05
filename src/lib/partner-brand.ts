@@ -50,6 +50,9 @@ export interface PartnerBrand {
   slug: string;
   name: string;
   logoInitials: string;
+  /** Portrait des Partners. Bei einer Personenmarke ist das Gesicht das
+   *  Argument — die Initialen sind der Notnagel, wenn keins hinterlegt ist. */
+  mascotHeadUrl?: string;
   /** Partner accent — used sparingly (badges, ring, highlight), never as the whole page. */
   accentColor: string;
   primaryColor: string;
@@ -88,6 +91,7 @@ export function writePartnerBrand(tenant: TenantConfig): void {
     slug: tenant.slug,
     name: tenant.name,
     logoInitials: tenant.logoInitials,
+    mascotHeadUrl: tenant.mascotHeadUrl,
     accentColor: tenant.accentColor,
     primaryColor: tenant.primaryColor,
     telegramChannel: tenant.telegramChannel,
@@ -110,6 +114,15 @@ export function readPartnerBrand(): PartnerBrand | null {
       slug: b.slug,
       name: b.name,
       logoInitials: b.logoInitials ?? b.name.slice(0, 2).toUpperCase(),
+      // Diese Liste ist eine AUFZAEHLUNG, keine Kopie: was hier nicht steht,
+      // faellt beim Lesen weg, egal ob es geschrieben wurde. Am 05.09. genau
+      // so aufgefallen — das Portrait des Partners war im Cookie und kam nie
+      // an. `broker` fehlte still seit jeher: die Broker-Wahl des Partners
+      // ueberlebte das Lesen nie. Faellt derzeit nicht auf, weil ohnehin jeder
+      // zu Hero geht — waere aber genau der Fehler, der beim Zurueckdrehen
+      // niemandem auffaellt.
+      mascotHeadUrl: b.mascotHeadUrl,
+      broker: b.broker,
       accentColor: b.accentColor ?? COSMO.accentColor,
       primaryColor: b.primaryColor ?? COSMO.primaryColor,
       telegramChannel: b.telegramChannel ?? "#",
