@@ -35,6 +35,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { ArrowRight, PlayCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { stampAttribution } from "@/lib/partner-brand";
 import type { TenantConfig } from "@/lib/tenants";
@@ -57,6 +58,64 @@ const PUNKTE = [
 export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
   const primary = tenant.primaryColor;
   const accent = tenant.accentColor;
+
+  /**
+   * Hell oder dunkel — und zwar an EINER Stelle entschieden.
+   *
+   * Vorher war die Seite fest dunkel. Das ist unsere Buehne, nicht die des
+   * Partners: wer aus einem Reel mit cremefarbenem Papier kommt und auf
+   * Tiefschwarz landet, erlebt einen Bruch genau in dem Moment, in dem er
+   * entscheidet, ob das hier noch dieselbe Person ist.
+   *
+   * Die Werte stehen als Objekt und nicht als verstreute Bedingungen im JSX:
+   * ein Ton, den man an neun Stellen einzeln umschaltet, bleibt irgendwann an
+   * einer davon stehen, und genau die faellt niemandem auf.
+   */
+  /**
+   * Die Schrift AUF dem Knopf folgt der Helligkeit der Knopffarbe.
+   *
+   * Vorher stand hier `text-black` fest. Das stimmte, solange jeder Partner
+   * eine helle Signalfarbe hatte. SmartEggface zeichnet mit schwarzer Tinte —
+   * sein Knopf ist tintenschwarz, und die Beschriftung waere unsichtbar
+   * gewesen. Ein Knopf ohne lesbare Beschriftung ist auf einer Seite, die genau
+   * einen Knopf hat, das Ende des Trichters.
+   *
+   * Grobe Helligkeit nach Rec.601 reicht: wir entscheiden nur zwischen zwei
+   * Textfarben, nicht ueber eine Palette.
+   */
+  const knopfText = (() => {
+    const hex = (tenant.primaryColor || "").trim();
+    const m = /^#?([0-9a-f]{6})$/i.exec(hex);
+    if (!m) return "#000";                       // oklch o.ae.: bisheriges Verhalten
+    const n = parseInt(m[1], 16);
+    const helligkeit = (((n >> 16) & 255) * 299 + ((n >> 8) & 255) * 587 + (n & 255) * 114) / 1000;
+    return helligkeit > 140 ? "#000" : "#fff";
+  })();
+
+  const hell = tenant.theme === "light";
+  const t = hell
+    ? {
+        grund: "#F3EFE4",          // sein Papier
+        text: "text-[#141210]",
+        gedaempft: "text-[#141210]/65",
+        leise: "text-[#141210]/45",
+        linie: "border-[#141210]/12",
+        teiler: "divide-[#141210]/10",
+        rahmen: "border-[#141210]/12",
+        koernung: 0.05,
+        leuchten: 0.16,
+      }
+    : {
+        grund: "#05070e",
+        text: "text-white",
+        gedaempft: "text-white/65",
+        leise: "text-white/40",
+        linie: "border-white/[0.07]",
+        teiler: "divide-white/[0.06]",
+        rahmen: "border-white/[0.09]",
+        koernung: 0.05,
+        leuchten: 0.22,
+      };
   const video = useRef<HTMLVideoElement>(null);
   const [laeuft, setLaeuft] = useState(false);
 
@@ -91,7 +150,7 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
   // Noetig ist es nicht mehr: die beiden Schmuckschichten sind `fixed` und
   // haengen am Fenster, nicht an diesem Kasten.
   return (
-    <div className="relative min-h-screen bg-[#05070e] font-sans text-white">
+    <div className={cn("relative min-h-screen font-sans", t.text)} style={{ background: t.grund }}>
       {/* ATMOSPHÄRE STATT FARBFLÄCHE.
           Eine einzelne weiche Lichtquelle in der Partnerfarbe, dazu ein feines
           Rauschen darüber. Das Rauschen ist der Unterschied zwischen "dunkler
@@ -109,13 +168,14 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
           Lichtquelle. Die Koernung traegt ihre Wirkung ueber Deckkraft allein. */}
       <div
         aria-hidden
-        className="pointer-events-none fixed -top-52 left-1/2 h-[42rem] w-[42rem] -translate-x-1/2 rounded-full opacity-[0.22] blur-[130px]"
-        style={{ background: `radial-gradient(circle, ${primary} 0%, ${accent} 55%, transparent 72%)` }}
+        className="pointer-events-none fixed -top-52 left-1/2 h-[42rem] w-[42rem] -translate-x-1/2 rounded-full blur-[130px]"
+        style={{ opacity: t.leuchten, background: `radial-gradient(circle, ${primary} 0%, ${accent} 55%, transparent 72%)` }}
       />
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 opacity-[0.05]"
+        className="pointer-events-none fixed inset-0"
         style={{
+          opacity: t.koernung,
           backgroundImage:
             "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E\")",
         }}
@@ -137,7 +197,7 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
         {/* ── Absender ────────────────────────────────────────────────────
             Wessen Seite das ist, und mit wem. Eine Haarlinie darunter statt
             einer Kastenfläche: sie trennt, ohne ein Element zu behaupten. */}
-        <div className="flex items-center gap-3 border-b border-white/[0.07] pb-5">
+        <div className={cn("flex items-center gap-3 border-b pb-5", t.linie)}>
           {tenant.mascotHeadUrl ? (
             <img
               src={tenant.mascotHeadUrl}
@@ -147,15 +207,15 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
             />
           ) : (
             <span
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-display text-[12px] font-black text-black"
-              style={{ background: primary }}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-display text-[12px] font-black"
+              style={{ background: primary, color: knopfText }}
             >
               {tenant.logoInitials}
             </span>
           )}
           <div className="min-w-0">
             <div className="truncate text-[15px] font-semibold leading-tight">{tenant.name}</div>
-            <div className="text-[11px] uppercase tracking-[0.16em] text-white/35">
+            <div className={cn("text-[11px] uppercase tracking-[0.16em]", t.leise)}>
               with Cosmos Candles
             </div>
           </div>
@@ -171,7 +231,7 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
           <span style={{ color: primary }}>to make money from it.</span>
         </h1>
 
-        <p className="mt-5 max-w-lg text-[15px] leading-relaxed text-white/65">
+        <p className={cn("mt-5 max-w-lg text-[15px] leading-relaxed", t.gedaempft)}>
           Our desk trades live every day. You see every position the second it opens —
           entry, stop, target. Follow it or don't. It costs you nothing.
         </p>
@@ -181,7 +241,7 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
             hat gerade ein Video gesehen und braucht erst einen Satz, der sagt,
             worum es hier geht. Ein zweites Video als Erstes wäre eine Zumutung. */}
         {tenant.pitchVideo && (
-          <div className="mt-8 overflow-hidden rounded-xl border border-white/[0.09] bg-black shadow-[0_24px_60px_-30px_rgba(0,0,0,0.9)]">
+          <div className={cn("mt-8 overflow-hidden rounded-xl border bg-black shadow-[0_24px_60px_-30px_rgba(0,0,0,0.55)]", t.rahmen)}>
             <div className="relative aspect-video bg-black">
               <video
                 ref={video}
@@ -205,7 +265,7 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
                     className="flex h-14 w-14 items-center justify-center rounded-full ring-1 ring-white/25 transition-transform duration-200 group-hover:scale-105"
                     style={{ background: primary, boxShadow: `0 12px 34px -12px ${primary}` }}
                   >
-                    <PlayCircle className="h-7 w-7 text-black" />
+                    <PlayCircle className="h-7 w-7" style={{ color: knopfText }} />
                   </span>
                 </button>
               )}
@@ -217,7 +277,7 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
             Nummeriert, mit Haarlinien getrennt. Die Ziffer steht in der
             Display-Schrift und in gedämpfter Partnerfarbe — sie ordnet, ohne
             um Aufmerksamkeit zu bitten. */}
-        <ul className="mt-9 divide-y divide-white/[0.06] border-y border-white/[0.06]">
+        <ul className={cn("mt-9 divide-y border-y", t.teiler, t.linie)}>
           {PUNKTE.map((p, i) => (
             <li key={p.title} className="flex gap-4 py-4">
               <span
@@ -228,7 +288,7 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
               </span>
               <div className="min-w-0">
                 <div className="text-[15px] font-bold leading-snug">{p.title}</div>
-                <div className="mt-1 text-[13.5px] leading-relaxed text-white/55">{p.body}</div>
+                <div className={cn("mt-1 text-[13.5px] leading-relaxed", t.gedaempft)}>{p.body}</div>
               </div>
             </li>
           ))}
@@ -240,8 +300,9 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
             Cookie liest. */}
         <a
           href="/preview"
-          className="group relative mt-9 inline-flex min-h-[56px] items-center justify-center gap-2.5 overflow-hidden rounded-full px-8 text-[15px] font-black text-black transition-transform duration-200 active:scale-[0.985]"
+          className="group relative mt-9 inline-flex min-h-[56px] items-center justify-center gap-2.5 overflow-hidden rounded-full px-8 text-[15px] font-black transition-transform duration-200 active:scale-[0.985]"
           style={{
+            color: knopfText,
             background: `linear-gradient(180deg, color-mix(in oklch, ${primary} 90%, white), ${primary})`,
             boxShadow: `0 14px 38px -16px ${primary}, inset 0 1px 0 rgba(255,255,255,0.5)`,
           }}
@@ -250,13 +311,14 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
               Bewegung auf der ganzen Seite, an der Stelle, auf die es ankommt. */}
           <span
             aria-hidden
-            className="pointer-events-none absolute inset-y-0 -left-full w-1/2 skew-x-[-20deg] bg-white/25 transition-all duration-700 ease-out group-hover:left-[150%]"
+            className="pointer-events-none absolute inset-y-0 -left-full w-1/2 skew-x-[-20deg] transition-all duration-700 ease-out group-hover:left-[150%]"
+            style={{ background: knopfText === "#fff" ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.28)" }}
           />
           <span className="relative">See what's waiting for you</span>
           <ArrowRight className="relative h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
         </a>
 
-        <p className="mt-4 text-[12.5px] leading-relaxed text-white/40">
+        <p className={cn("mt-4 text-[12.5px] leading-relaxed", t.leise)}>
           {tenant.name} runs this with Cosmos Candles — that's where you get in.
         </p>
         </div>

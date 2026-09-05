@@ -69,6 +69,20 @@ export interface TenantConfig {
    * nur Zeko —, steht als statischer Eintrag und bleibt unberuehrt.
    */
   bridge?: boolean;
+  /**
+   * Helligkeit der Partnerseite. Vorgabe: dunkel (unsere Buehne).
+   *
+   * Warum das ueberhaupt waehlbar sein muss: die Brueckenseite ist der erste
+   * Eindruck NACH einem Reel. Wer gerade zwanzig Sekunden cremefarbenes Papier
+   * mit schwarzer Tinte gesehen hat und dann auf einer tiefdunklen Seite
+   * landet, erlebt einen Bruch — es sieht aus, als haette er die Marke
+   * verlassen. SmartEggface (144k) zeichnet auf hellem Papier; seine Seite
+   * gehoert deshalb hell.
+   *
+   * Es geht NICHT um Geschmack. Der Bruch kostet genau an der Stelle, an der
+   * der Besucher entscheidet, ob das hier noch dieselbe Person ist.
+   */
+  theme?: "dark" | "light";
   pitchVideo?: string;
   pitchPoster?: string;
   affiliateEmail: string;
