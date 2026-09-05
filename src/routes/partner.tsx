@@ -227,6 +227,40 @@ export function PartnerCard({ row }: { row: PartnerRow }) {
     </div>
   );
 
+  /**
+   * Der eigene Link — sichtbar AB TAG EINS, nicht erst wenn der Signalkanal steht.
+   *
+   * Vorher stand er nur im Live-Zweig, und ein neuer Partner las stattdessen
+   * "Your website — coming in step 4, we're building it right now". Das war
+   * schlicht falsch: seine Seite existiert in dem Moment, in dem er angelegt
+   * wird. SmartEggface haette sein Portal geoeffnet, seine fertige Seite nicht
+   * gefunden und angenommen, es gehe nichts voran — waehrend der Link, den er
+   * haette verteilen sollen, hinter einem Schloss lag.
+   */
+  const linkBar = (
+    <div className="mb-5 mt-5 flex flex-col gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 sm:flex-row sm:items-center">
+      <div className="min-w-0 flex-1">
+        <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary/80">Your link</div>
+        <div className="truncate font-mono text-sm">{shareUrl}</div>
+      </div>
+      <div className="flex gap-2">
+        <button
+          onClick={copyLink}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90"
+        >
+          {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+          {copied ? "Copied" : "Copy"}
+        </button>
+        <a
+          href={shareUrl} target="_blank" rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold hover:bg-white/[0.08]"
+        >
+          Open <ExternalLink className="h-3.5 w-3.5" />
+        </a>
+      </div>
+    </div>
+  );
+
   const statGrid = (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {stats.map((s) => {
@@ -305,42 +339,31 @@ export function PartnerCard({ row }: { row: PartnerRow }) {
           <PartnerBrokerLinks slug={row.slug} />
           <PartnerPrimer name={row.name} />
 
-          <div className="mt-5 grid gap-3 lg:grid-cols-2">
-            <LockedShell title="Your website" icon={Eye} note={`Coming in step 4 — we're building it right now at ${shareUrl.replace("https://", "")}.`}>
-              <div className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 font-mono text-sm">{shareUrl.replace("https://", "")}</div>
-            </LockedShell>
-            <LockedShell title="Analytics" icon={BarChart3} note="Unlocks as soon as your brand is live — from then on every click and every customer is counted here.">
-              {statGrid}
-            </LockedShell>
-          </div>
+          {/* Seite und Zahlen sind ECHT, auch bevor der Signalkanal steht: die
+              Landingpage antwortet ab dem Anlegen, und jeder Klick darauf wird
+              gezaehlt. Sie hinter einem Schloss zu zeigen war keine Vorsicht,
+              sondern eine Falschaussage — und sie hielt den Partner davon ab,
+              genau den Link zu verteilen, um den es geht.
+
+              Gesperrt bleibt nur, was wirklich fehlt: sein Signalkanal. */}
+          {linkBar}
+          {statGrid}
+          <LockedShell
+            title="Your signal channel"
+            icon={Eye}
+            note="This is the last piece we set up for you. Your page and your link already work — share them now; the channel changes nothing about that."
+          >
+            <div className="rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-sm text-foreground/60">
+              We create the channel and connect it to the desk.
+            </div>
+          </LockedShell>
 
           {ladder}
         </>
       ) : (
         <>
           {/* Live-Reihenfolge: der Link zuerst — das ist das Werkzeug des Tages. */}
-          <div className="mb-5 mt-5 flex flex-col gap-2 rounded-xl border border-primary/20 bg-primary/5 p-3 sm:flex-row sm:items-center">
-            <div className="min-w-0 flex-1">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary/80">Your link</div>
-              <div className="truncate font-mono text-sm">{shareUrl}</div>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={copyLink}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:opacity-90"
-              >
-                {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
-                {copied ? "Copied" : "Copy"}
-              </button>
-              <a
-                href={shareUrl} target="_blank" rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-semibold hover:bg-white/[0.08]"
-              >
-                Open <ExternalLink className="h-3.5 w-3.5" />
-              </a>
-            </div>
-          </div>
-
+          {linkBar}
           {statGrid}
           {ladder}
 
