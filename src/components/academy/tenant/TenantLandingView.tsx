@@ -26,10 +26,10 @@ import {
 import { TIERS, LESSONS } from "@/lib/academy-data";
 import { formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { writePartnerBrand } from "@/lib/partner-brand";
+import { stampAttribution, usePartnerBrand } from "@/lib/partner-brand";
 import { supabase } from "@/integrations/supabase/client";
 import type { TenantConfig } from "@/lib/tenants";
-import { BROKER, BROKER_SWITCH } from "@/lib/broker";
+import { BROKER, BROKER_SWITCH, TELEGRAM_ENTRY } from "@/lib/broker";
 import { RiskWarning } from "@/components/academy/legal/RiskWarning";
 import { CommissionDisclosure } from "@/components/academy/legal/CommissionDisclosure";
 import { DeskResults } from "@/components/academy/tenant/DeskResults";
@@ -111,6 +111,25 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
      Knopf einfach hin — nie weg. */
   const [ctaIn, setCtaIn] = useState(false);
 
+  /**
+   * Wohin der Knopf unter dem Film fuehrt.
+   *
+   * NICHT mehr zur Registrierung. Der Besucher hat gerade den Film gesehen und
+   * ist so warm, wie er auf dieser Seite je wird — ihn jetzt ein Formular
+   * ausfuellen zu lassen, kostet genau an dieser Stelle. Ab hier laeuft alles
+   * ueber Telegram; das Konto entsteht spaeter aus der Einzahlung.
+   *
+   * Die Reihenfolge der Quellen ist die Herkunftskette:
+   *   1. Der Partner aus dem cosmo_brand-Cookie — er hat den Besucher gebracht,
+   *      und sein Einladungslink ist das, woran der Bot ihn spaeter erkennt.
+   *      Faellt der weg, gehoert der Kunde dem Haus statt dem Partner, und das
+   *      ist nach dem Anlegen nicht mehr zu reparieren.
+   *   2. Der Kanal des Mandanten, dessen Seite gerade laeuft.
+   *   3. Unser eigener Eingang.
+   */
+  const brand = usePartnerBrand();
+  const telegramZiel = brand?.telegramChannel || tenant.telegramChannel || TELEGRAM_ENTRY.url;
+
   const showCosmo = tenant.slug === "cosmos-candles";
   // Der Hero traegt das Maskottchen nur noch, wenn es KEIN Kopfzeilen-Portrait
   // gibt. Zekos Bild sass vorher an beiden Stellen; im Hero fraß es auf dem
@@ -121,8 +140,8 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
 
   useEffect(() => {
     if (typeof document === "undefined") return;
-    document.cookie = `cosmo_ref=${encodeURIComponent(tenant.slug)}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
-    writePartnerBrand(tenant);
+    // Eine Regel, an einer Stelle: das Haus ueberschreibt nie einen Partner.
+    stampAttribution(tenant);
     // The partner dashboard's headline number counts affiliate_clicks — and
     // until 21.08. nothing ever wrote that table, so every partner would have
     // stared at a zero forever. One click per tab session, recorded through a
@@ -561,13 +580,15 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                   className="pointer-events-none absolute inset-x-6 -bottom-1 h-7 rounded-full blur-2xl"
                   style={{ background: primary, opacity: 0.35 }}
                 />
-                <button
-                  onClick={goRegister}
+                <a
+                  href={telegramZiel}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="cta-btn relative flex w-full items-center justify-center gap-2 rounded-full px-5 py-3.5 text-sm font-black"
                   style={cta}
                 >
-                  Create your free account <ArrowRight className="cta-arrow h-4 w-4" />
-                </button>
+                  Unlock everything on Telegram <ArrowRight className="cta-arrow h-4 w-4" />
+                </a>
               </div>
               {/* "Nochmal ansehen" erst, wenn es etwas nochmal zu sehen gibt. */}
               {pitchEnded && (
@@ -582,6 +603,22 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                 </button>
               )}
             </div>
+          )}
+          {/* WARUM TELEGRAM — als Satz, nicht als Fussnote.
+              "Alles laeuft ueber Telegram" ohne Grund liest sich wie eine
+              Huerde, die wir uns ausgedacht haben. Mit dem Grund ist es ein
+              Argument: ein Signal, das zehn Minuten alt ist, ist wertlos.
+              Deshalb steht der Satz in Lesegroesse unter dem Knopf und nicht
+              klein darunter — wer ihn ueberliest, klickt aus Misstrauen nicht. */}
+          {pitchStarted && (
+            <p className={cn(
+              "mt-4 max-w-xl text-sm leading-relaxed text-foreground/60 transition-all duration-500 ease-out",
+              ctaIn ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0",
+            )}>
+              Everything runs on Telegram — that's where a call lands the second our desk
+              makes it. A trade you see ten minutes late is a trade you missed. One tap and
+              you're in.
+            </p>
           )}
       </Band>
       )}

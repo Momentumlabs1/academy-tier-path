@@ -16,6 +16,36 @@ import type { TenantConfig } from "./tenants";
 import { BRAND } from "./tenants";
 import { BROKER } from "./broker";
 
+/** Der Mandanten-slug unserer eigenen Marke — nie ein Partner. */
+const HAUS = "cosmos-candles";
+
+/**
+ * Herkunft festhalten — mit EINER Regel: das Haus ueberschreibt nie einen Partner.
+ *
+ * Der Fehler, den das verhindert (gemessen am 05.09.): die Partner-Bruecke
+ * schickt jeden Besucher auf die Cosmos-Seite. Die stempelte dort ihren eigenen
+ * slug in cosmo_ref — also wurde JEDER Partnerbesucher beim ersten Klick zum
+ * Hauskunden. Der Partner brachte den Kunden, wir bekamen ihn, und auffallen
+ * wuerde es nie: unsere eigene Abrechnung stimmt ja.
+ *
+ * Umgekehrt gilt es nicht. Wer erst bei uns war und spaeter ueber einen
+ * Partner-Reel kommt, gehoert dem Partner — er hat diese Anmeldung ausgeloest.
+ * Deshalb: ein Partner darf ueberschreiben, das Haus nicht.
+ *
+ * Das deckt sich mit dem Bot (`set_partner` ueberschreibt eine bestehende
+ * Zuordnung ebenfalls nicht) und mit `members.referred_by_tenant`, das nach dem
+ * Anlegen gesperrt ist — eine falsche Zuordnung ist danach endgueltig.
+ */
+export function stampAttribution(tenant: TenantConfig): void {
+  if (typeof document === "undefined") return;
+  const vorhanden = (document.cookie.match(/(?:^|;\s*)cosmo_ref=([^;]*)/) || [])[1];
+  const bestehtSchon = Boolean(vorhanden && decodeURIComponent(vorhanden) !== "");
+  if (tenant.slug === HAUS && bestehtSchon) return; // Partner behaelt seinen Kunden.
+
+  document.cookie = `cosmo_ref=${encodeURIComponent(tenant.slug)}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
+  writePartnerBrand(tenant);
+}
+
 export interface PartnerBrand {
   slug: string;
   name: string;

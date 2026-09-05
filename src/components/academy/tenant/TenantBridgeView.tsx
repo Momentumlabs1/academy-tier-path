@@ -31,7 +31,7 @@
 import { useEffect } from "react";
 import { ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { writePartnerBrand } from "@/lib/partner-brand";
+import { stampAttribution } from "@/lib/partner-brand";
 import type { TenantConfig } from "@/lib/tenants";
 
 const PUNKTE = [
@@ -60,8 +60,8 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
     if (typeof document === "undefined") return;
     // Identisch zur langen Seite — siehe Kopfkommentar: die Herkunft muss
     // gesetzt sein, BEVOR der Besucher weiterklickt.
-    document.cookie = `cosmo_ref=${encodeURIComponent(tenant.slug)}; path=/; max-age=${60 * 60 * 24 * 30}; SameSite=Lax`;
-    writePartnerBrand(tenant);
+    // Eine Regel, an einer Stelle: das Haus ueberschreibt nie einen Partner.
+    stampAttribution(tenant);
 
     const key = `cc_click_${tenant.slug}`;
     if (sessionStorage.getItem(key)) return;
