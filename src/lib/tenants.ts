@@ -247,7 +247,21 @@ export const TENANTS: TenantConfig[] = [
     // Chatfenster statt im Kanal. Der Kanal ist privat und hat deshalb keinen
     // @-Namen; sein Einladungslink ist die richtige Adresse. Direkt vom Bot
     // ueber getChat(-1004463541503) geholt, nicht geraten.
-    telegramChannel: "https://t.me/+7Nte7MEUqj1iM2Y0",
+    // SEIN Einladungslink in den GEMEINSAMEN Info-Kanal (Ansage 05.09.).
+    //
+    // Vorher stand hier sein eigener Kanal. Der bekam die gespiegelten Posts
+    // korrekt — aber insgesamt drei Stueck, waehrend der Cosmos-Kanal 13
+    // Mitglieder und den gepflegten Inhalt hat. Ein Partner, der seine Leute in
+    // einen fast leeren Raum schickt, verliert sie dort.
+    //
+    // Die Herkunft geht dabei NICHT verloren, im Gegenteil: Telegram meldet
+    // beim Beitritt, ueber welchen Link jemand kam (tenant_invite_links), und
+    // der Beitritts-Waechter schreibt Zeko an den Lead. Frueher war der eigene
+    // Kanal die einzige Moeglichkeit, das ueberhaupt zu wissen.
+    //
+    // Sein alter Kanal (-1004463541503) bleibt bestehen und wird weiter
+    // beliefert — wer schon drin ist, faellt nicht ins Leere.
+    telegramChannel: "https://t.me/+ap5zjGNHvFFlYjI0",
     // Sein eigener Film, nicht unserer. Neu kodiert mit +faststart, damit der
     // Index vorne steht — sonst muss ein Handy die ganze Datei laden, bevor
     // ueberhaupt etwas zu sehen ist, und das sieht aus wie "laedt nicht".
@@ -304,7 +318,13 @@ export const COSMOS_MASTER: TenantConfig = {
   // Same rule as the tenants: the name follows the broker we actually link to.
   brokerName: BROKER.name,
   brokerUrl: BROKER.url,
-  telegramChannel: TELEGRAM_ENTRY.url,
+  // Der Info-Kanal, nicht der Bot-Chat.
+  //
+  // TELEGRAM_ENTRY zeigt auf t.me/cosmoscandles — dort antwortet der Bot. Wer
+  // aus einer Anzeige kommt, soll aber erst den KANAL sehen: dort steht, dass
+  // etwas laeuft. Ein Chatfenster mit einem Bot als erster Eindruck beweist
+  // gar nichts. Der Bot kommt im Kanal gleich danach.
+  telegramChannel: "https://t.me/+W3EHV-PZp4M0MWJk",
   // Nur unsere eigene Marke. In diesem Film spricht Cosmo vor der
   // Cosmos-Candles-Seite — auf einer Partnerseite waere das unsere Werbung.
   pitchVideo: "/pitch.mp4?v=3",
