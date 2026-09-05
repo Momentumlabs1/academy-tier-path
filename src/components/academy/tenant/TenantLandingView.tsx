@@ -84,7 +84,6 @@ function CandleShape({ up, down, isUp, bt, bh, growDelay }: { up: string; down: 
 
 export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
   const navigate = useNavigate();
-  const goRegister = () => navigate({ to: "/signup" });
 
   // Poster-Overlay fuer das Pitch-Video: weicht beim Start, kehrt am Ende zurueck.
   const pitchRef = useRef<HTMLVideoElement>(null);
@@ -129,6 +128,22 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
    */
   const brand = usePartnerBrand();
   const telegramZiel = brand?.telegramChannel || tenant.telegramChannel || TELEGRAM_ENTRY.url;
+
+  /**
+   * JEDER Hauptknopf dieser Seite fuehrt nach Telegram, nicht in ein Formular.
+   *
+   * Bis zum 05.09. musste man sich zuerst registrieren, damit man das gesperrte
+   * Dashboard sieht und dadurch Lust auf Telegram bekommt. Der Weg war: Video,
+   * Formular, nochmal Video, dann Telegram — vier Schritte fuer eine Sache, die
+   * einer ist. Das Konto entsteht jetzt am Ende von selbst, aus der Einzahlung
+   * (bot-unlock), und der Kunde wird genau einmal nach einer Adresse gefragt.
+   *
+   * Anmelden koennen sich bestehende Mitglieder weiterhin — der "Sign in"-Link
+   * daneben bleibt. Nur der Weg HINEIN geht nicht mehr ueber ein Formular.
+   */
+  const goTelegram = () => {
+    if (typeof window !== "undefined") window.open(telegramZiel, "_blank", "noopener,noreferrer");
+  };
 
   const showCosmo = tenant.slug === "cosmos-candles";
   // Der Hero traegt das Maskottchen nur noch, wenn es KEIN Kopfzeilen-Portrait
@@ -393,10 +408,10 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                 Never hidden on mobile either — that left a phone visitor with no
                 way back into their own account at all. */}
             <Link to="/signup" className="inline-flex min-h-[44px] items-center rounded-full px-3 py-2 text-sm font-medium text-white/70 hover:text-white sm:px-4">Sign in</Link>
-            <button onClick={goRegister}
+            <button onClick={goTelegram}
               className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold text-black shadow-lg transition-transform hover:-translate-y-0.5"
               style={cta}>
-              Sign up free <ArrowRight className="h-3.5 w-3.5" />
+              Join on Telegram <ArrowRight className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>
@@ -445,7 +460,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
             </p>
 
             <div className="lv-in4 mt-6 flex flex-col items-stretch gap-2.5 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center sm:justify-center sm:gap-3 lg:justify-start">
-              <button onClick={goRegister}
+              <button onClick={goTelegram}
                 className="cta-btn group inline-flex items-center justify-center gap-2 rounded-full px-5 py-3.5 text-[13px] font-black text-black sm:py-3"
                 style={cta}>
                 Start free — €0 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -468,7 +483,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                   Weg offen — /welcome, /signals und das Willkommensfenster
                   fuehren dorthin, und der bezahlte Signalkanal kommt ohnehin
                   partnerweise aus create-telegram-link. */}
-              <button onClick={goRegister}
+              <button onClick={goTelegram}
                 className="inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-3.5 text-[13px] font-semibold hover:bg-white/10 sm:px-6 sm:py-3">
                 Watch the signals <ArrowRight className="h-4 w-4" />
               </button>
@@ -744,7 +759,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               <ul className="flex flex-1 flex-col gap-2">
                 {t.perks.map((perk) => <li key={perk} className="flex items-start gap-2 text-sm text-white/80"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" style={{ color: t.color }} />{perk}</li>)}
               </ul>
-              <button onClick={goRegister} className="mt-6 inline-flex items-center justify-center gap-2 rounded-full py-3 text-sm font-bold transition-opacity hover:opacity-90"
+              <button onClick={goTelegram} className="mt-6 inline-flex items-center justify-center gap-2 rounded-full py-3 text-sm font-bold transition-opacity hover:opacity-90"
                 style={idx === 1 ? cta : { background: "rgba(255,255,255,0.08)", color: "white" }}>Get started <ArrowRight className="h-4 w-4" /></button>
             </div>
           ))}
@@ -859,7 +874,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                   nicht auf unserer eigenen. Erst Registrierung, dann Kanal.
                   Begruendung steht beim Hero-Knopf (Cookie-Topf, Herkunft).
                   Der bezahlte Signalkanal bleibt partnerweise. */}
-              <button onClick={goRegister} className="inline-flex min-h-[44px] items-center gap-1.5 py-3 text-xs font-medium text-white/60 underline-offset-4 hover:text-white hover:underline">Get the signals <ArrowRight className="h-3.5 w-3.5" /></button>
+              <button onClick={goTelegram} className="inline-flex min-h-[44px] items-center gap-1.5 py-3 text-xs font-medium text-white/60 underline-offset-4 hover:text-white hover:underline">Get the signals <ArrowRight className="h-3.5 w-3.5" /></button>
             </div>
           </div>
         </div>
@@ -884,7 +899,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           <h2 className="apl-sheen font-display text-3xl font-black sm:text-5xl">Your first candle<br />starts today.</h2>
           <p className="mx-auto mt-4 max-w-md text-white/65">Join {tenant.name}, connect Telegram, and we take it from there.</p>
           <div className="mt-7 flex justify-center">
-            <button onClick={goRegister} className="cta-btn inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-[13px] font-black text-black" style={cta}>Start free — €0 <ArrowRight className="h-4 w-4" /></button>
+            <button onClick={goTelegram} className="cta-btn inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-[13px] font-black text-black" style={cta}>Start free — €0 <ArrowRight className="h-4 w-4" /></button>
           </div>
           {/* Objections resurface at the moment of action, so the answer
               stands next to the button — not only up in the hero. */}
@@ -928,7 +943,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
             <div className="truncate text-[12px] font-bold">{tenant.name}</div>
             <div className="truncate text-[10px] text-white/50">Free — no card, your money stays yours</div>
           </div>
-          <button onClick={goRegister} className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-5 py-3 text-[13px] font-black text-black" style={cta}>
+          <button onClick={goTelegram} className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-5 py-3 text-[13px] font-black text-black" style={cta}>
             Start free <ArrowRight className="h-4 w-4" />
           </button>
         </div>
