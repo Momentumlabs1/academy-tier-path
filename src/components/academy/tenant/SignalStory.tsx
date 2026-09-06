@@ -77,17 +77,19 @@ function Styles() {
         .ss-stage { view-timeline: --ss block; }
         /* Das Telefon richtet sich beim Hereinscrollen auf und die Lichtquelle
            wandert mit — das ist die Parallaxe. Danach die vier Stufen. */
-        .ss-phone { animation: ssTilt  cubic-bezier(.22,1,.36,1) both; animation-timeline: --ss; animation-range: entry 0% entry 90%; }
+        /* Diego, 06.09.: "etwas zu spaet" — alles kommt frueher und dichter;
+           die letzte Stufe steht, sobald das Telefon ganz im Bild ist. */
+        .ss-phone { animation: ssTilt  cubic-bezier(.22,1,.36,1) both; animation-timeline: --ss; animation-range: entry 0% entry 70%; }
         .ss-light { animation: ssLight linear both;                  animation-timeline: --ss; animation-range: entry 0% exit 100%; }
-        .ss-notif { animation: ssNotif cubic-bezier(.22,1,.36,1) both; animation-timeline: --ss; animation-range: entry 22% entry 46%; }
-        .ss-ask   { animation: ssFade  linear both;                  animation-timeline: --ss; animation-range: entry 40% entry 58%; }
-        .ss-yes   { animation: ssFillX cubic-bezier(.22,1,.36,1) both; animation-timeline: --ss; animation-range: entry 52% entry 70%; }
-        .ss-done  { animation: ssUp    cubic-bezier(.22,1,.36,1) both; animation-timeline: --ss; animation-range: entry 64% entry 80%; }
-        .ss-line  { animation: ssDraw  linear both;                  animation-timeline: --ss; animation-range: entry 68% contain 5%; }
-        .ss-area  { animation: ssFade  linear both;                  animation-timeline: --ss; animation-range: entry 68% contain 5%; }
-        .ss-tp1   { animation: ssPop   cubic-bezier(.22,1,.36,1) both; animation-timeline: --ss; animation-range: entry 82% entry 94%; }
-        .ss-tp2   { animation: ssPop   cubic-bezier(.22,1,.36,1) both; animation-timeline: --ss; animation-range: entry 94% contain 18%; }
-        .ss-final { animation: ssUp    cubic-bezier(.22,1,.36,1) both; animation-timeline: --ss; animation-range: entry 98% contain 32%; }
+        .ss-notif { animation: ssNotif cubic-bezier(.22,1,.36,1) both; animation-timeline: --ss; animation-range: entry 8% entry 26%; }
+        .ss-ask   { animation: ssFade  linear both;                  animation-timeline: --ss; animation-range: entry 20% entry 34%; }
+        .ss-yes   { animation: ssFillX cubic-bezier(.22,1,.36,1) both; animation-timeline: --ss; animation-range: entry 30% entry 44%; }
+        .ss-done  { animation: ssUp    cubic-bezier(.22,1,.36,1) both; animation-timeline: --ss; animation-range: entry 40% entry 52%; }
+        .ss-line  { animation: ssDraw  linear both;                  animation-timeline: --ss; animation-range: entry 44% entry 76%; }
+        .ss-area  { animation: ssFade  linear both;                  animation-timeline: --ss; animation-range: entry 44% entry 76%; }
+        .ss-tp1   { animation: ssPop   cubic-bezier(.22,1,.36,1) both; animation-timeline: --ss; animation-range: entry 60% entry 72%; }
+        .ss-tp2   { animation: ssPop   cubic-bezier(.22,1,.36,1) both; animation-timeline: --ss; animation-range: entry 72% entry 84%; }
+        .ss-final { animation: ssUp    cubic-bezier(.22,1,.36,1) both; animation-timeline: --ss; animation-range: entry 80% entry 96%; }
       }
       @media (prefers-reduced-motion: reduce) {
         .ss-phone,.ss-light,.ss-notif,.ss-ask,.ss-yes,.ss-done,.ss-line,.ss-area,.ss-tp1,.ss-tp2,.ss-final,.ss-live,.ss-sheen { animation: none !important; opacity: 1 !important; transform: none !important; filter: none !important; }
