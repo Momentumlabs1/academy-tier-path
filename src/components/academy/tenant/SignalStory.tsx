@@ -57,6 +57,10 @@ function Styles() {
       @keyframes ssPop   { from { opacity: 0; transform: scale(.5); } 70% { transform: scale(1.12); } to { opacity: 1; transform: scale(1); } }
       @keyframes ssDot   { 0%,100% { transform: scale(1); opacity: .9; } 50% { transform: scale(1.7); opacity: .35; } }
       @keyframes ssSheen { 0%,60% { transform: translateX(-140%) rotate(12deg); } 100% { transform: translateX(160%) rotate(12deg); } }
+      /* Der Finger: kommt gross und durchsichtig, drueckt (kleiner), verschwindet. */
+      @keyframes ssTap   { 0% { opacity: 0; transform: translate(-50%,-50%) scale(1.6); } 35% { opacity: .95; transform: translate(-50%,-50%) scale(1); } 60% { opacity: .95; transform: translate(-50%,-50%) scale(.82); } 100% { opacity: 0; transform: translate(-50%,-50%) scale(1.1); } }
+      @keyframes ssPing  { 0% { transform: scale(.9); opacity: .9; } 100% { transform: scale(2.1); opacity: 0; } }
+      @keyframes ssLoopTap { 0%,20% { opacity: 0; transform: translate(-50%,-50%) scale(1.6); } 24% { opacity: .95; transform: translate(-50%,-50%) scale(1); } 28% { transform: translate(-50%,-50%) scale(.82); } 32%,100% { opacity: 0; transform: translate(-50%,-50%) scale(1.1); } }
 
       /* Zeit-Loop als Fallback: 14 s, Stufen nacheinander, lange Haltephase. */
       @keyframes ssLoopNotif { 0%,3% { opacity: 0; transform: translateY(-34px) scale(.94); } 9%,90% { opacity: 1; transform: none; } 96%,100% { opacity: 0; } }
@@ -80,6 +84,9 @@ function Styles() {
       .ss-final { animation: ssLoopUp2 14s ease-out infinite; }
       .ss-live  { animation: ssDot 1.6s ease-in-out infinite; }
       .ss-sheen { animation: ssSheen 9s ease-in-out infinite; }
+      .ss-tap   { animation: ssLoopTap 14s ease-out infinite; }
+      .ss-ping  { animation: ssPing 1.8s ease-out infinite; }
+      .ss-money { animation: ssLoopUp2 14s ease-out infinite; }
 
       @supports (animation-timeline: view()) {
         .ss-stage { view-timeline: --ss block; }
@@ -96,9 +103,12 @@ function Styles() {
         .ss-tp1   { animation: ssPop   cubic-bezier(.22,1,.36,1) both; animation-timeline: --ss; animation-range: entry 60% entry 72%; }
         .ss-tp2   { animation: ssPop   cubic-bezier(.22,1,.36,1) both; animation-timeline: --ss; animation-range: entry 72% entry 84%; }
         .ss-final { animation: ssUp    cubic-bezier(.22,1,.36,1) both; animation-timeline: --ss; animation-range: entry 80% entry 96%; }
+        .ss-tap   { animation: ssTap   ease-out both;                animation-timeline: --ss; animation-range: entry 26% entry 46%; }
+        .ss-money { animation: ssUp    cubic-bezier(.22,1,.36,1) both; animation-timeline: --ss; animation-range: entry 74% entry 88%; }
       }
       @media (prefers-reduced-motion: reduce) {
-        .ss-phone,.ss-light,.ss-notif,.ss-ask,.ss-yes,.ss-done,.ss-line,.ss-area,.ss-tp1,.ss-tp2,.ss-final,.ss-live,.ss-sheen { animation: none !important; opacity: 1 !important; transform: none !important; filter: none !important; }
+        .ss-phone,.ss-light,.ss-notif,.ss-ask,.ss-yes,.ss-done,.ss-line,.ss-area,.ss-tp1,.ss-tp2,.ss-final,.ss-live,.ss-sheen,.ss-money,.ss-ping { animation: none !important; opacity: 1 !important; transform: none !important; filter: none !important; }
+        .ss-tap { animation: none !important; opacity: 0 !important; }
         .ss-line { stroke-dashoffset: 0 !important; }
       }
     `}</style>
@@ -152,6 +162,20 @@ export function SignalStory({
         glowOpacity: .55,
       };
 
+  /** Schritt-Etikett auf jeder Karte — damit der Ablauf (Signal → kopieren →
+   *  verdienen) nicht in der Optik untergeht (Diego, 06.09.). */
+  const Step = ({ n, t }: { n: number; t: string }) => (
+    <div className="mb-2 flex items-center gap-2">
+      <span
+        className="flex h-[18px] w-[18px] items-center justify-center rounded-full text-[10px] font-black tabular-nums"
+        style={hell ? { background: INK, color: "#fff" } : { background: primary, color: onPrimary }}
+      >
+        {n}
+      </span>
+      <span className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: hell ? INK : primary }}>{t}</span>
+    </div>
+  );
+
   return (
     <div className="ss-stage relative mx-auto w-full max-w-[360px] py-6 sm:py-8">
       <Styles />
@@ -189,12 +213,16 @@ export function SignalStory({
             <div className="relative space-y-3 px-3.5 pb-5 pt-4">
               {/* ── 1 · Die Benachrichtigung ─────────────────────────────── */}
               <div className={`ss-notif ${c.card} p-3`}>
+                <Step n={1} t="A signal lands" />
                 <div className="flex items-start gap-2.5">
-                  <span
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] text-[13px] font-black shadow-[0_6px_14px_-6px_rgba(0,0,0,.45)]"
-                    style={{ color: onPrimary, background: `linear-gradient(160deg, color-mix(in oklch, ${primary} 85%, white), ${primary})` }}
-                  >
-                    S
+                  <span className="relative shrink-0">
+                    <span aria-hidden className="ss-ping absolute inset-0 rounded-[10px]" style={{ boxShadow: `0 0 0 2px ${hell ? INK : primary}` }} />
+                    <span
+                      className="relative flex h-9 w-9 items-center justify-center rounded-[10px] text-[13px] font-black shadow-[0_6px_14px_-6px_rgba(0,0,0,.45)]"
+                      style={{ color: onPrimary, background: `linear-gradient(160deg, color-mix(in oklch, ${primary} 85%, white), ${primary})` }}
+                    >
+                      S
+                    </span>
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between">
@@ -216,6 +244,7 @@ export function SignalStory({
 
               {/* ── 2 · Die Frage — und dein Ja ──────────────────────────── */}
               <div className={`ss-ask ${c.card} p-3`}>
+                <Step n={2} t="You tap copy" />
                 <div className="text-[14px] font-semibold">Copy this trade?</div>
                 <div className="mt-0.5 text-[12px] leading-snug" style={{ color: c.muted }}>Same entry, same stop, same targets — in your account.</div>
                 <div className="mt-3 grid grid-cols-2 gap-2">
@@ -225,6 +254,12 @@ export function SignalStory({
                   <span className="relative flex h-10 items-center justify-center overflow-hidden rounded-full text-[13px] font-bold" style={{ color: onPrimary, boxShadow: `inset 0 0 0 1.5px ${onPrimary === "#fff" ? "rgba(255,255,255,.35)" : primary}` }}>
                     <span className="ss-yes absolute inset-0" style={{ background: `linear-gradient(180deg, color-mix(in oklch, ${primary} 88%, white), ${primary})` }} />
                     <span className="relative">Yes, copy</span>
+                    {/* Der Finger, der drueckt — die Apple-Demo-Geste. */}
+                    <span
+                      aria-hidden
+                      className="ss-tap pointer-events-none absolute left-1/2 top-1/2 h-9 w-9 rounded-full"
+                      style={{ background: "rgba(255,255,255,.55)", boxShadow: "0 0 0 2px rgba(255,255,255,.8), 0 8px 24px rgba(0,0,0,.35)" }}
+                    />
                   </span>
                 </div>
                 <div className="ss-done mt-2.5 flex items-center gap-1.5 text-[12px] font-medium" style={{ color: hell ? INK : UP }}>
@@ -235,8 +270,8 @@ export function SignalStory({
 
               {/* ── 3 · Dein Gewinn läuft ─────────────────────────────────── */}
               <div className={`${c.card} relative overflow-hidden p-3`}>
-                <div className="flex items-baseline justify-between">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: c.faint }}>Your position</span>
+                <div className="flex items-start justify-between">
+                  <Step n={3} t="You earn" />
                   <span className="text-[11px]" style={{ color: c.faint }}>Gold · short</span>
                 </div>
                 <div className="relative mt-2 h-[104px]">
@@ -267,6 +302,21 @@ export function SignalStory({
                 <div className="mt-1.5 flex items-center justify-between text-[10.5px]" style={{ color: c.faint }}>
                   <span>posted 15:48</span><span>TP1 15:58</span><span>TP2 15:59</span>
                 </div>
+                {/* Das Geld, das dahintersteht — echter Trade, Beispielgroesse 0,1 Lot
+                    (Gold: 1 Pip = 1 $ bei 0,1 Lot). Als Beispiel gekennzeichnet, kein
+                    Versprechen. */}
+                <div
+                  className="ss-money mt-2.5 flex items-center justify-between rounded-[14px] px-2.5 py-2 text-[12px] tabular-nums"
+                  style={{ background: c.cardDeep }}
+                >
+                  <span style={{ color: c.muted }}>Your account</span>
+                  <span className="font-semibold">
+                    <span style={{ color: c.faint }}>$1,000</span>
+                    <span style={{ color: c.faint }}> → </span>
+                    <span style={hell ? { background: `linear-gradient(transparent 60%, ${gewinn} 60%)`, padding: "0 3px" } : { color: UP }}>$1,200</span>
+                  </span>
+                </div>
+                <div className="mt-1 text-right text-[9.5px]" style={{ color: c.faint }}>example · 0.1 lot</div>
               </div>
 
               {/* ── 4 · Abschluss ─────────────────────────────────────────── */}
@@ -281,7 +331,7 @@ export function SignalStory({
                     >
                       +200 pips
                     </div>
-                    <div className="mt-1 text-[11px]" style={{ color: c.muted }}>in 11 minutes · Friday, 4 Sep</div>
+                    <div className="mt-1 text-[11px]" style={{ color: c.muted }}>= +$200 at 0.1 lot · in 11 minutes · Friday, 4 Sep</div>
                   </div>
                   <div className="text-right text-[10.5px] leading-tight" style={{ color: c.faint }}>
                     posted before<br />it happened
