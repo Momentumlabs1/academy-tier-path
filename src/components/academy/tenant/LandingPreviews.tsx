@@ -275,9 +275,12 @@ export function SignalsPreview({ primary, showCosmo }: { primary: string; showCo
             <span className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[9px] text-white/70">now</span>
           </div>
           <div className="mt-1.5 grid grid-cols-3 gap-2 font-mono text-[10px]">
-            <div><div className="text-white/40">Entry</div><div className="text-white">2,318.4</div></div>
-            <div><div className="text-white/40">SL</div><div style={{ color: DOWN }}>2,311.0</div></div>
-            <div><div className="text-white/40">TP</div><div style={{ color: UP }}>2,334.0</div></div>
+            {/* Echte Level (Desk 01.09.2026, Gold long 4 381.29 / SL 4 374.09 / TP1 4 384.89) —
+                die alten 2 318er stammten aus 2024 und verrieten jedem, der Gold kennt, dass
+                die Vorschau erfunden war. */}
+            <div><div className="text-white/40">Entry</div><div className="text-white">4,381.3</div></div>
+            <div><div className="text-white/40">SL</div><div style={{ color: DOWN }}>4,374.1</div></div>
+            <div><div className="text-white/40">TP</div><div style={{ color: UP }}>4,384.9</div></div>
           </div>
         </div>
         {/* Bubble 2: der Treffer — blitzt zusaetzlich im Zeit-Takt auf. */}

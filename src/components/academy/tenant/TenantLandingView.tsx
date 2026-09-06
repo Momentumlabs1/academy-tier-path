@@ -36,6 +36,7 @@ import { DeskResults } from "@/components/academy/tenant/DeskResults";
 import {
   SignalsPreview, BotPreview, AcademyPreview, QuizPreview, RewardsPreview, WhitelabelPreview,
 } from "@/components/academy/tenant/LandingPreviews";
+import { SignalStory } from "@/components/academy/tenant/SignalStory";
 
 
 // ── Orbit engine (pure CSS 3D — GPU only, no z-index, no per-frame repaint) ──
@@ -633,7 +634,7 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           title="Every call from the desk — on your phone in seconds"
           body="Entry, stop-loss and targets, pushed the moment the desk fires them."
           points={["Real-time Telegram delivery", "Entry · SL · multiple targets", "Win/loss tracked openly"]}
-          preview={<SignalsPreview primary={primary} showCosmo={showCosmo} />} />
+          preview={<SignalStory primary={primary} accent={accent} />} />
       </ChapterZone>
 
       <ChapterZone tone="raised" washSide="left" strength={9} primary={primary}>

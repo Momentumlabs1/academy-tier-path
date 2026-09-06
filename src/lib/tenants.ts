@@ -70,6 +70,12 @@ export interface TenantConfig {
    */
   bridge?: boolean;
   /**
+   * Wie gross der eigene Film auf der Bruecke steht. "hero" = volle Breite,
+   * randlos am Handy (Zeko: sein Film IST die Seite); "card" = Karte
+   * (Standard, sobald pitchVideo gesetzt ist); "none" = reine Typo-Fassung.
+   */
+  bridgeVideo?: "hero" | "card" | "none";
+  /**
    * Helligkeit der Partnerseite. Vorgabe: dunkel (unsere Buehne).
    *
    * Warum das ueberhaupt waehlbar sein muss: die Brueckenseite ist der erste
@@ -225,6 +231,7 @@ export const TENANTS: TenantConfig[] = [
   },
   {
     slug: "zekoglobal",
+    bridgeVideo: "hero",
     name: "Zeko Global",
     // Kurze Bruecke wie bei jedem Partner (Ansage 04.09., nachdem die Fassung
     // ohne Film sichtbar besser lief). Er ist der einzige STATISCHE Eintrag,

@@ -32,7 +32,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { stampAttribution } from "@/lib/partner-brand";
 import { DESK_WEEK } from "@/lib/desk-results";
-import { SignalsPreview } from "./LandingPreviews";
+import { SignalStory } from "./SignalStory";
 import type { TenantConfig } from "@/lib/tenants";
 
 const PUNKTE = [
@@ -119,6 +119,7 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
       };
   const video = useRef<HTMLVideoElement>(null);
   const [laeuft, setLaeuft] = useState(false);
+  const videoModus: "hero" | "card" | "none" = tenant.bridgeVideo ?? (tenant.pitchVideo ? "card" : "none");
 
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -237,9 +238,18 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
             </p>
           </div>
 
-          {/* ── Sein Film, falls er einen hat ─────────────────────────── */}
-          {tenant.pitchVideo && (
-            <div className={cn("mt-8 overflow-hidden rounded-xl border bg-black shadow-[0_24px_60px_-30px_rgba(0,0,0,0.55)]", t.rahmen)}>
+          {/* ── Sein Film, falls er einen hat ───────────────────────────
+              Groesse pro Partner (tenant.bridgeVideo): "hero" = volle Breite,
+              randlos am Handy, grosser Play (Zeko: sein Film IST die Seite);
+              "card" = Karte wie bisher; "none" = reine Typo-Fassung. */}
+          {tenant.pitchVideo && videoModus !== "none" && (
+            <div
+              className={cn(
+                "overflow-hidden border bg-black shadow-[0_24px_60px_-30px_rgba(0,0,0,0.55)]",
+                videoModus === "hero" ? "-mx-5 mt-7 rounded-none border-x-0 sm:mx-0 sm:rounded-2xl sm:border-x" : "mt-8 rounded-xl",
+                t.rahmen,
+              )}
+            >
               <div className="relative aspect-video bg-black">
                 <video
                   ref={video}
@@ -260,10 +270,13 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
                     className="group absolute inset-0 flex items-center justify-center bg-black/20 transition-colors hover:bg-black/10"
                   >
                     <span
-                      className="flex h-14 w-14 items-center justify-center rounded-full ring-1 ring-white/25 transition-transform duration-200 group-hover:scale-105"
+                      className={cn(
+                        "flex items-center justify-center rounded-full ring-1 ring-white/25 transition-transform duration-200 group-hover:scale-105",
+                        videoModus === "hero" ? "h-[72px] w-[72px]" : "h-14 w-14",
+                      )}
                       style={{ background: primary, boxShadow: `0 12px 34px -12px ${primary}` }}
                     >
-                      <PlayCircle className="h-7 w-7" style={{ color: knopfText }} />
+                      <PlayCircle className={videoModus === "hero" ? "h-9 w-9" : "h-7 w-7"} style={{ color: knopfText }} />
                     </span>
                   </button>
                 )}
@@ -282,7 +295,7 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
             </h2>
             <div className={cn("mt-6 flex justify-center rounded-2xl border px-4 py-8", t.rahmen, t.flaeche)}>
               <div className="w-full max-w-[300px]">
-                <SignalsPreview primary={primary} />
+                <SignalStory primary={primary} accent={accent} partnerName={tenant.name} />
               </div>
             </div>
             <ul className={cn("mt-6 divide-y border-y", t.teiler, t.linie)}>
