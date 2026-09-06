@@ -174,6 +174,11 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
 
   return (
     <div className={cn("relative min-h-screen font-sans", t.text)} style={{ background: t.grund }}>
+      <style>{`
+        @keyframes brIn { from { opacity: 0; transform: translateY(14px); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
+        .br-in { animation: brIn .7s cubic-bezier(.22,1,.36,1) both; }
+        @media (prefers-reduced-motion: reduce) { .br-in { animation: none !important; } }
+      `}</style>
       {/* Atmosphäre: eine weiche Lichtquelle in Partnerfarbe + feines Rauschen,
           beides `fixed` (mitscrollend + Mischmodus zeichnete Chromium am 05.09.
           als harten Block über die halbe Seite). */}
@@ -220,22 +225,59 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
             </div>
           </div>
 
-          {/* ── 1 · Was ist hier los ─────────────────────────────────── */}
-          <h1 className="mt-9 font-display text-[1.75rem] font-black leading-[1.12] tracking-[-0.02em] sm:text-[2.4rem]">
+          {/* ── 1 · Was ist hier los ───────────────────────────────────
+              Diego, 06.09.: der Hero wirkte "lost" neben dem 3D-Telefon.
+              Deshalb dieselbe Materialsprache: Kicker in Partnerfarbe, Titel
+              mit Verlauf und Leuchten, drei Milchglas-Chips als Substanz, und
+              ein gestaffelter Einstieg (br-in) statt eines statischen Blocks.
+              Der Titel selbst bleibt Wort fuer Wort. */}
+          <div className="br-in mt-9 text-[11px] font-black uppercase tracking-[0.28em]" style={{ color: primary, animationDelay: "0s" }}>
+            Live signals · Gold &amp; NASDAQ
+          </div>
+          <h1
+            className="br-in mt-3 font-display text-[2.05rem] font-black leading-[1.06] tracking-[-0.025em] sm:text-[2.7rem]"
+            style={{ animationDelay: ".08s" }}
+          >
             You don't have to learn trading
             <br />
-            <span style={{ color: primary }}>to make money from it.</span>
+            <span
+              className="[text-wrap:balance]"
+              style={{
+                backgroundImage: `linear-gradient(100deg, color-mix(in oklch, ${primary} 78%, white) 0%, ${primary} 55%, ${accent} 100%)`,
+                WebkitBackgroundClip: "text",
+                backgroundClip: "text",
+                color: "transparent",
+                filter: `drop-shadow(0 0 18px color-mix(in oklch, ${primary} 45%, transparent))`,
+              }}
+            >
+              to make money from it.
+            </span>
           </h1>
 
-          <div className="mt-5 flex max-w-lg items-start gap-3.5">
+          <div className="br-in mt-5 flex max-w-lg items-start gap-3.5" style={{ animationDelay: ".16s" }}>
             {tenant.mascotAskUrl && (
               <img src={tenant.mascotAskUrl} alt="" aria-hidden className="mt-0.5 h-9 w-9 shrink-0 opacity-90" />
             )}
-            <p className={cn("text-[15px] leading-relaxed", t.gedaempft)}>
+            <p className={cn("text-[16px] leading-relaxed", t.gedaempft)}>
               {tenant.name} teamed up with a real trading desk. It trades live every day, and
               every position is on your phone the second it opens — entry, stop, targets.
               Follow it or don't. It costs you nothing.
             </p>
+          </div>
+
+          {/* Drei Chips in Telefon-Material: die Substanz hinter dem Satz. */}
+          <div className="br-in mt-5 flex flex-wrap gap-2" style={{ animationDelay: ".24s" }}>
+            {["3–6 trades a day", "Entry · stop · targets", "$0 to us — your money stays yours"].map((c) => (
+              <span
+                key={c}
+                className={cn(
+                  "rounded-full border px-3 py-1.5 text-[12px] font-semibold backdrop-blur",
+                  hell ? "border-[#141210]/12 bg-[#141210]/[0.05] text-[#141210]/80" : "border-white/[0.14] bg-white/[0.07] text-white/85 shadow-[inset_0_1px_0_rgba(255,255,255,.14)]",
+                )}
+              >
+                {c}
+              </span>
+            ))}
           </div>
 
           {/* ── Sein Film, falls er einen hat ───────────────────────────
@@ -251,6 +293,12 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
               )}
             >
               <div className="relative aspect-video bg-black">
+                {/* Kleine Einordnung, damit der Film nicht "einfach da" ist. */}
+                {!laeuft && (
+                  <span className="pointer-events-none absolute left-3 top-3 z-10 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-semibold text-white/90 backdrop-blur">
+                    ▶ Watch first · {tenant.name} explains it
+                  </span>
+                )}
                 <video
                   ref={video}
                   controls
