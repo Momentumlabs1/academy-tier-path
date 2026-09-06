@@ -258,26 +258,11 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
             {tenant.mascotAskUrl && (
               <img src={tenant.mascotAskUrl} alt="" aria-hidden className="mt-0.5 h-9 w-9 shrink-0 opacity-90" />
             )}
+            {/* Ein Satz, kein Absatz (Diego, 06.09.: "viel zu lang"). Die
+                Substanz steht im Telefon darunter, nicht hier. */}
             <p className={cn("text-[16px] leading-relaxed", t.gedaempft)}>
-              {tenant.name} teamed up with a real trading desk. It trades live every day, and
-              every position is on your phone the second it opens — entry, stop, targets.
-              Follow it or don't. It costs you nothing.
+              Every trade from a live desk, straight to your phone. Copy it or don't — it costs you nothing.
             </p>
-          </div>
-
-          {/* Drei Chips in Telefon-Material: die Substanz hinter dem Satz. */}
-          <div className="br-in mt-5 flex flex-wrap gap-2" style={{ animationDelay: ".24s" }}>
-            {["3–6 trades a day", "Entry · stop · targets", "$0 to us — your money stays yours"].map((c) => (
-              <span
-                key={c}
-                className={cn(
-                  "rounded-full border px-3 py-1.5 text-[12px] font-semibold backdrop-blur",
-                  hell ? "border-[#141210]/12 bg-[#141210]/[0.05] text-[#141210]/80" : "border-white/[0.14] bg-white/[0.07] text-white/85 shadow-[inset_0_1px_0_rgba(255,255,255,.14)]",
-                )}
-              >
-                {c}
-              </span>
-            ))}
           </div>
 
           {/* ── Sein Film, falls er einen hat ───────────────────────────
