@@ -326,12 +326,6 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
             <h2 className="mt-2 font-display text-[1.35rem] font-black leading-tight sm:text-[1.6rem]">
               This is what lands on your phone.
             </h2>
-            {/* Der Ablauf in einer Zeile, bevor das Telefon ihn zeigt — damit
-                niemand raten muss, was er da gleich sieht (Diego, 06.09.). */}
-            <p className={cn("mt-2 text-[15px] leading-snug", t.gedaempft)}>
-              A signal lands <span style={{ color: primary }}>→</span> you tap copy <span style={{ color: primary }}>→</span> you earn.
-              Friday's real trade, replayed — scroll.
-            </p>
             {/* Bühne statt Karte: das Telefon steht frei im Licht, randlos am
                 Handy — kein Kasten um den Kasten (Diego: "zu generisch"). */}
             <div className="relative -mx-5 mt-4 sm:mx-0">
