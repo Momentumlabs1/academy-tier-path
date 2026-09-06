@@ -5,13 +5,20 @@
  * WARUM (Diego, 06.09.)
  * Der alte Block war ein generisches Telefon mit einem Zufalls-Trade: "zieht
  * nicht". Die erste Story-Fassung hatte den richtigen Ablauf, sah aber aus wie
- * ein Dashboard — dunkle Kästen in Kästen, Mono-Schrift, flach. Diegos Wahl:
- * "Cinematic 3D-Phone" — ein grosses, leicht gekipptes iPhone mit Tiefe, Glow
- * und Reflexionen (Keynote-Look), das sich beim Scrollen aufrichtet, und darauf
- * Apple-Material: Milchglas, weiche Schatten, System-Schrift.
+ * ein Dashboard. Diegos Wahl: "Cinematic 3D-Phone" — ein grosses, leicht
+ * gekipptes iPhone mit Tiefe, Glow und Reflexionen, das sich beim Scrollen
+ * aufrichtet, und darauf Apple-Material: Milchglas, weiche Schatten,
+ * System-Schrift.
+ *
+ * ZWEI TÖNE (Diego, 06.09.: "Handy soll mehr aussehen wie sein Content")
+ * Dunkle Marken (Cosmos, Zeko) bekommen den dunklen Screen. Helle Marken
+ * (SmartEggface, Agent Stick — Tinte auf Papier) bekommen ihr PAPIER als
+ * Screen: cremefarbener Hintergrund, Tinte statt Weiss, weisse iOS-Karten wie
+ * im Light Mode, die Akzentfarbe als Marker und Kurve, helles Titan-Gehäuse.
+ * Das Telefon soll aussehen, als käme es aus dem Reel, nicht aus unserem Haus.
  *
  * DER ABLAUF (vier Stufen, bauen sich beim Scrollen auf)
- *   1. Benachrichtigung fällt als Milchglas-Banner rein
+ *   1. Benachrichtigung fällt als Banner rein
  *   2. "Copy this trade?" — der Ja-Knopf füllt sich, "Copied" erscheint
  *   3. Gewinnkurve zeichnet sich steil, TP1/TP2 poppen
  *   4. "+200 pips" — posted before it happened
@@ -31,6 +38,7 @@
 
 const UP = "oklch(0.82 0.17 150)";
 const DOWN = "oklch(0.66 0.2 22)";
+const INK = "#141210";
 
 /** Gewinnkurve (P&L, nicht Kurs): ein Short verdient, wenn der Kurs fällt —
  *  die Linie, die der Besucher sieht, soll trotzdem steigen: es ist SEIN Gewinn. */
@@ -75,9 +83,7 @@ function Styles() {
 
       @supports (animation-timeline: view()) {
         .ss-stage { view-timeline: --ss block; }
-        /* Das Telefon richtet sich beim Hereinscrollen auf und die Lichtquelle
-           wandert mit — das ist die Parallaxe. Danach die vier Stufen. */
-        /* Diego, 06.09.: "etwas zu spaet" — alles kommt frueher und dichter;
+        /* Diego, 06.09.: "etwas zu spaet" — alles kommt frueh und dicht;
            die letzte Stufe steht, sobald das Telefon ganz im Bild ist. */
         .ss-phone { animation: ssTilt  cubic-bezier(.22,1,.36,1) both; animation-timeline: --ss; animation-range: entry 0% entry 70%; }
         .ss-light { animation: ssLight linear both;                  animation-timeline: --ss; animation-range: entry 0% exit 100%; }
@@ -99,17 +105,53 @@ function Styles() {
   );
 }
 
-/** Milchglas-Material: eine Karte, die aussieht, als läge sie auf dem Wallpaper. */
-const GLASS = "rounded-[20px] border border-white/[0.14] bg-white/[0.10] shadow-[inset_0_1px_0_rgba(255,255,255,.18),0_10px_30px_-18px_rgba(0,0,0,.8)] backdrop-blur-xl";
+type Tone = "dark" | "light";
 
 /**
- * onPrimary = Schriftfarbe AUF der Partnerfarbe. Agent Stick und SmartEggface
- * zeichnen mit Tinte (#141210): ihr Ja-Knopf und das App-Icon waren schwarz
- * auf schwarz (06.09.). Die Bruecke rechnet den Kontrast bereits (knopfText)
- * und reicht ihn durch; Cosmos' helle Farben bleiben bei Schwarz.
+ * onPrimary = Schriftfarbe AUF der Partnerfarbe (die Bruecke rechnet den
+ * Kontrast als knopfText und reicht ihn durch). tone = dunkler Screen (Haus)
+ * oder Papier-Screen (helle Marken) — folgt tenant.theme.
  */
-export function SignalStory({ primary, accent, partnerName, onPrimary = "#000" }: { primary: string; accent?: string; partnerName?: string; onPrimary?: string }) {
+export function SignalStory({
+  primary, accent, partnerName, onPrimary = "#000", tone = "dark",
+}: { primary: string; accent?: string; partnerName?: string; onPrimary?: string; tone?: Tone }) {
+  const hell = tone === "light";
   const glow = accent ?? primary;
+  /** Akzent fuer Kurve/Marker im hellen Modus: die Markenfarbe, die NICHT Tinte
+   *  ist (SmartEggface: Gelb). Ist auch der Akzent Tinte (Agent Stick), bleibt
+   *  Gruen — Tinte als Gewinnfarbe liest niemand. */
+  const accentIstTinte = !accent || accent.toLowerCase() === INK || accent.toLowerCase() === primary.toLowerCase();
+  const gewinn = hell && !accentIstTinte ? accent! : UP;
+
+  const c = hell
+    ? {
+        // Papier-Screen
+        screen: `radial-gradient(120% 70% at 50% -10%, ${glow}55 0%, transparent 60%), linear-gradient(180deg, #FBF8F0 0%, #F1ECDF 100%)`,
+        frame: "linear-gradient(160deg, #f6f3ec 0%, #d8d3c8 38%, #bdb7ab 62%, #efebe2 100%)",
+        frameShadow: `0 40px 90px -30px rgba(20,18,16,.45), 0 30px 70px -40px ${glow}, inset 0 0 0 1px rgba(255,255,255,.7)`,
+        text: INK, muted: "rgba(20,18,16,.55)", faint: "rgba(20,18,16,.38)",
+        card: "rounded-[20px] border border-white/80 bg-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,.9),0_10px_30px_-18px_rgba(20,18,16,.35)] backdrop-blur-xl",
+        cardDeep: "rgba(20,18,16,.06)",
+        neutral: "rgba(20,18,16,.08)", neutralText: "rgba(20,18,16,.7)",
+        reflex: "bg-gradient-to-br from-white/[0.55] via-transparent to-transparent",
+        sheen: "via-white/[0.35]",
+        battery: INK, island: "#0b0c10",
+        glowOpacity: .5,
+      }
+    : {
+        screen: `radial-gradient(120% 70% at 50% -10%, ${primary}55 0%, transparent 60%), radial-gradient(90% 60% at 100% 100%, ${glow}33 0%, transparent 60%), linear-gradient(180deg, #0c1018 0%, #070910 100%)`,
+        frame: "linear-gradient(160deg, #3a3d45 0%, #14161b 38%, #0b0c10 62%, #2c2f36 100%)",
+        frameShadow: `0 40px 90px -30px rgba(0,0,0,.85), 0 30px 70px -40px ${glow}, inset 0 0 0 1px rgba(255,255,255,.08)`,
+        text: "#fff", muted: "rgba(255,255,255,.55)", faint: "rgba(255,255,255,.4)",
+        card: "rounded-[20px] border border-white/[0.14] bg-white/[0.10] shadow-[inset_0_1px_0_rgba(255,255,255,.18),0_10px_30px_-18px_rgba(0,0,0,.8)] backdrop-blur-xl",
+        cardDeep: "rgba(0,0,0,.25)",
+        neutral: "rgba(255,255,255,.08)", neutralText: "rgba(255,255,255,.7)",
+        reflex: "bg-gradient-to-br from-white/[0.10] via-transparent to-transparent",
+        sheen: "via-white/[0.07]",
+        battery: "#fff", island: "#000",
+        glowOpacity: .55,
+      };
+
   return (
     <div className="ss-stage relative mx-auto w-full max-w-[360px] py-6 sm:py-8">
       <Styles />
@@ -118,83 +160,66 @@ export function SignalStory({ primary, accent, partnerName, onPrimary = "#000" }
       <div
         aria-hidden
         className="ss-light pointer-events-none absolute left-1/2 top-1/2 h-[120%] w-[140%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[70px]"
-        style={{ opacity: .55, background: `radial-gradient(closest-side, ${glow} 0%, ${primary}66 40%, transparent 72%)` }}
+        style={{ opacity: c.glowOpacity, background: `radial-gradient(closest-side, ${glow} 0%, ${hell ? glow : primary}66 40%, transparent 72%)` }}
       />
 
       {/* ── Das Telefon ─────────────────────────────────────────────────
-          Titan-Rahmen (Verlauf), Dynamic Island, Seitentasten, Glasreflex.
-          Leicht gekippt; richtet sich beim Hereinscrollen auf. */}
-      <div
-        className="ss-phone relative mx-auto w-full max-w-[318px] will-change-transform"
-        style={{ transformOrigin: "50% 60%" }}
-      >
-        {/* Seitentasten */}
-        <span aria-hidden className="absolute -left-[3px] top-[92px] h-7 w-[3px] rounded-l bg-[#2a2d34]" />
-        <span aria-hidden className="absolute -left-[3px] top-[132px] h-12 w-[3px] rounded-l bg-[#2a2d34]" />
-        <span aria-hidden className="absolute -left-[3px] top-[190px] h-12 w-[3px] rounded-l bg-[#2a2d34]" />
-        <span aria-hidden className="absolute -right-[3px] top-[150px] h-16 w-[3px] rounded-r bg-[#2a2d34]" />
+          Titan-Rahmen (dunkel oder hell), Dynamic Island, Seitentasten,
+          Glasreflex. Leicht gekippt; richtet sich beim Hereinscrollen auf. */}
+      <div className="ss-phone relative mx-auto w-full max-w-[318px] will-change-transform" style={{ transformOrigin: "50% 60%" }}>
+        {[["-left-[3px]", "top-[92px]", "h-7", "rounded-l"], ["-left-[3px]", "top-[132px]", "h-12", "rounded-l"], ["-left-[3px]", "top-[190px]", "h-12", "rounded-l"], ["-right-[3px]", "top-[150px]", "h-16", "rounded-r"]].map(([x, y, h, r]) => (
+          <span key={x + y} aria-hidden className={`absolute ${x} ${y} ${h} w-[3px] ${r}`} style={{ background: hell ? "#b9b3a7" : "#2a2d34" }} />
+        ))}
 
-        <div
-          className="relative rounded-[46px] p-[10px]"
-          style={{
-            background: "linear-gradient(160deg, #3a3d45 0%, #14161b 38%, #0b0c10 62%, #2c2f36 100%)",
-            boxShadow: `0 40px 90px -30px rgba(0,0,0,.85), 0 30px 70px -40px ${glow}, inset 0 0 0 1px rgba(255,255,255,.08)`,
-          }}
-        >
+        <div className="relative rounded-[46px] p-[10px]" style={{ background: c.frame, boxShadow: c.frameShadow }}>
           {/* Bildschirm */}
-          <div
-            className="relative overflow-hidden rounded-[38px] text-white"
-            style={{
-              background: `radial-gradient(120% 70% at 50% -10%, ${primary}55 0%, transparent 60%), radial-gradient(90% 60% at 100% 100%, ${glow}33 0%, transparent 60%), linear-gradient(180deg, #0c1018 0%, #070910 100%)`,
-            }}
-          >
-            {/* Glasreflex + wandernder Lichtstreifen */}
-            <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white/[0.10] via-transparent to-transparent" />
+          <div className="relative overflow-hidden rounded-[38px]" style={{ background: c.screen, color: c.text }}>
+            <div aria-hidden className={`pointer-events-none absolute inset-0 ${c.reflex}`} />
             <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
-              <span className="ss-sheen absolute -inset-y-10 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/[0.07] to-transparent" />
+              <span className={`ss-sheen absolute -inset-y-10 left-0 w-1/3 bg-gradient-to-r from-transparent ${c.sheen} to-transparent`} />
             </div>
 
             {/* Dynamic Island + Statusleiste */}
             <div className="relative flex items-center justify-between px-6 pt-3.5">
               <span className="text-[13px] font-semibold tracking-tight">15:48</span>
-              <span className="absolute left-1/2 top-2.5 h-[26px] w-[92px] -translate-x-1/2 rounded-full bg-black shadow-[inset_0_0_0_1px_rgba(255,255,255,.06)]" />
-              <span className="flex items-center gap-1.5">
-                <span className="h-[9px] w-[14px] rounded-[2px] border border-white/60" style={{ boxShadow: "inset 0 0 0 2px #0c1018, inset 0 0 0 9px rgba(255,255,255,.85)" }} />
-              </span>
+              <span className="absolute left-1/2 top-2.5 h-[26px] w-[92px] -translate-x-1/2 rounded-full shadow-[inset_0_0_0_1px_rgba(255,255,255,.06)]" style={{ background: c.island }} />
+              <span className="h-[9px] w-[14px] rounded-[2px]" style={{ border: `1px solid ${c.battery}99`, boxShadow: `inset 0 0 0 2px transparent, inset 0 0 0 9px ${c.battery}d9` }} />
             </div>
 
             <div className="relative space-y-3 px-3.5 pb-5 pt-4">
               {/* ── 1 · Die Benachrichtigung ─────────────────────────────── */}
-              <div className={`ss-notif ${GLASS} p-3`}>
+              <div className={`ss-notif ${c.card} p-3`}>
                 <div className="flex items-start gap-2.5">
                   <span
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] text-[13px] font-black shadow-[0_6px_14px_-6px_rgba(0,0,0,.7)]"
-                    style={{ color: onPrimary, background: `linear-gradient(160deg, color-mix(in oklch, ${primary} 85%, white), ${primary})`, boxShadow: onPrimary === "#fff" ? "inset 0 0 0 1px rgba(255,255,255,.22)" : undefined }}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] text-[13px] font-black shadow-[0_6px_14px_-6px_rgba(0,0,0,.45)]"
+                    style={{ color: onPrimary, background: `linear-gradient(160deg, color-mix(in oklch, ${primary} 85%, white), ${primary})` }}
                   >
                     S
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between">
                       <span className="text-[13px] font-semibold">Signal Desk</span>
-                      <span className="text-[11px] text-white/45">now</span>
+                      <span className="text-[11px]" style={{ color: c.faint }}>now</span>
                     </div>
-                    <div className="text-[13px] leading-snug text-white/85">New Gold short just went live — entry, stop and targets inside.</div>
+                    <div className="text-[13px] leading-snug" style={{ color: hell ? "rgba(20,18,16,.8)" : "rgba(255,255,255,.85)" }}>
+                      New Gold short just went live — entry, stop and targets inside.
+                    </div>
                   </div>
                 </div>
-                <div className="mt-2.5 grid grid-cols-4 gap-1 rounded-[14px] bg-black/25 px-2.5 py-2 text-[12px] tabular-nums">
-                  <div><div className="text-[10px] text-white/40">Entry</div><div className="font-semibold">4 430</div></div>
-                  <div><div className="text-[10px] text-white/40">Stop</div><div className="font-semibold" style={{ color: DOWN }}>4 441</div></div>
-                  <div><div className="text-[10px] text-white/40">TP1</div><div className="font-semibold" style={{ color: UP }}>4 420</div></div>
-                  <div><div className="text-[10px] text-white/40">TP2</div><div className="font-semibold" style={{ color: UP }}>4 410</div></div>
+                <div className="mt-2.5 grid grid-cols-4 gap-1 rounded-[14px] px-2.5 py-2 text-[12px] tabular-nums" style={{ background: c.cardDeep }}>
+                  <div><div className="text-[10px]" style={{ color: c.faint }}>Entry</div><div className="font-semibold">4 430</div></div>
+                  <div><div className="text-[10px]" style={{ color: c.faint }}>Stop</div><div className="font-semibold" style={{ color: DOWN }}>4 441</div></div>
+                  <div><div className="text-[10px]" style={{ color: c.faint }}>TP1</div><div className="font-semibold" style={{ color: hell ? INK : UP }}>4 420</div></div>
+                  <div><div className="text-[10px]" style={{ color: c.faint }}>TP2</div><div className="font-semibold" style={{ color: hell ? INK : UP }}>4 410</div></div>
                 </div>
               </div>
 
               {/* ── 2 · Die Frage — und dein Ja ──────────────────────────── */}
-              <div className={`ss-ask ${GLASS} p-3`}>
+              <div className={`ss-ask ${c.card} p-3`}>
                 <div className="text-[14px] font-semibold">Copy this trade?</div>
-                <div className="mt-0.5 text-[12px] leading-snug text-white/55">Same entry, same stop, same targets — in your account.</div>
+                <div className="mt-0.5 text-[12px] leading-snug" style={{ color: c.muted }}>Same entry, same stop, same targets — in your account.</div>
                 <div className="mt-3 grid grid-cols-2 gap-2">
-                  <span className="flex h-10 items-center justify-center rounded-full bg-white/[0.08] text-[13px] font-semibold text-white/70">
+                  <span className="flex h-10 items-center justify-center rounded-full text-[13px] font-semibold" style={{ background: c.neutral, color: c.neutralText }}>
                     Not now
                   </span>
                   <span className="relative flex h-10 items-center justify-center overflow-hidden rounded-full text-[13px] font-bold" style={{ color: onPrimary, boxShadow: `inset 0 0 0 1.5px ${onPrimary === "#fff" ? "rgba(255,255,255,.35)" : primary}` }}>
@@ -202,43 +227,44 @@ export function SignalStory({ primary, accent, partnerName, onPrimary = "#000" }
                     <span className="relative">Yes, copy</span>
                   </span>
                 </div>
-                <div className="ss-done mt-2.5 flex items-center gap-1.5 text-[12px] font-medium" style={{ color: UP }}>
-                  <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: UP }} />
+                <div className="ss-done mt-2.5 flex items-center gap-1.5 text-[12px] font-medium" style={{ color: hell ? INK : UP }}>
+                  <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: gewinn }} />
                   Copied · short 4 430 · stop 4 441
                 </div>
               </div>
 
               {/* ── 3 · Dein Gewinn läuft ─────────────────────────────────── */}
-              <div className={`${GLASS} relative overflow-hidden p-3`}>
+              <div className={`${c.card} relative overflow-hidden p-3`}>
                 <div className="flex items-baseline justify-between">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-white/45">Your position</span>
-                  <span className="text-[11px] text-white/40">Gold · short</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: c.faint }}>Your position</span>
+                  <span className="text-[11px]" style={{ color: c.faint }}>Gold · short</span>
                 </div>
                 <div className="relative mt-2 h-[104px]">
                   <svg viewBox="0 0 220 96" className="h-full w-full" preserveAspectRatio="none" aria-hidden>
                     <defs>
                       <linearGradient id="ssGlow" x1="0" x2="0" y1="0" y2="1">
-                        <stop offset="0" stopColor={UP} stopOpacity=".32" />
-                        <stop offset="1" stopColor={UP} stopOpacity="0" />
+                        <stop offset="0" stopColor={gewinn} stopOpacity={hell ? ".45" : ".32"} />
+                        <stop offset="1" stopColor={gewinn} stopOpacity="0" />
                       </linearGradient>
                     </defs>
                     <path className="ss-area" d={`${PATH} L220,96 L0,96 Z`} fill="url(#ssGlow)" stroke="none" />
-                    <path className="ss-line" d={PATH} fill="none" stroke={UP} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
+                    <path className="ss-line" d={PATH} fill="none" stroke={hell ? INK : UP} strokeWidth={hell ? "3" : "2.6"} strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
+                  {/* Marker-Stil im hellen Modus: Gelb hinter Tinte, wie ein Textmarker. */}
                   <span
                     className="ss-tp1 absolute left-[42%] top-[54%] rounded-full px-2 py-1 text-[11px] font-semibold backdrop-blur"
-                    style={{ color: UP, background: "rgba(7,9,16,.85)", boxShadow: `0 0 0 1px ${UP}66` }}
+                    style={hell ? { color: INK, background: gewinn } : { color: UP, background: "rgba(7,9,16,.85)", boxShadow: `0 0 0 1px ${UP}66` }}
                   >
                     ✓ TP1 · +100 pips
                   </span>
                   <span
-                    className="ss-tp2 absolute right-1 top-0 rounded-full px-2 py-1 text-[11px] font-bold text-black"
-                    style={{ background: UP, boxShadow: `0 8px 20px -8px ${UP}` }}
+                    className="ss-tp2 absolute right-1 top-0 rounded-full px-2 py-1 text-[11px] font-bold"
+                    style={hell ? { color: "#fff", background: INK, boxShadow: `0 8px 20px -8px ${INK}` } : { color: "#000", background: UP, boxShadow: `0 8px 20px -8px ${UP}` }}
                   >
                     ✓ TP2 · +200 pips
                   </span>
                 </div>
-                <div className="mt-1.5 flex items-center justify-between text-[10.5px] text-white/40">
+                <div className="mt-1.5 flex items-center justify-between text-[10.5px]" style={{ color: c.faint }}>
                   <span>posted 15:48</span><span>TP1 15:58</span><span>TP2 15:59</span>
                 </div>
               </div>
@@ -247,15 +273,22 @@ export function SignalStory({ primary, accent, partnerName, onPrimary = "#000" }
               <div className="ss-final px-1 pb-1 pt-1">
                 <div className="flex items-end justify-between">
                   <div>
-                    <div className="font-display text-[28px] font-black leading-none tabular-nums" style={{ color: UP, textShadow: `0 0 24px ${UP}55` }}>+200 pips</div>
-                    <div className="mt-1 text-[11px] text-white/55">in 11 minutes · Friday, 4 Sep</div>
+                    <div
+                      className="inline-block font-display text-[28px] font-black leading-none tabular-nums"
+                      style={hell
+                        ? { color: INK, background: `linear-gradient(transparent 55%, ${gewinn} 55%)`, padding: "0 4px" }
+                        : { color: UP, textShadow: `0 0 24px ${UP}55` }}
+                    >
+                      +200 pips
+                    </div>
+                    <div className="mt-1 text-[11px]" style={{ color: c.muted }}>in 11 minutes · Friday, 4 Sep</div>
                   </div>
-                  <div className="text-right text-[10.5px] leading-tight text-white/45">
+                  <div className="text-right text-[10.5px] leading-tight" style={{ color: c.faint }}>
                     posted before<br />it happened
                   </div>
                 </div>
                 {partnerName && (
-                  <div className="mt-2 text-[11px] leading-snug text-white/45">
+                  <div className="mt-2 text-[11px] leading-snug" style={{ color: c.faint }}>
                     That's what {partnerName}'s followers get. Every day the desk trades.
                   </div>
                 )}
