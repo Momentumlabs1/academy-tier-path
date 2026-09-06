@@ -329,7 +329,7 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
             {/* Bühne statt Karte: das Telefon steht frei im Licht, randlos am
                 Handy — kein Kasten um den Kasten (Diego: "zu generisch"). */}
             <div className="relative -mx-5 mt-4 sm:mx-0">
-              <SignalStory primary={primary} accent={accent} partnerName={tenant.name} />
+              <SignalStory primary={primary} accent={accent} partnerName={tenant.name} onPrimary={knopfText} />
             </div>
             <ul className={cn("mt-6 divide-y border-y", t.teiler, t.linie)}>
               {PUNKTE.map((p, i) => (

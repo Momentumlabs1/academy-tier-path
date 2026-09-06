@@ -102,7 +102,13 @@ function Styles() {
 /** Milchglas-Material: eine Karte, die aussieht, als läge sie auf dem Wallpaper. */
 const GLASS = "rounded-[20px] border border-white/[0.14] bg-white/[0.10] shadow-[inset_0_1px_0_rgba(255,255,255,.18),0_10px_30px_-18px_rgba(0,0,0,.8)] backdrop-blur-xl";
 
-export function SignalStory({ primary, accent, partnerName }: { primary: string; accent?: string; partnerName?: string }) {
+/**
+ * onPrimary = Schriftfarbe AUF der Partnerfarbe. Agent Stick und SmartEggface
+ * zeichnen mit Tinte (#141210): ihr Ja-Knopf und das App-Icon waren schwarz
+ * auf schwarz (06.09.). Die Bruecke rechnet den Kontrast bereits (knopfText)
+ * und reicht ihn durch; Cosmos' helle Farben bleiben bei Schwarz.
+ */
+export function SignalStory({ primary, accent, partnerName, onPrimary = "#000" }: { primary: string; accent?: string; partnerName?: string; onPrimary?: string }) {
   const glow = accent ?? primary;
   return (
     <div className="ss-stage relative mx-auto w-full max-w-[360px] py-6 sm:py-8">
@@ -162,8 +168,8 @@ export function SignalStory({ primary, accent, partnerName }: { primary: string;
               <div className={`ss-notif ${GLASS} p-3`}>
                 <div className="flex items-start gap-2.5">
                   <span
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] text-[13px] font-black text-black shadow-[0_6px_14px_-6px_rgba(0,0,0,.7)]"
-                    style={{ background: `linear-gradient(160deg, color-mix(in oklch, ${primary} 85%, white), ${primary})` }}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] text-[13px] font-black shadow-[0_6px_14px_-6px_rgba(0,0,0,.7)]"
+                    style={{ color: onPrimary, background: `linear-gradient(160deg, color-mix(in oklch, ${primary} 85%, white), ${primary})`, boxShadow: onPrimary === "#fff" ? "inset 0 0 0 1px rgba(255,255,255,.22)" : undefined }}
                   >
                     S
                   </span>
@@ -191,7 +197,7 @@ export function SignalStory({ primary, accent, partnerName }: { primary: string;
                   <span className="flex h-10 items-center justify-center rounded-full bg-white/[0.08] text-[13px] font-semibold text-white/70">
                     Not now
                   </span>
-                  <span className="relative flex h-10 items-center justify-center overflow-hidden rounded-full text-[13px] font-bold" style={{ color: "#000", boxShadow: `inset 0 0 0 1.5px ${primary}` }}>
+                  <span className="relative flex h-10 items-center justify-center overflow-hidden rounded-full text-[13px] font-bold" style={{ color: onPrimary, boxShadow: `inset 0 0 0 1.5px ${onPrimary === "#fff" ? "rgba(255,255,255,.35)" : primary}` }}>
                     <span className="ss-yes absolute inset-0" style={{ background: `linear-gradient(180deg, color-mix(in oklch, ${primary} 88%, white), ${primary})` }} />
                     <span className="relative">Yes, copy</span>
                   </span>

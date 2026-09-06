@@ -303,8 +303,8 @@ export const TENANTS: TenantConfig[] = [
     // Index vorne steht — sonst muss ein Handy die ganze Datei laden, bevor
     // ueberhaupt etwas zu sehen ist, und das sieht aus wie "laedt nicht".
     mascotHeadUrl: "/zeko-hero.png",
-    pitchVideo: "/zeko-pitch.mp4?v=8",
-    pitchPoster: "/zeko-pitch-poster.jpg?v=5",
+    pitchVideo: "/zeko-pitch.mp4?v=9",
+    pitchPoster: "/zeko-pitch-poster.jpg?v=6",
     affiliateEmail: "zekoglobalhq@gmail.com",
     // Leer: "155K+" hat niemand geprueft, "from €100" nannte einen Betrag vor
     // dem Gespraech, das ihn erklaeren soll. Die Kacheln standen zwischen dem
