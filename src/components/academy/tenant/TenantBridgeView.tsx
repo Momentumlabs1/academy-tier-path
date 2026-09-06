@@ -149,7 +149,12 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
       <style>{`
         @keyframes brIn { from { opacity: 0; transform: translateY(14px); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
         .br-in { animation: brIn .7s cubic-bezier(.22,1,.36,1) both; }
-        @media (prefers-reduced-motion: reduce) { .br-in { animation: none !important; } }
+        /* Der Film kippt beim Hereinscrollen aus der Tiefe ein (3D, scroll-getrieben). */
+        @keyframes brTilt { from { transform: perspective(1200px) rotateX(12deg) scale(.94); opacity: .55; } to { transform: none; opacity: 1; } }
+        @supports (animation-timeline: view()) {
+          .br-tilt { animation: brTilt cubic-bezier(.22,1,.36,1) both; animation-timeline: view(); animation-range: entry 0% entry 85%; transform-origin: 50% 100%; }
+        }
+        @media (prefers-reduced-motion: reduce) { .br-in, .br-tilt { animation: none !important; } }
       `}</style>
       {/* Atmosphäre: eine weiche Lichtquelle in Partnerfarbe + feines Rauschen,
           beides `fixed` (mitscrollend + Mischmodus zeichnete Chromium am 05.09.
@@ -244,7 +249,7 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
           {tenant.pitchVideo && videoModus !== "none" && (
             <div
               className={cn(
-                "overflow-hidden border bg-black shadow-[0_24px_60px_-30px_rgba(0,0,0,0.55)]",
+                "br-tilt overflow-hidden border bg-black shadow-[0_24px_60px_-30px_rgba(0,0,0,0.55)]",
                 videoModus === "hero" ? "-mx-5 mt-7 rounded-none border-x-0 sm:mx-0 sm:rounded-2xl sm:border-x" : "mt-8 rounded-xl",
                 t.rahmen,
               )}

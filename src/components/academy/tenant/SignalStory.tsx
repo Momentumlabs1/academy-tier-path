@@ -36,7 +36,16 @@ function Styles() {
   return (
     <style>{`
       /* ── Scrub-Keyframes: from = Anfang, to = Ende (fuer Auftritt+Abgang beide) ── */
-      @keyframes ssTilt  { from { transform: perspective(1400px) rotateY(-14deg) rotateX(6deg) translateY(24px); } }
+      /* Das Telefon dreht sich ueber die ganze Story im Raum (Apple-Keynote):
+         kommt von links gekippt, steht bei Szene 2 frontal, dreht bei Szene 3
+         leicht nach rechts und kommt naeher. Die Lichtquelle wandert gegenlaeufig. */
+      @keyframes ssTilt  {
+        0%   { transform: perspective(1400px) rotateY(-18deg) rotateX(8deg) translateY(30px) scale(.94); }
+        30%  { transform: perspective(1400px) rotateY(-9deg)  rotateX(4deg) translateY(6px)  scale(.98); }
+        55%  { transform: perspective(1400px) rotateY(0deg)   rotateX(0deg) translateY(0)    scale(1); }
+        100% { transform: perspective(1400px) rotateY(9deg)   rotateX(-3deg) translateY(-6px) scale(1.03); }
+      }
+      @keyframes ssLightMove { from { transform: translate(-70%, -40%) scale(.9); } to { transform: translate(-30%, -60%) scale(1.15); } }
       @keyframes ssIn    { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
       @keyframes ssOut   { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(-14px); } }
       @keyframes ssBanner{ from { opacity: 0; transform: translateY(-40px) scale(.94); filter: blur(8px); } to { opacity: 1; transform: none; filter: none; } }
@@ -79,7 +88,8 @@ function Styles() {
 
       @supports (animation-timeline: view()) {
         .ss-stage { view-timeline: --ss block; }
-        .ss-phone  { animation: ssTilt cubic-bezier(.22,1,.36,1) both; animation-timeline: --ss; animation-range: entry 0% contain 8%; }
+        .ss-phone  { animation: ssTilt linear both; animation-timeline: --ss; animation-range: entry 40% contain 100%; }
+        .ss-light  { animation: ssLightMove linear both; animation-timeline: --ss; animation-range: entry 40% contain 100%; }
         /* Szene 1: sichtbar bis ~30 % der Standzeit */
         .ss-s1     { animation: ssScene linear both; animation-timeline: --ss; animation-range: entry 60% contain 34%; }
         .ss-c1     { animation: ssScene linear both; animation-timeline: --ss; animation-range: entry 60% contain 34%; }
@@ -97,7 +107,7 @@ function Styles() {
         .ss-count  { animation: ssCount cubic-bezier(.22,1,.36,1) both; animation-timeline: --ss; animation-range: contain 70% contain 86%; }
       }
       @media (prefers-reduced-motion: reduce) {
-        .ss-phone,.ss-s1,.ss-s2,.ss-s3,.ss-c1,.ss-c2,.ss-c3,.ss-banner,.ss-tap,.ss-btn,.ss-copied,.ss-count,.ss-line,.ss-ping { animation: none !important; }
+        .ss-phone,.ss-light,.ss-s1,.ss-s2,.ss-s3,.ss-c1,.ss-c2,.ss-c3,.ss-banner,.ss-tap,.ss-btn,.ss-copied,.ss-count,.ss-line,.ss-ping { animation: none !important; }
         .ss-s3,.ss-c3,.ss-count { opacity: 1 !important; transform: none !important; }
         .ss-line { stroke-dashoffset: 0 !important; }
       }
@@ -156,8 +166,8 @@ export function SignalStory({
         {/* Lichtquelle */}
         <div
           aria-hidden
-          className="pointer-events-none absolute left-1/2 top-1/2 h-[70%] w-[130%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[70px]"
-          style={{ opacity: .5, background: `radial-gradient(closest-side, ${glow} 0%, ${hell ? glow : primary}55 40%, transparent 72%)` }}
+          className="ss-light pointer-events-none absolute left-1/2 top-1/2 h-[70%] w-[130%] rounded-full blur-[70px]"
+          style={{ opacity: .5, transform: "translate(-50%,-50%)", background: `radial-gradient(closest-side, ${glow} 0%, ${hell ? glow : primary}55 40%, transparent 72%)` }}
         />
 
         {/* ── Das Telefon ─────────────────────────────────────────────── */}
