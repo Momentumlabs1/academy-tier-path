@@ -142,7 +142,7 @@ export function SignalStory({
   );
 
   return (
-    <div className="ss-stage relative mx-auto w-full max-w-[420px]" style={{ height: "230svh" }}>
+    <div className="ss-stage relative mx-auto w-full max-w-[420px]" style={{ height: "200svh" }}>
       <Styles />
       <div className="sticky flex flex-col items-center justify-center" style={{ top: "4svh", height: "92svh" }}>
 

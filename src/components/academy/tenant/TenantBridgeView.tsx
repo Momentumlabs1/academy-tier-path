@@ -27,7 +27,7 @@
  * - Kein overflow-hidden am Wurzelelement (schnitt am 05.09. die halbe Seite ab).
  */
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ArrowRight, PlayCircle, Radio, GraduationCap, Wallet } from "lucide-react";
+import { ArrowRight, PlayCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { stampAttribution } from "@/lib/partner-brand";
@@ -36,12 +36,6 @@ import { SignalStory } from "./SignalStory";
 import { LevelRail } from "./LevelRail";
 import type { TenantConfig } from "@/lib/tenants";
 
-/** Drei Zeilen, keine Absaetze (Diego, 06.09.: "sonst nur Text, low"). */
-const PUNKTE = [
-  { Icon: Radio, title: "Every trade, live.", body: "Entry, stop, targets — on your phone." },
-  { Icon: GraduationCap, title: "Learn it. Free.", body: "Full academy + Cosmo, your mentor." },
-  { Icon: Wallet, title: "$0 to us.", body: "You fund your own account. It stays yours." },
-];
 
 export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
   const primary = tenant.primaryColor;
@@ -309,28 +303,13 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
             <div className="relative -mx-5 mt-4 sm:mx-0">
               <SignalStory primary={primary} accent={accent} partnerName={tenant.name} onPrimary={knopfText} tone={hell ? "light" : "dark"} />
             </div>
-            <ul className="mt-2 space-y-3">
-              {PUNKTE.map(({ Icon, title, body }) => (
-                <li key={title} className={cn("flex items-center gap-4 rounded-2xl border px-4 py-4", t.rahmen, t.flaeche)}>
-                  <span
-                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl"
-                    style={{ background: `color-mix(in oklch, ${primary} 16%, transparent)`, color: hell ? "#141210" : primary }}
-                  >
-                    <Icon className="h-6 w-6" strokeWidth={2.2} />
-                  </span>
-                  <div className="min-w-0">
-                    <div className="font-display text-[1.2rem] font-black leading-tight">{title}</div>
-                    <div className={cn("mt-0.5 text-[13.5px]", t.gedaempft)}>{body}</div>
-                  </div>
-                </li>
-              ))}
-            </ul>
           </section>
 
-          {/* ── 3 · Was als Nächstes passiert ─────────────────────────────
-              Drei Schritte an einer Linie; der erste Punkt ist gefüllt und
-              heißt "you are here" — der Knopf unten IST dieser Schritt. */}
-          <section className="mt-12">
+          {/* ── 3 · Dein Zug — direkt nach der Story ────────────────────────
+              Diego, 06.09.: die Partnerseite soll beeindrucken, aber nicht
+              festhalten. Deshalb keine Punkte-Liste und kein Beweis-Block
+              mehr zwischen Story und Knopf: Story → Level → weiter. */}
+          <section className="mt-6">
             <Kicker>Your turn</Kicker>
             <h2 className="mt-2 font-display text-[1.35rem] font-black leading-tight sm:text-[1.6rem]">
               Three levels. No form, no card.
@@ -339,40 +318,19 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
             <LevelRail current={1} primary={primary} onPrimary={knopfText} tone={hell ? "light" : "dark"} className="mt-6" />
           </section>
 
-          {/* ── 4 · Beweis ─────────────────────────────────────────────────
-              Die geprüften Zahlen der letzten Woche, inklusive der roten und
-              leeren Tage. Keine Gewinnversprechen, keine Trefferquote. */}
-          <section className="mt-12">
-            <Kicker>Proof</Kicker>
-            <h2 className="mt-2 font-display text-[1.35rem] font-black leading-tight sm:text-[1.6rem]">
-              Last week at the desk.
-            </h2>
-            {/* EINE Zahl, gross — der Rest klein darunter (Diego, 06.09.). */}
-            <div className={cn("mt-6 rounded-2xl border px-5 py-6", t.rahmen, t.flaeche)}>
-              <div className={cn("text-[11px] uppercase tracking-[0.16em]", t.leise)}>{DESK_WEEK.label} · {DESK_WEEK.range}</div>
-              <div className="mt-3 flex items-baseline gap-3">
-                <span className="font-display text-[3.4rem] font-black leading-none tabular-nums sm:text-[4rem]" style={{ color: hell ? "#141210" : primary }}>
-                  {DESK_WEEK.tpPips}
-                </span>
-                <span className="font-display text-[1.1rem] font-black leading-tight">pips<br />at target</span>
-              </div>
-              <div className={cn("mt-4 text-[13px] leading-relaxed", t.gedaempft)}>
-                {DESK_WEEK.signals} {DESK_WEEK.instrument} signals · {DESK_WEEK.slPips} pips stopped · {DESK_WEEK.note}
-              </div>
-              <div className={cn("mt-3 border-t pt-3 text-[12.5px] font-semibold", t.linie)}>
-                Every entry was posted before it happened.
-              </div>
-            </div>
-          </section>
-
           {/* ── Der einzige Weg von hier ───────────────────────────────────
               <a> statt Router: ein voller Seitenaufruf stellt sicher, dass
-              /preview den gerade gesetzten Cookie liest. */}
-          <div className="mt-12">
+              /preview den gerade gesetzten Cookie liest. Der Beweis ist eine
+              Zeile darunter — geprüfte Zahl, kein eigener Block. */}
+          <div className="mt-8">
             {/* Am Handy uebernimmt die feste Leiste unten — sonst standen am
                 Seitenende zwei identische Knoepfe uebereinander (06.09.). */}
             <Knopf className="hidden sm:inline-flex" />
-            <p className={cn("mt-4 text-[12.5px] leading-relaxed", t.leise)}>
+            <p className={cn("text-[13px] leading-relaxed sm:mt-5", t.gedaempft)}>
+              <span className="font-semibold" style={{ color: hell ? "#141210" : primary }}>Last week at the desk:</span>{" "}
+              {DESK_WEEK.tpPips} pips at target · {DESK_WEEK.signals} {DESK_WEEK.instrument} signals · every entry posted before it happened.
+            </p>
+            <p className={cn("mt-3 text-[12.5px] leading-relaxed", t.leise)}>
               {tenant.name} runs this with Cosmos Candles — that's where you get in. No account
               needed to look around.
             </p>
