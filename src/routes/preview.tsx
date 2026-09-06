@@ -31,6 +31,7 @@ import { usePartnerBrand } from "@/lib/partner-brand";
 import { TELEGRAM_ENTRY } from "@/lib/broker";
 import { COSMOS_MASTER } from "@/lib/tenants";
 import { cn } from "@/lib/utils";
+import { LevelRail } from "@/components/academy/tenant/LevelRail";
 
 export const Route = createFileRoute("/preview")({
   head: () => ({
@@ -81,6 +82,11 @@ function Preview() {
           ) : null}
           <span className="text-white/55">Cosmos Candles</span>
         </div>
+
+        {/* Das kleine Spiel geht hier weiter: Level 1 (Akademie ansehen) ist
+            mit dem Aufruf dieser Seite geschafft, Level 2 steht an. Dieselbe
+            Leiste wie auf der Partnerseite — der Besucher erkennt sie wieder. */}
+        <LevelRail current={2} primary={primary} compact className="mt-5" />
 
         <h1 className="mt-7 font-display text-[1.9rem] font-black leading-[1.1] tracking-tight sm:text-4xl">
           Everything is ready for you.
@@ -142,7 +148,7 @@ function Preview() {
               boxShadow: `0 10px 30px -14px ${primary}, inset 0 1px 0 rgba(255,255,255,0.45)`,
             }}
           >
-            Unlock everything on Telegram
+            Level 2 · Connect Telegram
             <ArrowRight className="h-4 w-4" />
           </a>
           <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/60">

@@ -110,7 +110,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      // Kein Zoom: die Partnerseiten tragen Scroll-Szenen, die bei Pinch/Doppeltipp
+      // auseinanderfallen (Diego, 06.09.). iOS ignoriert das teils — dort greifen
+      // touch-action + gesturestart in TenantBridgeView.
+      { name: "viewport", content: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" },
       { title: "Cosmos Candles Academy" },
       { name: "description", content: "Learn to trade the whole cosmos. Live signals, a course that starts from zero and pro orderflow tools — free with a deposit at our partner broker." },
       { property: "og:site_name", content: "Cosmos Candles Academy" },

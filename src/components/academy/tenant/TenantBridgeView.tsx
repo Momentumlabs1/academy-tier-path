@@ -27,49 +27,20 @@
  * - Kein overflow-hidden am Wurzelelement (schnitt am 05.09. die halbe Seite ab).
  */
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ArrowRight, PlayCircle } from "lucide-react";
+import { ArrowRight, PlayCircle, Radio, GraduationCap, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { stampAttribution } from "@/lib/partner-brand";
 import { DESK_WEEK } from "@/lib/desk-results";
 import { SignalStory } from "./SignalStory";
+import { LevelRail } from "./LevelRail";
 import type { TenantConfig } from "@/lib/tenants";
 
+/** Drei Zeilen, keine Absaetze (Diego, 06.09.: "sonst nur Text, low"). */
 const PUNKTE = [
-  {
-    title: "Every trade, as it happens",
-    body: "The moment our desk goes in, it's on your phone — entry, stop and targets. Nothing to work out yourself. 3–6 trades a day, Gold and NASDAQ.",
-  },
-  {
-    title: "Learn it if you want to",
-    body: "A full academy comes with it, free — plus Cosmo, your mentor in the chat. Most people just follow the calls. That works too.",
-  },
-  {
-    title: "Nothing to pay us",
-    body: "No fees, no subscription. You fund your own trading account and the money stays yours, in your name, the whole time.",
-  },
-];
-
-/**
- * Der Weg von hier — in der Reihenfolge, in der er wirklich passiert.
- * Schritt 1 ist der Knopf unten; deshalb steht er als "du bist hier".
- */
-const SCHRITTE = [
-  {
-    you: "1 tap",
-    title: "See your academy",
-    body: "It's already set up for you — lessons, signal room, Cosmo. Locked until step 3.",
-  },
-  {
-    you: "2 minutes",
-    title: "Connect Telegram",
-    body: "You get your personal invite. From then on every trade lands on your phone.",
-  },
-  {
-    you: "5 minutes",
-    title: "Open your trading account",
-    body: "With our partner broker, from $100. That deposit stays in YOUR account — and it's what unlocks the signals and the academy.",
-  },
+  { Icon: Radio, title: "Every trade, live.", body: "Entry, stop, targets — on your phone." },
+  { Icon: GraduationCap, title: "Learn it. Free.", body: "Full academy + Cosmo, your mentor." },
+  { Icon: Wallet, title: "$0 to us.", body: "You fund your own account. It stays yours." },
 ];
 
 export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
@@ -123,6 +94,13 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
 
   useEffect(() => {
     if (typeof document === "undefined") return;
+    // Kein Zoom (Diego, 06.09.): Pinch/Doppeltipp zerreisst die Scroll-Szenen.
+    // iOS ignoriert user-scalable=no seit Jahren; touch-action + gesturestart
+    // greifen dort, das Meta-Tag (in __root) deckt Android/Chrome.
+    const block = (e: Event) => e.preventDefault();
+    document.addEventListener("gesturestart", block, { passive: false });
+    document.addEventListener("gesturechange", block, { passive: false });
+    document.documentElement.style.touchAction = "pan-y";
     // Eine Regel, an einer Stelle: das Haus überschreibt nie einen Partner.
     stampAttribution(tenant);
 
@@ -161,7 +139,7 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
         className="pointer-events-none absolute inset-y-0 -left-full w-1/2 skew-x-[-20deg] transition-all duration-700 ease-out group-hover:left-[150%]"
         style={{ background: knopfText === "#fff" ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.28)" }}
       />
-      <span className="relative">See what's waiting for you</span>
+      <span className="relative">Start Level 1 · see your academy</span>
       <ArrowRight className="relative h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
     </a>
   );
@@ -331,18 +309,18 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
             <div className="relative -mx-5 mt-4 sm:mx-0">
               <SignalStory primary={primary} accent={accent} partnerName={tenant.name} onPrimary={knopfText} tone={hell ? "light" : "dark"} />
             </div>
-            <ul className={cn("mt-6 divide-y border-y", t.teiler, t.linie)}>
-              {PUNKTE.map((p, i) => (
-                <li key={p.title} className="flex gap-4 py-4">
+            <ul className="mt-2 space-y-3">
+              {PUNKTE.map(({ Icon, title, body }) => (
+                <li key={title} className={cn("flex items-center gap-4 rounded-2xl border px-4 py-4", t.rahmen, t.flaeche)}>
                   <span
-                    className="mt-[3px] font-display text-[11px] font-black tabular-nums"
-                    style={{ color: primary, opacity: 0.55 }}
+                    className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl"
+                    style={{ background: `color-mix(in oklch, ${primary} 16%, transparent)`, color: hell ? "#141210" : primary }}
                   >
-                    {String(i + 1).padStart(2, "0")}
+                    <Icon className="h-6 w-6" strokeWidth={2.2} />
                   </span>
                   <div className="min-w-0">
-                    <div className="text-[15px] font-bold leading-snug">{p.title}</div>
-                    <div className={cn("mt-1 text-[13.5px] leading-relaxed", t.gedaempft)}>{p.body}</div>
+                    <div className="font-display text-[1.2rem] font-black leading-tight">{title}</div>
+                    <div className={cn("mt-0.5 text-[13.5px]", t.gedaempft)}>{body}</div>
                   </div>
                 </li>
               ))}
@@ -353,52 +331,12 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
               Drei Schritte an einer Linie; der erste Punkt ist gefüllt und
               heißt "you are here" — der Knopf unten IST dieser Schritt. */}
           <section className="mt-12">
-            <Kicker>What happens next</Kicker>
+            <Kicker>Your turn</Kicker>
             <h2 className="mt-2 font-display text-[1.35rem] font-black leading-tight sm:text-[1.6rem]">
-              Three steps. No form, no card.
+              Three levels. No form, no card.
             </h2>
-            <ol className="mt-6">
-              {SCHRITTE.map((s, i) => {
-                const hier = i === 0;
-                const letzter = i === SCHRITTE.length - 1;
-                return (
-                  <li key={s.title} className="relative flex gap-5 pb-7 last:pb-0">
-                    {!letzter && (
-                      <span
-                        aria-hidden
-                        className="absolute left-[13px] top-7 bottom-0 w-px"
-                        style={{ background: hell ? "rgba(20,18,16,0.14)" : "rgba(255,255,255,0.10)" }}
-                      />
-                    )}
-                    <span
-                      className="relative mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-display text-[11px] font-black tabular-nums"
-                      style={
-                        hier
-                          ? { background: primary, color: knopfText, boxShadow: `0 0 0 4px color-mix(in oklch, ${primary} 22%, transparent)` }
-                          : { border: `1.5px solid ${primary}`, color: primary, opacity: 0.8 }
-                      }
-                    >
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                        <div className="text-[15px] font-bold leading-snug">{s.title}</div>
-                        <div className={cn("text-[11px] uppercase tracking-[0.16em]", t.leise)}>{s.you}</div>
-                        {hier && (
-                          <div
-                            className="rounded-full px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em]"
-                            style={{ background: `color-mix(in oklch, ${primary} 16%, transparent)`, color: primary }}
-                          >
-                            you are here
-                          </div>
-                        )}
-                      </div>
-                      <div className={cn("mt-1 text-[13.5px] leading-relaxed", t.gedaempft)}>{s.body}</div>
-                    </div>
-                  </li>
-                );
-              })}
-            </ol>
+            {/* Dieselbe Leiste laeuft auf /preview weiter (Level 1 geschafft). */}
+            <LevelRail current={1} primary={primary} onPrimary={knopfText} tone={hell ? "light" : "dark"} className="mt-6" />
           </section>
 
           {/* ── 4 · Beweis ─────────────────────────────────────────────────
@@ -409,26 +347,20 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
             <h2 className="mt-2 font-display text-[1.35rem] font-black leading-tight sm:text-[1.6rem]">
               Last week at the desk.
             </h2>
-            <div className={cn("mt-6 rounded-2xl border p-5", t.rahmen, t.flaeche)}>
-              <div className={cn("flex items-baseline justify-between text-[11px] uppercase tracking-[0.16em]", t.leise)}>
-                <span>{DESK_WEEK.label} · {DESK_WEEK.instrument}</span>
-                <span>{DESK_WEEK.range}</span>
+            {/* EINE Zahl, gross — der Rest klein darunter (Diego, 06.09.). */}
+            <div className={cn("mt-6 rounded-2xl border px-5 py-6", t.rahmen, t.flaeche)}>
+              <div className={cn("text-[11px] uppercase tracking-[0.16em]", t.leise)}>{DESK_WEEK.label} · {DESK_WEEK.range}</div>
+              <div className="mt-3 flex items-baseline gap-3">
+                <span className="font-display text-[3.4rem] font-black leading-none tabular-nums sm:text-[4rem]" style={{ color: hell ? "#141210" : primary }}>
+                  {DESK_WEEK.tpPips}
+                </span>
+                <span className="font-display text-[1.1rem] font-black leading-tight">pips<br />at target</span>
               </div>
-              <div className="mt-4 grid grid-cols-3 gap-3">
-                {[
-                  { n: DESK_WEEK.signals, l: "signals" },
-                  { n: DESK_WEEK.tpPips, l: "pips at target" },
-                  { n: DESK_WEEK.slPips, l: "pips stopped" },
-                ].map((z) => (
-                  <div key={z.l}>
-                    <div className="font-display text-[1.7rem] font-black leading-none tabular-nums sm:text-[2rem]">{z.n}</div>
-                    <div className={cn("mt-1.5 text-[11.5px] leading-tight", t.gedaempft)}>{z.l}</div>
-                  </div>
-                ))}
+              <div className={cn("mt-4 text-[13px] leading-relaxed", t.gedaempft)}>
+                {DESK_WEEK.signals} {DESK_WEEK.instrument} signals · {DESK_WEEK.slPips} pips stopped · {DESK_WEEK.note}
               </div>
-              <div className={cn("mt-5 border-t pt-4 text-[13px] leading-relaxed", t.linie, t.gedaempft)}>
-                {DESK_WEEK.note} Every entry was posted before it happened — that's the only
-                result we count.
+              <div className={cn("mt-3 border-t pt-3 text-[12.5px] font-semibold", t.linie)}>
+                Every entry was posted before it happened.
               </div>
             </div>
           </section>
@@ -437,7 +369,9 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
               <a> statt Router: ein voller Seitenaufruf stellt sicher, dass
               /preview den gerade gesetzten Cookie liest. */}
           <div className="mt-12">
-            <Knopf />
+            {/* Am Handy uebernimmt die feste Leiste unten — sonst standen am
+                Seitenende zwei identische Knoepfe uebereinander (06.09.). */}
+            <Knopf className="hidden sm:inline-flex" />
             <p className={cn("mt-4 text-[12.5px] leading-relaxed", t.leise)}>
               {tenant.name} runs this with Cosmos Candles — that's where you get in. No account
               needed to look around.
