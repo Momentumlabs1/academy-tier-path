@@ -293,10 +293,10 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
             <h2 className="mt-2 font-display text-[1.35rem] font-black leading-tight sm:text-[1.6rem]">
               This is what lands on your phone.
             </h2>
-            <div className={cn("mt-6 flex justify-center rounded-2xl border px-4 py-8", t.rahmen, t.flaeche)}>
-              <div className="w-full max-w-[300px]">
-                <SignalStory primary={primary} accent={accent} partnerName={tenant.name} />
-              </div>
+            {/* Bühne statt Karte: das Telefon steht frei im Licht, randlos am
+                Handy — kein Kasten um den Kasten (Diego: "zu generisch"). */}
+            <div className="relative -mx-5 mt-4 sm:mx-0">
+              <SignalStory primary={primary} accent={accent} partnerName={tenant.name} />
             </div>
             <ul className={cn("mt-6 divide-y border-y", t.teiler, t.linie)}>
               {PUNKTE.map((p, i) => (
