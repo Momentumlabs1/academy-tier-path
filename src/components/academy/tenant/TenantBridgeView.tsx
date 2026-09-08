@@ -308,14 +308,15 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
               Erst das Bild (so sieht es auf deinem Telefon aus), dann die
               drei Punkte. Die Telefon-Vorschau ist dieselbe wie auf Cosmos'
               Seite — die Partnerseite darf nicht ärmer aussehen. */}
-          <section className="mt-12">
-            <Kicker>What you get</Kicker>
-            <h2 className="mt-2 font-display text-[1.35rem] font-black leading-tight sm:text-[1.6rem]">
-              This is what lands on your phone.
-            </h2>
-            {/* Bühne statt Karte: das Telefon steht frei im Licht, randlos am
-                Handy — kein Kasten um den Kasten (Diego: "zu generisch"). */}
-            <div className="relative -mx-5 mt-4 sm:mx-0">
+          <section className="mt-6">
+            {/* KEINE Überschrift über der Story (08.09. am Bildlauf gesehen):
+                "This is what lands on your phone." stand direkt über
+                "01 A signal lands." — zwei Überschriften, eine Aussage. Die
+                Story trägt ihre eigene, und sie wechselt beim Scrollen mit.
+
+                Bühne statt Karte: das Telefon steht frei im Licht, randlos am
+                Handy — kein Kasten um den Kasten. */}
+            <div className="relative -mx-5 sm:mx-0">
               <SignalStory primary={primary} accent={accent} partnerName={tenant.name} onPrimary={knopfText} tone={hell ? "light" : "dark"} />
             </div>
           </section>

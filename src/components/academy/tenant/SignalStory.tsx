@@ -46,6 +46,7 @@ function Styles() {
          "animation-delay" setzt den Abspielkopf exakt auf den Fortschritt. */
       .ss-scrub { animation-duration: 1s; animation-timing-function: linear; animation-fill-mode: both; animation-play-state: paused; }
       .ss-p     { animation-delay: calc(var(--p, 0) * -1s); }
+      .ss-pe    { animation-delay: calc(var(--pe, 0) * -1s); }
       .ss-p1    { animation-delay: calc(var(--p1, 0) * -1s); }
       .ss-p2    { animation-delay: calc(var(--p2, 0) * -1s); }
       .ss-p3    { animation-delay: calc(var(--p3, 0) * -1s); }
@@ -140,6 +141,15 @@ export function SignalStory({
       const p = strecke > 0 ? Math.min(1, Math.max(0, -r.top / strecke)) : 0;
       const teil = (a: number, b: number) => Math.min(1, Math.max(0, (p - a) / (b - a)));
       el.style.setProperty("--p", p.toFixed(4));
+      /**
+       * Der Sperrbildschirm baut sich auf, waehrend das Telefon HEREINKOMMT —
+       * nicht erst, wenn es oben andockt. Vorher war der Bildschirm eine volle
+       * Scrollhoehe lang leer und dunkel: das sah aus, als lade die Seite
+       * nicht (08.09. am Bildlauf nachgesehen). Fertig ist er kurz bevor die
+       * Buehne einrastet.
+       */
+      const vh = window.innerHeight;
+      el.style.setProperty("--pe", Math.min(1, Math.max(0, (vh - r.top) / (vh * 0.85))).toFixed(4));
       el.style.setProperty("--p1", teil(0.00, 0.34).toFixed(4));
       el.style.setProperty("--p2", teil(0.30, 0.66).toFixed(4));
       const p3 = teil(0.62, 0.96);
@@ -261,7 +271,7 @@ export function SignalStory({
 
               {/* ── Szene 1 · Sperrbildschirm ─────────────────────────── */}
               <div className="ss-scrub ss-p1 absolute inset-0 flex flex-col items-center px-3.5 pt-16" style={{ animationName: "ssS1" }}>
-                <div className="ss-scrub ss-p1 flex flex-col items-center" style={{ animationName: "ssWake" }}>
+                <div className="ss-scrub ss-pe flex flex-col items-center" style={{ animationName: "ssWake" }}>
                   <div className="text-[12.5px] font-medium" style={{ color: c.muted }}>Friday, 4 September</div>
                   <div className="font-display text-[60px] font-black leading-none tracking-[-0.04em]">15:48</div>
                 </div>
@@ -269,11 +279,11 @@ export function SignalStory({
                 <div className="relative mt-7 w-full">
                   {/* Zweite Karte dahinter: es ist nicht das einzige Signal. */}
                   <div
-                    className="ss-scrub ss-p1 absolute inset-x-3 -bottom-2.5 h-14 rounded-[20px]"
+                    className="ss-scrub ss-pe absolute inset-x-3 -bottom-2.5 h-14 rounded-[20px]"
                     style={{ animationName: "ssBanner2", background: c.card, border: `1px solid ${c.cardBorder}` }}
                   />
                   <div
-                    className="ss-scrub ss-p1 relative rounded-[22px] p-3.5"
+                    className="ss-scrub ss-pe relative rounded-[22px] p-3.5"
                     style={{ animationName: "ssBanner", background: c.card, border: `1px solid ${c.cardBorder}`, boxShadow: "0 16px 34px -22px rgba(0,0,0,.7)" }}
                   >
                     <div className="flex items-center gap-3">
