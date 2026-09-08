@@ -84,6 +84,7 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
       };
   const video = useRef<HTMLVideoElement>(null);
   const [laeuft, setLaeuft] = useState(false);
+  const [dauer, setDauer] = useState<number | null>(null);
   const videoModus: "hero" | "card" | "none" = tenant.bridgeVideo ?? (tenant.pitchVideo ? "card" : "none");
 
   useEffect(() => {
@@ -156,21 +157,21 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
         }
         @media (prefers-reduced-motion: reduce) { .br-in, .br-tilt { animation: none !important; } }
       `}</style>
-      {/* Atmosphäre: eine weiche Lichtquelle in Partnerfarbe + feines Rauschen,
-          beides `fixed` (mitscrollend + Mischmodus zeichnete Chromium am 05.09.
-          als harten Block über die halbe Seite). */}
+      {/* ATMOSPHÄRE OHNE WEICHZEICHNER UND OHNE `fixed` (Diego, 08.09., iPhone).
+          Vorher standen hier zwei bildschirmfüllende `fixed`-Ebenen, eine davon
+          mit blur(130px). Auf dem Telefon kostet das in JEDEM Scroll-Frame eine
+          Neuberechnung — das war das Ruckeln. Und weil `fixed` am visuellen
+          Viewport hängt, sprang die Ebene genau in dem Moment, in dem iOS beim
+          ersten Scrollen die URL-Leiste einklappt: "oben verrutscht alles".
+
+          Ein radialer Verlauf sieht genauso aus und kostet nichts; er sitzt
+          `absolute` im Dokument und scrollt einfach mit. Die Körnung liegt als
+          Hintergrundbild auf demselben Element statt als zweite Ebene. */}
       <div
         aria-hidden
-        className="pointer-events-none fixed -top-52 left-1/2 h-[42rem] w-[42rem] -translate-x-1/2 rounded-full blur-[130px]"
-        style={{ opacity: t.leuchten, background: `radial-gradient(circle, ${primary} 0%, ${accent} 55%, transparent 72%)` }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0"
+        className="pointer-events-none absolute inset-x-0 top-0 h-[70vh]"
         style={{
-          opacity: t.koernung,
-          backgroundImage:
-            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E\")",
+          background: `radial-gradient(120% 60% at 50% 0%, color-mix(in oklch, ${primary} ${Math.round(t.leuchten * 100)}%, transparent) 0%, transparent 70%)`,
         }}
       />
 
@@ -254,21 +255,26 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
                 t.rahmen,
               )}
             >
+              {/* KEINE NATIVE STEUERLEISTE VOR DEM START (Diego, 08.09.:
+                  "das Video ist komisch eingebunden, passt nicht zum Design").
+                  Der graue Browser-Balken mit "0:00 / 0:56" gehört keiner
+                  Marke — er ist das einzige Element auf der Seite, das nicht
+                  von uns gestaltet ist. Deshalb erscheint er erst, wenn der
+                  Film läuft; davor trägt das Standbild nur unsere Auflage
+                  und einen Knopf in Partnerfarbe. */}
               <div className="relative aspect-video bg-black">
-                {/* Kleine Einordnung, damit der Film nicht "einfach da" ist. */}
-                {!laeuft && (
-                  <span className="pointer-events-none absolute left-3 top-3 z-10 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-semibold text-white/90 backdrop-blur">
-                    ▶ Watch first · {tenant.name} explains it
-                  </span>
-                )}
                 <video
                   ref={video}
-                  controls
+                  controls={laeuft}
                   playsInline
                   preload="metadata"
                   poster={tenant.pitchPoster}
                   onPlay={() => setLaeuft(true)}
-                  className="h-full w-full object-contain"
+                  // Die Laufzeit kommt aus der Datei, nicht aus einer
+                  // abgeschriebenen Zahl — sonst steht bei jedem Filmwechsel
+                  // eine falsche Sekundenzahl auf der Seite.
+                  onLoadedMetadata={(e) => setDauer(Math.round(e.currentTarget.duration) || null)}
+                  className="h-full w-full object-cover"
                 >
                   <source src={tenant.pitchVideo} type="video/mp4" />
                 </video>
@@ -276,17 +282,21 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
                   <button
                     type="button"
                     onClick={() => video.current?.play()}
-                    aria-label="Play video"
-                    className="group absolute inset-0 flex items-center justify-center bg-black/20 transition-colors hover:bg-black/10"
+                    aria-label={`Play ${tenant.name}'s video`}
+                    className="group absolute inset-0 flex flex-col items-center justify-center gap-4"
+                    style={{ background: "linear-gradient(180deg, rgba(0,0,0,.28) 0%, rgba(0,0,0,.12) 45%, rgba(0,0,0,.62) 100%)" }}
                   >
                     <span
                       className={cn(
-                        "flex items-center justify-center rounded-full ring-1 ring-white/25 transition-transform duration-200 group-hover:scale-105",
-                        videoModus === "hero" ? "h-[72px] w-[72px]" : "h-14 w-14",
+                        "flex items-center justify-center rounded-full transition-transform duration-200 group-hover:scale-105 group-active:scale-95",
+                        videoModus === "hero" ? "h-[76px] w-[76px]" : "h-16 w-16",
                       )}
-                      style={{ background: primary, boxShadow: `0 12px 34px -12px ${primary}` }}
+                      style={{ background: primary, boxShadow: `0 18px 44px -14px ${primary}, inset 0 1px 0 rgba(255,255,255,.45)` }}
                     >
-                      <PlayCircle className={videoModus === "hero" ? "h-9 w-9" : "h-7 w-7"} style={{ color: knopfText }} />
+                      <PlayCircle className={videoModus === "hero" ? "h-9 w-9" : "h-8 w-8"} style={{ color: knopfText }} strokeWidth={1.8} />
+                    </span>
+                    <span className="text-[13px] font-semibold text-white/90 drop-shadow">
+                      {tenant.name} explains it{dauer ? ` · ${dauer} sec` : ""}
                     </span>
                   </button>
                 )}
