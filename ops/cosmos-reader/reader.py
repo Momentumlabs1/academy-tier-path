@@ -192,6 +192,42 @@ async def on_edit(event):
     await forward(event.message, edited=True)
 
 
+async def melde_loeschung(ids):
+    """
+    Loeschungen weiterreichen.
+
+    Telegram sagt einem BOT nie, dass eine Nachricht geloescht wurde — nur
+    dieser Leser sieht es ueber MTProto. Ohne diesen Weg bleibt eine vom Desk
+    zurueckgezogene Zeile in JEDEM Kundenkanal stehen; bei einem
+    zurueckgezogenen Signal steht dann ein falscher Auftrag bei zahlenden
+    Kunden.
+
+    Der Koerper traegt kein Textfeld: der Webhook erkennt die Loeschung an
+    `deleted_message_ids` und behandelt sie vor allen anderen Zweigen, weil
+    jeder spaetere sie als \"kein Inhalt\" verwerfen wuerde.
+    """
+    if not ids:
+        return
+    payload = {
+        "update_id": update_id(ids[0]),
+        "via_reader": True,
+        "chat": {"id": SOURCE, "type": "supergroup"},
+        "deleted_message_ids": [int(i) for i in ids],
+    }
+    try:
+        async with httpx.AsyncClient(timeout=60) as h:
+            r = await h.post(HOOK, json=payload,
+                             headers={"x-telegram-bot-api-secret-token": SECRET})
+        log.info("LOESCH %s -> %s %s", ids, r.status_code, r.text[:120])
+    except Exception as e:
+        log.error("Loeschmeldung fehlgeschlagen (%s): %s", ids, e)
+
+
+@client.on(events.MessageDeleted(chats=SOURCE))
+async def on_delete(event):
+    await melde_loeschung(event.deleted_ids)
+
+
 def main():
     # start() ist hier synchron: es fragt bei fehlender Session nach Nummer,
     # Code und ggf. Passwort und laeuft in Telethons eigener Loop.
