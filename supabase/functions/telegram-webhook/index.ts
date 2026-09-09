@@ -992,6 +992,55 @@ async function editInfoPost(db: SupabaseClient, msg: TgMessage) {
     .eq("chat_id", msg.chat.id).eq("message_id", msg.message_id);
 }
 
+/**
+ * Loeschungen aus der Quellgruppe nachziehen.
+ *
+ * Telegram meldet einem BOT keine Loeschungen — nur dem MTProto-Leser. Der
+ * schickt sie hierher, und hier werden die Kopien anhand von `delivered`
+ * entfernt.
+ *
+ * Warum das wichtig ist: am 08.09. schrieb der Desk eine Zeile in seine Gruppe,
+ * wir reichten sie an beide Kundenkanaele weiter, danach loeschte er sie bei
+ * sich — bei den Kunden blieb sie stehen. Bei einer Nebenbemerkung ist das
+ * peinlich. Bei einem zurueckgezogenen SIGNAL steht ein falscher Auftrag bei
+ * zahlenden Kunden.
+ *
+ * Fehlschlaege werden geschluckt: eine Nachricht, die Telegram nicht mehr
+ * loeschen laesst (aelter als 48 h, schon weg), darf den Rest nicht aufhalten.
+ */
+async function deleteRelayed(db: SupabaseClient, ids: number[], chatId: number | null) {
+  let q = db
+    .from("signal_relays")
+    .select("id, source_message_id, delivered")
+    .in("source_message_id", ids)
+    .is("deleted_at", null);
+  // Nur wenn die Quelle bekannt ist: Telethon meldet Loeschungen in kleinen
+  // Gruppen ohne Chat-Bezug. Dann bleibt die Nummer allein — sie stammt aus
+  // demselben Zaehler, also ist das immer noch die richtige Zeile.
+  if (chatId) q = q.eq("source_chat_id", chatId);
+  const { data: rows } = await q;
+  if (!rows?.length) return;
+
+  const tenants = await activeTenants(db);
+  for (const row of rows as Array<{ id: string; delivered: unknown }>) {
+    const zugestellt = (row.delivered ?? null) as Record<string, DeliveredEntry> | null;
+    if (!zugestellt) continue;
+    for (const [slug, info] of Object.entries(zugestellt)) {
+      if (!info?.ok || !info.message_id) continue;
+      const t = tenants.find((x) => x.slug === slug);
+      const ziel = t?.telegram_channel_id ?? t?.telegram_info_channel_id;
+      if (!ziel) continue;
+      const r = await tg("deleteMessage", { chat_id: ziel, message_id: info.message_id });
+      if (!r.ok) console.log(`[delete] ${slug} #${info.message_id}: ${r.description}`);
+    }
+    await db.from("signal_relays")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", row.id);
+  }
+  console.log(`[delete] ${rows.length} Quellnachricht(en) nachgezogen`);
+}
+
+
 // ── Admin-Befehle ────────────────────────────────────────────────────────────
 //
 // Die private Gruppe "Cosmos Admin 🔔" (ADMIN_ALERT_CHAT_ID) empfaengt nicht
@@ -1082,6 +1131,15 @@ async function processUpdate(update: TgUpdate) {
   const adminChatId = Number(await cfg("ADMIN_ALERT_CHAT_ID") || 0);
 
   // Admin-Gruppe zuerst: Befehle duerfen nie in den Signal-Umschreiber laufen.
+  // Loeschungen zuerst: sie tragen keinen Text und wuerden von jedem
+  // spaeteren Zweig als "kein Inhalt" verworfen.
+  const geloescht = (update as { deleted_message_ids?: number[] }).deleted_message_ids;
+  if (Array.isArray(geloescht) && geloescht.length) {
+    const quelle = Number((update as { chat?: { id?: number } }).chat?.id ?? 0) || null;
+    await deleteRelayed(db, geloescht.map(Number).filter(Number.isFinite), quelle);
+    return;
+  }
+
   const adminMsg = update.message ?? update.edited_message;
   if (adminChatId !== 0 && adminMsg && adminMsg.chat.id === adminChatId) {
     if ((adminMsg.text ?? "").startsWith("/")) await handleAdminCommand(db, adminMsg);
