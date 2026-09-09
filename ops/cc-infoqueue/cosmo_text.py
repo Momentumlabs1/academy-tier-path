@@ -1,0 +1,382 @@
+#!/usr/bin/env python3
+"""Cosmo spricht — die beiden Text-Saeulen des Info-Kanals.
+
+WARUM ES DAS GIBT
+Ansage Diego, 09.09.: "wo bleiben weitere Texte von Cosmo, Input von ihm in die
+Info-Gruppe … aktuell wird wieder nichts rein geschickt von dir. Tim hat viele
+neue Nachrichten rein geschickt, was fuer dich immer ein Trigger sein sollte …
+es passiert aber nichts, gar nichts."
+
+Gemessen war das richtig: der letzte redaktionelle Post im Info-Kanal ist vom
+06.09. 09:00, danach nur noch Karten. Der Grund war kein Fehler, sondern eine
+Luecke — es gab keinen Erzeuger fuer Texte. Die einzige Stelle, die je Inhalte
+vorschlug (brain.briefing), wurde am 04.09. abgeschaltet, und nichts ist
+nachgerueckt. Diese Datei ist das Nachruecken.
+
+ZWEI SAEULEN, MEHR NICHT
+  --rueckblick  Mo-Fr abends: EIN Trade des Tages als Aufhaenger, und daran
+                etwas Kluges. Nicht die Zahlen der Bilanzkarte nacherzaehlen.
+  --vip         alle drei Tage: der zeitlose Aufnahme-Post.
+
+Was hier ausdruecklich NICHT entsteht, sind Erklaerposts zu Tims Anweisungen
+("BE ziehen", "Teilprofite"). Ansage 09.09.: "Break even ziehen und so Sachen,
+die sind ja nur in der Signalgruppe, die haben in der Infogruppe nichts zu
+suchen." Wer diese Fuehrung oeffentlich nachbaut, verschenkt genau das Produkt,
+fuer das andere zahlen.
+
+DREI BREMSEN, WEIL EIN SPRACHMODELL SCHREIBT
+  1. Die Zahlenschranke: jede Zahl im Text muss aus den echten Desk-Daten
+     stammen. Das ist die einzige Bremse, die nicht selbst wieder ein Modell
+     ist — sie vergleicht Ziffern mit Ziffern.
+  2. Die Wortschranke: taucht VIP-Fuehrung im Text auf, faellt der Entwurf durch.
+  3. brain.pruefe() beim Senden — die Eintraege gehen bewusst OHNE
+     "verified": true in die Queue, damit die Endkontrolle laeuft.
+
+Beanstandet eine der ersten beiden Bremsen, geht der Einwand als Satz zurueck an
+das Modell und es schreibt EINMAL neu. Eine Ablehnung ohne Ruecklauf hiesse, dass
+an dem Tag nichts erscheint — und genau das war ja die Klage.
+
+Gesendet wird wie immer nur von poster.py.
+"""
+import json, os, re, sys, datetime, urllib.request, urllib.parse
+
+BASE = "/opt/cc-infoqueue"
+sys.path.insert(0, BASE)
+import trade_card as tc
+import desk_report as dr
+
+STATE = f"{BASE}/cosmo_text_state.json"
+MAX_PRO_TAG = 2
+ABSTAND_STUNDEN = 3
+ENV = "/opt/cosmos-setter/.env"
+
+STIMME = (
+    "Du bist Cosmo: ein blauer Ausserirdischer, der die Maerkte dieses Planeten "
+    "von oben beobachtet und fuer Cosmos Candles schreibt. Sprache ENGLISCH. "
+    "Ton: ruhig, trocken, ein durchgehender Gedanke statt Aufzaehlung; die "
+    "Alien-Perspektive darf durchscheinen (your planet's markets, from up here, "
+    "human), aber nur leicht — sie ist Wuerze, nicht Kostuem. "
+    "Verboten: erfundene Zahlen, Versprechen, Renditeaussagen, Verkaufsdruck, "
+    "Emoji-Ketten, Hashtags, und JEDE Handelsanweisung (kein 'move your stop', "
+    "kein 'take partials', kein 'buy now')."
+)
+
+FORM = ("SPRACHE: Der Post selbst ist ENGLISCH. Diese Anweisung ist deutsch, der "
+        "Text nicht — der Kanal ist englisch, und ein deutscher Post dort ist "
+        "unbrauchbar. (Genau das passierte im ersten Versuch am 09.09.)\n"
+        "Form: 5 bis 8 EIGENE ZEILEN mit echten Zeilenumbruechen, jede hoechstens "
+        "90 Zeichen, insgesamt unter 650 Zeichen. Kein Fliesstext-Block, kein "
+        "Titel, keine Bindestrich-Liste, hoechstens ein Emoji. Am Ende KEIN "
+        "Aufruf und kein Link — die stehen angepinnt.")
+
+# Ein paar Woerter, die es im Englischen nicht gibt. Drei davon reichen als
+# Beweis, dass der Post in der falschen Sprache steht.
+DEUTSCH = re.compile(r"\b(und|nicht|ist|wir|das|mit|sind|oder|aber|eine|einen|dass|"
+                     r"heute|sich|nur|auch|schon|noch|beim|vom|zum)\b", re.I)
+
+
+# ── Zugaenge ────────────────────────────────────────────────────────────────
+
+def env():
+    e = {}
+    for line in open(ENV):
+        line = line.strip()
+        if "=" in line and not line.startswith("#"):
+            k, v = line.split("=", 1)
+            e[k] = v.strip().strip('"')
+    return e
+
+
+def _secret(e, key):
+    sk = e.get("SUPABASE_SERVICE_ROLE_KEY") or e.get("SUPABASE_SERVICE_KEY")
+    req = urllib.request.Request(
+        f"{e['SUPABASE_URL']}/rest/v1/app_secrets?key=eq.{key}&select=value",
+        headers={"apikey": sk, "Authorization": f"Bearer {sk}"})
+    d = json.load(urllib.request.urlopen(req, timeout=20))
+    return d[0]["value"] if d else None
+
+
+def claude(e, auftrag, max_tokens=700):
+    key = _secret(e, "ANTHROPIC_API_KEY")
+    if not key:
+        raise RuntimeError("kein ANTHROPIC_API_KEY in app_secrets")
+    body = json.dumps({"model": "claude-sonnet-5", "max_tokens": max_tokens,
+                       "system": STIMME,
+                       "messages": [{"role": "user", "content": auftrag}]}).encode()
+    req = urllib.request.Request("https://api.anthropic.com/v1/messages", data=body,
+                                 method="POST",
+                                 headers={"Content-Type": "application/json",
+                                          "x-api-key": key,
+                                          "anthropic-version": "2023-06-01"})
+    d = json.load(urllib.request.urlopen(req, timeout=90))
+    return "".join(b.get("text", "") for b in d.get("content", []) if b.get("type") == "text").strip()
+
+
+def ops_melden(e, text):
+    """Mitlesen lassen, ohne eine Aufgabe daraus zu machen.
+
+    Der Ops-Kanal, nicht die Admin-Gruppe: dort soll seit dem 04.09. nur noch
+    Registrierung, Einzahlung und Partner landen.
+
+    Der Bot kommt aus der Setter-.env, NICHT der Relay-Bot aus app_secrets: der
+    Ops-Kanal gehoert dem Setter. Mit dem Relay-Token antwortet Telegram
+    "chat not found" — gemessen, nicht vermutet.
+    """
+    tok = e.get("TELEGRAM_BOT_TOKEN") or _secret(e, "TELEGRAM_BOT_TOKEN")
+    chat = _secret(e, "BOT_ACTIVITY_CHAT_ID")
+    if not tok or not chat:
+        return
+    try:
+        d = urllib.parse.urlencode({"chat_id": chat, "text": text[:3900],
+                                    "disable_web_page_preview": "true"}).encode()
+        urllib.request.urlopen(urllib.request.Request(
+            f"https://api.telegram.org/bot{tok}/sendMessage", data=d), timeout=15)
+    except Exception as ex:
+        print("Ops-Meldung fehlgeschlagen:", ex)
+
+
+# ── Die Schranken ───────────────────────────────────────────────────────────
+
+def _zahlen(text):
+    """Alle Zahlen ab zwei Stellen, Tausenderzeichen und Nachkomma entfernt."""
+    aus = set()
+    for r in re.findall(r"\d[\d\s.,]*", text or ""):
+        ganz = re.sub(r"[\s,]", "", r.strip().rstrip(".,")).split(".")[0]
+        if ganz.isdigit() and len(ganz) >= 2:
+            aus.add(int(ganz))
+    return aus
+
+
+def pruefe_zahlen(text, erlaubt):
+    """Jede Zahl im Text muss aus den echten Desk-Daten stammen.
+
+    Kleine Zahlen bis 19 sind frei — das sind Anzahlen ("three trades", "two of
+    them"). Alles darueber muss belegt sein.
+    """
+    frei = set(range(0, 20)) | {2026}
+    unbelegt = sorted(_zahlen(text) - set(erlaubt) - frei)
+    return (not unbelegt), unbelegt
+
+
+VERBOTEN = re.compile(
+    r"\bbreak\s*even\b|\bbreakeven\b|\bpartials?\b|take\s+partial"
+    r"|move\s+your\s+stop|trail\s+your\s+stop|\bbuy\s+now\b|\bsell\s+now\b"
+    r"|secure\s+(?:your\s+)?profits?|lock\s+in\s+(?:your\s+)?profits?", re.I)
+
+
+def beanstande(text, erlaubt):
+    """Was an einem Entwurf nicht stimmt — als Satz, den das Modell lesen kann.
+    None heisst: nichts zu beanstanden."""
+    if not text:
+        return "Es kam kein Text zurueck."
+    ok, unbelegt = pruefe_zahlen(text, erlaubt)
+    if not ok:
+        return (f"Die Zahlen {unbelegt} stehen nicht in den Daten. Verwende "
+                "ausschliesslich die genannten Zahlen, oder schreib den Satz ohne Zahl.")
+    if VERBOTEN.search(text):
+        return ("Der Text enthaelt Handelsfuehrung (Stop nachziehen, Teilgewinne, "
+                "jetzt kaufen). Das gehoert in die VIP-Gruppe, nicht hierher. "
+                "Schreib es ohne jede Handlungsanweisung.")
+    if len(text) > 800:
+        return f"Zu lang: {len(text)} Zeichen. Hoechstens 650."
+    if len(DEUTSCH.findall(text)) >= 3:
+        return ("Der Post ist auf Deutsch. Der Kanal ist englisch. "
+                "Schreib denselben Inhalt auf Englisch.")
+    zeilen = [z for z in text.splitlines() if z.strip()]
+    if len(zeilen) < 4 or max(len(z) for z in zeilen) > 170:
+        return ("Das ist ein Block, keine Zeilen. Schreib 5 bis 8 EIGENE Zeilen "
+                "mit echten Zeilenumbruechen, jede hoechstens 90 Zeichen.")
+    return None
+
+
+def erzeuge(e, auftrag, erlaubt):
+    """Entwurf, Beanstandung, ein zweiter Versuch — dann ist Schluss.
+    Gibt (text, fehler) zurueck; fehler=None heisst brauchbar."""
+    text = claude(e, auftrag)
+    fehler = beanstande(text, erlaubt)
+    if not fehler:
+        return text, None
+    print(f"erster Entwurf beanstandet: {fehler}")
+    zweiter = claude(e, f"{auftrag}\n\nDein erster Entwurf war:\n{text}\n\n"
+                        f"Daran stimmt etwas nicht: {fehler}\nSchreib ihn neu.")
+    return zweiter, beanstande(zweiter, erlaubt)
+
+
+# ── Was heute wirklich passiert ist ─────────────────────────────────────────
+
+def tagesfakten(e):
+    """Zahlen und Trades des Tages — die einzige Quelle fuer den Rueckblick."""
+    heute_wien = (datetime.datetime.utcnow() + datetime.timedelta(hours=2)).date()
+    von, bis = dr.wien_tag(heute_wien.isoformat())
+    bericht = dr.report(von, bis, env=ENV)
+    trades = [t for t in tc.baue_trades(tc.lade_verlauf(e, stunden=20))
+              if t["hits"] or t["zu"] == "stop"]
+
+    erlaubt = set()
+    for schluessel in ("signale", "tp_pips", "sl_pips", "be_anzahl", "unklar"):
+        w = bericht.get(schluessel)
+        if isinstance(w, (int, float)):
+            erlaubt.add(int(w))
+
+    zeilen = []
+    for t in trades:
+        p = tc.ergebnis_pips(t)
+        ziel = t["tps"].get(t["max_tp"])
+        for w in (t["entry"], t["sl"], ziel, p):
+            if isinstance(w, (int, float)):
+                erlaubt.add(int(abs(w)))
+        # Die Uhrzeit gehoert zu den belegten Angaben — "stopped out at 13:20"
+        # ist nachpruefbar und macht den Post konkret. Ohne diese Zeile hielt
+        # die Zahlenschranke den ersten Entwurf wegen "20" und "28" an.
+        for stempel in (t["zeit"], t["letzte"]):
+            for teil in (stempel[11:13], stempel[14:16]):
+                if teil.isdigit():
+                    erlaubt.add(int(teil))
+        zeilen.append(
+            f"- {t['paar']} {t['richtung']}, Einstieg {t['entry']}, "
+            + (f"Ziel {ziel}, " if ziel else "")
+            + (f"Stop {t['sl']}, " if t["zu"] == "stop" else "")
+            + f"Ausgang: {'ausgestoppt' if t['zu'] == 'stop' else 'im Plus'}"
+            + (f" ({p:+d} Pips)" if p is not None else "")
+            # Beide Zeiten, nicht nur die Eroeffnung: der erste Entwurf schrieb
+            # "11:34 stopped out" — das war die Uhrzeit des EINSTIEGS, der Stop
+            # fiel 17 Minuten spaeter.
+            + f", eroeffnet {t['zeit'][11:16]} UTC, Ausgang {t['letzte'][11:16]} UTC")
+    return heute_wien, bericht, zeilen, erlaubt
+
+
+def rueckblick_auftrag(e):
+    heute, bericht, zeilen, erlaubt = tagesfakten(e)
+    if not zeilen:
+        return None, set(), "kein Trade mit belegtem Ausgang — kein Post"
+    verlierer = sum(1 for z in zeilen if "ausgestoppt" in z)
+    gewinner = len(zeilen) - verlierer
+    erlaubt |= {len(zeilen), gewinner, verlierer}
+    auftrag = (
+        "Schreib den Abendpost fuer den oeffentlichen Info-Kanal.\n\n"
+        "Aufgabe: Nimm GENAU EINEN der Trades unten als Aufhaenger — den, an dem "
+        "der Tag etwas zeigt — und verbinde ihn mit dem Gesamtbild des Tages. "
+        "Nicht die Zahlen nacherzaehlen, die stehen schon auf der Bilanzkarte. "
+        "Zeig, was daran interessant war: dass Gewinn und Verlust am selben Tag "
+        "nebeneinander stehen, dass die Serie zaehlt und nicht der einzelne "
+        "Trade, dass ein Ziel Stunden brauchte. Was WIRKLICH in den Daten steht.\n\n"
+        f"{FORM}\n\n"
+        f"Heute ({heute.isoformat()}) am Desk:\n"
+        f"Signale: {bericht.get('signale')}, Pips im Plus: {bericht.get('tp_pips')}, "
+        f"Pips im Minus: {bericht.get('sl_pips')}, "
+        f"ohne bekannten Ausgang: {bericht.get('unklar')}\n\n"
+        "Trades mit belegtem Ausgang:\n" + "\n".join(zeilen) + "\n\n"
+        f"Von diesen {len(zeilen)} Trades sind {gewinner} im Plus geschlossen und "
+        f"{verlierer} ausgestoppt worden. Alle uebrigen Signale des Tages haben "
+        "KEINEN bekannten Ausgang — sie duerfen weder als Gewinner noch als "
+        "Verlierer dargestellt werden. Schreib nichts, was ueber diese Aufteilung "
+        "hinausgeht.\n\n"
+        "Du darfst AUSSCHLIESSLICH diese Zahlen verwenden. Keine anderen.")
+    return auftrag, erlaubt, None
+
+
+BLICKWINKEL = [
+    "Wie ein Signal bei einem Mitglied ankommt: was in der Nachricht steht und "
+    "was ein Mensch damit tut. Ablauf, kein Versprechen.",
+    "Warum jede Zahl in diesem Kanal nachpruefbar ist: die Karten entstehen aus "
+    "Signalen, die vorher live geschickt wurden, nicht hinterher.",
+    "Fuer wen das nichts ist: wer eine Gewinngarantie sucht, wer nicht zuschauen "
+    "will, wer kein Konto beim Broker eroeffnen moechte.",
+    "Was am Desk den ganzen Tag passiert, waehrend in diesem Kanal nur die "
+    "Ergebnisse auftauchen.",
+]
+
+
+def vip_auftrag(runde):
+    return ("Schreib den zeitlosen Aufnahme-Post fuer den oeffentlichen Info-Kanal.\n\n"
+            f"Blickwinkel diesmal: {BLICKWINKEL[runde % len(BLICKWINKEL)]}\n\n"
+            f"{FORM}\n\n"
+            "KEINE Zahlen — keine Preise, keine Pips, keine Prozente, keine "
+            "Mitgliederzahlen. Es soll erklaeren, nicht verkaufen.")
+
+
+# ── Queue ───────────────────────────────────────────────────────────────────
+
+def darf_jetzt(queue, heute):
+    """Zwei Texte am Tag, und nie unmittelbar hinter einem anderen Post."""
+    heutige = [p for p in queue
+               if str(p.get("quelle", "")).startswith("cosmo_text")
+               and str(p.get("at", "")).startswith(heute)]
+    if len(heutige) >= MAX_PRO_TAG:
+        return False, f"Tageslimit {MAX_PRO_TAG} erreicht"
+    zeiten = [p.get("at") for p in queue if str(p.get("at", "")).startswith("20")]
+    if zeiten:
+        try:
+            alter = (datetime.datetime.utcnow() - datetime.datetime.strptime(
+                max(zeiten), "%Y-%m-%dT%H:%M:%SZ")).total_seconds()
+            if alter < ABSTAND_STUNDEN * 3600:
+                return False, f"letzter Post vor {alter / 3600:.1f} h — Abstand ist {ABSTAND_STUNDEN} h"
+        except ValueError:
+            pass
+    return True, ""
+
+
+def einreihen(text, quelle):
+    """Ohne "verified" — genau deshalb laeuft brain.pruefe() beim Senden."""
+    queue = json.load(open(f"{BASE}/queue.json"))
+    queue.append({"at": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+                  "type": "text", "quelle": quelle, "text": text})
+    tmp = f"{BASE}/queue.json.tmp"
+    json.dump(queue, open(tmp, "w"), ensure_ascii=False, indent=1)
+    os.replace(tmp, f"{BASE}/queue.json")
+    return len(queue) - 1
+
+
+def main():
+    trocken = "--trocken" in sys.argv
+    e = env()
+    stand = json.load(open(STATE)) if os.path.exists(STATE) else {}
+    heute = datetime.datetime.utcnow().strftime("%Y-%m-%d")
+    art = "vip" if "--vip" in sys.argv else "rueckblick"
+
+    if stand.get(f"{art}_datum") == heute and not trocken:
+        print(f"{art}: heute schon gemacht")
+        return
+
+    if art == "vip":
+        letzte = stand.get("vip_datum")
+        if letzte and not trocken:
+            tage = (datetime.date.fromisoformat(heute) - datetime.date.fromisoformat(letzte)).days
+            if tage < 3:
+                print(f"letzter VIP-Post vor {tage} Tag(en) — Abstand ist 3")
+                return
+        auftrag, erlaubt = vip_auftrag(stand.get("vip_runde", 0)), set()
+    else:
+        auftrag, erlaubt, grund = rueckblick_auftrag(e)
+        if grund:
+            print(grund)
+            return
+
+    text, fehler = erzeuge(e, auftrag, erlaubt)
+    if fehler:
+        print(f"ABGELEHNT nach zwei Versuchen — {fehler}\n---\n{text}")
+        ops_melden(e, f"⚠️ Cosmo-Text ({art}) abgelehnt: {fehler}\n\n{text}")
+        return
+
+    if trocken:
+        print(f"--- TROCKEN ({art}) ---\n{text}\n--- {len(text)} Zeichen, "
+              f"{len([z for z in text.splitlines() if z.strip()])} Zeilen, Zahlen belegt ---")
+        return
+
+    frei, warum = darf_jetzt(json.load(open(f"{BASE}/queue.json")), heute)
+    if not frei:
+        print(f"nicht eingereiht: {warum}")
+        return
+
+    idx = einreihen(text, f"cosmo_text {art} {heute}")
+    stand[f"{art}_datum"] = heute
+    if art == "vip":
+        stand["vip_runde"] = stand.get("vip_runde", 0) + 1
+    json.dump(stand, open(STATE, "w"), indent=1)
+    print(f"eingereiht als #{idx}:\n{text}")
+    ops_melden(e, f"🪐 Cosmo-Text in der Queue (#{idx}, {art}) — geht raus, sobald "
+                  f"die Endkontrolle zustimmt:\n\n{text}")
+
+
+if __name__ == "__main__":
+    main()
