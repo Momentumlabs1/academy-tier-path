@@ -497,6 +497,63 @@ def render_teaser(inst, richtung, wann, ziel):
     return ziel
 
 
+# ── Karte: Kundennachricht ──────────────────────────────────────────────────
+#
+# Ansage Diego 10.09.: Kundennachrichten wie in Tims Lobby, "die sind ja echt,
+# aber halt im Cosmo-Style".
+#
+# Der Text kommt WOERTLICH aus dem Screenshot (lobby_cron.py), nur uebersetzt,
+# ohne Namen und ohne Anrede. Die Zeile darunter sagt nur, was stimmt: die
+# Nachricht stammt von jemandem, der denselben Desk handelt. Keine Sterne, kein
+# Name, kein erfundenes Profilbild — nichts, was so tut, als waere es mehr als
+# ein Zitat.
+def render_zitat(text, ziel):
+    B = 1080
+    fz = _f(38, 600)
+    probe = ImageDraw.Draw(Image.new("RGB", (10, 10)))
+
+    # Umbrechen nach Breite, nicht nach Zeichenzahl — die Schrift ist breit.
+    zeilen, zeile = [], ""
+    for wort in text.split():
+        versuch = (zeile + " " + wort).strip()
+        if probe.textlength(versuch, font=fz) <= B - 200:
+            zeile = versuch
+        else:
+            zeilen.append(zeile); zeile = wort
+    if zeile:
+        zeilen.append(zeile)
+    zeilen = zeilen[:5]
+
+    H = 232 + len(zeilen) * 54
+    bild = Image.new("RGB", (B, H))
+    px = ImageDraw.Draw(bild)
+    oben_f, unten_f = (13, 30, 68), (5, 9, 22)
+    for y in range(H):
+        a = y / (H - 1)
+        px.line((0, y, B, y), fill=tuple(int(oben_f[i] * (1 - a) + unten_f[i] * a) for i in range(3)))
+    d = ImageDraw.Draw(bild, "RGBA")
+
+    kick = _f(18, 700)
+    w = d.textlength("FROM A TRADER", font=kick)
+    d.rounded_rectangle((56, 38, 56 + w + 36, 76), 19, fill=(*AZUR, 40), outline=(*AZUR, 120), width=1)
+    d.text((74, 47), "FROM A TRADER", font=kick, fill=AZUR)
+    marke = _f(18, 700)
+    d.text((B - 56 - d.textlength("COSMOS CANDLES", font=marke), 48), "COSMOS CANDLES",
+           font=marke, fill=AZUR)
+
+    # Das grosse Anfuehrungszeichen ist das einzige Schmuckstueck. Es sagt
+    # "Zitat", bevor man ein Wort liest.
+    d.text((50, 84), "\u201c", font=_f(120, 900), fill=(*AZUR, 150))
+    y = 128
+    for z in zeilen:
+        d.text((144, y), z, font=fz, fill=WEISS)
+        y += 54
+    d.text((144, y + 20), "\u2014 a trader following the desk", font=_f(20, 400),
+           fill=(255, 255, 255, 140))
+    bild.save(ziel, quality=95)
+    return ziel
+
+
 # ── Karte B gab es hier einmal ──────────────────────────────────────────────
 #
 # render_treffer() ist am 09.09. entfallen. Sie war die zweite Karte zum selben

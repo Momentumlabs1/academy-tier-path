@@ -51,13 +51,14 @@ different loop" — noch bevor die Nummernabfrage verarbeitet ist. Telethons
 eigener Einstieg benutzt die Loop, an der der Client bereits haengt.
 """
 import base64
+import json
 import logging
 import os
 import time
 
 import httpx
 from telethon import TelegramClient, events
-from telethon.tl.types import MessageMediaWebPage
+from telethon.tl.types import MessageMediaWebPage, MessageMediaPhoto
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 log = logging.getLogger("reader")
@@ -226,6 +227,57 @@ async def melde_loeschung(ids):
 @client.on(events.MessageDeleted(chats=SOURCE))
 async def on_delete(event):
     await melde_loeschung(event.deleted_ids)
+
+
+
+# ── Tims Lobby: der menschliche Teil ────────────────────────────────────────
+#
+# Ansage Diego 10.09.: "Es geht um die Info-Gruppe von Tim und den menschlichen
+# Input, den er reinschickt — bei uns waren heute nur Signalkarten."
+#
+# Die Lobby ("DC Analysen - Lobby") ist Tims oeffentlicher Kanal. Dort steht,
+# was einen Kanal lebendig macht: der Chart vom laufenden Runner mit einem
+# Satz dazu, Kundennachrichten, Kontoauszuege, "noch einer". Nichts davon kam
+# bisher bei uns an — dieser Leser hoerte nur auf die Whitelabel-Gruppe.
+#
+# Hier wird NUR abgelegt, nicht gesendet und nicht bewertet. Was davon in den
+# Cosmos-Info-Kanal darf, entscheidet /opt/cc-infoqueue/lobby_cron.py. Der
+# Leser bleibt dumm und schnell — faellt die Bewertung aus, gehen ihm keine
+# Signale verloren.
+LOBBY = int(os.environ.get("LOBBY_CHAT_ID", "-1003916214212"))
+LOBBY_INBOX = os.environ.get("LOBBY_INBOX", "/opt/cc-infoqueue/lobby_inbox")
+
+
+async def lobby_ablegen(msg, ordner=LOBBY_INBOX):
+    # Weitergeleitetes aus Tims VIP ("TP3 hit, 700 PIPS") ist Signalgeschehen —
+    # dafuer hat der Info-Kanal eigene Karten. Nur Tims EIGENE Posts zaehlen.
+    if msg.fwd_from:
+        return
+    foto = isinstance(getattr(msg, "media", None), MessageMediaPhoto)
+    text = msg.message or ""
+    if not foto and not text.strip():
+        return
+    os.makedirs(ordner, exist_ok=True)
+    meta = {"id": msg.id, "date": msg.date.isoformat(), "text": text, "foto": None}
+    if foto:
+        pfad = f"{ordner}/{msg.id}.jpg"
+        await client.download_media(msg, file=pfad)
+        meta["foto"] = pfad
+    tmp = f"{ordner}/{msg.id}.json.tmp"
+    with open(tmp, "w") as f:
+        json.dump(meta, f, ensure_ascii=False)
+    os.replace(tmp, f"{ordner}/{msg.id}.json")
+    log.info("LOBBY abgelegt id=%s %s", msg.id, "FOTO" if foto else "TEXT")
+
+
+@client.on(events.NewMessage(chats=LOBBY))
+async def on_lobby(event):
+    try:
+        await lobby_ablegen(event.message)
+    except Exception as e:
+        # Die Lobby ist Beiwerk. Ein Fehler hier darf den Leser nie beenden —
+        # sonst fehlen die Signale.
+        log.error("Lobby-Ablage fehlgeschlagen (id=%s): %s", event.message.id, e)
 
 
 def main():

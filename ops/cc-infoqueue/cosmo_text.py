@@ -47,7 +47,7 @@ import desk_report as dr
 
 STATE = f"{BASE}/cosmo_text_state.json"
 MAX_PRO_TAG = 2
-ABSTAND_STUNDEN = 3
+ABSTAND_STUNDEN = 0.5   # vorher 3 — mit Tims Lobby-Posts tagsueber waere der Abendtext nie mehr rausgegangen
 ENV = "/opt/cosmos-setter/.env"
 
 STIMME = (
