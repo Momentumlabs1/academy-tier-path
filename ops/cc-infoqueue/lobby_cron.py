@@ -24,8 +24,15 @@ WAS BEWUSST NICHT UEBERNOMMEN WIRD
   privat   Tims Leben (Auto, Gym, Reisen). Cosmo ist ein Maskottchen, kein
            Mensch mit Tiefgarage; Tims Privatfotos unter unserem Namen
            waeren eine fremde Person, die sich als wir ausgibt.
-  werbung  Tims eigene VIP-Werbung, Links, sein Name — sein Trichter, nicht unserer.
+  werbung  Tims eigene VIP-Werbung, SEINE Academy/Kurse, Links, sein Name — sein
+           Trichter, nicht unserer. Ansage Diego 11.09.: "er wird auch welche
+           reinschicken ueber seine Academy oder private Nachrichten oder Bilder
+           von seinen Autos — die alle nicht uebernehmen." Erwartete Quote:
+           50-70 % seiner Posts, gemessen am 09./10.09.: 8 von 13 = 62 %.
   emoji    "✅😎" allein. Neben Tims Screenshot ergibt das Sinn, bei uns nicht.
+  meme     Witzbilder, Vergleiche, Collagen — auch wenn ein Chart darin steckt.
+           Am 10.09. um 00:20 ging so ein Meme ("What other people see / What
+           I see") als "chart" raus; die Kategorie fehlte schlicht.
   Weitergeleitetes aus Tims VIP filtert schon der Leser weg: dafuer gibt es
   unsere eigenen Karten.
 
@@ -51,7 +58,7 @@ MAX_PRO_TAG = 6
 ABSTAND_MIN = 15
 MAX_ALTER_H = 3     # was laenger liegt, ist keine Nachricht mehr, sondern Archiv
 
-ARTEN_BILD = ("kontoauszug", "chart", "kundennachricht", "privat", "werbung", "sonstig")
+ARTEN_BILD = ("kontoauszug", "chart", "meme", "kundennachricht", "privat", "werbung", "sonstig")
 ARTEN_TEXT = ("markt", "stimmung", "werbung", "emoji", "privat", "sonstig")
 
 
@@ -80,11 +87,16 @@ def bewerte_bild(e, pfad, text):
     b64 = base64.b64encode(open(pfad, "rb").read()).decode()
     auftrag = (
         "Das Bild stammt aus dem oeffentlichen Kanal eines Trading-Desks. Ordne es EINER Art zu:\n"
-        "kontoauszug = Broker-App mit Positionen/Deals/Gewinn\n"
-        "chart = Kurschart eines Marktes\n"
+        "kontoauszug = ein ECHTER Screenshot einer Broker-App mit Positionen/Deals/Gewinn\n"
+        "chart = ein ECHTER, roher Screenshot einer Trading-Plattform mit einem Kurschart — "
+        "so wie ein Trader ihn selbst abfotografiert, ohne Witz-Text und ohne Collage\n"
+        "meme = alles, was als Witz, Vergleich oder Grafik gebaut ist: Memes, Vorher/Nachher, "
+        "'what people see / what I see', Hand haelt ein Handy, Stockfoto, Collage, Text-"
+        "Ueberschriften im Bild — AUCH WENN darin ein Chart vorkommt\n"
         "kundennachricht = Screenshot einer Nachricht eines Kunden an den Desk\n"
         "privat = Privatleben (Auto, Essen, Gym, Reisen, Personen)\n"
-        "werbung = Werbegrafik, Rabatt, Link-Aufforderung\n"
+        "werbung = Werbegrafik, Rabatt, Link-Aufforderung, und alles zu einer EIGENEN Academy, "
+        "einem Kurs, Coaching oder Mentoring des Desks\n"
         "sonstig = alles andere\n\n"
         f"Bildunterschrift des Desks (deutsch, darf leer sein): {text!r}\n\n"
         f"{REGELN}\n\n"
@@ -101,7 +113,8 @@ def bewerte_text(e, text):
         "Ein Text aus dem oeffentlichen Kanal eines Trading-Desks. Ordne ihn EINER Art zu:\n"
         "markt = News, Termine, Session, Marktlage, Volatilitaet\n"
         "stimmung = kurzer persoenlicher Satz zum Handelstag oder zu einem Trade\n"
-        "werbung = Werbung fuer eine VIP-Gruppe, Preise, Links, Aufforderung beizutreten\n"
+        "werbung = Werbung fuer eine VIP-Gruppe, Preise, Links, Aufforderung beizutreten, und "
+        "alles zu einer EIGENEN Academy, einem Kurs, Coaching oder Mentoring des Desks\n"
         "emoji = nur Emojis oder ein einzelnes Wort ohne Inhalt\n"
         "privat = Privatleben\n"
         "sonstig = alles andere, auch Saetze, die ohne ein Bild daneben keinen Sinn ergeben "
@@ -125,7 +138,18 @@ def sauber(en):
     return not re.search(r"\btim\b|@\w|t\.me/|https?://|\+?\d[\d\s]{8,}", en or "", re.I)
 
 
+NACHT_WIEN = (22, 7)   # von 22 bis 7 Uhr Wiener Zeit geht nichts aus der Lobby raus
+
+
 def darf_jetzt(queue, jetzt):
+    # Nachtruhe. Am 10.09. um 00:16 postete Tim ein Meme in seine Lobby, und
+    # um 00:20 stand es bei uns — ein Kanal, der um Mitternacht Bilder
+    # verschickt, wirkt wie ein Bot. Was nachts kommt, ist bis zum Morgen aelter
+    # als MAX_ALTER_H und verfaellt; das ist gewollt.
+    stunde_wien = (jetzt + datetime.timedelta(hours=2)).hour
+    von, bis = NACHT_WIEN
+    if stunde_wien >= von or stunde_wien < bis:
+        return False, "Nachtruhe"
     heute = jetzt.strftime("%Y-%m-%d")
     heutige = [p for p in queue if str(p.get("quelle", "")).startswith("lobby ")
                and str(p.get("at", "")).startswith(heute)]
