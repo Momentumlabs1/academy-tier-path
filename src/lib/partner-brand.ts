@@ -18,6 +18,8 @@ import { BROKER } from "./broker";
 
 /** Der Mandanten-slug unserer eigenen Marke — nie ein Partner. */
 const HAUS = "cosmos-candles";
+// sessionStorage-Schluessel: von welcher Landingpage DIESER Besuch kommt (usePartnerBrand).
+const VIA_KEY = "cc_via";
 
 /**
  * Herkunft festhalten — mit EINER Regel: das Haus ueberschreibt nie einen Partner.
@@ -38,6 +40,9 @@ const HAUS = "cosmos-candles";
  */
 export function stampAttribution(tenant: TenantConfig): void {
   if (typeof document === "undefined") return;
+  // Die Seite, von der DIESER Besuch kommt — vor jeder Rueckkehr unten, also
+  // auch fuer das Haus. Siehe markierteHerkunft().
+  try { sessionStorage.setItem(VIA_KEY, tenant.slug); } catch { /* privater Modus */ }
   const vorhanden = (document.cookie.match(/(?:^|;\s*)cosmo_ref=([^;]*)/) || [])[1];
   const bestehtSchon = Boolean(vorhanden && decodeURIComponent(vorhanden) !== "");
   if (tenant.slug === HAUS && bestehtSchon) return; // Partner behaelt seinen Kunden.
@@ -141,8 +146,31 @@ export function readPartnerBrand(): PartnerBrand | null {
  * Reads the cookie on mount — client-only, so it returns null on the first SSR
  * paint and fills in after hydration (accents fade in, page never blocks).
  */
+/**
+ * ANZEIGE FOLGT DEM KLICK DIESES BESUCHS, NICHT EINEM ALTEN COOKIE.
+ *
+ * Vorfall 10.09.: Diego klickt auf Cosmos eigener Seite "Start" — und /preview
+ * zeigt Zeko, mit Zekos Telegram-Link. Grund: Wochen vorher war er einmal auf
+ * /zekoglobal; das Marken-Cookie haelt 30 Tage, und das Haus ueberschreibt es
+ * absichtlich nie (stampAttribution). /preview las nur dieses Cookie. Damit
+ * landete JEDER, der irgendwann ueber einen Partner kam und jetzt ueber ein
+ * Cosmo-Video kommt, bei diesem Partner — auf dessen Seite und in dessen Kanal.
+ *
+ * Jetzt merkt sich jede Landingpage im sessionStorage, dass DIESER Besuch von
+ * ihr kommt. Kam er vom Haus, gilt fuer diesen Besuch das Haus. Das
+ * Zuordnungs-Cookie (cosmo_ref) bleibt davon unberuehrt — geaendert wird nur,
+ * was der Besucher jetzt sieht und in welchen Kanal ihn der Knopf schickt.
+ * Ohne Markierung (Direktaufruf von /preview) gilt wie bisher das Cookie.
+ */
+export function markierteHerkunft(): string | null {
+  if (typeof window === "undefined") return null;
+  try { return sessionStorage.getItem(VIA_KEY); } catch { return null; }
+}
+
 export function usePartnerBrand(): PartnerBrand | null {
   const [brand, setBrand] = useState<PartnerBrand | null>(null);
-  useEffect(() => { setBrand(readPartnerBrand()); }, []);
+  useEffect(() => {
+    setBrand(markierteHerkunft() === HAUS ? null : readPartnerBrand());
+  }, []);
   return brand;
 }

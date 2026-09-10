@@ -23,7 +23,7 @@
  * hoechstens ueberschreiben — und das Haus darf einen Partner nie ueberschreiben.
  */
 import { createFileRoute } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRight, PlayCircle, Lock } from "lucide-react";
 import { HeroBento } from "@/components/academy/hero/HeroBento";
 import { LockedGate } from "@/components/academy/onboarding/LockedGate";
@@ -48,6 +48,11 @@ function Preview() {
   const video = useRef<HTMLVideoElement>(null);
   const [gestartet, setGestartet] = useState(false);
   const [ctaDa, setCtaDa] = useState(false);
+  // Sicherheitsnetz: wer nicht abspielt, bekommt den Knopf nach 12 s trotzdem.
+  useEffect(() => {
+    const t = setTimeout(() => setCtaDa(true), 12000);
+    return () => clearTimeout(t);
+  }, []);
 
   const primary = brand?.primaryColor ?? COSMOS_MASTER.primaryColor;
   // Derselbe Vorrang wie auf der Landingpage: der Partner zuerst, sonst wir.
@@ -56,10 +61,12 @@ function Preview() {
 
   return (
     <div className="min-h-screen bg-[#05070e] text-white">
+      {/* Verlauf statt blur(120px): gleiches Licht, keine Neuberechnung beim
+          Scrollen auf dem Telefon (siehe TenantBridgeView, 08.09.). */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-96 opacity-20 blur-[120px]"
-        style={{ background: primary }}
+        className="pointer-events-none absolute inset-x-0 top-0 h-[28rem]"
+        style={{ background: `radial-gradient(110% 70% at 50% 0%, color-mix(in oklch, ${primary} 26%, transparent) 0%, transparent 70%)` }}
       />
 
       <div className="relative mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
@@ -99,14 +106,16 @@ function Preview() {
             die Erklaerung zu dem, was der Besucher gerade vor sich sieht. */}
         <div className="mt-7 overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl">
           <div className="relative aspect-video bg-black">
+            {/* Die graue Browser-Leiste erst beim Abspielen (Diego, 10.09.):
+                vorher ist sie das einzige Element, das nicht gestaltet ist. */}
             <video
               ref={video}
-              controls
+              controls={gestartet}
               playsInline
               preload="metadata"
               poster={COSMOS_MASTER.pitchPoster}
               onPlay={() => { setGestartet(true); setTimeout(() => setCtaDa(true), 450); }}
-              className="h-full w-full object-contain"
+              className="h-full w-full object-cover"
             >
               <source src={COSMOS_MASTER.pitchVideo} type="video/mp4" />
             </video>
@@ -126,17 +135,26 @@ function Preview() {
           </div>
         </div>
 
-        {/* Der Knopf steht hier von Anfang an sichtbar.
-            Auf der Landingpage erscheint er erst beim Play — dort ist der Film
-            das Argument und der Knopf die Folge. HIER ist der Knopf der Zweck
-            der Seite; wer schon ueberzeugt ist, soll nicht erst ein Video
-            starten muessen, um ihn zu finden. Gemessen am 05.09.: unsichtbar
-            hinterliess er ein handhohes Loch zwischen Film und Kacheln, das
-            aussah wie eine kaputte Seite.
-            Der Anflug bleibt als leichte Betonung beim Start. */}
+        {/* ERST DER FILM, DANN DER KNOPF (Diego, 10.09.: "Video, und wenn man
+            es anschaut, kommt der Button in den Telegram-Info-Kanal").
+            Der Knopf erscheint beim Abspielen. Damit an seiner Stelle kein
+            Loch steht (das Problem vom 05.09.), liegt dort vorher ein Hinweis
+            auf genau diesen Knopf. Und damit niemand haengen bleibt, der den
+            Ton gerade nicht anmachen kann, kommt er nach 12 Sekunden auch
+            ohne Abspielen. */}
+        <div className="relative mt-6 min-h-[54px]">
+          {!ctaDa && (
+            <button
+              type="button"
+              onClick={() => video.current?.play()}
+              className="flex min-h-[54px] w-full items-center justify-center gap-2 rounded-full border border-dashed border-white/15 text-[14px] font-semibold text-white/55 sm:w-auto sm:px-8"
+            >
+              <PlayCircle className="h-4 w-4" /> Watch first — your access link appears here
+            </button>
+          )}
         <div className={cn(
-          "mt-6 transition-transform duration-500 ease-out",
-          ctaDa ? "translate-y-0" : "translate-y-1",
+          "transition-all duration-500 ease-out",
+          ctaDa ? "translate-y-0 opacity-100" : "pointer-events-none absolute inset-x-0 top-0 translate-y-2 opacity-0",
         )}>
           <a
             href={telegram}
@@ -156,6 +174,7 @@ function Preview() {
             makes it. A trade you see ten minutes late is a trade you missed. One tap and
             you're in.
           </p>
+        </div>
         </div>
 
         {/* DAS EIGENTLICHE ARGUMENT: nicht die Beschreibung, sondern der Blick
