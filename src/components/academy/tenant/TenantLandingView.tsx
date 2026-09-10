@@ -33,6 +33,7 @@ import { BROKER, BROKER_SWITCH } from "@/lib/broker";
 import { RiskWarning } from "@/components/academy/legal/RiskWarning";
 import { CommissionDisclosure } from "@/components/academy/legal/CommissionDisclosure";
 import { DeskResults } from "@/components/academy/tenant/DeskResults";
+import { openTelegramApp, TelegramFallback } from "@/components/academy/signals/telegram-handoff";
 import {
   SignalsPreview, BotPreview, AcademyPreview, QuizPreview, RewardsPreview, WhitelabelPreview,
 } from "@/components/academy/tenant/LandingPreviews";
@@ -128,7 +129,27 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
    * Anmelden koennen sich bestehende Mitglieder weiterhin — der "Sign in"-Link
    * bleibt. Nur der Weg HINEIN geht nicht mehr ueber ein Formular.
    */
-  const goTelegram = () => navigate({ to: "/preview" });
+  /**
+   * AUSNAHME: COSMOS EIGENE SEITE GEHT DIREKT NACH TELEGRAM (Diego, 11.09.).
+   * "Der erste Schritt ist die Landingpage mit dem Video, der zweite waere
+   * nochmal das Video — bei Cosmo soll es direkt zu Telegram gehen." Auf der
+   * Hausseite laeuft der Film schon unter dem Hero; /preview zeigte denselben
+   * Film ein zweites Mal. Partnerseiten bleiben beim Weg ueber /preview.
+   *
+   * Absprung ueber openTelegramApp: oeffnet die App per tg://-Link ohne
+   * Browser-Umweg. Nimmt keine App ab (kein Telegram installiert, oder ein
+   * In-App-Browser wie Instagram schluckt den Link), erscheint unten ein
+   * Blatt mit Store-Knopf und dem t.me-Link — niemand bleibt haengen.
+   */
+  const [tgFallback, setTgFallback] = useState(false);
+  const hausTelegram = tenant.telegramChannel;
+  const goTelegram = () => {
+    if (tenant.slug === "cosmos-candles" && hausTelegram) {
+      void openTelegramApp(hausTelegram).then((geoeffnet) => { if (!geoeffnet) setTgFallback(true); });
+      return;
+    }
+    navigate({ to: "/preview" });
+  };
 
   const showCosmo = tenant.slug === "cosmos-candles";
   // Der Hero traegt das Maskottchen nur noch, wenn es KEIN Kopfzeilen-Portrait
@@ -232,6 +253,27 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
 
   return (
     <div className="relative min-h-screen overflow-clip bg-[#05070e] font-sans text-white">
+      {/* Kein Telegram gefunden → Blatt am unteren Rand, ueber allem, egal
+          welcher der acht Knoepfe gedrueckt wurde. */}
+      {tgFallback && hausTelegram && (
+        <div className="fixed inset-x-0 bottom-0 z-[60] px-4 pb-5 pt-2 sm:left-auto sm:right-6 sm:max-w-md">
+          <div className="relative rounded-2xl bg-[#0b0f18] p-1 shadow-[0_-10px_40px_rgba(0,0,0,.6)] ring-1 ring-white/10">
+            <button
+              type="button"
+              onClick={() => setTgFallback(false)}
+              aria-label="Close"
+              className="absolute right-3 top-3 z-10 flex h-7 w-7 items-center justify-center rounded-full text-white/50 hover:bg-white/10 hover:text-white"
+            >
+              ×
+            </button>
+            <TelegramFallback
+              url={hausTelegram}
+              onRetry={() => { setTgFallback(false); goTelegram(); }}
+              body="The Cosmos Candles info channel lives in Telegram — every trade from the desk, the free academy and your VIP access. Get the app, then tap “I have Telegram”."
+            />
+          </div>
+        </div>
+      )}
       <style>{`
         @keyframes cosmoFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-16px); } }
         .cosmo-float { animation: cosmoFloat 6s ease-in-out infinite; will-change: transform; }

@@ -81,7 +81,13 @@ const STORES: Record<Platform, { label: string; url: string }> = {
  * group (so the install feels worth it), the right store button, and the plain
  * t.me link as an escape hatch. No dead ends.
  */
-export function TelegramFallback({ url, onRetry }: { url: string; onRetry: () => void }) {
+export function TelegramFallback({ url, onRetry, body }: {
+  url: string;
+  onRetry: () => void;
+  /** Eigener Erklaertext. Der Standard spricht von "diesem Konto" — auf der
+   *  Hausseite gibt es seit dem Funnel ohne Registrierung (05.09.) keins. */
+  body?: string;
+}) {
   const store = STORES[detectPlatform()];
   return (
     <div className="mt-4 rounded-xl border border-sky-400/25 bg-sky-400/[0.06] p-4">
@@ -92,9 +98,8 @@ export function TelegramFallback({ url, onRetry }: { url: string; onRetry: () =>
         <div className="min-w-0">
           <div className="text-sm font-bold">Almost there — you just need Telegram</div>
           <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-            Your signal group lives in Telegram. Inside: every signal in real time with entry,
-            targets and stop — pushed straight to your phone. Your invite stays linked to this
-            account, so nothing is lost.
+            {body ??
+              "Your signal group lives in Telegram. Inside: every signal in real time with entry, targets and stop — pushed straight to your phone. Your invite stays linked to this account, so nothing is lost."}
           </p>
         </div>
       </div>
