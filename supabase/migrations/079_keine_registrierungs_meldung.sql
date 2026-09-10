@@ -1,0 +1,13 @@
+-- "Neue Registrierung" aus der Admin-Gruppe nehmen.
+--
+-- Ansage Diego 11.09.: "der Telegram-Chat, wo ich benachrichtigt wurde, ob sich
+-- jemand registriert, der ist ja jetzt sinnlos — jetzt will ich eine
+-- Nachricht, wenn jemand in den Info-Channel neu kommt und wenn jemand den Bot
+-- startet, mit Link zum Chat."
+--
+-- Seit dem Funnel ohne Registrierung (05.09.) entsteht ein Mitglied erst in
+-- bot-unlock, also IM Moment der Einzahlung — und die meldet schon
+-- alert_member_deposit. Die Registrierungs-Meldung war damit ein Doppel.
+-- Nur der Trigger faellt weg; die Funktion bleibt fuer den Fall, dass die
+-- Website-Anmeldung zurueckkommt.
+drop trigger if exists alert_member_insert on public.members;

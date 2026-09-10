@@ -140,7 +140,11 @@ function AdminLeads() {
         if (e) { setError(e.message); setLeads([]); return; }
         const rows = (data ?? []) as Lead[];
         setLeads(rows);
-        if (first && rows.length) setActive(rows[0]);
+        // ?lead=<id> opens that chat directly — the link in the admin group's
+        // "new bot start" alert lands here, and it should land IN the chat.
+        const wanted = typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search).get("lead") : null;
+        if (first && rows.length) setActive(rows.find((r) => r.id === wanted) ?? rows[0]);
         // Keep the open chat's header (pause switch) in step with the list.
         else setActive((a) => (a ? rows.find((r) => r.id === a.id) ?? a : a));
       });

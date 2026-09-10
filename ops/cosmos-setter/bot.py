@@ -420,6 +420,21 @@ def _melde_blockierend(text: str):
         log.warning("Betriebsmeldung fehlgeschlagen: %s", e)
 
 
+async def admin_melden(text: str):
+    """Eine Zeile in die Admin-Gruppe ("Cosmos Admin 🔔").
+
+    Ueber die Datenbankfunktion admin_alert() — dieselbe, mit der Einzahlungen
+    und Partner-Antraege dort landen. So schreibt in die Gruppe genau EIN
+    Absender, und der Chat bleibt lesbar.
+    """
+    if not store.rest.enabled:
+        return
+    try:
+        await asyncio.to_thread(lambda: store.rest._c.post("/rpc/admin_alert", json={"p_text": text}))
+    except Exception as e:
+        log.warning("Admin-Meldung fehlgeschlagen: %s", e)
+
+
 async def melde(text: str):
     try:
         await asyncio.to_thread(_melde_blockierend, text)
@@ -473,9 +488,18 @@ async def send_opener(update: Update, lead: dict, context=None):
     below it (see on_message) instead of greeting twice.
     """
     text = script.opener(lead.get("first_name"), cfg.BRAND_NAME)
+    erster_start = (lead.get("step") or "new") == "new"
     store.log_message(lead["id"], "assistant", text)
     store.set_step(lead["telegram_user_id"], "opened")
     await melde(f"▶️ START · {_wer(lead)}\nQuelle: {lead.get('source') or '-'}")
+    # In die Admin-Gruppe, mit dem Weg direkt in den Chat. Ansage 11.09.:
+    # "wenn jemand den Bot startet, mit Link zum Chat". Nur beim ERSTEN Start —
+    # send_opener laeuft ein zweites Mal, wenn die vorgetippte Zeile nach dem
+    # START-Knopf kommt, und zwei Meldungen fuer eine Person sind Laerm.
+    if erster_start:
+        await admin_melden(
+            f"▶️ Neuer Bot-Start\n{_wer(lead)}\n"
+            f"Chat: https://cosmos-candles.com/admin/leads?lead={lead['id']}")
     sent = await menschlich(update.effective_chat, text)
     if context is not None:
         context.bot_data[f"opener_{lead['telegram_user_id']}"] = sent.message_id

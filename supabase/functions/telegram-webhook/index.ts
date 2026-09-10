@@ -232,6 +232,15 @@ interface TgUpdate {
   /** Groups send edits here, not as edited_channel_post. */
   edited_message?: TgMessage;
   chat_join_request?: { chat: TgChat; from: TgUser };
+  /** Beitritte/Austritte — kommen nur, wenn "chat_member" in allowed_updates steht. */
+  chat_member?: TgChatMemberUpdated;
+}
+interface TgChatMemberUpdated {
+  chat: TgChat;
+  from: TgUser;
+  old_chat_member: { status: string; user: TgUser };
+  new_chat_member: { status: string; user: TgUser };
+  invite_link?: { invite_link: string; name?: string };
 }
 interface TenantRow {
   slug: string;
@@ -1041,6 +1050,33 @@ async function deleteRelayed(db: SupabaseClient, ids: number[], chatId: number |
 }
 
 
+/**
+ * Jemand ist neu im Info-Kanal -> eine Zeile in die Admin-Gruppe.
+ *
+ * Ansage Diego 11.09.: "jetzt will ich eine Nachricht, wenn jemand in den
+ * Info-Channel neu kommt". Bis dahin kam keine einzige Beitritts-Meldung an:
+ * im Info-Kanal ist nur dieser Relay-Bot Admin (der Setter nicht), und sein
+ * Webhook abonnierte "chat_member" gar nicht.
+ *
+ * Nur ein FRISCHER Beitritt zaehlt (vorher nicht drin, jetzt drin), nur echte
+ * Menschen, nur der Info-Kanal. Der Name des Einladungslinks steht dabei, weil
+ * er verraet, ueber welchen Partner jemand kam.
+ */
+async function meldeBeitritt(db: SupabaseClient, cm: TgChatMemberUpdated, infoId: number) {
+  if (!infoId || cm.chat.id !== infoId) return;
+  const drin = (st: string) => ["member", "administrator", "creator"].includes(st);
+  if (drin(cm.old_chat_member.status) || !drin(cm.new_chat_member.status)) return;
+  const u = cm.new_chat_member.user;
+  if (u.is_bot) return;
+  const name = [u.first_name ?? "?", u.username ? `@${u.username}` : ""].filter(Boolean).join(" ");
+  const zeilen = [`👋 Neu im Info-Kanal`, name];
+  if (cm.invite_link?.name) zeilen.push(`über Link: ${cm.invite_link.name}`);
+  if (u.username) zeilen.push(`Profil: https://t.me/${u.username}`);
+  const { error } = await db.rpc("admin_alert", { p_text: zeilen.join("\n") });
+  if (error) console.log("[beitritt] admin_alert:", error.message);
+}
+
+
 // ── Admin-Befehle ────────────────────────────────────────────────────────────
 //
 // Die private Gruppe "Cosmos Admin 🔔" (ADMIN_ALERT_CHAT_ID) empfaengt nicht
@@ -1137,6 +1173,11 @@ async function processUpdate(update: TgUpdate) {
   if (Array.isArray(geloescht) && geloescht.length) {
     const quelle = Number((update as { chat?: { id?: number } }).chat?.id ?? 0) || null;
     await deleteRelayed(db, geloescht.map(Number).filter(Number.isFinite), quelle);
+    return;
+  }
+
+  if (update.chat_member) {
+    await meldeBeitritt(db, update.chat_member, infoId);
     return;
   }
 
