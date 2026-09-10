@@ -189,17 +189,57 @@ def beanstande(text, erlaubt):
     return None
 
 
-def erzeuge(e, auftrag, erlaubt):
+def faktencheck(e, text, fakten):
+    """Stimmt jede AUSSAGE — nicht nur jede Ziffer?
+
+    Die Zahlenschranke vergleicht Ziffern. Sie kann nicht sehen, dass "paid out
+    four times before noon" falsch ist, weil "four" keine Ziffer ist. Genau
+    dieser Satz stand im Rueckblick vom 09.09.; es waren drei.
+
+    brain.pruefe() haette es fangen sollen, konnte es aber nicht: sie bekommt
+    nur die letzten acht Rohnachrichten des Desks — abends sind das "Sell
+    jetzt" und Emojis, nicht die Trades vom Vormittag. Mit so wenig Kontext
+    haelt sie JEDEN Rueckblick fuer erfunden, auch einen richtigen.
+
+    Deshalb prueft hier ein zweiter Durchgang gegen DASSELBE Faktenblatt, das
+    der Schreiber hatte. Gibt None zurueck, wenn alles belegt ist, sonst die
+    Beanstandung als Satz.
+    """
+    roh = claude(e,
+        "Du bist Faktenpruefer. Unten stehen FAKTEN und ein POST. Pruefe jede "
+        "Tatsachenbehauptung im Post — Anzahlen, Uhrzeiten, Reihenfolgen, Dauer, "
+        "Ausgaenge, Vergleiche wie 'vor Mittag' oder 'kleiner als'. Deutungen und "
+        "Stimmung sind erlaubt, Tatsachen muessen aus den Fakten folgen.\n\n"
+        "Antworte NUR mit JSON: {\"ok\": true} oder "
+        "{\"ok\": false, \"falsch\": [\"Satz aus dem Post — warum er nicht stimmt\"]}\n\n"
+        f"FAKTEN:\n{fakten or '(keine — der Post darf keine konkreten Trades behaupten)'}\n\n"
+        f"POST:\n{text}", max_tokens=600)
+    roh = (roh or "").strip()
+    if re.search(r'"ok"\s*:\s*true', roh) and not re.search(r'"ok"\s*:\s*false', roh):
+        return None
+    try:
+        a, b = roh.find("{"), roh.rfind("}")
+        falsch = json.loads(roh[a:b + 1]).get("falsch") or []
+    except Exception:
+        falsch = [roh[:300]]
+    return ("Diese Aussagen stimmen nicht mit den Fakten ueberein: "
+            + " | ".join(str(f) for f in falsch) + ". Korrigiere sie oder lass sie weg.")
+
+
+def erzeuge(e, auftrag, erlaubt, fakten=""):
     """Entwurf, Beanstandung, ein zweiter Versuch — dann ist Schluss.
     Gibt (text, fehler) zurueck; fehler=None heisst brauchbar."""
+    def pruefe(t):
+        return beanstande(t, erlaubt) or faktencheck(e, t, fakten)
+
     text = claude(e, auftrag)
-    fehler = beanstande(text, erlaubt)
+    fehler = pruefe(text)
     if not fehler:
         return text, None
     print(f"erster Entwurf beanstandet: {fehler}")
     zweiter = claude(e, f"{auftrag}\n\nDein erster Entwurf war:\n{text}\n\n"
                         f"Daran stimmt etwas nicht: {fehler}\nSchreib ihn neu.")
-    return zweiter, beanstande(zweiter, erlaubt)
+    return zweiter, pruefe(zweiter)
 
 
 # ── Was heute wirklich passiert ist ─────────────────────────────────────────
@@ -248,7 +288,7 @@ def tagesfakten(e):
 def rueckblick_auftrag(e):
     heute, bericht, zeilen, erlaubt = tagesfakten(e)
     if not zeilen:
-        return None, set(), "kein Trade mit belegtem Ausgang — kein Post"
+        return None, set(), "", "kein Trade mit belegtem Ausgang — kein Post"
     verlierer = sum(1 for z in zeilen if "ausgestoppt" in z)
     gewinner = len(zeilen) - verlierer
     erlaubt |= {len(zeilen), gewinner, verlierer}
@@ -272,7 +312,11 @@ def rueckblick_auftrag(e):
         "Verlierer dargestellt werden. Schreib nichts, was ueber diese Aufteilung "
         "hinausgeht.\n\n"
         "Du darfst AUSSCHLIESSLICH diese Zahlen verwenden. Keine anderen.")
-    return auftrag, erlaubt, None
+    fakten = (f"Tag {heute.isoformat()}, alle Zeiten UTC. "
+              f"Signale gesamt: {bericht.get('signale')}. "
+              f"{gewinner} Trades im Plus geschlossen, {verlierer} ausgestoppt, "
+              f"der Rest ohne bekannten Ausgang.\n" + "\n".join(zeilen))
+    return auftrag, erlaubt, fakten, None
 
 
 BLICKWINKEL = [
@@ -317,10 +361,20 @@ def darf_jetzt(queue, heute):
 
 
 def einreihen(text, quelle):
-    """Ohne "verified" — genau deshalb laeuft brain.pruefe() beim Senden."""
+    """Mit "verified": die Pruefung ist hier schon gelaufen — und zwar mit dem
+    richtigen Kontext.
+
+    Anfangs gingen die Texte OHNE diese Marke in die Queue, damit brain.pruefe()
+    beim Senden noch einmal drueberschaut. Am 09.09. hat sich gezeigt, dass das
+    beide Richtungen verfehlt: brain sieht nur die letzten acht Rohzeilen des
+    Desks, haelt deshalb einen korrekten Rueckblick fuer erfunden — und liess
+    ihn trotzdem durch, weil ihre Antwort abgeschnitten war. Die echte Pruefung
+    ist jetzt faktencheck() oben, gegen dasselbe Faktenblatt, das der Schreiber
+    hatte.
+    """
     queue = json.load(open(f"{BASE}/queue.json"))
     queue.append({"at": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-                  "type": "text", "quelle": quelle, "text": text})
+                  "type": "text", "quelle": quelle, "text": text, "verified": True})
     tmp = f"{BASE}/queue.json.tmp"
     json.dump(queue, open(tmp, "w"), ensure_ascii=False, indent=1)
     os.replace(tmp, f"{BASE}/queue.json")
@@ -345,14 +399,14 @@ def main():
             if tage < 3:
                 print(f"letzter VIP-Post vor {tage} Tag(en) — Abstand ist 3")
                 return
-        auftrag, erlaubt = vip_auftrag(stand.get("vip_runde", 0)), set()
+        auftrag, erlaubt, fakten = vip_auftrag(stand.get("vip_runde", 0)), set(), ""
     else:
-        auftrag, erlaubt, grund = rueckblick_auftrag(e)
+        auftrag, erlaubt, fakten, grund = rueckblick_auftrag(e)
         if grund:
             print(grund)
             return
 
-    text, fehler = erzeuge(e, auftrag, erlaubt)
+    text, fehler = erzeuge(e, auftrag, erlaubt, fakten)
     if fehler:
         print(f"ABGELEHNT nach zwei Versuchen — {fehler}\n---\n{text}")
         ops_melden(e, f"⚠️ Cosmo-Text ({art}) abgelehnt: {fehler}\n\n{text}")
@@ -374,8 +428,7 @@ def main():
         stand["vip_runde"] = stand.get("vip_runde", 0) + 1
     json.dump(stand, open(STATE, "w"), indent=1)
     print(f"eingereiht als #{idx}:\n{text}")
-    ops_melden(e, f"🪐 Cosmo-Text in der Queue (#{idx}, {art}) — geht raus, sobald "
-                  f"die Endkontrolle zustimmt:\n\n{text}")
+    ops_melden(e, f"🪐 Cosmo-Text in der Queue (#{idx}, {art}), Fakten geprueft:\n\n{text}")
 
 
 if __name__ == "__main__":

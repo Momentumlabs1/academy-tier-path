@@ -98,7 +98,7 @@ def pruefe(post_text):
             f"Geplanter Post:\n{post_text[:600]}\n\nHeutige Desk-Signale ({len(signale)}):\n"
             + ("\n".join(s[:80] for s in signale[:8]) or "KEINE — der Desk hat heute nicht gehandelt")
             + "\n\nZuletzt gesendete Kanal-Posts:\n" + ("\n---\n".join(gesendet) or "keine"),
-            max_tokens=400)
+            max_tokens=700)
         # Robust auslesen statt hoffen: das Modell packt die Antwort mal in
         # einen ```json-Block, mal nicht. Gemessen am 04.09.: mit 200 Tokens
         # brach die Begruendung mitten im Satz ab, json.loads warf
@@ -106,6 +106,18 @@ def pruefe(post_text):
         # die Bremse war seit dem Einbau tot. Deshalb mehr Luft UND ein
         # Auslesen, das den ersten geschweiften Block herausschneidet.
         roh = (antwort or "").strip()
+        # Das Urteil zuerst lesen, das Format danach. Am 09.09. kam
+        # '{"senden": false, "grund": "Die im Post…' — abgeschnitten, ohne
+        # schliessende Klammer. json.loads warf, der except-Zweig liess den
+        # Post durch. Die Kontrolle hatte NEIN gesagt, und das NEIN ging
+        # verloren, weil es schlecht formatiert war. Ein erkennbares Nein
+        # haelt jetzt an, egal wie der Rest aussieht.
+        import re as _re
+        if _re.search(r'"senden"\s*:\s*false', roh):
+            m = _re.search(r'"grund"\s*:\s*"([^"]*)', roh)
+            grund = (m.group(1) if m else "abgelehnt (Begruendung abgeschnitten)")
+            print(f"[brain] zurueckgehalten: {post_text[:120]} | Grund: {grund}")
+            return False, grund
         anfang, ende = roh.find("{"), roh.rfind("}")
         if anfang < 0 or ende <= anfang:
             raise ValueError(f"keine JSON-Antwort: {roh[:120]}")

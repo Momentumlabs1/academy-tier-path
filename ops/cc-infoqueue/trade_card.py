@@ -359,13 +359,16 @@ def render_ergebnis(t, ziel_datei):
     f_held = schrift(46, True)
     d.text((48, 44), held, font=f_held, fill=WEISS)
 
-    x = 48 + d.textlength(held, font=f_held) + 28
-    f_paar = schrift(22, True)
-    d.text((x, 62), f"{t['paar']} {t['richtung']}", font=f_paar, fill=(255, 255, 255, 130))
-
+    # Paar und Ausgang als kleiner Zweizeiler DIREKT neben der Zahl — nicht am
+    # rechten Rand. Dort legt Telegram Uhrzeit und Aufrufe als Plakette ueber
+    # jedes Bild, und auf einem 148 Pixel hohen Streifen trifft die genau die
+    # Zeile. Am 09.09. stand "CLOSED IN PROFIT" rechts und war im Kanal nicht
+    # zu lesen. Die rechte Seite bleibt deshalb bewusst leer.
+    x = 48 + d.textlength(held, font=f_held) + 30
+    d.text((x, 44), f"{t['paar']} {t['richtung']}", font=schrift(20, True),
+           fill=(255, 255, 255, 150))
     kopf = "CLOSED IN PROFIT" if gewonnen else "STOPPED OUT"
-    f_kopf = schrift(20, True)
-    d.text((B - 48 - d.textlength(kopf, font=f_kopf), 63), kopf, font=f_kopf, fill=akzent)
+    d.text((x, 76), kopf, font=schrift(18, True), fill=akzent)
 
     bild.save(ziel_datei, quality=95)
     return ziel_datei
