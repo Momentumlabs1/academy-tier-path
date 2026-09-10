@@ -28,6 +28,10 @@ logging.basicConfig(format="%(asctime)s %(levelname)s %(name)s: %(message)s", le
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("httpcore").setLevel(logging.WARNING)
 log = logging.getLogger("setter")
+# Der Postausgang laeuft alle 4 s. Auf INFO schreibt apscheduler dafuer zwei
+# Zeilen pro Lauf ins Journal — rund 43.000 am Tag, in denen jeder echte
+# Fehler untergeht.
+logging.getLogger("apscheduler").setLevel(logging.WARNING)
 
 OPENER_SEED = ("[The user just started this chat via the VIP button. Write a VERY short greeting "
                "(2 sentences, plain, no name-dropping, no gushing): that you'll get them into the "
@@ -125,6 +129,52 @@ async def check_and_grant(bot, lead: dict) -> None:
         await grant_vip(bot, lead)
 
 
+async def outbox_senden(context: ContextTypes.DEFAULT_TYPE):
+    """Was Diego im Admin-Bereich schreibt (setter_outbox), an den Lead zustellen.
+
+    Ansage 11.09.: "Ich muss die Moeglichkeit haben, selber Nachrichten zu
+    schreiben." Gesendet wird als DIESER Bot — fuer den Lead bleibt es ein
+    Gespraech, kein zweiter Absender. Der Token bleibt dafuer hier auf dem
+    Server; der Browser legt die Nachricht nur in die Tabelle.
+
+    Protokolliert (role=admin) wird erst NACH der Zustellung. Das Protokoll
+    soll zeigen, was beim Kunden ankam, nicht was jemand abschicken wollte.
+    Scheitert die Zustellung (Bot blockiert, Chat geloescht), steht der Grund
+    in setter_outbox.error und der Eintrag wird nicht endlos neu versucht.
+    """
+    if not store.rest.enabled:
+        return
+    try:
+        r = store.rest._c.get("/setter_outbox", params={
+            "select": "id,lead_id,text,setter_leads(telegram_user_id,tenant_slug)",
+            "sent_at": "is.null", "error": "is.null",
+            "order": "created_at.asc", "limit": "10"})
+        r.raise_for_status()
+        rows = r.json()
+    except Exception as e:
+        log.warning("Outbox nicht lesbar: %s", e)
+        return
+    import datetime as _dt
+    for row in rows:
+        ziel = row.get("setter_leads") or {}
+        if ziel.get("tenant_slug") != cfg.TENANT_SLUG or not ziel.get("telegram_user_id"):
+            continue
+        try:
+            m = await context.bot.send_message(chat_id=int(ziel["telegram_user_id"]),
+                                               text=row["text"], disable_web_page_preview=True)
+            store.rest.update("setter_outbox",
+                              {"sent_at": _dt.datetime.now(_dt.timezone.utc).isoformat(),
+                               "telegram_message_id": m.message_id}, id=row["id"])
+            store.log_message(row["lead_id"], "admin", row["text"])
+            log.info("Admin-Nachricht zugestellt an %s", ziel["telegram_user_id"])
+        except Exception as e:
+            try:
+                store.rest.update("setter_outbox", {"error": str(e)[:300]}, id=row["id"])
+            except Exception:
+                pass
+            log.warning("Admin-Nachricht nicht zustellbar (%s): %s", ziel.get("telegram_user_id"), e)
+
+
 async def deposit_sweep(context: ContextTypes.DEFAULT_TYPE):
     """Periodic: grant VIP to everyone who has now deposited enough."""
     for lead in store.leads_awaiting_vip():
@@ -176,11 +226,16 @@ async def _deposit_followup(context: ContextTypes.DEFAULT_TYPE):
         await grant_vip(context.bot, lead)
         return
 
+    # Die Freischaltung oben laeuft auch bei Uebernahme — sie ist das Produkt.
+    # Die Zwischenstaende unten sind Gespraech, und das fuehrt dann Diego.
+    still = bool(lead.get("bot_paused"))
+
     if dep > 0:
-        await context.bot.send_message(
-            chat_id=uid,
-            text=script.DEPOSIT_TOO_LOW.format(have=dep, min_dep=cfg.VIP_MIN_DEPOSIT),
-        )
+        if not still:
+            await context.bot.send_message(
+                chat_id=uid,
+                text=script.DEPOSIT_TOO_LOW.format(have=dep, min_dep=cfg.VIP_MIN_DEPOSIT),
+            )
         return
 
     now = asyncio.get_event_loop().time()
@@ -188,11 +243,13 @@ async def _deposit_followup(context: ContextTypes.DEFAULT_TYPE):
 
     # First empty look: say the wait out loud, once.
     if not announced:
-        await context.bot.send_message(chat_id=uid, text=script.DEPOSIT_PENDING)
+        if not still:
+            await context.bot.send_message(chat_id=uid, text=script.DEPOSIT_PENDING)
         announced = True
 
     if elapsed >= DEPOSIT_FOLLOWUP_WINDOW:
-        await context.bot.send_message(chat_id=uid, text=script.DEPOSIT_STILL_PENDING)
+        if not still:
+            await context.bot.send_message(chat_id=uid, text=script.DEPOSIT_STILL_PENDING)
         return  # the 5-minute sweep keeps watching from here
 
     context.job_queue.run_once(
@@ -209,9 +266,11 @@ async def _deposit_ack(context: ContextTypes.DEFAULT_TYPE):
     lead = store.get_lead(uid)
     if not lead or lead.get("vip_granted_at"):
         return
-    await context.bot.send_message(chat_id=uid, text=script.DEPOSIT_CHECKING)
+    still = bool(lead.get("bot_paused"))   # uebernommen: pruefen ja, reden nein
+    if not still:
+        await context.bot.send_message(chat_id=uid, text=script.DEPOSIT_CHECKING)
     # Asking makes the lookup feel real AND gives us the fallback matcher.
-    if not lead.get("broker_email"):
+    if not still and not lead.get("broker_email"):
         await context.bot.send_message(chat_id=uid, text=script.ASK_BROKER_EMAIL)
         store.log_message(lead["id"], "assistant", script.ASK_BROKER_EMAIL)
     context.job_queue.run_once(
@@ -805,7 +864,7 @@ async def _link_nudge(context: ContextTypes.DEFAULT_TYPE):
     lead = store.get_lead(uid)
     if not lead or lead.get("vip_granted_at") or lead.get("status") == "opted_out":
         return
-    if lead.get("status") in ("deposited",):
+    if lead.get("status") in ("deposited",) or lead.get("bot_paused"):
         return
     await send_link_line(context.bot, lead, script.LINK_AFTER_SILENCE, chat_id=uid)
 
@@ -833,6 +892,12 @@ async def on_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     msg = update.message.text or ""
     store.log_message(lead["id"], "user", msg)
     _cancel_nudge(context, u.id)   # they answered — no nudge needed
+
+    # Uebernommen: Diego schreibt in diesem Chat selbst (Admin-Bereich,
+    # setter_admin_send). Die Nachricht des Leads ist oben protokolliert und
+    # erscheint dort — der Bot sagt nichts, sonst redet er Diego dazwischen.
+    if lead.get("bot_paused"):
+        return
     step = lead.get("step") or "new"
 
     # ── SCRIPTED PATH (no model, always identical) ───────────────────────────
@@ -1058,6 +1123,8 @@ def build_app() -> Application:
     # Periodic deposit sweep → auto-grant VIP once a lead has deposited enough.
     if app.job_queue and cfg.VIP_GROUP_ID:
         app.job_queue.run_repeating(deposit_sweep, interval=cfg.DEPOSIT_SWEEP_MINUTES * 60, first=30)
+        # Postausgang fuer Admin-Nachrichten: alle 4 s, damit es sich wie ein Chat anfuehlt.
+        app.job_queue.run_repeating(outbox_senden, interval=4, first=5)
         log.info("Deposit sweep scheduled every %d min (VIP >= %.0f)", cfg.DEPOSIT_SWEEP_MINUTES, cfg.VIP_MIN_DEPOSIT)
     return app
 

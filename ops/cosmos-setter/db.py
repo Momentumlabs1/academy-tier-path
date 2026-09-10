@@ -562,7 +562,7 @@ class Store:
                 name = f"{r.get('first_name') or 'Lead'} {handle}".strip()
                 self._lead_names[str(lead_id)] = name
 
-            who = "👤" if role == "user" else "🤖"
+            who = {"user": "👤", "admin": "🧑\u200d💼"}.get(role, "🤖")
             text = f"{who} <b>{name}</b>\n{content[:3500]}"
             httpx.post(
                 f"https://api.telegram.org/bot{cfg.TELEGRAM_BOT_TOKEN}/sendMessage",

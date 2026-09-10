@@ -18,13 +18,20 @@
  * Conversion is only shown once there is enough to divide. One VIP out of one
  * lead is 100%, and a 100% on a dashboard is a number nobody can act on.
  *
- * Read-only, still. The transcript is the record of what was said to a
- * customer, and a record you can quietly edit is not a record. Replying happens
- * in Telegram, where the person actually is.
+ * TAKING OVER (11.09.). Diego: "Ich muss die Moeglichkeit haben, selber
+ * Nachrichten zu schreiben." Until then this page said "reply in Telegram" —
+ * which nobody could: the lead talks to the BOT, not to a person. Now a message
+ * typed here goes out AS the bot (setter_admin_send -> setter_outbox -> the
+ * setter on the server sends it), and sending one mutes the bot for that lead,
+ * so it cannot answer over you. The switch in the chat header hands it back.
+ *
+ * The transcript is still a record, not a draft: nothing here can be edited,
+ * and an admin message is logged only AFTER Telegram accepted it — so the log
+ * shows what reached the customer, not what someone meant to send.
  */
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
-import { Loader2, MessageSquare, Search, User } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { AlertCircle, Bot, Hand, Loader2, MessageSquare, Search, Send, User } from "lucide-react";
 import { AdminPageHeader } from "@/components/academy/admin/AdminShell";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -49,8 +56,17 @@ interface Lead {
   message_count: number | null;
   reply_count: number | null;
   last_message_at: string | null;
+  bot_paused: boolean | null;
 }
-interface Msg { id: string; role: "user" | "assistant"; content: string; created_at: string }
+interface Msg { id: string; role: "user" | "assistant" | "admin"; content: string; created_at: string }
+/** A message typed here that the server has not delivered yet — or could not. */
+interface Outgoing { id: string; text: string; created_at: string; sent_at: string | null; error: string | null }
+
+/** Loose client for the two admin RPCs; the generated types predate them. */
+const rpc = (fn: string, args: Record<string, unknown>) =>
+  (supabase as unknown as {
+    rpc: (f: string, a: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
+  }).rpc(fn, args);
 
 /** Where a lead got to. The colour is the point: red = we lost them. */
 const STATUS: Record<string, { label: string; tone: string }> = {
@@ -109,29 +125,94 @@ function AdminLeads() {
   const [msgs, setMsgs] = useState<Msg[] | null>(null);
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<string | null>(null);
+  const [outgoing, setOutgoing] = useState<Outgoing[]>([]);
+  const [draft, setDraft] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
 
-  useEffect(() => {
+  const loadLeads = useCallback((first: boolean) => {
     db().from("setter_lead_overview")
-      .select("id, first_name, telegram_username, telegram_user_id, status, step, experience, broker_email, deposit_usd, vip_granted_at, created_at, message_count, reply_count, last_message_at")
+      .select("id, first_name, telegram_username, telegram_user_id, status, step, experience, broker_email, deposit_usd, vip_granted_at, created_at, message_count, reply_count, last_message_at, bot_paused")
       .order("last_message_at", { ascending: false })
       .limit(500)
       .then(({ data, error: e }) => {
         if (e) { setError(e.message); setLeads([]); return; }
         const rows = (data ?? []) as Lead[];
         setLeads(rows);
-        if (rows.length) setActive(rows[0]);
+        if (first && rows.length) setActive(rows[0]);
+        // Keep the open chat's header (pause switch) in step with the list.
+        else setActive((a) => (a ? rows.find((r) => r.id === a.id) ?? a : a));
       });
   }, []);
 
+  useEffect(() => { loadLeads(true); }, [loadLeads]);
+  // The list re-sorts by last message; a slow refresh is enough for that.
   useEffect(() => {
-    if (!active) return;
-    setMsgs(null);
+    const t = setInterval(() => loadLeads(false), 20000);
+    return () => clearInterval(t);
+  }, [loadLeads]);
+
+  const loadChat = useCallback((leadId: string) => {
     db().from("setter_messages")
       .select("id, role, content, created_at")
-      .eq("lead_id", active.id)
+      .eq("lead_id", leadId)
       .order("created_at", { ascending: true })
       .then(({ data }) => setMsgs((data ?? []) as Msg[]));
-  }, [active]);
+    db().from("setter_outbox")
+      .select("id, text, created_at, sent_at, error")
+      .eq("lead_id", leadId)
+      .order("created_at", { ascending: true })
+      .then(({ data }) => setOutgoing((data ?? []) as Outgoing[]));
+  }, []);
+
+  // A chat you are typing into has to feel live: every 4 s, the same rhythm the
+  // server uses to pick up what you send.
+  const activeId = active?.id;
+  useEffect(() => {
+    if (!activeId) return;
+    setMsgs(null);
+    setOutgoing([]);
+    setSendError(null);
+    loadChat(activeId);
+    const t = setInterval(() => loadChat(activeId), 4000);
+    return () => clearInterval(t);
+  }, [activeId, loadChat]);
+
+  // Follow the conversation down as it grows.
+  const msgCount = (msgs?.length ?? 0) + outgoing.length;
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [msgCount]);
+
+  const send = async () => {
+    const text = draft.trim();
+    if (!active || !text || busy) return;
+    setBusy(true);
+    setSendError(null);
+    const { error: e } = await rpc("setter_admin_send", { p_lead_id: active.id, p_text: text });
+    setBusy(false);
+    if (e) { setSendError(e.message); return; }
+    setDraft("");
+    // Sending takes the chat over — the server does the same, this only saves
+    // waiting for the next refresh to see it.
+    setActive({ ...active, bot_paused: true });
+    setLeads((ls) => (ls ?? []).map((l) => (l.id === active.id ? { ...l, bot_paused: true } : l)));
+    loadChat(active.id);
+  };
+
+  const setPaused = async (paused: boolean) => {
+    if (!active) return;
+    const { error: e } = await rpc("setter_admin_set_paused", { p_lead_id: active.id, p_paused: paused });
+    if (e) { setSendError(e.message); return; }
+    setActive({ ...active, bot_paused: paused });
+    setLeads((ls) => (ls ?? []).map((l) => (l.id === active.id ? { ...l, bot_paused: paused } : l)));
+  };
+
+  // Delivered admin messages show up in setter_messages; the outbox only
+  // contributes what is still on its way, or what failed.
+  const pending = outgoing.filter((o) => !o.sent_at);
 
   const funnel = useMemo(() => {
     const rows = leads ?? [];
@@ -163,7 +244,7 @@ function AdminLeads() {
     <div>
       <AdminPageHeader
         title="Telegram leads"
-        sub="Every conversation Cosmo has had, and where each one stopped. Read-only — reply in Telegram."
+        sub="Every conversation Cosmo has had, and where each one stopped. Open a chat to write as Cosmo — sending takes it over from the bot."
       />
 
       {error && (
@@ -274,7 +355,10 @@ function AdminLeads() {
                       on ? "border-primary/50 bg-primary/10" : "border-white/10 bg-white/[0.03] hover:border-white/20")}
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="truncate text-sm font-semibold">{l.first_name || "Lead"}</span>
+                      <span className="flex min-w-0 items-center gap-1.5 truncate text-sm font-semibold">
+                        {l.bot_paused && <Hand className="h-3.5 w-3.5 shrink-0 text-amber-300" aria-label="You took over" />}
+                        <span className="truncate">{l.first_name || "Lead"}</span>
+                      </span>
                       <span className={cn("shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold", st.tone)}>
                         {st.label}
                       </span>
@@ -304,14 +388,33 @@ function AdminLeads() {
                         <span className="ml-2 font-normal text-muted-foreground">@{active.telegram_username}</span>
                       )}
                     </span>
-                    <a
-                      href={`https://t.me/${active.telegram_username ?? ""}`}
-                      target="_blank" rel="noopener noreferrer"
-                      className={cn("ml-auto inline-flex items-center gap-1.5 text-[12px] font-semibold text-primary hover:underline",
-                        !active.telegram_username && "pointer-events-none opacity-40")}
-                    >
-                      <MessageSquare className="h-3.5 w-3.5" /> Open in Telegram
-                    </a>
+                    <div className="ml-auto flex items-center gap-3">
+                      {active.bot_paused ? (
+                        <button
+                          onClick={() => setPaused(false)}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-amber-300/40 bg-amber-300/10 px-3 py-1 text-[12px] font-semibold text-amber-300 hover:bg-amber-300/20"
+                          title="The bot stays silent in this chat until you hand it back"
+                        >
+                          <Hand className="h-3.5 w-3.5" /> You took over · hand back to bot
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setPaused(true)}
+                          className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.04] px-3 py-1 text-[12px] font-semibold text-foreground/80 hover:bg-white/10"
+                          title="Mute the bot in this chat without writing yet"
+                        >
+                          <Bot className="h-3.5 w-3.5 text-primary" /> Bot is replying · take over
+                        </button>
+                      )}
+                      <a
+                        href={`https://t.me/${active.telegram_username ?? ""}`}
+                        target="_blank" rel="noopener noreferrer"
+                        className={cn("inline-flex items-center gap-1.5 text-[12px] font-semibold text-primary hover:underline",
+                          !active.telegram_username && "pointer-events-none opacity-40")}
+                      >
+                        <MessageSquare className="h-3.5 w-3.5" /> Profile
+                      </a>
+                    </div>
                   </div>
 
                   {/* What the bot learned, so nobody has to read the transcript
@@ -330,20 +433,69 @@ function AdminLeads() {
                       <Loader2 className="h-4 w-4 animate-spin" /> Loading…
                     </div>
                   ) : (
-                    <div className="max-h-[58vh] space-y-3 overflow-y-auto">
+                    <div ref={scrollRef} className="max-h-[52vh] space-y-3 overflow-y-auto">
                       {msgs.map((m) => (
                         <div key={m.id} className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}>
                           <div className={cn(
                             "max-w-[78%] whitespace-pre-wrap rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed",
                             m.role === "user" ? "bg-primary/15 text-foreground/90"
-                                              : "border border-white/10 bg-white/[0.04] text-foreground/80")}>
+                              : m.role === "admin" ? "border border-amber-300/30 bg-amber-300/[0.07] text-foreground/90"
+                              : "border border-white/10 bg-white/[0.04] text-foreground/80")}>
                             {m.content}
-                            <div className="mt-1 text-[10px] text-muted-foreground">{time(m.created_at)}</div>
+                            <div className="mt-1 text-[10px] text-muted-foreground">
+                              {m.role === "admin" && <span className="font-semibold text-amber-300/90">You · as Cosmo · </span>}
+                              {time(m.created_at)}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                      {pending.map((o) => (
+                        <div key={o.id} className="flex justify-start">
+                          <div className={cn(
+                            "max-w-[78%] whitespace-pre-wrap rounded-2xl border px-3.5 py-2.5 text-sm leading-relaxed",
+                            o.error ? "border-red-400/40 bg-red-400/[0.07] text-foreground/80"
+                                    : "border-dashed border-amber-300/40 bg-amber-300/[0.04] text-foreground/70")}>
+                            {o.text}
+                            <div className={cn("mt-1 flex items-center gap-1 text-[10px]", o.error ? "text-red-400" : "text-muted-foreground")}>
+                              {o.error
+                                ? <><AlertCircle className="h-3 w-3" /> Not delivered: {o.error}</>
+                                : <><Loader2 className="h-3 w-3 animate-spin" /> sending…</>}
+                            </div>
                           </div>
                         </div>
                       ))}
                     </div>
                   )}
+
+                  {/* Write as Cosmo. Enter sends, Shift+Enter breaks the line. */}
+                  <div className="mt-3 border-t border-white/8 pt-3">
+                    <div className="flex items-end gap-2">
+                      <textarea
+                        value={draft}
+                        onChange={(e) => setDraft(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); }
+                        }}
+                        rows={2}
+                        maxLength={4000}
+                        placeholder={`Message ${active.first_name || "this lead"} as Cosmo…`}
+                        className="min-h-[44px] flex-1 resize-y rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-sm outline-none focus:border-primary/50"
+                      />
+                      <button
+                        onClick={() => void send()}
+                        disabled={busy || !draft.trim()}
+                        className="inline-flex h-[44px] items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-40"
+                      >
+                        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Send
+                      </button>
+                    </div>
+                    <p className="mt-1.5 text-[11px] text-muted-foreground">
+                      {active.bot_paused
+                        ? "Goes out as the Cosmos bot. The bot stays silent in this chat until you hand it back."
+                        : "Goes out as the Cosmos bot. Sending takes this chat over — the bot stops replying here."}
+                    </p>
+                    {sendError && <p className="mt-1 text-[12px] text-red-400">{sendError}</p>}
+                  </div>
                 </>
               )}
             </div>
