@@ -374,74 +374,111 @@ def render_ergebnis(t, ziel_datei):
     return ziel_datei
 
 
-# ── Karte A: Signal ist live, Zahlen verdeckt ───────────────────────────────
+# ── Karte A: ein neuer Trade ist live ───────────────────────────────────────
 #
-# Der Info-Kanal ist oeffentlich. Wer hier Einstieg, Stop und Ziel zeigt, gibt
-# das Produkt weg, fuer das andere zahlen. Also dieselbe Bauform wie die
-# Ergebniskarte, aber mit verdeckten Zahlen: man sieht, DASS ein Trade laeuft
-# und wie er aufgebaut ist, nicht WELCHER.
+# Ansage Diego 10.09.: "die Trade-Karte sollte auch ein bisschen cooler
+# dargestellt sein, das sind zu viele kleine Infos, man rafft gar nicht so
+# sehr — es soll wirklich gross dastehen: New Gold Trade in VIP Group … es
+# muss halt ins Auge fallen. Aktuell ist es eine grosse schwarze Karte, wo man
+# nicht viel erkennt."
 #
-# Bewusst KEIN Aufruf ("tap the pinned message"). Der stand unter jedem Teaser
-# und liess die Reihe wie Spam aussehen — dafuer gibt es eigene Nachrichten.
+# Die Vorgaengerin trug eine verdeckte Preisleiter mit drei Beschriftungen,
+# drei Punktreihen und einer Fusszeile — neun Einzelheiten in 17 bis 34 Punkt
+# auf fast Schwarz. Beim Scrollen blieb davon nichts haengen. Jetzt traegt EINE
+# Zeile die Nachricht, in der schwersten Schnittstaerke der Schrift, und alles
+# andere ordnet sich darunter.
+#
+# Bewusst weiter OHNE Zahlen: der Info-Kanal ist oeffentlich, Einstieg, Stop
+# und Ziel sind das Produkt. Und bewusst ohne Uhrzeit — rechts unten legt
+# Telegram seine eigene ueber jedes Bild, die zweite war am 10.09. davon
+# verdeckt.
+
+def _f(groesse, gewicht=400):
+    s = ImageFont.truetype(FONT, groesse)
+    try:
+        s.set_variation_by_axes([gewicht])
+    except Exception:
+        pass
+    return s
+
+
+def _passend(d, text, gewicht, max_breite, start):
+    """So gross wie moeglich, aber nie breiter als der Platz. "NEW NASDAQ
+    TRADE" ist drei Buchstaben laenger als "NEW GOLD TRADE"."""
+    g = start
+    while g > 30 and d.textlength(text, font=_f(g, gewicht)) > max_breite:
+        g -= 2
+    return _f(g, gewicht)
+
+
+def _winkel(d, cx, cy, w, h, dicke, runter, farbe):
+    s = 1 if runter else -1
+    oben, unten = cy - s * h / 2, cy + s * h / 2
+    d.polygon([(cx - w / 2, oben), (cx - w / 2 + dicke, oben),
+               (cx, unten - s * dicke * 1.35),
+               (cx + w / 2 - dicke, oben), (cx + w / 2, oben), (cx, unten)], fill=farbe)
+
+
 def render_teaser(inst, richtung, wann, ziel):
-    # Ansage 09.09.: "die Trade-Kacheln muessen auch ein bisschen kleiner sein."
-    # 560 -> 400 Pixel, ohne etwas wegzulassen: die Leiter steht enger, die
-    # Raender sind schmaler. Im Kanal frisst eine Karte damit rund ein Drittel
-    # weniger Bildschirm, und bei mehreren Signalen am Tag ist genau das der
-    # Unterschied zwischen "gepflegt" und "zugespammt".
-    B, H = 1080, 400
-    bild = Image.new("RGB", (B, H), GRUND)
+    B, H = 1080, 380
+    kurz = richtung.lower().startswith("s")
+    farbe = ROT if kurz else GRUEN
+
+    # Nachtblau statt Schwarz: ein senkrechter Verlauf gibt der Flaeche Tiefe.
+    # Die alte Karte war im dunklen Telegram-Thema ein schwarzes Loch.
+    bild = Image.new("RGB", (B, H))
+    px = ImageDraw.Draw(bild)
+    oben_f, unten_f = (13, 30, 68), (5, 9, 22)
+    for y in range(H):
+        a = y / (H - 1)
+        px.line((0, y, B, y), fill=tuple(int(oben_f[i] * (1 - a) + unten_f[i] * a) for i in range(3)))
+
+    K = 120
+    licht = Image.new("L", (K, K), 0); lp = licht.load()
+    for yy in range(K):
+        for xx in range(K):
+            dx, dy = (xx - K / 2) / (K / 2), (yy - K / 2) / (K / 2)
+            lp[xx, yy] = int(255 * max(0.0, 1.0 - (dx * dx + dy * dy) ** 0.5) ** 2.0)
+    licht = licht.resize((900, 700), Image.BICUBIC)
+    bild.paste(Image.new("RGB", licht.size, AZUR), (B - 560, -380),
+               licht.point(lambda v: int(v * 0.30)))
+
     d = ImageDraw.Draw(bild, "RGBA")
 
-    K = 110
-    licht = Image.new("L", (K, K), 0); lp = licht.load()
-    for y in range(K):
-        for x in range(K):
-            dx, dy = (x - K / 2) / (K / 2), (y - K / 2) / (K / 2)
-            lp[x, y] = int(255 * max(0.0, 1.0 - (dx * dx + dy * dy) ** 0.5) ** 2.2)
-    licht = licht.resize((1120, 440), Image.BICUBIC)
-    bild.paste(Image.new("RGB", licht.size, AZUR), (B // 2 - 560, -240),
-               licht.point(lambda v: int(v * 0.24)))
+    # Drei gestaffelte Winkel in Richtungsfarbe. Der hellste sitzt an der
+    # SPITZE der Bewegung — bei Short unten, bei Long oben —, die anderen sind
+    # die Spur dahinter. So liest man die Richtung, bevor man ein Wort liest.
+    # Bewusst KEIN Kursverlauf: ein erfundener Chart neben echten Signalen
+    # waere eine Behauptung; ein Pfeil ist nur ein Pfeil.
+    stufen = (40, 90, 160) if kurz else (160, 90, 40)
+    for i, alpha in enumerate(stufen):
+        _winkel(d, 895, 134 + i * 62, 146, 60, 20, kurz, (*farbe, alpha))
 
-    farbe = ROT if richtung.lower().startswith("s") else GRUEN
-    # Der Punkt links pulst nicht — ein Standbild kann das nicht. Er ist der
-    # ruhige Hinweis "laeuft gerade", mehr soll er nicht sein.
-    d.ellipse((56, 44, 72, 60), fill=farbe)
-    d.text((86, 40), "LIVE IN VIP", font=schrift(20, True), fill=farbe)
-    d.text((B - 56 - d.textlength("COSMOS CANDLES", font=schrift(18, True)), 42),
-           "COSMOS CANDLES", font=schrift(18, True), fill=AZUR)
+    txt = "LIVE NOW"
+    pill = _f(19, 700)
+    w = d.textlength(txt, font=pill)
+    d.rounded_rectangle((56, 38, 56 + 44 + w + 22, 78), 20,
+                        fill=(255, 255, 255, 22), outline=(255, 255, 255, 40), width=1)
+    d.ellipse((74, 51, 88, 65), fill=ROT)
+    d.text((100, 47), txt, font=pill, fill=WEISS)
+    marke = _f(18, 700)
+    d.text((B - 56 - d.textlength("COSMOS CANDLES", font=marke), 48), "COSMOS CANDLES",
+           font=marke, fill=AZUR)
 
-    f_paar = schrift(48, True)
-    d.text((56, 88), inst.upper(), font=f_paar, fill=WEISS)
-    bx = 56 + d.textlength(inst.upper(), font=f_paar) + 20
-    f_ri = schrift(21, True); rw = d.textlength(richtung.upper(), font=f_ri)
-    d.rounded_rectangle((bx, 100, bx + rw + 26, 100 + 34), 17,
-                        fill=(*farbe, 38), outline=(*farbe, 150), width=2)
-    d.text((bx + 13, 106), richtung.upper(), font=f_ri, fill=farbe)
+    kopf = f"NEW {inst.upper()} TRADE" if inst.lower() != "market" else "NEW TRADE"
+    fk = _passend(d, kopf, 900, 740, 84)
+    d.text((54, 104), kopf, font=fk, fill=WEISS)
+    d.text((58, 104 + fk.size + 22), "IN THE VIP GROUP", font=_f(30, 600),
+           fill=(255, 255, 255, 150))
 
-    # Die Leiter steht, die Zahlen sind zu. Gleichmaessiger Abstand, damit auch
-    # das Verhaeltnis nichts verraet.
-    # Die Reihenfolge folgt der RICHTUNG. Bei einem Short liegt der Stop ueber
-    # dem Einstieg und das Ziel darunter — bei einem Long genau andersherum.
-    # Vorher stand immer SL oben; auf einer Long-Karte war das schlicht falsch,
-    # und das faellt jedem Trader in einer Sekunde auf.
-    leiter = [("SL", ROT), ("ENTRY", WEISS), ("TARGET", GRUEN)]
-    if not richtung.lower().startswith("s"):
-        leiter = [("TARGET", GRUEN), ("ENTRY", WEISS), ("SL", ROT)]
-    f_lab, f_wert = schrift(15, True), schrift(28, True)
-    for i, (name, f) in enumerate(leiter):
-        y = 190 + i * 58
-        d.line((72, y, B - 56, y), fill=(*f, 55), width=2)
-        d.ellipse((66, y - 6, 78, y + 6), fill=f)
-        d.text((90, y - 23), name, font=f_lab, fill=(*f, 200))
-        pkt = "• • • •"
-        d.text((B - 56 - d.textlength(pkt, font=f_wert), y - 20), pkt,
-               font=f_wert, fill=(255, 255, 255, 70))
+    ri = "SHORT" if kurz else "LONG"
+    fr = _f(22, 800)
+    rw = d.textlength(ri, font=fr)
+    d.rounded_rectangle((56, 290, 56 + rw + 40, 336), 23, fill=farbe)
+    d.text((76, 301), ri, font=fr, fill=(8, 12, 26))
+    d.text((56 + rw + 62, 303), "Entry, stop and targets are inside.",
+           font=_f(20, 400), fill=(255, 255, 255, 140))
 
-    d.text((56, 344), "Entry, stop and targets are in VIP right now.",
-           font=schrift(18), fill=(255, 255, 255, 150))
-    d.text((B - 56 - d.textlength(wann, font=schrift(15)), 348), wann,
-           font=schrift(15), fill=GRAU)
     bild.save(ziel, quality=95)
     return ziel
 

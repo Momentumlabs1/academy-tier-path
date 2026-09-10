@@ -28,7 +28,7 @@ richtiger Formatierung neu gesetzt werden muss. Gibt zurueck, was Telegram
 gespeichert hat (Breite/Hoehe/Dauer), damit man die Formatierung sieht,
 statt sie zu vermuten.
 """
-import json, os, sys, datetime, struct, urllib.request, urllib.parse
+import json, os, sys, datetime, struct, urllib.request, urllib.parse, urllib.error
 
 BASE = "/opt/cc-infoqueue"
 CHAT = "-1003894894276"
@@ -202,8 +202,18 @@ def ersetze(p, API, chat=CHAT):
                          "caption": p.get("caption", "")})
     body, ctype = _multipart({"chat_id": chat, "message_id": str(mid), "media": medien},
                              "datei", pfad)
-    j = json.load(urllib.request.urlopen(urllib.request.Request(
-        f"{API}/editMessageMedia", data=body, headers={"Content-Type": ctype}), timeout=300))
+    try:
+        j = json.load(urllib.request.urlopen(urllib.request.Request(
+            f"{API}/editMessageMedia", data=body, headers={"Content-Type": ctype}), timeout=300))
+    except urllib.error.HTTPError as ex:
+        # Telegram antwortet auf "message to edit not found" mit HTTP 400 —
+        # urllib wirft dann, statt die Antwort zurueckzugeben. Als Ausnahme
+        # waere das im allgemeinen except des Hauptlaufs gelandet, OHNE den
+        # Eintrag abzuhaken: Endlosschleife, Warteschlange steht.
+        try:
+            j = json.load(ex)
+        except Exception:
+            j = {"ok": False, "description": str(ex)}
     if not j.get("ok"):
         print(f"editMessageMedia abgelehnt: {j.get('description')}", file=sys.stderr)
         return None
@@ -341,6 +351,16 @@ def main():
                     ids[str(key)] = res["message_id"]
                     json.dump(ids, open(f"{BASE}/sent_ids.json", "w"))
                 print(f"gepostet: {key} ({p['type']}) {describe(res)}")
+            elif p.get("ersetzt_index") is not None:
+                # Ein Austausch, der nicht klappt, klappt auch beim naechsten
+                # Mal nicht — die Zielnachricht ist geloescht oder zu alt. Ohne
+                # diesen Zweig blieb der Eintrag offen, der Poster versuchte es
+                # alle zwei Minuten neu, und weil er pro Lauf nur EINEN Eintrag
+                # anfasst, stand dahinter die ganze Warteschlange still.
+                done[key] = "skipped: ersetzen fehlgeschlagen"
+                json.dump(done, open(f"{BASE}/done.json", "w"))
+                print(f"uebersprungen: {key} — Zielnachricht nicht mehr ersetzbar", file=sys.stderr)
+                continue
             else:
                 print(f"FEHLER bei {key}", file=sys.stderr)
         except Exception as e:
