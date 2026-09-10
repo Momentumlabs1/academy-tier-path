@@ -72,10 +72,25 @@ RE_LAUFEND = re.compile(r"\d+\s*pips?\b|\bim\s*profit\b|\bin\s*profit\b|\bam\s*l
 
 # Tims eigene Bilanzkarten ("4 SIGNALE / 1180 TP") — die zaehlen wir selbst,
 # aus den Signalen. Siehe desk_report.py.
-RE_FREMDBILANZ = re.compile(r"\d+\s*[✅❌🛑🔴]\s*(?:TP|SL|BE)\b|heutiger\s*report|weekly\s*report", re.I)
+RE_FREMDBILANZ = re.compile(r"heutige[rs]?\s*(?:report|ergebnis)|weekly\s*report|\b\d+\s*signale\b", re.I)
+# Eine Zaehlzeile: "420 ✅ TP" oder "1250 TP ✅" — das Emoji steht bei Tim mal
+# davor, mal dahinter. EINE solche Zeile ist ein einzelner Stop ("30 SL ❌"),
+# erst ZWEI davon sind eine Bilanz. Am 10.09. verwechselte der Filter sonst
+# entweder Tims Tagesbilanz mit einem Treffer oder einen Stop mit einer Bilanz.
+RE_ZAEHLZEILE = re.compile(r"\d+\s*[✅❌🛑🔴]\s*(?:TP|SL|BE)\b|\d+\s*(?:TP|SL|BE)\s*[✅❌🛑🔴]", re.I)
+
+
+def ist_fremdbilanz(t: str) -> bool:
+    return bool(RE_FREMDBILANZ.search(t)) or len(RE_ZAEHLZEILE.findall(t)) >= 2
+
 
 # Plaene ("bei TP2 nachlegen") sind Ankuendigungen, keine Ereignisse.
 RE_PLAN = re.compile(r"\b(?:bei|ab|bis)\s+tp", re.I)
+
+# "Fast TP1 hit", "Gleich TP2 hit", "kurz vor TP1" — der Desk kuendigt an, dass
+# ein Ziel GLEICH faellt. Am 10.09. las der Filter beides als Treffer und
+# schrieb einem Trade TP2 gut, der es in dem Moment noch nicht hatte.
+RE_BEINAHE = re.compile(r"\b(?:fast|gleich|bald|kurz\s+vor|almost|nearly|soon|close\s+to)\b", re.I)
 
 
 def klassifiziere(text: str) -> str:
@@ -87,7 +102,7 @@ def klassifiziere(text: str) -> str:
     if not t:
         return "rauschen"
 
-    if RE_FREMDBILANZ.search(t):
+    if ist_fremdbilanz(t):
         return "fremdbilanz"
 
     if RE_SIGNAL.search(t) and RE_RICHTUNG.search(t) and RE_SL_ZEILE.search(t):
@@ -97,8 +112,9 @@ def klassifiziere(text: str) -> str:
         return "plan"
 
     # Treffer VOR Anweisung: "TP2 ✅ Teilprofite ziehen" ist ein Treffer.
+    # Aber nicht, wenn er erst angekuendigt wird.
     if RE_TP_TREFFER.search(t):
-        return "treffer"
+        return "laufend" if RE_BEINAHE.search(t) else "treffer"
 
     if RE_STOP.search(t):
         return "stop"
@@ -188,6 +204,13 @@ if __name__ == "__main__":
         ("TP1 geknackt 140 + 130 🔥✅", "treffer"),
         ("Sell jetzt", "anweisung"),
         ("XAUUSD 190 PIPS im Profit + 180 PIPS im Profit 🔥✅", "laufend"),
+        ("TP3 hit, 700 PIPS ✅🔥", "treffer"),
+        ("330 PIPS im Profit\nGleich TP2 hit 🔥✅", "laufend"),
+        ("Fast TP1 hit\n120 PIPS im Profit 🔥✅", "laufend"),
+        ("TP1 fast hit\n110 PIPS im Profit 🔥✅", "laufend"),
+        ("HEUTIGES ERGEBNIS\n8 SIGNALE\n\n1250 TP ✅\n0 SL ❌\n0 BE 🛑", "fremdbilanz"),
+        ("SL HIT ❌", "stop"),
+        ("❌ Limit Order stornieren", "rauschen"),
     ]
     fehler = 0
     for text, soll in proben:

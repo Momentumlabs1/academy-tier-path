@@ -163,15 +163,29 @@ def _waehle_trade(offen, stufe, pips):
     frei = [t for t in offen if stufe not in t["hits"]]
     if not frei:
         return None
+
+    # Ein Ziel OHNE Preis ("TP3 : offen") ist der Runner — der Rest der
+    # Position laeuft ohne festes Ziel weiter. Eine Pip-Zahl laesst sich dann
+    # an nichts nachrechnen. Am 10.09. fiel genau so "TP3 hit, 700 PIPS"
+    # durch, der groesste Treffer des Tages. Gemeint ist in dem Fall der Trade,
+    # der am weitesten ist: nur einer, der schon TP1/TP2 hinter sich hat, kann
+    # als Naechstes seinen Runner auszahlen.
+    mit_preis = [t for t in frei if t["tps"].get(stufe) is not None]
+    if not mit_preis:
+        weiteste = max(t["max_tp"] for t in frei)
+        return next(t for t in frei if t["max_tp"] == weiteste)
+
     if pips:
-        for t in frei:
-            z = t["tps"].get(stufe)
-            if z is None:
-                continue
-            eigene = abs(t["entry"] - z) / pip_wert(t["paar"])
-            if eigene and abs(eigene - pips) / eigene <= 0.15:
-                return t
-        return None
+        # Den GENAUESTEN nehmen, nicht den erstbesten innerhalb der Toleranz.
+        # Am 10.09. passte "TP1 geknackt, 130" zu zwei Trades — einer mit 140
+        # Pips bis TP1, einer mit genau 130. Der erstbeste war der falsche.
+        beste, abstand = None, 1.0
+        for t in mit_preis:
+            eigene = abs(t["entry"] - t["tps"][stufe]) / pip_wert(t["paar"])
+            d = abs(eigene - pips) / eigene if eigene else 1.0
+            if d <= 0.15 and d < abstand:
+                beste, abstand = t, d
+        return beste
     for t in frei:
         if t["max_tp"] == stufe - 1:
             return t
