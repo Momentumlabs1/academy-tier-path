@@ -251,6 +251,31 @@ def baue_trades(rows):
                            "hits": {}, "max_tp": 0, "zu": None})
             continue
 
+        if art == "fremdbilanz":
+            # Tims Tagesbilanz schliesst, was der Desk nie einzeln abgeschlossen hat.
+            #
+            # Am 10.09. standen zwei Live-Karten ohne Streifen im Kanal: fuer
+            # diese Trades schrieb der Desk nie "TP1 hit", nur "190 Pips im
+            # Profit" fuer alles, was gerade lief. Die Bilanz um 18:19 sagte
+            # dann "8 Signale / 1250 TP / 0 SL / 0 BE" — also ist JEDER Trade des
+            # Tages mindestens bei TP1 raus. Genau so viel wird gutgeschrieben:
+            # TP1, gerechnet aus dem Signal selbst. Nicht mehr.
+            #
+            # Nur bei 0 SL UND 0 BE. Sonst ist offen, WELCHER Trade den Stop
+            # oder den Einstand hatte, und dann bleibt der Streifen lieber weg,
+            # als dass er einem Trade das falsche Ergebnis anheftet.
+            b = df.lies_bilanz(text)
+            if b and b["art"] == "tag" and b["sl"] == 0 and (b["be"] or 0) == 0:
+                tag = r["created_at"][:10]
+                for t in trades:
+                    if not t["zu"] and t["zeit"][:10] == tag:
+                        t["zu"] = "gewinn"
+                        t["max_tp"] = max(t["max_tp"], 1)
+                        t["hits"].setdefault(1, None)
+                        t["letzte"] = r["created_at"]
+                        t["per_bilanz"] = True
+            continue
+
         if art not in ("treffer", "stop"):
             continue
 
@@ -550,6 +575,101 @@ def render_zitat(text, ziel):
         y += 54
     d.text((144, y + 20), "\u2014 a trader following the desk", font=_f(20, 400),
            fill=(255, 255, 255, 140))
+    bild.save(ziel, quality=95)
+    return ziel
+
+
+# ── Karte: Tagesergebnis (neu, 10.09.) ─────────────────────────────────────
+#
+# Ansage Diego 10.09.: "wieso keine geile Karte mit den Daily Results?! Stil
+# haben wir ja jetzt gefunden, die Karte darf gerne auch groesser sein und
+# special designt."
+#
+# Die Zahlen sind TIMS EIGENE Tagesbilanz ("HEUTIGES ERGEBNIS"), nicht eine
+# Nachrechnung. Die VIP-Mitglieder sehen genau diese Bilanz im Signalkanal;
+# stuende im Info-Kanal eine andere Zahl, widersprachen sich zwei Kanaele
+# derselben Marke. Wir gestalten sie, wir veraendern sie nicht.
+#
+# Die Heldenzahl ist NETTO (TP minus SL). Wer an einem Tag mit 70 Pips Stop
+# nur die 420 Take-Profit gross schreibt, zeigt einen Ausschnitt und nennt ihn
+# Ergebnis.
+def render_tagesbilanz(b, datum, ziel):
+    B, H = 1080, 930
+    netto = (b["tp"] or 0) - (b["sl"] or 0)
+    gut = netto >= 0
+    held_f = GRUEN if gut else ROT
+
+    bild = Image.new("RGB", (B, H))
+    px = ImageDraw.Draw(bild)
+    oben_f, unten_f = (14, 33, 74), (4, 8, 20)
+    for y in range(H):
+        a = y / (H - 1)
+        px.line((0, y, B, y), fill=tuple(int(oben_f[i] * (1 - a) + unten_f[i] * a) for i in range(3)))
+
+    def schein(farbe, groesse, pos, staerke):
+        K = 120
+        m = Image.new("L", (K, K), 0); mp = m.load()
+        for yy in range(K):
+            for xx in range(K):
+                dx, dy = (xx - K / 2) / (K / 2), (yy - K / 2) / (K / 2)
+                mp[xx, yy] = int(255 * max(0.0, 1.0 - (dx * dx + dy * dy) ** 0.5) ** 2.0)
+        m = m.resize(groesse, Image.BICUBIC)
+        bild.paste(Image.new("RGB", groesse, farbe), pos, m.point(lambda v: int(v * staerke)))
+
+    schein(AZUR, (1000, 800), (B - 620, -460), 0.30)
+    schein(held_f, (1100, 560), (-260, 110), 0.16)   # hinter der Heldenzahl
+
+    d = ImageDraw.Draw(bild, "RGBA")
+
+    kopf = "WEEKLY RESULT" if b.get("art") == "woche" else "DAILY RESULT"
+    fk = _f(20, 700)
+    w = d.textlength(kopf, font=fk)
+    d.rounded_rectangle((56, 50, 56 + w + 40, 92), 21, fill=(*AZUR, 38), outline=(*AZUR, 130), width=1)
+    d.text((76, 60), kopf, font=fk, fill=AZUR)
+    marke = _f(20, 700)
+    d.text((B - 56 - d.textlength("COSMOS CANDLES", font=marke), 61), "COSMOS CANDLES",
+           font=marke, fill=AZUR)
+    d.text((58, 128), datum.upper(), font=_f(26, 600), fill=(255, 255, 255, 150))
+
+    # Die Zahl.
+    zahl = ("+" if netto >= 0 else "\u2212") + f"{abs(netto):,}".replace(",", " ")
+    fz = _passend(d, zahl, 900, B - 112, 230)
+    d.text((48, 170), zahl, font=fz, fill=WEISS)
+    d.text((58, 170 + fz.size + 28), "PIPS  \u00b7  NET", font=_f(38, 800), fill=held_f)
+
+    # Drei Kacheln. Stop-Loss ist rot, sobald es einen gab — und grau, wenn
+    # nicht. Eine rote Null sieht aus wie ein Fehler.
+    kacheln = [
+        (str(b["signale"]), "SIGNALS", WEISS),
+        ("+" + f"{b['tp'] or 0:,}".replace(",", " "), "TAKE PROFIT", GRUEN),
+        (("\u2212" if b["sl"] else "") + f"{b['sl'] or 0:,}".replace(",", " "), "STOP LOSS",
+         ROT if b["sl"] else (255, 255, 255)),
+    ]
+    y0, hk, luecke = 560, 190, 24
+    bk = (B - 112 - 2 * luecke) // 3
+    for i, (wert, name, farbe) in enumerate(kacheln):
+        x0 = 56 + i * (bk + luecke)
+        d.rounded_rectangle((x0, y0, x0 + bk, y0 + hk), 26, fill=(255, 255, 255, 14),
+                            outline=(255, 255, 255, 34), width=1)
+        fw = _passend(d, wert, 900, bk - 56, 78)
+        alpha = 255 if (farbe is not WEISS and not (name == "STOP LOSS" and not b["sl"])) else 235
+        d.text((x0 + 28, y0 + 34), wert, font=fw, fill=(*farbe[:3], alpha if name != "STOP LOSS" or b["sl"] else 110))
+        d.text((x0 + 28, y0 + hk - 58), name, font=_f(18, 700), fill=(255, 255, 255, 140))
+
+    # Ein Chip je Signal — neutral in Azur. Tims Bilanz nennt nur Summen,
+    # nicht, welches Signal wie ausging; gefaerbte Chips wuerden eine
+    # Aufschluesselung vortaeuschen, die es nicht gibt.
+    n = max(0, min(int(b["signale"] or 0), 20))
+    if n:
+        cw, cl = 34, 12
+        for i in range(n):
+            x = 58 + i * (cw + cl)
+            d.rounded_rectangle((x, 800, x + cw, 812), 6, fill=(*AZUR, 200))
+    fuss = "Every signal was called live in the VIP group."
+    if b.get("be"):
+        fuss += f"  Breakeven: {b['be']} pips, not counted."
+    d.text((58, 846), fuss, font=_f(20, 400), fill=(255, 255, 255, 140))
+
     bild.save(ziel, quality=95)
     return ziel
 

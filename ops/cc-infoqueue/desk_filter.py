@@ -173,6 +173,31 @@ def pips_angabe(text: str):
     return int(m.group(1)) if m else None
 
 
+def lies_bilanz(text: str):
+    """Tims eigene Tages-/Wochenbilanz in Zahlen — oder None.
+
+    Zwei Schreibweisen im Bestand, das Emoji mal vor, mal hinter dem Kuerzel:
+        HEUTIGES ERGEBNIS / 8 SIGNALE / 1250 TP ✅ / 0 SL ❌ / 0 BE 🛑      (10.09.)
+        HEUTIGER REPORT / 7 SIGNALE / 420 ✅ TP / 70 ❌ SL / 100 🛑BE     (08.09.)
+    TP, SL und BE sind Pips, keine Anzahlen. BE zaehlt bei Tim ausdruecklich
+    nicht mit ("BE zaehlt nicht mit").
+    """
+    t = text or ""
+    if not ist_fremdbilanz(t):
+        return None
+
+    def wert(kuerzel):
+        m = re.search(rf"(\d[\d\s.]*)\s*[✅❌🛑🔴]?\s*{kuerzel}\b", t, re.I) \
+            or re.search(rf"{kuerzel}\s*[✅❌🛑🔴]?\s*(\d[\d\s.]*)", t, re.I)
+        return int(re.sub(r"[\s.]", "", m.group(1))) if m else None
+
+    m = re.search(r"(\d+)\s*signale", t, re.I)
+    art = "woche" if re.search(r"weekly|woche", t, re.I) else "tag"
+    b = {"art": art, "signale": int(m.group(1)) if m else None,
+         "tp": wert("TP"), "sl": wert("SL"), "be": wert("BE")}
+    return b if b["signale"] is not None and b["tp"] is not None else None
+
+
 DARF_IN_KANAL = {"signal", "treffer", "stop"}
 
 
@@ -224,3 +249,5 @@ if __name__ == "__main__":
     print("pips_liste('TP1 geknackt, 120 PIPS'):", pips_liste("TP1 geknackt, 120 PIPS 🔥✅"))
     print("pips_liste('TP1✅'):", pips_liste("TP1✅"))
     print("kern('SL ❌') == kern('30 SL ❌'):", kern("SL ❌") == kern("30 SL ❌"))
+    print(lies_bilanz("HEUTIGES ERGEBNIS\n8 SIGNALE\n\n1250 TP ✅\n0 SL ❌\n0 BE 🛑"))
+    print(lies_bilanz("HEUTIGER REPORT\n7 SIGNALE\n\n420 ✅ TP\n70 ❌ SL\n100 🛑BE zaehlt nicht mit"))

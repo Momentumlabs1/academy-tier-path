@@ -301,7 +301,7 @@ def rueckblick_auftrag(e):
         "nebeneinander stehen, dass die Serie zaehlt und nicht der einzelne "
         "Trade, dass ein Ziel Stunden brauchte. Was WIRKLICH in den Daten steht.\n\n"
         f"{FORM}\n\n"
-        f"Heute ({heute.isoformat()}) am Desk:\n"
+        f"Heute ({heute.isoformat()}, ein {heute.strftime('%A')}) am Desk:\n"
         f"Signale: {bericht.get('signale')}, Pips im Plus: {bericht.get('tp_pips')}, "
         f"Pips im Minus: {bericht.get('sl_pips')}, "
         f"ohne bekannten Ausgang: {bericht.get('unklar')}\n\n"
@@ -312,7 +312,11 @@ def rueckblick_auftrag(e):
         "Verlierer dargestellt werden. Schreib nichts, was ueber diese Aufteilung "
         "hinausgeht.\n\n"
         "Du darfst AUSSCHLIESSLICH diese Zahlen verwenden. Keine anderen.")
-    fakten = (f"Tag {heute.isoformat()}, alle Zeiten UTC. "
+    # Der Wochentag steht ausdruecklich drin. Am 10.09. (Donnerstag) schrieb
+    # der Rueckblick "it's just Tuesday" — das Faktenblatt hatte nur das
+    # Datum, und weder Schreiber noch Pruefer haben daraus den Tag gerechnet.
+    wochentag = heute.strftime("%A")
+    fakten = (f"Tag {heute.isoformat()} ({wochentag}), alle Zeiten UTC. "
               f"Signale gesamt: {bericht.get('signale')}. "
               f"{gewinner} Trades im Plus geschlossen, {verlierer} ausgestoppt, "
               f"der Rest ohne bekannten Ausgang.\n" + "\n".join(zeilen))
