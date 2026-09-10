@@ -594,7 +594,18 @@ def render_zitat(text, ziel):
 # nur die 420 Take-Profit gross schreibt, zeigt einen Ausschnitt und nennt ihn
 # Ergebnis.
 def render_tagesbilanz(b, datum, ziel):
-    B, H = 1080, 930
+    """Recap of the Day — Tims Tagesbilanz als Karte.
+
+    Zweite Fassung, 11.09. Diego zur ersten: "es fehlt sowas wie Recap of the
+    Day, man rafft nicht ganz, was das jetzt ist — die Zahl oben ist zu gross,
+    die unten sind zu klein, der Text unten ist gar nicht lesbar."
+
+    Der Grund war messbar: Telegram zeigt ein 1080-px-Bild auf dem Handy etwa
+    auf ein Drittel verkleinert. Die Beschriftungen hatten 18-20 px — dort
+    also rund 7 pt. Deshalb gilt auf dieser Karte: NICHTS unter 30 px. Und
+    eine Ueberschrift, die sagt, was die Karte ist, bevor man eine Zahl liest.
+    """
+    B, H = 1080, 1000
     netto = (b["tp"] or 0) - (b["sl"] or 0)
     gut = netto >= 0
     held_f = GRUEN if gut else ROT
@@ -617,77 +628,61 @@ def render_tagesbilanz(b, datum, ziel):
         bild.paste(Image.new("RGB", groesse, farbe), pos, m.point(lambda v: int(v * staerke)))
 
     schein(AZUR, (1000, 800), (B - 620, -460), 0.30)
-    schein(held_f, (1100, 560), (-260, 110), 0.16)   # hinter der Heldenzahl
+    schein(held_f, (900, 460), (-240, 250), 0.14)
 
     d = ImageDraw.Draw(bild, "RGBA")
 
-    kopf = "WEEKLY RESULT" if b.get("art") == "woche" else "DAILY RESULT"
-    fk = _f(20, 700)
-    w = d.textlength(kopf, font=fk)
-    d.rounded_rectangle((56, 50, 56 + w + 40, 92), 21, fill=(*AZUR, 38), outline=(*AZUR, 130), width=1)
-    d.text((76, 60), kopf, font=fk, fill=AZUR)
-    marke = _f(20, 700)
-    d.text((B - 56 - d.textlength("COSMOS CANDLES", font=marke), 61), "COSMOS CANDLES",
-           font=marke, fill=AZUR)
-    d.text((58, 128), datum.upper(), font=_f(26, 600), fill=(255, 255, 255, 150))
+    # Kopf: WAS ist das, WANN war das.
+    d.text((56, 50), "COSMOS CANDLES", font=_f(28, 700), fill=AZUR)
+    titel = "RECAP OF THE WEEK" if b.get("art") == "woche" else "RECAP OF THE DAY"
+    ft = _passend(d, titel, 900, B - 112, 76)
+    d.text((54, 94), titel, font=ft, fill=WEISS)
+    d.text((58, 94 + ft.size + 20), datum.upper(), font=_f(32, 600), fill=(255, 255, 255, 165))
 
-    # Die Zahl.
-    zahl = ("+" if netto >= 0 else "\u2212") + f"{abs(netto):,}".replace(",", " ")
-    # Links die Zahl, rechts Cosmo. Ansage 10.09.: "vielleicht noch mit einem
-    # Bild von Cosmo seinem Gesicht drauf, die Karte soll ja wirklich ein
-    # bisschen special sein." Die Zahl gibt dafuer die rechte Haelfte ab.
-    fz = _passend(d, zahl, 900, 620, 200)
-    d.text((48, 170), zahl, font=fz, fill=WEISS)
-    d.text((58, 170 + fz.size + 28), "PIPS  \u00b7  NET", font=_f(38, 800), fill=held_f)
-
-    # Cosmo als Brustbild, er "steht" auf der Kachelreihe: die Unterkante des
-    # Ausschnitts sitzt genau auf ihrer Oberkante. Ein Schein in Azur hinter ihm
-    # loest ihn vom Grund; ohne ihn verschwimmt der blaue Kopf im Nachtblau.
+    # Cosmo rechts, er steht auf der Kachelreihe.
+    y_kacheln = 640
     try:
         cosmo = Image.open(f"{BASE}/assets/cosmo_bust.png").convert("RGBA")
-        hc = 430
+        hc = 380
         cosmo = cosmo.resize((int(cosmo.width * hc / cosmo.height), hc), Image.LANCZOS)
-        cx = B - 40 - cosmo.width
-        cy = 560 - hc
-        schein(AZUR, (620, 620), (cx + cosmo.width // 2 - 310, cy - 60), 0.22)
-        d = ImageDraw.Draw(bild, "RGBA")
+        cx, cy = B - 48 - cosmo.width, y_kacheln - hc
+        schein(AZUR, (560, 560), (cx + cosmo.width // 2 - 280, cy - 40), 0.22)
         bild.paste(cosmo, (cx, cy), cosmo)
         d = ImageDraw.Draw(bild, "RGBA")
+        platz = cx - 56 - 20
     except FileNotFoundError:
-        pass    # ohne Bild bleibt die Karte, wie sie war — lieber so als gar nicht
+        platz = B - 112
 
-    # Drei Kacheln. Stop-Loss ist rot, sobald es einen gab — und grau, wenn
-    # nicht. Eine rote Null sieht aus wie ein Fehler.
+    # Die Zahl — gross, aber nicht mehr alles erschlagend.
+    zahl = ("+" if netto >= 0 else "\u2212") + f"{abs(netto):,}".replace(",", " ")
+    fz = _passend(d, zahl, 900, min(platz, 600), 150)
+    yz = 300
+    d.text((50, yz), zahl, font=fz, fill=WEISS)
+    d.text((58, yz + fz.size + 24), "PIPS NET PROFIT" if gut else "PIPS NET",
+           font=_f(40, 800), fill=held_f)
+
+    # Drei Kacheln, Zahlen gross genug fuer ein Handy.
     kacheln = [
         (str(b["signale"]), "SIGNALS", WEISS),
         ("+" + f"{b['tp'] or 0:,}".replace(",", " "), "TAKE PROFIT", GRUEN),
         (("\u2212" if b["sl"] else "") + f"{b['sl'] or 0:,}".replace(",", " "), "STOP LOSS",
-         ROT if b["sl"] else (255, 255, 255)),
+         ROT if b["sl"] else WEISS),
     ]
-    y0, hk, luecke = 560, 190, 24
+    hk, luecke = 200, 22
     bk = (B - 112 - 2 * luecke) // 3
     for i, (wert, name, farbe) in enumerate(kacheln):
         x0 = 56 + i * (bk + luecke)
-        d.rounded_rectangle((x0, y0, x0 + bk, y0 + hk), 26, fill=(16, 24, 48, 235),
-                            outline=(255, 255, 255, 34), width=1)
-        fw = _passend(d, wert, 900, bk - 56, 78)
-        alpha = 255 if (farbe is not WEISS and not (name == "STOP LOSS" and not b["sl"])) else 235
-        d.text((x0 + 28, y0 + 34), wert, font=fw, fill=(*farbe[:3], alpha if name != "STOP LOSS" or b["sl"] else 110))
-        d.text((x0 + 28, y0 + hk - 58), name, font=_f(18, 700), fill=(255, 255, 255, 140))
+        d.rounded_rectangle((x0, y_kacheln, x0 + bk, y_kacheln + hk), 28,
+                            fill=(16, 24, 48, 240), outline=(255, 255, 255, 40), width=2)
+        fw = _passend(d, wert, 900, bk - 52, 88)
+        d.text((x0 + 26, y_kacheln + 30), wert, font=fw, fill=farbe)
+        d.text((x0 + 28, y_kacheln + hk - 62), name, font=_f(30, 700), fill=(255, 255, 255, 170))
 
-    # Ein Chip je Signal — neutral in Azur. Tims Bilanz nennt nur Summen,
-    # nicht, welches Signal wie ausging; gefaerbte Chips wuerden eine
-    # Aufschluesselung vortaeuschen, die es nicht gibt.
-    n = max(0, min(int(b["signale"] or 0), 20))
-    if n:
-        cw, cl = 34, 12
-        for i in range(n):
-            x = 58 + i * (cw + cl)
-            d.rounded_rectangle((x, 800, x + cw, 812), 6, fill=(*AZUR, 200))
     fuss = "Every signal was called live in the VIP group."
     if b.get("be"):
-        fuss += f"  Breakeven: {b['be']} pips, not counted."
-    d.text((58, 846), fuss, font=_f(20, 400), fill=(255, 255, 255, 140))
+        fuss = f"Breakeven {b['be']} pips, not counted. " + fuss
+    ff = _passend(d, fuss, 500, B - 112, 32)
+    d.text((58, y_kacheln + hk + 44), fuss, font=ff, fill=(255, 255, 255, 175))
 
     bild.save(ziel, quality=95)
     return ziel
