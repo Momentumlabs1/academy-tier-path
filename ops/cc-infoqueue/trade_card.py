@@ -633,9 +633,28 @@ def render_tagesbilanz(b, datum, ziel):
 
     # Die Zahl.
     zahl = ("+" if netto >= 0 else "\u2212") + f"{abs(netto):,}".replace(",", " ")
-    fz = _passend(d, zahl, 900, B - 112, 230)
+    # Links die Zahl, rechts Cosmo. Ansage 10.09.: "vielleicht noch mit einem
+    # Bild von Cosmo seinem Gesicht drauf, die Karte soll ja wirklich ein
+    # bisschen special sein." Die Zahl gibt dafuer die rechte Haelfte ab.
+    fz = _passend(d, zahl, 900, 620, 200)
     d.text((48, 170), zahl, font=fz, fill=WEISS)
     d.text((58, 170 + fz.size + 28), "PIPS  \u00b7  NET", font=_f(38, 800), fill=held_f)
+
+    # Cosmo als Brustbild, er "steht" auf der Kachelreihe: die Unterkante des
+    # Ausschnitts sitzt genau auf ihrer Oberkante. Ein Schein in Azur hinter ihm
+    # loest ihn vom Grund; ohne ihn verschwimmt der blaue Kopf im Nachtblau.
+    try:
+        cosmo = Image.open(f"{BASE}/assets/cosmo_bust.png").convert("RGBA")
+        hc = 430
+        cosmo = cosmo.resize((int(cosmo.width * hc / cosmo.height), hc), Image.LANCZOS)
+        cx = B - 40 - cosmo.width
+        cy = 560 - hc
+        schein(AZUR, (620, 620), (cx + cosmo.width // 2 - 310, cy - 60), 0.22)
+        d = ImageDraw.Draw(bild, "RGBA")
+        bild.paste(cosmo, (cx, cy), cosmo)
+        d = ImageDraw.Draw(bild, "RGBA")
+    except FileNotFoundError:
+        pass    # ohne Bild bleibt die Karte, wie sie war — lieber so als gar nicht
 
     # Drei Kacheln. Stop-Loss ist rot, sobald es einen gab — und grau, wenn
     # nicht. Eine rote Null sieht aus wie ein Fehler.
@@ -649,7 +668,7 @@ def render_tagesbilanz(b, datum, ziel):
     bk = (B - 112 - 2 * luecke) // 3
     for i, (wert, name, farbe) in enumerate(kacheln):
         x0 = 56 + i * (bk + luecke)
-        d.rounded_rectangle((x0, y0, x0 + bk, y0 + hk), 26, fill=(255, 255, 255, 14),
+        d.rounded_rectangle((x0, y0, x0 + bk, y0 + hk), 26, fill=(16, 24, 48, 235),
                             outline=(255, 255, 255, 34), width=1)
         fw = _passend(d, wert, 900, bk - 56, 78)
         alpha = 255 if (farbe is not WEISS and not (name == "STOP LOSS" and not b["sl"])) else 235
