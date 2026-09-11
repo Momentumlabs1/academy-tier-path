@@ -92,8 +92,8 @@ PITCH_PARTS = [
     "It costs you nothing. You only fund your own account at our partner broker, "
     "from {min_dep:.0f}$ — that money stays yours and you can withdraw it anytime.",
 
-    "Here's the sign-up. The link is registered to you — as soon as your deposit "
-    "goes through, I unlock you automatically.",
+    "Here's the sign-up. The link is registered to you — once your deposit is on "
+    "the trading account, come back here and tell me and I'll unlock you.",
 ]
 
 # No link configured yet (setup/testing) — same tone, no fake link.
@@ -132,7 +132,7 @@ DEPOSIT_GUIDE = (
     "trading account yet? Open one first — pick the TradeLocker \"Cosmos "
     "Special\" one, that is where your commission discount sits — then transfer "
     "the full amount over.\n\n"
-    "Once it sits on the trading account, I unlock you automatically."
+    "Once it sits on the trading account, message me here and I'll unlock you."
 )
 
 # Er meldet "hab eingezahlt", wir sehen aber nichts. In neun von zehn Faellen
@@ -193,10 +193,17 @@ VIDEO_UNTERTEXT = (
     "and it costs you nothing."
 )
 
+# Rueckweg ausdruecklich: "komm zurueck und sag Bescheid". Diego will, dass der
+# Lead nach der Einzahlung ZURUECKSCHREIBT (11.09.), und das Bot-Video sagt es
+# genau so. Stand hier "I unlock you automatically", schrieb niemand zurueck —
+# dann fragt der Bot nie nach der Broker-Mail, und die ist bei HeroFX der einzige
+# verlaessliche Abgleich. Die automatische Freischaltung laeuft trotzdem weiter;
+# der Satz nimmt nichts weg, er holt nur die Mail dazu.
 VIDEO_LINK = (
     "Here's your access link — open your account with our partner broker "
     "and fund it with at least {min}:\n\n{link}\n\n"
-    "Once the deposit lands I unlock the signal group and the academy for you."
+    "Once it's funded, come back here and tell me — I'll check and unlock "
+    "the signal group and the academy."
 )
 
 PITCH_AGAIN = "Here's the sign-up link again."
