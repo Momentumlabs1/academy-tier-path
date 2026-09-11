@@ -20,10 +20,12 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as PartnerRouteImport } from './routes/partner'
 import { Route as PartnerProgramRouteImport } from './routes/partner-program'
 import { Route as PartnerProgrammRouteImport } from './routes/partner-programm'
+import { Route as PreviewRouteImport } from './routes/preview'
 import { Route as RegistrierenRouteImport } from './routes/registrieren'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as TeamRouteImport } from './routes/team'
+import { Route as TelegramRouteImport } from './routes/telegram'
 import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as WillkommenRouteImport } from './routes/willkommen'
 import { Route as SlugAdminRouteImport } from './routes/$slug_.admin'
@@ -104,6 +106,11 @@ const PartnerProgrammRoute = PartnerProgrammRouteImport.update({
   path: '/partner-programm',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PreviewRoute = PreviewRouteImport.update({
+  id: '/preview',
+  path: '/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegistrierenRoute = RegistrierenRouteImport.update({
   id: '/registrieren',
   path: '/registrieren',
@@ -122,6 +129,11 @@ const SignupRoute = SignupRouteImport.update({
 const TeamRoute = TeamRouteImport.update({
   id: '/team',
   path: '/team',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TelegramRoute = TelegramRouteImport.update({
+  id: '/telegram',
+  path: '/telegram',
   getParentRoute: () => rootRouteImport,
 } as any)
 const WelcomeRoute = WelcomeRouteImport.update({
@@ -262,10 +274,12 @@ export interface FileRoutesByFullPath {
   '/partner': typeof PartnerRoute
   '/partner-program': typeof PartnerProgramRoute
   '/partner-programm': typeof PartnerProgrammRoute
+  '/preview': typeof PreviewRoute
   '/registrieren': typeof RegistrierenRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/team': typeof TeamRoute
+  '/telegram': typeof TelegramRoute
   '/welcome': typeof WelcomeRoute
   '/willkommen': typeof WillkommenRoute
   '/$slug/admin': typeof SlugAdminRoute
@@ -301,10 +315,12 @@ export interface FileRoutesByTo {
   '/partner': typeof PartnerRoute
   '/partner-program': typeof PartnerProgramRoute
   '/partner-programm': typeof PartnerProgrammRoute
+  '/preview': typeof PreviewRoute
   '/registrieren': typeof RegistrierenRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/team': typeof TeamRoute
+  '/telegram': typeof TelegramRoute
   '/welcome': typeof WelcomeRoute
   '/willkommen': typeof WillkommenRoute
   '/$slug/admin': typeof SlugAdminRoute
@@ -343,10 +359,12 @@ export interface FileRoutesById {
   '/partner': typeof PartnerRoute
   '/partner-program': typeof PartnerProgramRoute
   '/partner-programm': typeof PartnerProgrammRoute
+  '/preview': typeof PreviewRoute
   '/registrieren': typeof RegistrierenRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signup': typeof SignupRoute
   '/team': typeof TeamRoute
+  '/telegram': typeof TelegramRoute
   '/welcome': typeof WelcomeRoute
   '/willkommen': typeof WillkommenRoute
   '/$slug_/admin': typeof SlugAdminRoute
@@ -387,10 +405,12 @@ export interface FileRouteTypes {
     | '/partner'
     | '/partner-program'
     | '/partner-programm'
+    | '/preview'
     | '/registrieren'
     | '/reset-password'
     | '/signup'
     | '/team'
+    | '/telegram'
     | '/welcome'
     | '/willkommen'
     | '/$slug/admin'
@@ -426,10 +446,12 @@ export interface FileRouteTypes {
     | '/partner'
     | '/partner-program'
     | '/partner-programm'
+    | '/preview'
     | '/registrieren'
     | '/reset-password'
     | '/signup'
     | '/team'
+    | '/telegram'
     | '/welcome'
     | '/willkommen'
     | '/$slug/admin'
@@ -467,10 +489,12 @@ export interface FileRouteTypes {
     | '/partner'
     | '/partner-program'
     | '/partner-programm'
+    | '/preview'
     | '/registrieren'
     | '/reset-password'
     | '/signup'
     | '/team'
+    | '/telegram'
     | '/welcome'
     | '/willkommen'
     | '/$slug_/admin'
@@ -510,10 +534,12 @@ export interface RootRouteChildren {
   PartnerRoute: typeof PartnerRoute
   PartnerProgramRoute: typeof PartnerProgramRoute
   PartnerProgrammRoute: typeof PartnerProgrammRoute
+  PreviewRoute: typeof PreviewRoute
   RegistrierenRoute: typeof RegistrierenRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SignupRoute: typeof SignupRoute
   TeamRoute: typeof TeamRoute
+  TelegramRoute: typeof TelegramRoute
   WelcomeRoute: typeof WelcomeRoute
   WillkommenRoute: typeof WillkommenRoute
   SlugAdminRoute: typeof SlugAdminRoute
@@ -599,6 +625,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PartnerProgrammRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/preview': {
+      id: '/preview'
+      path: '/preview'
+      fullPath: '/preview'
+      preLoaderRoute: typeof PreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/registrieren': {
       id: '/registrieren'
       path: '/registrieren'
@@ -625,6 +658,13 @@ declare module '@tanstack/react-router' {
       path: '/team'
       fullPath: '/team'
       preLoaderRoute: typeof TeamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/telegram': {
+      id: '/telegram'
+      path: '/telegram'
+      fullPath: '/telegram'
+      preLoaderRoute: typeof TelegramRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/welcome': {
@@ -885,10 +925,12 @@ const rootRouteChildren: RootRouteChildren = {
   PartnerRoute: PartnerRoute,
   PartnerProgramRoute: PartnerProgramRoute,
   PartnerProgrammRoute: PartnerProgrammRoute,
+  PreviewRoute: PreviewRoute,
   RegistrierenRoute: RegistrierenRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SignupRoute: SignupRoute,
   TeamRoute: TeamRoute,
+  TelegramRoute: TelegramRoute,
   WelcomeRoute: WelcomeRoute,
   WillkommenRoute: WillkommenRoute,
   SlugAdminRoute: SlugAdminRoute,
