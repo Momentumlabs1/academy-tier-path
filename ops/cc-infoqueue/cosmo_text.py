@@ -51,23 +51,29 @@ ABSTAND_STUNDEN = 0.5   # vorher 3 — mit Tims Lobby-Posts tagsueber waere der 
 ENV = "/opt/cosmos-setter/.env"
 
 STIMME = (
-    "Du bist Cosmo: ein blauer Ausserirdischer, der die Maerkte dieses Planeten "
-    "von oben beobachtet und fuer Cosmos Candles schreibt. Sprache ENGLISCH. "
-    "Ton: ruhig, trocken, ein durchgehender Gedanke statt Aufzaehlung; die "
-    "Alien-Perspektive darf durchscheinen (your planet's markets, from up here, "
-    "human), aber nur leicht — sie ist Wuerze, nicht Kostuem. "
-    "Verboten: erfundene Zahlen, Versprechen, Renditeaussagen, Verkaufsdruck, "
-    "Emoji-Ketten, Hashtags, und JEDE Handelsanweisung (kein 'move your stop', "
-    "kein 'take partials', kein 'buy now')."
+    "Du bist Cosmo und schreibst fuer den Telegram-Kanal von Cosmos Candles, einer Trading-"
+    "Community. Du schreibst wie ein echter Mensch, der selbst jeden Tag am Chart sitzt: kurz, "
+    "direkt, warm, ein bisschen frech, per du (englisch: 'you'). Emojis setzt du so selbst"
+    "verstaendlich wie im Chat unter Freunden (📈 🔥 ✅ 💆‍♂️ 👀 🚀 👽) — nie als Kette. Dass du ein "
+    "Ausserirdischer bist, blitzt hoechstens EINMAL als Augenzwinkern auf, nie als Philosophie. "
+    "Keine Lebensweisheiten, keine Vortraege, keine Metaphern-Ketten. Jeder Post hat genau EINE "
+    "Aussage, die der Leser mitnimmt. "
+    "Verboten: erfundene Zahlen, Gewinnversprechen, Druck ('last chance'), und jede "
+    "Handelsanweisung (kein 'move your stop', kein 'take partials', kein 'buy now')."
 )
 
-FORM = ("SPRACHE: Der Post selbst ist ENGLISCH. Diese Anweisung ist deutsch, der "
-        "Text nicht — der Kanal ist englisch, und ein deutscher Post dort ist "
-        "unbrauchbar. (Genau das passierte im ersten Versuch am 09.09.)\n"
-        "Form: 5 bis 8 EIGENE ZEILEN mit echten Zeilenumbruechen, jede hoechstens "
-        "90 Zeichen, insgesamt unter 650 Zeichen. Kein Fliesstext-Block, kein "
-        "Titel, keine Bindestrich-Liste, hoechstens ein Emoji. Am Ende KEIN "
-        "Aufruf und kein Link — die stehen angepinnt.")
+# Vorbild ist Tims eigener Lobby-Stil, den Diego als "menschlich" kennt:
+#   "Gym ✅ / Calls ✅ / Erster Trade ✅ / Der Tag laeuft. Jetzt gleich voller Fokus
+#    auf die NY Session. 📈"
+# Ansage 11.09. zum VIP-Post in der alten Form: "zu lang, komplett gleich
+# formatiert, keine Emojis, keine Absaetze, keine Menschlichkeit — wofuer?"
+# Die alte Form verlangte 5-8 gleich gebaute Zeilen, hoechstens EIN Emoji und
+# keinen Aufruf. Genau das kam heraus: acht gleich lange Philosophie-Zeilen.
+FORM = ("SPRACHE: Der Post selbst ist ENGLISCH (diese Anweisung ist deutsch, der Text nicht).\n"
+        "FORM: 3 bis 6 kurze Zeilen, insgesamt UNTER 380 Zeichen. Erste Zeile = Aufhaenger, kurz, "
+        "gern mit Emoji. Wechsle die Bauart: mal eine Mini-Liste mit ✅, mal eine Frage, mal zwei "
+        "Saetze und eine Pointe — NICHT jede Zeile gleich lang und gleich gebaut. Zwei bis vier "
+        "Emojis insgesamt. Leerzeilen fuer Luft sind erlaubt. Kein Titel, keine Hashtags, keine Links.")
 
 # Ein paar Woerter, die es im Englischen nicht gibt. Drei davon reichen als
 # Beweis, dass der Post in der falschen Sprache steht.
@@ -177,15 +183,23 @@ def beanstande(text, erlaubt):
         return ("Der Text enthaelt Handelsfuehrung (Stop nachziehen, Teilgewinne, "
                 "jetzt kaufen). Das gehoert in die VIP-Gruppe, nicht hierher. "
                 "Schreib es ohne jede Handlungsanweisung.")
-    if len(text) > 800:
-        return f"Zu lang: {len(text)} Zeichen. Hoechstens 650."
+    if len(text) > 460:
+        return f"Zu lang: {len(text)} Zeichen. Unter 380, das ist ein Telegram-Post, kein Artikel."
+    emojis = re.findall(r"[\U0001F300-\U0001FAFF\u2600-\u27BF]", text)
+    if len(emojis) < 1:
+        return "Keine Emojis — so schreibt kein Mensch in einem Trading-Kanal. Setz zwei bis vier ein."
+    if len(emojis) > 7:
+        return "Zu viele Emojis. Zwei bis vier, keine Ketten."
     if len(DEUTSCH.findall(text)) >= 3:
         return ("Der Post ist auf Deutsch. Der Kanal ist englisch. "
                 "Schreib denselben Inhalt auf Englisch.")
     zeilen = [z for z in text.splitlines() if z.strip()]
-    if len(zeilen) < 4 or max(len(z) for z in zeilen) > 170:
-        return ("Das ist ein Block, keine Zeilen. Schreib 5 bis 8 EIGENE Zeilen "
-                "mit echten Zeilenumbruechen, jede hoechstens 90 Zeichen.")
+    if len(zeilen) < 3 or max(len(z) for z in zeilen) > 170:
+        return ("Das ist ein Block. Schreib 3 bis 6 kurze Zeilen mit echten Zeilenumbruechen.")
+    laengen = sorted(len(z) for z in zeilen)
+    if len(zeilen) >= 4 and laengen[-1] - laengen[0] < 15:
+        return ("Alle Zeilen sind gleich lang und gleich gebaut — das liest sich wie eine Liste "
+                "Kalendersprueche. Mach die erste Zeile kurz, wechsle die Bauart.")
     return None
 
 
@@ -293,13 +307,11 @@ def rueckblick_auftrag(e):
     gewinner = len(zeilen) - verlierer
     erlaubt |= {len(zeilen), gewinner, verlierer}
     auftrag = (
-        "Schreib den Abendpost fuer den oeffentlichen Info-Kanal.\n\n"
-        "Aufgabe: Nimm GENAU EINEN der Trades unten als Aufhaenger — den, an dem "
-        "der Tag etwas zeigt — und verbinde ihn mit dem Gesamtbild des Tages. "
-        "Nicht die Zahlen nacherzaehlen, die stehen schon auf der Bilanzkarte. "
-        "Zeig, was daran interessant war: dass Gewinn und Verlust am selben Tag "
-        "nebeneinander stehen, dass die Serie zaehlt und nicht der einzelne "
-        "Trade, dass ein Ziel Stunden brauchte. Was WIRKLICH in den Daten steht.\n\n"
+        "Schreib den Abendpost fuer den Info-Kanal — so, wie ein Trader abends noch kurz in "
+        "seine Gruppe schreibt, nicht wie ein Bericht.\n\n"
+        "Aufgabe: Nimm GENAU EINEN Trade von unten als Aufhaenger und erzaehl in zwei, drei "
+        "Zeilen, was an ihm heute interessant war. Dann EINE Zeile, die der Leser mitnimmt. "
+        "Die Tagessumme steht schon auf der Bilanzkarte — nicht wiederholen.\n\n"
         f"{FORM}\n\n"
         f"Heute ({heute.isoformat()}, ein {heute.strftime('%A')}) am Desk:\n"
         f"Signale: {bericht.get('signale')}, Pips im Plus: {bericht.get('tp_pips')}, "
@@ -324,23 +336,39 @@ def rueckblick_auftrag(e):
 
 
 BLICKWINKEL = [
-    "Wie ein Signal bei einem Mitglied ankommt: was in der Nachricht steht und "
-    "was ein Mensch damit tut. Ablauf, kein Versprechen.",
-    "Warum jede Zahl in diesem Kanal nachpruefbar ist: die Karten entstehen aus "
-    "Signalen, die vorher live geschickt wurden, nicht hinterher.",
-    "Fuer wen das nichts ist: wer eine Gewinngarantie sucht, wer nicht zuschauen "
-    "will, wer kein Konto beim Broker eroeffnen moechte.",
-    "Was am Desk den ganzen Tag passiert, waehrend in diesem Kanal nur die "
-    "Ergebnisse auftauchen.",
+    "WAS DRIN IST: In der VIP-Gruppe kommt jedes Signal live, mit Einstieg, Stop und Zielen, "
+    "dazu die komplette Academy. Kostet nichts — man finanziert nur sein eigenes Konto beim "
+    "Partner-Broker, das Geld bleibt einem und ist jederzeit abhebbar.",
+    "SO KOMMST DU REIN, in drei Schritten mit 1️⃣2️⃣3️⃣: angepinnte Nachricht antippen und "
+    "abschicken, der Bot fuehrt durch, Konto beim Partner-Broker finanzieren — dann ist VIP "
+    "und die Academy offen.",
+    "WARUM DIE KARTEN HIER ECHT SIND: Jede Ergebnis-Karte in diesem Kanal gehoert zu einem "
+    "Signal, das VORHER live in VIP stand. Wer die Karte sieht, war zu spaet — in VIP kommt "
+    "es, bevor es passiert.",
+    "FUER WEN ES NICHTS IST: wer eine Garantie will, wer nie selbst hinschaut. Ehrlich gesagt, "
+    "kurz. Und dann, fuer alle anderen, wie man reinkommt.",
 ]
 
 
+# Was der Faktencheck bei VIP-Posts als belegt gelten laesst — dieselben
+# Aussagen, die der Setter-Bot jedem Lead macht (script.PITCH_PARTS). Ohne diese
+# Liste haette der Pruefer jede Produktaussage als "unbelegt" abgelehnt.
+VIP_FAKTEN = (
+    "VIP-Gruppe: jedes Signal kommt live, immer mit Einstieg, Stop-Loss und Take-Profit. "
+    "Die komplette Trading-Academy ist dabei. Es kostet nichts; man finanziert nur sein "
+    "eigenes Konto beim Partner-Broker, das Geld bleibt dem Kunden und ist jederzeit abhebbar. "
+    "Zugang: angepinnte Nachricht im Kanal antippen, abschicken, der Bot fuehrt durch, nach der "
+    "Einzahlung werden VIP und Academy freigeschaltet. Jede Ergebnis-Karte im Kanal gehoert zu "
+    "einem Signal, das vorher live in VIP stand. Es gibt keine Gewinngarantie.")
+
+
 def vip_auftrag(runde):
-    return ("Schreib den zeitlosen Aufnahme-Post fuer den oeffentlichen Info-Kanal.\n\n"
-            f"Blickwinkel diesmal: {BLICKWINKEL[runde % len(BLICKWINKEL)]}\n\n"
+    return ("Schreib einen Post fuer den Info-Kanal, der Leute in die kostenlose VIP-Gruppe holt.\n\n"
+            f"Inhalt diesmal: {BLICKWINKEL[runde % len(BLICKWINKEL)]}\n\n"
             f"{FORM}\n\n"
-            "KEINE Zahlen — keine Preise, keine Pips, keine Prozente, keine "
-            "Mitgliederzahlen. Es soll erklaeren, nicht verkaufen.")
+            "Letzte Zeile: ein kurzer, lockerer Hinweis auf die angepinnte Nachricht oben "
+            "(z. B. 'Tap the pinned message 👆'). Das ist der Zweck des Posts — ohne ihn weiss "
+            "niemand, was er tun soll. Keine Preise, keine Pips, keine Prozente.")
 
 
 # ── Queue ───────────────────────────────────────────────────────────────────
@@ -403,7 +431,7 @@ def main():
             if tage < 3:
                 print(f"letzter VIP-Post vor {tage} Tag(en) — Abstand ist 3")
                 return
-        auftrag, erlaubt, fakten = vip_auftrag(stand.get("vip_runde", 0)), set(), ""
+        auftrag, erlaubt, fakten = vip_auftrag(stand.get("vip_runde", 0)), set(), VIP_FAKTEN
     else:
         auftrag, erlaubt, fakten, grund = rueckblick_auftrag(e)
         if grund:
