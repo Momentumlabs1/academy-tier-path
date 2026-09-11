@@ -753,7 +753,27 @@ EXP_WORDS = {
             "been trading", "i trade", "trading for", "yes", "yeah", "yep"),
 }
 DONE_WORDS = ("deposited", "funded", "transferred", "sent it", "done", "paid",
-              "finished", "registered", "signed up", "signup", "deposit", "topped up")
+              "finished", "registered", "signed up", "signup", "deposit", "topped up",
+              # 11.09.: Das Bot-Video sagt "come back here and tell me". Die
+              # natuerlichen Antworten darauf fielen alle an die KI durch — und
+              # dann fragt niemand nach der Broker-Mail, dem einzigen Weg, eine
+              # HeroFX-Einzahlung zuzuordnen. Gemessen an 12 Probesaetzen.
+              "did it", "sent the money", "money is on", "on my trading account",
+              "on the trading account", "in my trading account", "it's there", "its there",
+              "eingezahlt", "fertig", "erledigt", "ueberwiesen", "überwiesen")
+
+# Eine FRAGE ist keine Erfolgsmeldung. "How do I deposit?" enthielt "deposit" und
+# startete bis zum 11.09. die Einzahl-Pruefung — der Lead bekam statt einer
+# Antwort "let me take a look" und die Frage nach seiner Broker-Mail.
+QUESTION_START = ("how", "what", "where", "when", "can ", "do i", "should", "which", "is it",
+                  "wie", "was ", "wo ", "wann", "kann", "muss", "welche")
+
+
+def _meldet_einzahlung(text: str) -> bool:
+    t = (text or "").strip().lower()
+    if not t or "?" in t or t.startswith(QUESTION_START):
+        return False
+    return any(w in t for w in DONE_WORDS)
 
 
 def _is_prefill(text: str) -> bool:
@@ -1077,7 +1097,7 @@ async def on_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # 3) "Bin fertig / hab eingezahlt" → start the timed watch.
     #    Deliberately NO instant reply: the broker sync runs every 10 minutes, so
     #    an immediate "seh ich nicht" would be wrong far more often than right.
-    if any(w in msg.lower() for w in DONE_WORDS):
+    if _meldet_einzahlung(msg):
         await start_deposit_watch(context, lead)
         return
 
