@@ -7,6 +7,7 @@ hands over the tracked link. /stop opts out.
 """
 from __future__ import annotations
 import asyncio
+import time
 import re
 import logging
 
@@ -144,13 +145,19 @@ async def outbox_senden(context: ContextTypes.DEFAULT_TYPE):
     """
     if not store.rest.enabled:
         return
-    try:
+    # Im THREAD, mit kurzem Zeitlimit. Der httpx-Client ist synchron: direkt
+    # hier aufgerufen, haelt er die ganze Ereignisschleife an, solange die
+    # Datenbank braucht. Am 11.09. um 09:18 antwortete sie 30 s lang nicht —
+    # so lange stand der Bot fuer ALLE Leads still, und das alle 4 s drohend.
+    def _holen():
         r = store.rest._c.get("/setter_outbox", params={
             "select": "id,lead_id,text,setter_leads(telegram_user_id,tenant_slug)",
             "sent_at": "is.null", "error": "is.null",
-            "order": "created_at.asc", "limit": "10"})
+            "order": "created_at.asc", "limit": "10"}, timeout=5)
         r.raise_for_status()
-        rows = r.json()
+        return r.json()
+    try:
+        rows = await asyncio.to_thread(_holen)
     except Exception as e:
         log.warning("Outbox nicht lesbar: %s", e)
         return
@@ -162,14 +169,16 @@ async def outbox_senden(context: ContextTypes.DEFAULT_TYPE):
         try:
             m = await context.bot.send_message(chat_id=int(ziel["telegram_user_id"]),
                                                text=row["text"], disable_web_page_preview=True)
-            store.rest.update("setter_outbox",
-                              {"sent_at": _dt.datetime.now(_dt.timezone.utc).isoformat(),
-                               "telegram_message_id": m.message_id}, id=row["id"])
-            store.log_message(row["lead_id"], "admin", row["text"])
+            await asyncio.to_thread(
+                store.rest.update, "setter_outbox",
+                {"sent_at": _dt.datetime.now(_dt.timezone.utc).isoformat(),
+                 "telegram_message_id": m.message_id}, id=row["id"])
+            await asyncio.to_thread(store.log_message, row["lead_id"], "admin", row["text"])
             log.info("Admin-Nachricht zugestellt an %s", ziel["telegram_user_id"])
         except Exception as e:
             try:
-                store.rest.update("setter_outbox", {"error": str(e)[:300]}, id=row["id"])
+                await asyncio.to_thread(store.rest.update, "setter_outbox",
+                                        {"error": str(e)[:300]}, id=row["id"])
             except Exception:
                 pass
             log.warning("Admin-Nachricht nicht zustellbar (%s): %s", ziel.get("telegram_user_id"), e)
@@ -500,6 +509,10 @@ async def send_opener(update: Update, lead: dict, context=None):
         await admin_melden(
             f"▶️ Neuer Bot-Start\n{_wer(lead)}\n"
             f"Chat: https://cosmos-candles.com/admin/leads?lead={lead['id']}")
+    if context is not None:
+        # VOR dem Tippen merken: menschlich() wartet bis zu 5 s, und genau in
+        # dieses Fenster fiel am 11.09. das zweite /start.
+        context.bot_data[f"opener_zeit_{lead['telegram_user_id']}"] = time.time()
     sent = await menschlich(update.effective_chat, text)
     if context is not None:
         context.bot_data[f"opener_{lead['telegram_user_id']}"] = sent.message_id
@@ -681,6 +694,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         pass
     if lead.get("step") == "pitched":
         await resend_link(update.effective_chat, lead)
+        return
+    # Zweites /start kurz nach dem ersten (doppelt getippt, oder nochmal ueber
+    # den Kanal-Knopf): die Begruessung steht schon auf dem Schirm. Am 11.09.
+    # bekam der erste echte Lead der Nacht sie so zweimal, fuenf Sekunden
+    # auseinander. Nach 10 Minuten wird wieder begruesst — wer den Chat
+    # geloescht hat und neu startet, saehe sonst gar nichts.
+    zuletzt = context.bot_data.get(f"opener_zeit_{u.id}", 0)
+    if lead.get("step") == "opened" and time.time() - zuletzt < 600:
         return
     await send_opener(update, lead, context)
 
