@@ -669,9 +669,45 @@ async def einzahl_hinweis(chat, lead: dict, link):
         log.warning("deposit guide failed for %s", lead.get("telegram_user_id"))
 
 
+def _bot_zuletzt_vor_stunden(lead: dict) -> float:
+    """Wie lange die letzte Nachricht des Bots an diesen Lead her ist (Stunden).
+    Unbekannt -> sehr lange."""
+    try:
+        r = store.rest._c.get("/setter_messages", params={
+            "select": "created_at", "lead_id": f"eq.{lead['id']}", "role": "eq.assistant",
+            "order": "created_at.desc", "limit": "1"}, timeout=5)
+        rows = r.json() if r.status_code == 200 else []
+        if not rows:
+            return 1e9
+        import datetime as _dt
+        roh = rows[0]["created_at"].replace("Z", "+00:00")
+        # Python 3.9 nimmt nur 3 oder 6 Nachkommastellen — Postgres liefert auch 5.
+        import re as _re
+        m = _re.search(r"\.(\d+)", roh)
+        if m:
+            roh = roh.replace("." + m.group(1), "." + (m.group(1) + "000000")[:6])
+        t = _dt.datetime.fromisoformat(roh)
+        return (_dt.datetime.now(_dt.timezone.utc) - t).total_seconds() / 3600
+    except Exception:
+        return 1e9
+
+
 async def resend_link(chat, lead: dict):
     """They tapped the group button again — one line and the button, not the
-    whole pitch again."""
+    whole pitch again.
+
+    AUSSER bei Rueckkehrern. Am 11.09. kam "Bill" nach einer Woche zurueck
+    ("Hi, I want to join VIP 🚀") und bekam nur "Here's the sign-up link
+    again." — ohne Video, ohne Einzahl-Anleitung, ohne die Bitte, sich nach
+    der Einzahlung zu melden, und ohne Land, also mit dem Standard-Broker.
+    Seinen Link hatte er am 04.09. bekommen, bevor es Landfrage und Video gab.
+    Wer den Link vor ueber 24 h bekam oder bei wem das Land fehlt, bekommt
+    deshalb den AKTUELLEN Ablauf von vorn: Landfrage, dann Video, Link und
+    Anleitung. Die Kurzform bleibt fuer den, der gerade eben schon alles hatte.
+    """
+    if not lead.get("country") or _bot_zuletzt_vor_stunden(lead) > 24:
+        await send_pitch(chat, lead)
+        return
     ziel = store.broker_link_for(lead.get("partner_slug"), lead.get("country")) or cfg.HANDOVER_LINK
     link = tracked_link(ziel, lead["token"])
     store.log_message(lead["id"], "assistant", script.PITCH_AGAIN)
