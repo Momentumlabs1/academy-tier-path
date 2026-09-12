@@ -219,6 +219,65 @@ Deno.serve(async (req) => {
     return json({ error: "Hero API unreachable", detail: String(e).slice(0, 200) }, 502);
   }
 
+  // ── 1b) Walk the sub-IB downlines ─────────────────────────────────────────
+  // Hero's own v2 collection (sent 12.09.2026, scope rules marked "verified")
+  // says `clients/` returns the key owner's DIRECT clients only — depth 0.
+  // Anyone who registered through a sub-IB's link (a partner with their own
+  // Hero code) lives in that sub-IB's downline: `clients/<sub_id>/`, any depth.
+  // 404 = empty downline, 403 = outside our tree, and the response may omit
+  // `count`/`next`, so page until `results` comes back short or empty.
+  //
+  // Without this step every customer a partner brings in over their own Hero
+  // link is invisible here — no balance, no unlock, and the bot keeps telling
+  // them "not found". On 12.09. that was still zero people (Hero: 5 clients in
+  // the whole network, 5 direct), which is exactly when to close it.
+  const seen = new Set(clients.map((c) => String(c.id)));
+  const subQueue = clients.filter((c) => c.isPartner).map((c) => String(c.id));
+  let subIbsWalked = 0;
+  while (subQueue.length && !outOfTime()) {
+    const sub = subQueue.shift()!;
+    subIbsWalked++;
+    for (let page = 1; page <= 200; page++) {
+      let raw: unknown;
+      try {
+        raw = await heroGet(`/partnership/clients/${sub}/?page=${page}&page_size=100`, token);
+      } catch (e) {
+        // 404/403 are answers, not faults. Anything else: log, move on to the
+        // next sub-IB — one broken downline must not cost everyone their sync.
+        if (!(e instanceof HeroError && (e.status === 404 || e.status === 403))) {
+          console.error(`[hero-sync] downline ${sub}:`, e instanceof Error ? e.message : String(e));
+        }
+        break;
+      }
+      const rows = (Array.isArray(raw) ? raw : ((raw as Record<string, unknown>).results ?? [])) as HeroClient[];
+      for (const r of rows) {
+        const id = String(r.id);
+        if (seen.has(id)) continue;
+        seen.add(id);
+        clients.push(r);
+        if (r.isPartner) subQueue.push(id);
+      }
+      const hasNext = !Array.isArray(raw) && (raw as Record<string, unknown>).next;
+      if (rows.length < 100 && !hasNext) break;
+      if (clients.length > 20_000) break; // runaway guard
+    }
+  }
+
+  // Coverage check against Hero's own count. `balance/` reports clientsWith
+  // (whole network, incl. sub-IB downlines) — NOT "clients with a balance", as
+  // the name suggests; the v2 docs spell that out. If we saw fewer, say so
+  // instead of silently under-syncing.
+  let heroNetworkClients: number | null = null;
+  try {
+    const b = await heroGet("/partnership/balance/", token) as Record<string, unknown>;
+    heroNetworkClients = Number(b.clientsWith);
+    if (Number.isFinite(heroNetworkClients) && clients.length < heroNetworkClients) {
+      console.warn(`[hero-sync] coverage gap: saw ${clients.length} of ${heroNetworkClients} network clients`);
+    }
+  } catch (e) {
+    console.warn("[hero-sync] balance/ unreadable:", e instanceof Error ? e.message : String(e));
+  }
+
   // ── 2) Each customer's accounts, then each account's balance ──────────────
   interface Acc {
     clientId: string; email: string | null; accountNumber: string;
@@ -377,6 +436,9 @@ Deno.serve(async (req) => {
   return json({
     ok: true,
     clients: clientRows.length,
+    subIbsWalked,
+    heroNetworkClients,
+    coverageOk: heroNetworkClients === null ? null : clientRows.length >= heroNetworkClients,
     withEmail: clientRows.filter((r) => r.email).length,
     withClickId: clientRows.filter((r) => r.utm_campaign).length,
     accountsRead: accounts.length,
