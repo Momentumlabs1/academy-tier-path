@@ -585,6 +585,9 @@ async def send_pitch(chat, lead: dict, intro: str | None = None):
     if not lead.get("country"):
         await menschlich(chat, script.ASK_COUNTRY)
         store.log_message(lead["id"], "assistant", script.ASK_COUNTRY)
+        # Den Schritt MERKEN. Ohne das blieb er auf "asked_signals", und die
+        # Landantwort landete im Signal-Zweig — siehe on_message, 12.09.
+        store.set_step(lead["telegram_user_id"], "asked_country")
         return
     ziel = store.broker_link_for(lead.get("partner_slug"), lead.get("country")) or cfg.HANDOVER_LINK
     link = tracked_link(ziel, lead["token"])
@@ -1026,6 +1029,38 @@ async def on_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     # 2) They answered the experience question by typing instead of tapping.
+    # 2-) Die Antwort auf die Landfrage — VOR allen Frage-Zweigen.
+    #
+    # 12.09., Lead "J": er nannte dreimal sein Land ("germany", "united states",
+    # "USA") und kam nie an den Link. Die Landfrage kommt nach der Signal-Frage,
+    # der Schritt blieb aber auf "asked_signals"; also las der Signal-Zweig
+    # "germany" als ungueltige Antwort, fragte neu, und nach "yes" kam wieder die
+    # Landfrage. Eine Schleife, dazwischen KI-Smalltalk ("what part of NC?").
+    landfrage = step == "asked_country" or (
+        not lead.get("country")
+        and any(script.ASK_COUNTRY[:40] in (m.get("content") or "")
+                for m in store.history(lead["id"], 4)))
+    if landfrage and not lead.get("country"):
+        land = store.erkenne_land(msg)
+        if not land and "?" in msg:
+            # Eine echte Rueckfrage ("why do you need that?"): kurz antworten,
+            # EINMAL neu fragen.
+            await _answer_aside(update, lead, msg)
+            again = _reask(context, u.id, "land", [script.ASK_COUNTRY])
+            if again:
+                await menschlich(update.effective_chat, again)
+                store.log_message(lead["id"], "assistant", again)
+                return
+        # Nicht erkannt und keine Frage ("North Carolina", "Mars"): Hero nimmt
+        # jeden. Weitermachen ist besser als eine zweite Runde Fragen.
+        land = land or "US"
+        store.set_country(u.id, land)
+        lead["country"] = land
+        broker = "Hero" if land.upper() == "US" else "VT"
+        await melde(f"🌍 LAND · {_wer(lead)}\n{land} → {broker}")
+        await send_pitch(update.effective_chat, lead)
+        return
+
     if step == "opened":
         # A question is never an answer: "wie viele Signale?" contains "viel",
         # which used to be read as "erfahren". Never infer from a question.
