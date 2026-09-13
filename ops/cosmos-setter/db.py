@@ -174,7 +174,9 @@ class Store:
                 "tenant_slug": "eq." + cfg.TENANT_SLUG}
         # broker_email only exists after the fallback migration — ask for it, but
         # never let a missing column take the whole sweep down.
-        for cols in ("id,telegram_user_id,first_name,token,status,broker_email",
+        for cols in ("id,telegram_user_id,first_name,telegram_username,partner_slug,tenant_slug,"
+                     "token,status,broker_email,bot_paused,wallet_hint_at",
+                     "id,telegram_user_id,first_name,token,status,broker_email",
                      "id,telegram_user_id,first_name,token,status"):
             r = self.rest._c.get("/setter_leads", params={"select": cols, **base})
             if r.status_code < 400:
@@ -495,6 +497,44 @@ class Store:
         except Exception as e:
             log.warning("deposit_for_email failed: %s", e)
             return 0.0
+
+    def wallet_stand(self, lead: dict) -> Optional[dict]:
+        """Der Hero-Kunde dieses Leads, WENN Geld in seinem Wallet angekommen ist.
+
+        Zuordnung wie bei der Einzahlung: erst ueber den Token im Link, dann
+        ueber die Broker-Mail — die aber nur, wenn kein anderer Lead diese
+        Einzahlung schon fuer sich beansprucht hat (sonst verraet eine fremde
+        Mail-Adresse, dass dort Geld liegt). Liefert client_id,
+        wallet_deposit_at, trading_account_at, current_balance_usd — oder None.
+        """
+        if not self.rest.enabled:
+            return None
+        cols = "client_id,email,wallet_deposit_at,trading_account_at,current_balance_usd"
+        basis = {"select": cols, "broker": "eq.hero", "wallet_deposit_at": "not.is.null"}
+        tok = lead.get("token")
+        if tok:
+            r = self.rest._c.get("/broker_clients", params={**basis, "utm_campaign": f"ilike.*{tok}*"},
+                                 timeout=5)
+            r.raise_for_status()
+            if r.json():
+                return r.json()[0]
+        mail = (lead.get("broker_email") or "").strip().lower()
+        if not mail:
+            return None
+        r = self.rest._c.get("/broker_clients", params={**basis, "email": f"ilike.{mail}"}, timeout=5)
+        r.raise_for_status()
+        rows = r.json()
+        if not rows:
+            return None
+        c = self.rest._c.get("/setter_deposit_claims", params={
+            "select": "lead_id", "client_email": f"eq.{mail}"}, timeout=5)
+        c.raise_for_status()
+        fremd = [x for x in c.json() if str(x.get("lead_id")) != str(lead.get("id"))]
+        return None if fremd else rows[0]
+
+    def set_wallet_hint(self, lead_id: str) -> None:
+        if self.rest.enabled:
+            self.rest.update("setter_leads", {"wallet_hint_at": _now_iso()}, id=lead_id)
 
     def _claim_deposit(self, email: str, lead_id: str) -> bool:
         """Bind this broker deposit to this lead. False if someone else holds it."""

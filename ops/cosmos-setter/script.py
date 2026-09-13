@@ -241,6 +241,24 @@ BROKER_EMAIL_OK = (
 )
 
 # Sent once the first look came up empty. Names the wait so it feels normal.
+# Wir SEHEN es jetzt (Heros Aktivitaets-Feed, hero-sync seit 13.09.): die
+# Einzahlung ist im Wallet angekommen, auf einem Handelskonto liegt nichts. Genau
+# da hing der HeroFX-Kontakt Jonny am 12.09. — eingezahlt, nicht freigeschaltet,
+# und niemand sagte ihm, was fehlt. Kein Raten mehr ("ist es vielleicht im
+# Wallet?"), sondern: angekommen, das hier ist der letzte Schritt.
+WALLET_ANGEKOMMEN = (
+    "Good news: your deposit arrived ✅ It's sitting in your broker WALLET right now.\n\n"
+    "One step left: it has to be on a TRADING account. Open one — pick TradeLocker "
+    "\"Cosmos Special\" — and transfer the full amount from your wallet onto it.\n\n"
+    "The moment it lands there, I unlock you automatically. 🚀"
+)
+WALLET_ANGEKOMMEN_KONTO = (
+    "Good news: your deposit arrived ✅ It's sitting in your broker WALLET right now.\n\n"
+    "You already have a trading account, so one step left: transfer the full amount "
+    "from your wallet onto that trading account.\n\n"
+    "The moment it lands there, I unlock you automatically. 🚀"
+)
+
 DEPOSIT_PENDING = (
     "The broker can take up to 10 minutes to confirm — completely normal. "
     "I'll keep checking and message you the moment it lands. 👍"

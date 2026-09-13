@@ -101,6 +101,16 @@ interface HeroClient {
   utmClickId?: string;
 }
 
+interface HeroEvent {
+  user?: { id?: number | string };
+  at?: string;
+  description?: string;
+  eventType?: string;
+}
+
+/** How far back the activity feed is read. It is newest-first, so paging stops there. */
+const EVENT_LOOKBACK_DAYS = 45;
+
 interface HeroAccount {
   id: number;
   login?: string;
@@ -278,6 +288,45 @@ Deno.serve(async (req) => {
     console.warn("[hero-sync] balance/ unreadable:", e instanceof Error ? e.message : String(e));
   }
 
+  // ── 1c) Wallet deposits and new trading accounts, from Hero's event feed ──
+  // A Hero deposit lands in the client's WALLET first; only a transfer onto a
+  // trading account makes it count for us (step 2 reads account balances). On
+  // 12.09. the HeroFX contact tested the funnel, paid 100 $, and was never
+  // unlocked: the money sat in his wallet, no trading account existed, and
+  // nothing on our side could see it — so the bot said nothing useful.
+  // `dashboards/events/` does report it ("Wallet deposit request N marked
+  // executed", eventType "accountcreate"). No amount, and per Hero's v2 docs
+  // DIRECT clients only (no sub-IB downlines) — enough to tell a stuck client
+  // exactly what is missing.
+  const walletAt = new Map<string, string>();
+  const accountAt = new Map<string, string>();
+  let eventsRead = 0;
+  try {
+    const cutoff = Date.now() - EVENT_LOOKBACK_DAYS * 86_400_000;
+    for (let page = 1; page <= 50 && !outOfTime(); page++) {
+      const raw = await heroGet(`/dashboards/events/?page=${page}&page_size=100`, token) as Record<string, unknown>;
+      const rows = ((raw.results as HeroEvent[]) ?? []);
+      let reachedCutoff = false;
+      for (const ev of rows) {
+        eventsRead++;
+        const uid = ev.user?.id != null ? String(ev.user.id) : null;
+        const at = stamp(ev.at);
+        if (!uid || !at) continue;
+        if (new Date(at).getTime() < cutoff) { reachedCutoff = true; continue; }
+        const desc = String(ev.description ?? "");
+        if (/^Wallet deposit request \d+ marked executed/i.test(desc)) {
+          if ((walletAt.get(uid) ?? "") < at) walletAt.set(uid, at);
+        } else if (ev.eventType === "accountcreate") {
+          if ((accountAt.get(uid) ?? "") < at) accountAt.set(uid, at);
+        }
+      }
+      if (reachedCutoff || !raw.next || rows.length === 0) break;
+    }
+  } catch (e) {
+    // The feed is an extra; losing it must never cost anyone their balance sync.
+    console.warn("[hero-sync] events unreadable:", e instanceof Error ? e.message : String(e));
+  }
+
   // ── 2) Each customer's accounts, then each account's balance ──────────────
   interface Acc {
     clientId: string; email: string | null; accountNumber: string;
@@ -403,6 +452,18 @@ Deno.serve(async (req) => {
     if (error) return fail("clients upsert", error.message);
   }
 
+  // Event stamps only where the feed had one — an event that aged out of the
+  // lookback must not wipe what an earlier run already recorded.
+  const ids = new Set(clientRows.map((r) => r.client_id));
+  for (const uid of new Set([...walletAt.keys(), ...accountAt.keys()])) {
+    if (!ids.has(uid)) continue;
+    const patch: Record<string, string> = {};
+    if (walletAt.has(uid)) patch.wallet_deposit_at = walletAt.get(uid)!;
+    if (accountAt.has(uid)) patch.trading_account_at = accountAt.get(uid)!;
+    const { error } = await admin.from("broker_clients").update(patch).eq("broker", BROKER).eq("client_id", uid);
+    if (error) console.error("[hero-sync] event stamps:", error.message);
+  }
+
   if (accounts.length) {
     const accRows = accounts.map((a) => ({
       broker: BROKER,
@@ -441,6 +502,8 @@ Deno.serve(async (req) => {
     coverageOk: heroNetworkClients === null ? null : clientRows.length >= heroNetworkClients,
     withEmail: clientRows.filter((r) => r.email).length,
     withClickId: clientRows.filter((r) => r.utm_campaign).length,
+    eventsRead,
+    walletDepositors: walletAt.size,
     accountsRead: accounts.length,
     fundedClients: funded,
     balanceUnreadable: clientRows.filter((r) => r.current_balance_usd === null).length,

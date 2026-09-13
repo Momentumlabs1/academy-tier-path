@@ -184,10 +184,53 @@ async def outbox_senden(context: ContextTypes.DEFAULT_TYPE):
             log.warning("Admin-Nachricht nicht zustellbar (%s): %s", ziel.get("telegram_user_id"), e)
 
 
+async def wallet_hinweis(bot, lead: dict) -> bool:
+    """Geld liegt im Wallet, nicht auf dem Handelskonto -> dem Kunden genau das sagen.
+
+    Anlass 12.09.: der HeroFX-Kontakt Jonny zahlte 100 $ ein und wurde nicht
+    freigeschaltet. Das Geld lag im Hero-Wallet, ein Handelskonto gab es nicht,
+    und wir konnten das nicht sehen — also sagte ihm niemand, was fehlt. Seit
+    13.09. liest hero-sync Heros Aktivitaets-Feed und traegt die Wallet-
+    Einzahlung ein (broker_clients.wallet_deposit_at).
+
+    Einmal je Lead (setter_leads.wallet_hint_at). Nicht bei Uebernahme durch
+    Diego — dann fuehrt er das Gespraech. True, wenn der Hinweis rausging.
+    """
+    if lead.get("wallet_hint_at") or lead.get("vip_granted_at") or lead.get("bot_paused"):
+        return False
+    if not lead.get("telegram_user_id"):
+        return False
+    try:
+        st = await asyncio.to_thread(store.wallet_stand, lead)
+    except Exception as e:
+        log.warning("Wallet-Stand nicht lesbar: %s", e)
+        return False
+    if not st or float(st.get("current_balance_usd") or 0) > 0:
+        return False
+    text = script.WALLET_ANGEKOMMEN_KONTO if st.get("trading_account_at") else script.WALLET_ANGEKOMMEN
+    await bot.send_message(chat_id=int(lead["telegram_user_id"]), text=text)
+    await asyncio.to_thread(store.set_wallet_hint, lead["id"])
+    await asyncio.to_thread(store.log_message, lead["id"], "assistant", text)
+    await admin_melden(
+        f"💼 Geld im Wallet, noch nicht auf dem Handelskonto\n{_wer(lead)}\n"
+        f"Bot hat ihm den letzten Schritt geschickt.\n"
+        f"Chat: https://cosmos-candles.com/admin/leads?lead={lead['id']}")
+    log.info("Wallet-Hinweis an %s", lead["telegram_user_id"])
+    return True
+
+
 async def deposit_sweep(context: ContextTypes.DEFAULT_TYPE):
     """Periodic: grant VIP to everyone who has now deposited enough."""
     for lead in store.leads_awaiting_vip():
         await check_and_grant(context.bot, lead)
+        # Wer frisch freigeschaltet wurde, hat wallet_hint noch leer, aber
+        # vip_granted_at gesetzt — deshalb den Lead neu lesen, bevor gefragt wird.
+        try:
+            frisch = await asyncio.to_thread(store.get_lead, int(lead["telegram_user_id"]))
+            if frisch:
+                await wallet_hinweis(context.bot, {**lead, **frisch})
+        except Exception as e:
+            log.warning("Wallet-Hinweis fehlgeschlagen: %s", e)
 
 
 # ── "hab eingezahlt" follow-up ──────────────────────────────────────────────
@@ -250,9 +293,15 @@ async def _deposit_followup(context: ContextTypes.DEFAULT_TYPE):
     now = asyncio.get_event_loop().time()
     elapsed = now - started
 
-    # First empty look: say the wait out loud, once.
+    # First empty look: say the wait out loud, once. Liegt das Geld schon
+    # sichtbar im Wallet, ist "dauert noch" falsch — dann der letzte Schritt.
     if not announced:
-        if not still:
+        gesagt = False
+        try:
+            gesagt = await wallet_hinweis(context.bot, lead)
+        except Exception as e:
+            log.warning("Wallet-Hinweis fehlgeschlagen: %s", e)
+        if not still and not gesagt:
             await context.bot.send_message(chat_id=uid, text=script.DEPOSIT_PENDING)
         announced = True
 
