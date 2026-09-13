@@ -47,7 +47,11 @@ RE_PENDING = re.compile(r"limit\s*order|⏳", re.I)
 # kein Treffer — der Unterschied ist der ganze Punkt dieser Datei.
 RE_TP_TREFFER = re.compile(
     r"\bTP\s*([1-9])?\s*(?:[:\-–]\s*)?(?:✅|hit|geknackt|erreicht|getroffen|done|geschafft)"
-    r"|(?:✅|hit|geknackt|erreicht|getroffen)\s*\bTP\s*([1-9])?", re.I)
+    r"|(?:✅|hit|geknackt|erreicht|getroffen)\s*\bTP\s*([1-9])?"
+    # "TP2 & BE ziehen ✅", "direkt TP1 & TP2 ✅" — so schrieb der Desk bis
+    # 31.08. Das Ziel ist gefallen, der Rest ist Fuehrung. Vorher als Anweisung
+    # gelesen: der Treffer fehlte, der Trade blieb offen und fing fremde Ziele.
+    r"|\bTP\s*([1-9])\s*&\s*(?:TP\s*[1-9]|(?:SL\s+auf\s+|direkt\s+)?BE(?:\s+ziehen)?)\s*✅", re.I)
 
 # Ein Stop ist getroffen, nicht "gezogen". "SL auf Breakeven ziehen" ist eine
 # Anweisung und darf hier auf keinen Fall greifen.
@@ -86,17 +90,63 @@ def ist_fremdbilanz(t: str) -> bool:
 
 # Plaene ("bei TP2 nachlegen") sind Ankuendigungen, keine Ereignisse.
 RE_PLAN = re.compile(r"\b(?:bei|ab|bis)\s+tp", re.I)
+# Der Plan-Teil einer Nachricht bis zum Zeilenende. "TP1✅ / Bei TP2 BE ziehen"
+# ist ein Treffer MIT Plan dahinter — erst ohne den Plan wird gelesen, ob etwas
+# gefallen ist (24.08.: das TP1 ging so verloren).
+RE_PLAN_SATZ = re.compile(r"\b(?:bei|ab|bis)\s+tp[^\n]*", re.I)
 
 # "Fast TP1 hit", "Gleich TP2 hit", "kurz vor TP1" — der Desk kuendigt an, dass
 # ein Ziel GLEICH faellt. Am 10.09. las der Filter beides als Treffer und
 # schrieb einem Trade TP2 gut, der es in dem Moment noch nicht hatte.
 RE_BEINAHE = re.compile(r"\b(?:fast|gleich|bald|kurz\s+vor|almost|nearly|soon|close\s+to)\b", re.I)
 
+# Der Trade ist auf Einstand rausgegangen — ein EREIGNIS, keine Anweisung.
+# "BE ziehen" heisst: Stop nachziehen, der Trade laeuft weiter. "BE Hit" heisst:
+# der nachgezogene Stop ist gefallen, der Trade ist zu. Am 11.09. um 12:30 kam
+# "und BE Hit 🥲" fuer den Long von 12:19; der Filter las es als Anweisung, der
+# Long blieb offen und schnappte sich um 15:08 das "TP1✅" des Shorts von 14:30.
+# So stand unter dem Long "+230 closed in profit" — ein Ziel, das er nie hatte.
+RE_BE_TREFFER = re.compile(
+    # Nicht "erreicht": "BE erreicht" heisst beim Desk "jetzt risikofrei", der
+    # Trade laeuft weiter (Review 13.09.).
+    r"\bBE\b\s*(?:hit|getroffen|gefallen)\b"
+    r"|\bbreak\s*-?\s*even\s*(?:hit|getroffen)\b"
+    r"|\b(?:raus|out)\s+(?:auf|at|bei)\s+BE\b|\bauf\s+BE\b\s*raus"
+    # "SL auf BE getroffen", "Stop auf Einstand getroffen" — der nachgezogene
+    # Stop ist gefallen, also null. Vorher als "stop" gelesen und mit dem vollen
+    # urspruenglichen Abstand als Verlust gebucht (Review 13.09.).
+    r"|\b(?:SL|stop)\b\s+(?:auf|bei|at)\s+(?:BE|break\s*-?\s*even|einstand|entry)\b"
+    r"[^\n]{0,15}?\b(?:hit|getroffen|erreicht|gefallen)\b", re.I)
+
+# Kein Ereignis, sondern Beinahe, Verneinung oder Moeglichkeit — eng am
+# Stichwort gesucht, damit ein "wer" drei Saetze weiter nichts kippt:
+#   "Fast BE hit 😅", "SL fast hit", "Kein BE Hit, laeuft weiter",
+#   "SL nicht getroffen", "Wer mag kann raus auf BE", "Nicht raus auf BE".
+RE_KEIN_EREIGNIS = re.compile(
+    r"\b(?:fast|knapp|beinahe|almost|nearly)\s+(?:den\s+|auf\s+)?(?:SL|stop|BE)\b"
+    r"|\b(?:SL|stop|BE)\s+(?:fast|knapp|beinahe|almost|nearly)\s+(?:hit|getroffen|erreicht)"
+    r"|\b(?:kein|keine|keinen|nicht)\s+(?:den\s+|der\s+)?(?:SL|stop|BE)\b"
+    r"|\b(?:SL|stop|BE)\s+(?:ist\s+|wurde\s+)?(?:nicht|kein)\s+(?:hit|getroffen|erreicht|gefallen)"
+    r"|\bnicht\s+ausgestoppt"
+    r"|\b(?:kann|k(?:ö|oe)nnt|wer|wenn|falls|mag|nicht)\b[^\n]{0,15}?\b(?:raus|out)\s+(?:auf|at|bei)\s+BE\b"
+    r"|\b(?:kann|k(?:ö|oe)nnt|wer|wenn|falls|mag|nicht)\b[^\n]{0,15}?\bauf\s+BE\b\s*raus",
+    re.I)
+
+# Dasselbe fuer den Stop — aber OHNE die BE-Formen. "SL Hit ❌ knapp BE verpasst"
+# ist ein echter Stop; eine BE-Bemerkung daneben darf ihn nicht aufheben
+# (Review 13.09.: der ausgestoppte Trade bekam sonst einen gruenen Streifen).
+RE_KEIN_STOP = re.compile(
+    r"\b(?:fast|knapp|beinahe|almost|nearly)\s+(?:den\s+)?(?:SL|stop)\b"
+    r"|\b(?:SL|stop)\s+(?:fast|knapp|beinahe|almost|nearly)\s+(?:hit|getroffen|erreicht)"
+    r"|\b(?:kein|keine|keinen|nicht)\s+(?:den\s+|der\s+)?(?:SL|stop)\b"
+    r"|\b(?:SL|stop)\s+(?:ist\s+|wurde\s+)?(?:nicht|kein)\s+(?:hit|getroffen|erreicht|gefallen)"
+    r"|\bnicht\s+ausgestoppt", re.I)
+
 
 def klassifiziere(text: str) -> str:
     """Eine Desk-Nachricht → eine Sorte.
 
-    signal | treffer | stop | anweisung | laufend | fremdbilanz | plan | rauschen
+    signal | treffer | stop | be | anweisung | laufend | fremdbilanz | plan | rauschen
     """
     t = (text or "").strip()
     if not t:
@@ -108,16 +158,25 @@ def klassifiziere(text: str) -> str:
     if RE_SIGNAL.search(t) and RE_RICHTUNG.search(t) and RE_SL_ZEILE.search(t):
         return "pending" if RE_PENDING.search(t) else "signal"
 
+    # Treffer VOR Anweisung: "TP2 ✅ Teilprofite ziehen" ist ein Treffer.
+    # Aber nicht, wenn er erst angekuendigt wird — und nicht der Teil, der nur
+    # einen Plan beschreibt ("bei TP2 BE ziehen").
+    ohne_plan = RE_PLAN_SATZ.sub(" ", t)
+    if RE_TP_TREFFER.search(ohne_plan):
+        return "laufend" if RE_BEINAHE.search(ohne_plan) else "treffer"
+
     if RE_PLAN.search(t):
         return "plan"
 
-    # Treffer VOR Anweisung: "TP2 ✅ Teilprofite ziehen" ist ein Treffer.
-    # Aber nicht, wenn er erst angekuendigt wird.
-    if RE_TP_TREFFER.search(t):
-        return "laufend" if RE_BEINAHE.search(t) else "treffer"
+    # Einstand VOR Stop: "SL auf BE getroffen" ist null, kein Verlust. Und vor
+    # der Anweisung, denn RE_ANWEISUNG greift auf jedes "BE".
+    if RE_BE_TREFFER.search(t):
+        return "anweisung" if RE_KEIN_EREIGNIS.search(t) else "be"
 
     if RE_STOP.search(t):
-        return "stop"
+        # "Fast SL hit" heisst: der Trade LAEUFT noch. Als Stop gelesen, war er
+        # zu, und seine spaeteren Ziele suchten sich einen fremden Trade.
+        return "laufend" if RE_KEIN_STOP.search(t) else "stop"
 
     if RE_ANWEISUNG.search(t):
         return "anweisung"
@@ -129,14 +188,15 @@ def klassifiziere(text: str) -> str:
 
 
 def tp_stufe(text: str):
-    """Welche TP-Stufe eine Treffermeldung nennt — oder None."""
-    m = RE_TP_TREFFER.search(text or "")
-    if not m:
-        return None
-    for g in m.groups():
-        if g:
-            return int(g)
-    return None
+    """Die hoechste TP-Stufe, die als gefallen gemeldet wird — oder None.
+
+    "direkt TP1 & TP2 ✅" meint beide; zaehlen muss die hoehere. Stufen, die
+    nur im Plan stehen ("bei TP2 BE ziehen"), zaehlen nicht.
+    """
+    ohne_plan = RE_PLAN_SATZ.sub(" ", text or "")
+    stufen = [int(n) for m in RE_TP_TREFFER.finditer(ohne_plan)
+              for n in re.findall(r"\bTP\s*([1-9])", m.group(0), re.I)]
+    return max(stufen) if stufen else None
 
 
 def pips_liste(text: str):
@@ -236,6 +296,49 @@ if __name__ == "__main__":
         ("HEUTIGES ERGEBNIS\n8 SIGNALE\n\n1250 TP ✅\n0 SL ❌\n0 BE 🛑", "fremdbilanz"),
         ("SL HIT ❌", "stop"),
         ("❌ Limit Order stornieren", "rauschen"),
+        # BE als Ereignis (Trade zu) gegen BE als Anweisung (Stop nachziehen)
+        ("und BE Hit 🥲", "be"),
+        ("raus auf BE, und short confirmation bekommen.", "be"),
+        ("Das ist frech, Pipetten genau auf BE rausgeholt 🫠", "be"),
+        ("BE ZIEHEN", "anweisung"),
+        ("70 pips profit & Be ziehen ✅🔥", "anweisung"),
+        ("SL auf BE bei 4586.20", "anweisung"),
+        ("Alle : TP1 & be knapp verpasst, SL Hit -0.5RR ❌", "stop"),
+        ("SL HIT, aber der Short ist noch am laufen 🚀", "stop"),
+        # Code-Review 13.09.: Beinahe, Verneinung, Moeglichkeit, BE-Stop
+        ("Fast BE hit 😅", "anweisung"),
+        ("fast BE getroffen, haelt aber", "anweisung"),
+        ("Nicht raus auf BE, laufen lassen 🚀", "anweisung"),
+        ("Wer mag kann raus auf BE", "anweisung"),
+        ("Kein BE Hit, laeuft weiter", "anweisung"),
+        ("SL fast hit 😅", "laufend"),
+        ("Fast SL hit", "laufend"),
+        ("SL nicht getroffen, weiter geht's", "laufend"),
+        ("SL auf BE getroffen", "be"),
+        ("Stop auf Einstand getroffen", "be"),
+        ("SL Hit, abwarten und neu ausrichten ❌", "stop"),
+        ("Da hat er uns verarscht.. SL Hit -0.5RR", "stop"),
+        ("SL HIT, wer noch drin ist neu einsteigen", "stop"),
+        # echte Meldung 24.08. 11:35 — "nicht schlimm" verneint nicht den Stop
+        ("SL Hit, nicht schlimm wir warten auf neue Chancen.", "stop"),
+        # Alte Schreibweise bis 31.08.: Treffer mit Fuehrung bzw. Plan dahinter
+        ("TP2 & BE✅", "treffer"),
+        ("TP1 & BE ziehen✅", "treffer"),
+        ("TP2 & SL auf BE ✅", "treffer"),
+        ("direkt TP1 & TP2 ✅ \n\nBe ziehen!!", "treffer"),
+        ("TP1✅  \n\nBei TP2 BE ziehen.", "treffer"),
+        ("TP1✅ wieder bei TP2 BE ziehen", "treffer"),
+        ("Bei TP2 BE ziehen", "plan"),
+        ("Alle : TP1 & be knapp verpasst, SL Hit -0.5RR ❌", "stop"),
+        # Review 13.09. (zweite Runde)
+        ("Alle : TP1 & knapp BE verpasst, SL Hit -0.5RR ❌", "stop"),
+        ("SL Hit ❌ leider kein BE gezogen", "stop"),
+        ("SL Hit ❌ war fast auf BE", "stop"),
+        ("Nicht auf BE raus, laufen lassen 🚀", "anweisung"),
+        ("Ihr könnt auf BE raus", "anweisung"),
+        ("Break even erreicht, jetzt laufen lassen 🔥", "anweisung"),
+        ("50 Pips, BE erreicht ✅", "anweisung"),
+        ("TP3 & TP4 laufen lassen ✅", "rauschen"),
     ]
     fehler = 0
     for text, soll in proben:
@@ -248,6 +351,9 @@ if __name__ == "__main__":
     print("pips_liste('TP1 geknackt 140 + 130'):", pips_liste("TP1 geknackt 140 + 130 🔥✅"))
     print("pips_liste('TP1 geknackt, 120 PIPS'):", pips_liste("TP1 geknackt, 120 PIPS 🔥✅"))
     print("pips_liste('TP1✅'):", pips_liste("TP1✅"))
+    for t, soll in (("direkt TP1 & TP2 ✅", 2), ("TP1✅ wieder bei TP2 BE ziehen", 1),
+                    ("TP2 & BE✅", 2), ("TP3 hit, 700 PIPS ✅🔥", 3), ("TP1 geknackt 140 + 130", 1)):
+        print(f"tp_stufe({t!r}) = {tp_stufe(t)}", "" if tp_stufe(t) == soll else f"!! soll {soll}")
     print("kern('SL ❌') == kern('30 SL ❌'):", kern("SL ❌") == kern("30 SL ❌"))
     print(lies_bilanz("HEUTIGES ERGEBNIS\n8 SIGNALE\n\n1250 TP ✅\n0 SL ❌\n0 BE 🛑"))
     print(lies_bilanz("HEUTIGER REPORT\n7 SIGNALE\n\n420 ✅ TP\n70 ❌ SL\n100 🛑BE zaehlt nicht mit"))

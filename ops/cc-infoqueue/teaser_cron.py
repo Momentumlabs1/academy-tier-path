@@ -33,6 +33,7 @@ ABSTAND_MIN = 15
 
 sys.path.insert(0, BASE)
 import desk_filter as df
+import queue_lock as ql
 
 def env():
     e = {}
@@ -88,9 +89,17 @@ def _zeit(iso: str):
 
 
 def main():
+    # Die ganze Runde unter der Queue-Sperre: sie liest die Queue, entscheidet
+    # nach Tageslimit und Abstand und haengt an — dazwischen darf niemand
+    # anderes schreiben (siehe queue_lock.py).
+    with ql.gesperrt():
+        _main()
+
+
+def _main():
     e = env()
     state = json.load(open(STATE)) if os.path.exists(STATE) else {}
-    queue = json.load(open(f"{BASE}/queue.json"))
+    queue = ql.lies()
     jetzt = datetime.datetime.utcnow()
 
     if "seit" not in state:
@@ -146,7 +155,7 @@ def main():
     json.dump(state, open(STATE, "w"))
     if neu:
         queue.extend(neu)
-        json.dump(queue, open(f"{BASE}/queue.json", "w"), ensure_ascii=False, indent=1)
+        ql.schreibe(queue)
         print(f"{len(neu)} Teaser in die Queue gelegt")
 
 

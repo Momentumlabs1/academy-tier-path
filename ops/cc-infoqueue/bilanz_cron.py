@@ -19,6 +19,7 @@ Laeuft */5. Jede Bilanz genau einmal (Zustand je signal_relays-Zeile).
 import json, os, sys, datetime
 sys.path.insert(0, "/opt/cc-infoqueue")
 import trade_card as tc, desk_filter as df
+import queue_lock as ql
 
 BASE = "/opt/cc-infoqueue"
 STATE = f"{BASE}/bilanz_state.json"
@@ -45,13 +46,15 @@ def main():
         datum = wann.strftime("%A · %d %b %Y")
         datei = f"tagesbilanz-{wann.date().isoformat()}-{r['id'][:6]}.png"
         tc.render_tagesbilanz(b, datum, f"{BASE}/media/{datei}")
-        queue = json.load(open(f"{BASE}/queue.json"))
-        queue.append({"at": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-                      "type": "photo", "file": datei, "caption": "", "verified": True,
-                      "quelle": f"tagesbilanz {r['id']} — Tims eigene Bilanz, unveraendert"})
-        tmp = f"{BASE}/queue.json.tmp"
-        json.dump(queue, open(tmp, "w"), ensure_ascii=False, indent=1)
-        os.replace(tmp, f"{BASE}/queue.json")
+        with ql.gesperrt():
+            queue = ql.lies()
+            # Die Queue selbst ist die Wahrheit, nicht bilanz_state.json: zwei
+            # Laeufe, die sich ueberholen, lasen beide "noch nicht gepostet".
+            if not any(str(p.get("quelle", "")).startswith(f"tagesbilanz {r['id']} ") for p in queue):
+                queue.append({"at": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+                              "type": "photo", "file": datei, "caption": "", "verified": True,
+                              "quelle": f"tagesbilanz {r['id']} — Tims eigene Bilanz, unveraendert"})
+                ql.schreibe(queue)
         stand[r["id"]] = datei
         neu += 1
         print(f"Tageskarte eingereiht (#{len(queue) - 1}): {b}")

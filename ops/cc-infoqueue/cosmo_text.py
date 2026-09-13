@@ -264,7 +264,8 @@ def tagesfakten(e):
     von, bis = dr.wien_tag(heute_wien.isoformat())
     bericht = dr.report(von, bis, env=ENV)
     trades = [t for t in tc.baue_trades(tc.lade_verlauf(e, stunden=20))
-              if t["hits"] or t["zu"] == "stop"]
+              if (t["hits"] or t["zu"] == "stop")
+              and t["paar"] != "?" and not t.get("verdaechtig")]
 
     erlaubt = set()
     for schluessel in ("signale", "tp_pips", "sl_pips", "be_anzahl", "unklar"):
@@ -404,12 +405,12 @@ def einreihen(text, quelle):
     ist jetzt faktencheck() oben, gegen dasselbe Faktenblatt, das der Schreiber
     hatte.
     """
-    queue = json.load(open(f"{BASE}/queue.json"))
-    queue.append({"at": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-                  "type": "text", "quelle": quelle, "text": text, "verified": True})
-    tmp = f"{BASE}/queue.json.tmp"
-    json.dump(queue, open(tmp, "w"), ensure_ascii=False, indent=1)
-    os.replace(tmp, f"{BASE}/queue.json")
+    import queue_lock as ql
+    with ql.gesperrt():
+        queue = ql.lies()
+        queue.append({"at": datetime.datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+                      "type": "text", "quelle": quelle, "text": text, "verified": True})
+        ql.schreibe(queue)
     return len(queue) - 1
 
 

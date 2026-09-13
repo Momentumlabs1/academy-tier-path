@@ -50,6 +50,7 @@ import base64, json, os, re, sys, glob, shutil, datetime, urllib.request
 BASE = "/opt/cc-infoqueue"
 sys.path.insert(0, BASE)
 import trade_card as tc
+import queue_lock as ql
 
 INBOX = f"{BASE}/lobby_inbox"
 ERLEDIGT = f"{INBOX}/erledigt"
@@ -228,19 +229,24 @@ def main():
             elif trocken:
                 print(f"#{meta['id']}: WUERDE POSTEN — {grund}")
             else:
-                queue = json.load(open(f"{BASE}/queue.json"))
-                frei, warum = darf_jetzt(queue, jetzt)
-                if not frei:
+                with ql.gesperrt():
+                    queue = ql.lies()
+                    # Schon eingereiht (ein paralleler Lauf war schneller)? Dann
+                    # nur noch abhaken. Und die Uhr NEU lesen: vor der Sperre
+                    # kann eine Bewertung Minuten gedauert haben.
+                    schon = any(p.get("quelle") == f"lobby {meta['id']}" for p in queue)
+                    jetzt_l = datetime.datetime.utcnow()
+                    frei, warum = (False, "schon eingereiht") if schon else darf_jetzt(queue, jetzt_l)
+                    if frei:
+                        eintrag.update({"at": jetzt_l.strftime("%Y-%m-%dT%H:%M:%SZ"), "verified": True,
+                                        "quelle": f"lobby {meta['id']}"})
+                        queue.append(eintrag)
+                        ql.schreibe(queue)
+                if not frei and not schon:
                     # Nicht abhaken: im naechsten Lauf ist der Abstand vielleicht um.
                     # Das Alterslimit sorgt dafuer, dass nichts ewig nachhaengt.
                     print(f"#{meta['id']}: wartet — {warum}")
                     continue
-                eintrag.update({"at": jetzt.strftime("%Y-%m-%dT%H:%M:%SZ"), "verified": True,
-                                "quelle": f"lobby {meta['id']}"})
-                queue.append(eintrag)
-                tmp = f"{BASE}/queue.json.tmp"
-                json.dump(queue, open(tmp, "w"), ensure_ascii=False, indent=1)
-                os.replace(tmp, f"{BASE}/queue.json")
                 print(f"#{meta['id']}: eingereiht als #{len(queue) - 1} — {grund}")
         if not trocken:
             for teil in (pfad, meta.get("foto")):

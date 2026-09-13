@@ -75,9 +75,14 @@ def rest(e, pfad):
 # steht nur noch, WIE die Zahlen aus einem Signal geholt werden.
 sys.path.insert(0, BASE)
 import desk_filter as df
+import queue_lock as ql
 
+# NAS, NASDAQ, NDX, USTEC stehen ausdruecklich drin: am 20.08. schrieb der Desk
+# "🟢 NAS BUY". Das Wort fehlte hier, der Trade entstand nie, und seine beiden
+# "SL Hit"-Meldungen landeten als rote Streifen auf zwei Gold-Trades, die in
+# Wahrheit im Gewinn standen (Code-Review 13.09.).
 RE_KOPF = re.compile(
-    r"\b(?P<paar>XAUUSD|XAU|GOLD|BTCUSD|BTC|NAS100|US100|US30|[A-Z]{6})\b"
+    r"\b(?P<paar>XAUUSD|XAU|GOLD|BTCUSD|BTC|NAS100|NASDAQ|NAS|NDX|USTEC|US100|US30|[A-Z]{6})\b"
     r"[^\n]{0,8}?\b(?P<richtung>BUY|SELL)\b", re.I)
 RE_ENTRY = re.compile(r"entry\s*:?\s*(?P<v>[\d\s.,]+)", re.I)
 RE_SL = re.compile(r"^\s*SL\s*:?\s*(?P<v>[\d\s.,]+)", re.I | re.M)
@@ -87,7 +92,40 @@ RE_TPS = re.compile(r"TP\s*(\d)\s*:?\s*(\d[\d\s.,]*)", re.I)
 
 def norm_paar(p):
     p = p.upper()
-    return "XAUUSD" if p in ("GOLD", "XAU", "XAUUSD") else ("BTCUSD" if p.startswith("BTC") else p)
+    if p in ("GOLD", "XAU", "XAUUSD"):
+        return "XAUUSD"
+    if p.startswith("BTC"):
+        return "BTCUSD"
+    if p in ("NAS", "NASDAQ", "NAS100", "NDX", "USTEC", "US100"):
+        return "NAS100"
+    return p
+
+
+# Welches Instrument eine Treffer- oder Stop-Meldung selbst nennt ("Nochmal SL
+# Hit bei NAS"). Nennt sie eins, kommen nur Trades dieses Instruments in Frage.
+RE_PAAR_NENNUNG = re.compile(
+    r"\b(XAUUSD|XAU|GOLD|BTCUSD|BTC|BITCOIN|NAS100|NASDAQ|NAS|NDX|USTEC|US100)\b", re.I)
+
+
+def genanntes_paar(text, anker):
+    """Das Instrument, das der Meldung am naechsten zum Ereigniswort steht.
+
+    "Nochmal SL Hit bei NAS, ... der letzte Gold Trade ist aber im TP3" nennt
+    zwei — gemeint ist das, was beim "SL Hit" steht. `anker` ist die Position
+    des Ereigniswortes im Text (oder None).
+    """
+    treffer = [(m.start(), m.group(1)) for m in RE_PAAR_NENNUNG.finditer(text or "")]
+    if not treffer:
+        return None
+    if anker is None or len(treffer) == 1:
+        return norm_paar("BTC" if treffer[0][1].upper() == "BITCOIN" else treffer[0][1])
+    pos, name = min(treffer, key=lambda x: abs(x[0] - anker))
+    return norm_paar("BTC" if name.upper() == "BITCOIN" else name)
+
+
+# "SL HIT, aber der Short ist noch am laufen" — der genannte Trade ist es NICHT.
+RE_LAEUFT_NOCH = re.compile(r"\b(?:der|die|das|unser)\s+(short|long)\b[^\n]{0,20}?"
+                            r"\b(?:noch|weiter)\b[^\n]{0,10}?\b(?:am\s+laufen|l(?:ae|ä)uft|offen|drin)\b", re.I)
 
 
 def pip_wert(paar):
@@ -112,6 +150,22 @@ def zahl(s):
     return float(s.replace(" ", "").replace("\u202f", "").replace("\u00a0", "").replace(",", "."))
 
 
+RE_SPANNE = re.compile(r"entry\s*:?\s*(?P<a>\d[\d \u202f\u00a0.,]*?)\s*[-\u2013]\s*(?P<b>\d[\d \u202f\u00a0.,]*)", re.I)
+
+
+def einstieg_spanne(text, entry):
+    """Der Einstieg als (von, bis) \u2014 bei "Entry : 4 339.00-4 347.00" beide
+    Enden, sonst zweimal derselbe Preis."""
+    m = RE_SPANNE.search(text or "")
+    if m:
+        try:
+            a, b = zahl(m.group("a")), zahl(m.group("b"))
+            return min(a, b), max(a, b)
+        except ValueError:
+            pass
+    return entry, entry
+
+
 def _zeit(iso):
     """Zeitstempel aus Postgres, auch mit krummen Sekundenbruchteilen.
 
@@ -126,12 +180,25 @@ def _zeit(iso):
     return datetime.datetime.fromisoformat(t)
 
 
-def lade_verlauf(e, stunden=36):
+LESE_STUNDEN = 72   # so weit zurueck wird der Desk-Strom gelesen ...
+FRIST_STUNDEN = 20  # ... aber nur Trades, die juenger sind, bekommen noch eine Karte
+
+
+def lade_verlauf(e, stunden=LESE_STUNDEN):
+    """Der Desk-Strom der letzten `stunden`, aelteste Nachricht zuerst.
+
+    Absteigend geholt und dann umgedreht: bei aufsteigender Sortierung mit
+    Limit fallen bei zu vielen Zeilen die NEUESTEN weg — also genau die
+    Signale, fuer die gerade eine Karte faellig waere.
+    """
     import urllib.parse
     seit = urllib.parse.quote((datetime.datetime.now(datetime.timezone.utc)
             - datetime.timedelta(hours=stunden)).isoformat())
-    return rest(e, f"signal_relays?select=id,preview,created_at"
-                   f"&created_at=gte.{seit}&order=created_at.asc&limit=300")
+    rows = rest(e, f"signal_relays?select=id,preview,created_at"
+                   f"&created_at=gte.{seit}&order=created_at.desc&limit=1000")
+    if len(rows) >= 1000:
+        print(f"WARNUNG: 1000 Desk-Nachrichten in {stunden} h — der Anfang fehlt")
+    return rows[::-1]
 
 
 def letzte_stufe(t):
@@ -139,7 +206,33 @@ def letzte_stufe(t):
     return max(t["tps"]) if t["tps"] else 1
 
 
-def _waehle_trade(offen, stufe, pips):
+NACH_MINUTEN = 15      # so frisch darf eine Kursmessung sein, ohne gegen einen Trade zu sprechen
+SPERR_ABSTAND_PIPS = 30  # erst so weit jenseits des Stops gilt ein Stop als nachweislich gefallen
+
+
+def _ziel_laengst_ueberschritten(t, stufe, beob, jetzt):
+    """Lag der Kurs schon lange VOR dieser Meldung jenseits dieses Ziels?
+
+    Dann haette der Desk den Treffer damals gemeldet — oder der Trade war da
+    schon zu. Eine Meldung, die jetzt kommt, gehoert dann eher einem anderen.
+    Am 11.09.: der Long von 12:19 hatte TP1 bei 4350, um 14:30 stieg der Desk
+    bei 4376 short ein. Das "TP1✅" um 15:08 kann nicht das Ziel des Longs sein
+    — das war seit mindestens 38 Minuten durch, ohne Meldung.
+    """
+    ziel = t["tps"].get(stufe)
+    if ziel is None:
+        return False
+    for zeit, paar, lo, hi in beob:
+        if paar != t["paar"] or zeit <= _zeit(t["zeit"]):
+            continue
+        if (jetzt - zeit).total_seconds() < NACH_MINUTEN * 60:
+            continue
+        if (t["richtung"] == "BUY" and hi >= ziel) or (t["richtung"] == "SELL" and lo <= ziel):
+            return True
+    return False
+
+
+def _waehle_trade(offen, stufe, pips, beob, jetzt, gesperrte=()):
     """Zu welchem laufenden Trade gehoert diese Treffermeldung?
 
     Der Desk haelt mehrere Positionen gleichzeitig und schreibt nur "TP2 ✅".
@@ -148,7 +241,7 @@ def _waehle_trade(offen, stufe, pips):
     Trade zuordnet, schreibt dem Long ein Ziel gut, das er in zwei Minuten nie
     erreicht haben kann.
 
-    Deshalb zwei Wege, in dieser Reihenfolge:
+    Deshalb drei Wege, in dieser Reihenfolge:
       1. Nennt der Desk eine Pip-Zahl, ist das eine MESSUNG: Einstieg und Ziel
          stehen im Signal, der Abstand ist nachrechenbar. Passt die Zahl zu
          genau einem laufenden Trade, ist die Frage beantwortet — passt sie zu
@@ -158,7 +251,13 @@ def _waehle_trade(offen, stufe, pips):
          einem unbeteiligten Trade gutgeschrieben wurde.
       2. Ohne Pip-Zahl die Reihenfolge — Ziele fallen von unten nach oben.
          Gemeint ist der Trade, dessen hoechster Treffer eine Stufe darunter
-         liegt.
+         liegt. Passen mehrere in DERSELBEN Richtung, der juengste: der Desk
+         meldet ein Ziel fuer die Position, die er gerade fuehrt (18.08. und
+         04.09. von zwei unabhaengigen Pruefern so bestaetigt).
+      3. Stehen Long und Short gleichzeitig zur Wahl, entscheidet der Kurs:
+         wessen Ziel laengst ueberschritten war, der ist es nicht. Bleiben
+         danach beide Richtungen uebrig, bekommt KEINER den Treffer. Ein
+         fehlender Streifen kostet einen Post, ein falscher die Glaubwuerdigkeit.
     """
     frei = [t for t in offen if stufe not in t["hits"]]
     if not frei:
@@ -186,45 +285,143 @@ def _waehle_trade(offen, stufe, pips):
             if d <= 0.15 and d < abstand:
                 beste, abstand = t, d
         return beste
-    for t in frei:
-        if t["max_tp"] == stufe - 1:
-            return t
-    for t in reversed(frei):
-        if t["max_tp"] < stufe:
-            return t
-    return None
+
+    kandidaten = [t for t in frei if t["max_tp"] == stufe - 1]
+    if not kandidaten:
+        # Hoechstens EINE Stufe darf ungemeldet fehlen ("direkt TP2"). Frueher
+        # durfte jede fehlen — so bekam am Ende ein Trade ohne jeden Treffer
+        # ein TP3 gutgeschrieben, weil das TP2 davor als Duplikat verworfen war.
+        kandidaten = [t for t in frei if stufe - 2 <= t["max_tp"] < stufe - 1]
+    if not kandidaten:
+        return None
+    # Laufen mehrere Instrumente, gilt die Meldung dem, das der Desk zuletzt
+    # eroeffnet hat (25.08.: "TP2✅" eine Minute nach dem TP1 des Gold-Longs,
+    # waehrend zwei NAS-Shorts von frueh morgens noch offen standen).
+    kandidaten = [t for t in kandidaten if t["paar"] == kandidaten[-1]["paar"]]
+    if len({t["richtung"] for t in kandidaten}) > 1:
+        kandidaten = [t for t in kandidaten
+                      if not _ziel_laengst_ueberschritten(t, stufe, beob, jetzt)]
+        if len({t["richtung"] for t in kandidaten}) != 1:
+            return None
+    # Ein gesperrter Trade bekommt nie einen Treffer — aber seine Sperre kann
+    # auf einem veralteten Signalpreis beruhen. Haette er dieses Ziel genauso
+    # gut liefern koennen und steht er in der Gegenrichtung, ist es ein
+    # Gleichstand, und dann gilt dieselbe Enthaltung (Review 13.09.).
+    w = kandidaten[-1]
+    if any(g["paar"] == w["paar"] and g["richtung"] != w["richtung"] and stufe not in g["hits"]
+           and stufe - 2 <= g["max_tp"] <= stufe - 1 for g in gesperrte):
+        return None
+    return w
+
+
+def _lies_signal(text):
+    """Die Zahlen einer Order: dict oder None.
+
+    Ohne Instrument im Kopf ("🟢 BUY BUY", 20.08.) wird das Paar "?" — die
+    Position existiert trotzdem und faengt ihre eigenen Meldungen auf, statt
+    dass ihr Stop einem fremden Trade angehaengt wird. Eine Karte bekommt sie
+    nie.
+    """
+    e_, s_ = RE_ENTRY.search(text), RE_SL.search(text)
+    if not (e_ and s_):
+        return None
+    try:
+        entry, sl = zahl(e_.group("v")), zahl(s_.group("v"))
+    except ValueError:
+        return None
+    kopf = RE_KOPF.search(text)
+    if kopf:
+        richtung, paar = kopf.group("richtung").upper(), norm_paar(kopf.group("paar"))
+    else:
+        m = df.RE_RICHTUNG.search(text)
+        if not m:
+            return None
+        richtung, paar = m.group(1).upper(), "?"
+    tps = {}
+    for nr, wert in RE_TPS.findall(text):
+        try:
+            tps[int(nr)] = zahl(wert)
+        except ValueError:
+            pass
+    lo, hi = einstieg_spanne(text, entry)
+    # Unmoegliche Zahlen: am 20.08. stand "Entry 4 384.59" (gemeint 4 484.59,
+    # ein Tippfehler) — Stop 7 Punkte weg, Ziele 200 bis 300 Punkte weg. Daraus
+    # rechnete die Karte "+2 140 Pips". Liegt ein Ziel mehr als 20-mal so weit
+    # weg wie der Stop, stimmt das Signal nicht. Der Trade faengt seine
+    # Meldungen trotzdem auf, bekommt aber keine Zahl und keine Karte.
+    #
+    # Derselbe Tippfehler kann auch den Stop 100 Punkte weit weg setzen. Tims
+    # Stops liegen 0,1-0,4 % vom Einstieg; mehr als 2 % ist kein echter Stop.
+    sl_abstand = abs(entry - sl)
+    verdaechtig = (not sl_abstand or sl_abstand / entry > 0.02
+                   or any(abs(entry - p) > 20 * sl_abstand for p in tps.values()))
+    # Bei einer Spanne zaehlt das UNGUENSTIGE Ende: wer beim Long oben einsteigt,
+    # hat weniger Gewinn und mehr Verlust. So rechnet der Streifen nie schoener,
+    # als es fuer jeden Teilnehmer war.
+    if lo != hi:
+        entry = hi if richtung == "BUY" else lo
+    return {"paar": paar, "richtung": richtung, "entry": entry, "sl": sl,
+            "tps": tps, "lo": lo, "hi": hi, "verdaechtig": verdaechtig}
+
+
+RE_AKTIV = re.compile(r"^\s*(?:aktiv|active|ausgel(?:ö|oe)st|getriggert|triggered)\b", re.I)
+RE_STORNO = re.compile(r"\binvalid|\bl(?:ö|oe)schen\b|\bstorn|\bcancel", re.I)
+# Ein Zug an den Einstand — nicht jede Erwaehnung von "BE" ("Gesamt heute: ⚪️ 1 BE").
+RE_BE_ZIEHEN = re.compile(
+    r"\b(?:BE|break\s*-?\s*even|breakeven|einstand)\b[^\n]{0,12}?\b(?:ziehen|nachziehen|setzen|gezogen)\b"
+    r"|\b(?:SL|stop)\s+(?:auf|bei)\s+(?:BE|break\s*-?\s*even|breakeven|einstand|entry)\b", re.I)
+
+
+def _neuer_trade(r, s):
+    return {"id": r["id"], "ids": [r["id"]], "paar": s["paar"], "richtung": s["richtung"],
+            "entry": s["entry"], "sl": s["sl"], "tps": dict(s["tps"]),
+            "lo": s["lo"], "hi": s["hi"],
+            "zeit": r["created_at"], "letzte": r["created_at"],
+            "hits": {}, "max_tp": 0, "zu": None, "verdaechtig": s.get("verdaechtig", False)}
 
 
 def baue_trades(rows):
     """Aus dem Desk-Strom die einzelnen Trades rekonstruieren.
 
-    Ein Trade entsteht mit dem Signal und endet mit einem Stop oder dem letzten
-    genannten Ziel. Alles dazwischen — "BE ziehen", "Teilprofite", "100 Pips im
-    Profit" — ist Fuehrung der VIP-Gruppe und wird von desk_filter aussortiert.
+    Ein Trade entsteht mit dem Signal und endet mit einem Stop, einem Ausstieg
+    auf Einstand oder dem letzten genannten Ziel. Alles dazwischen — "BE
+    ziehen", "Teilprofite", "100 Pips im Profit" — ist Fuehrung der VIP-Gruppe
+    und erzeugt selbst nichts.
     """
     trades = []
-    zuletzt = {}          # Buchstabenkern einer Meldung -> Zeitpunkt
+    zuletzt = {}          # Wiedererkennung einer Meldung -> Zeitpunkt
+    beob = []             # Kursmessungen: (zeit, paar, von, bis) aus jedem Signal
+    pending = None        # letzte Stop-/Limit-Order, die noch nicht ausgeloest ist
 
     for r in rows:
         text = r.get("preview") or ""
         art = df.klassifiziere(text)
+        jetzt = _zeit(r["created_at"])
+
+        if art == "pending":
+            s = _lies_signal(text)
+            pending = (r, s) if s else None
+            continue
+        if pending and art in ("rauschen", "anweisung", "laufend") and RE_AKTIV.search(text):
+            # Eine Stop-Order ist ausgeloest: ab jetzt eine echte Position. Am
+            # 11.09. lief so ein Short ab 08:28, und alles, was der Desk zu ihm
+            # schrieb, suchte sich einen fremden Trade. Eine Karte bekommt er
+            # nicht (keine Live-Karte), aber er faengt seine Meldungen auf.
+            pr, ps = pending
+            if (jetzt - _zeit(pr["created_at"])).total_seconds() < 3 * 3600:
+                trades.append(_neuer_trade(pr, ps))
+            pending = None
+            continue
+        if pending and art in ("rauschen", "anweisung") and RE_STORNO.search(text):
+            pending = None           # "Invalide löschen", "Limit Order stornieren"
+            continue
 
         if art == "signal":
-            kopf, e_, s_ = RE_KOPF.search(text), RE_ENTRY.search(text), RE_SL.search(text)
-            if not (kopf and e_ and s_):
+            s = _lies_signal(text)
+            if not s:
                 continue
-            try:
-                entry, sl = zahl(e_.group("v")), zahl(s_.group("v"))
-            except ValueError:
-                continue
-            richtung = kopf.group("richtung").upper()
-            paar = norm_paar(kopf.group("paar"))
-            tps = {}
-            for nr, wert in RE_TPS.findall(text):
-                try:
-                    tps[int(nr)] = zahl(wert)
-                except ValueError:
-                    pass
+            richtung, paar, entry, sl, lo, hi = (s["richtung"], s["paar"], s["entry"],
+                                                 s["sl"], s["lo"], s["hi"])
 
             # Waechter: liegt der Stop auf der falschen Seite, ist die Richtung
             # falsch. Am 08.09. um 08:17 schickte der Desk "🟢 XAUUSD BUY,
@@ -236,19 +433,60 @@ def baue_trades(rows):
                 print(f"verworfen (Stop auf der falschen Seite): {text[:60]!r}")
                 continue
 
+            # Ein neues Signal ist auch eine KURSMESSUNG: der Desk steigt zum
+            # aktuellen Preis ein. Liegt der deutlich jenseits des Stops eines
+            # aelteren Trades desselben Paares, ist dieser Stop inzwischen
+            # gefallen — ob der Desk es gemeldet hat oder nicht. Am 10.09. kam
+            # um 13:39 ein Short bei 4370; der Short von 13:09 hatte seinen
+            # Stop bei 4363. Er stand in der Rechnung weiter offen, und die
+            # Tagesbilanz schrieb ihm spaeter ein Ziel gut.
+            #
+            # "Deutlich": der Einstieg eines formellen Signals ist nicht immer
+            # der Kurs dieser Minute (11.09.: "Buy jetzt 4347" um 09:17, das
+            # Signal mit 4347 erst um 09:53). Deshalb erst ab 30 Pips jenseits.
+            #
+            # Gesperrt heisst nur: kein Kandidat mehr fuer spaetere Meldungen.
+            # Ein Ergebnis wird daraus NICHT gemacht — dafuer braucht es eine
+            # Meldung des Desks. Veredeln ja, erfinden nein.
+            # Ein Signal mit unmoeglichen Zahlen ist auch keine verlaessliche
+            # Kursmessung (Review 13.09.).
+            if paar != "?" and not s["verdaechtig"]:
+                beob.append((jetzt, paar, lo, hi))
+                abstand = SPERR_ABSTAND_PIPS * pip_wert(paar)
+                for t in trades:
+                    if t["zu"] or t.get("gesperrt") or t["paar"] != paar:
+                        continue
+                    if (t["richtung"] == "BUY" and hi < t["sl"] - abstand) or \
+                            (t["richtung"] == "SELL" and lo > t["sl"] + abstand):
+                        t["gesperrt"] = r["created_at"]
+
             # Dieselbe Order zweimal geschickt — erst nackt, Minuten spaeter mit
             # den Zielen, manchmal noch einmal als Spanne. Das ist EIN Trade.
+            # Die Spanne zaehlt mit, in beiden Reihenfolgen: am 11.09. kam
+            # "Entry 4347" um 09:53 und "Entry 4339-4347" um 09:55, gleicher
+            # Stop, gleiche Ziele. Als zwei Trades gelesen, fing der
+            # Phantom-Zwilling das "SL HIT" von 12:07 ab, der echte Trade blieb
+            # offen und bekam Stunden spaeter das Ziel eines anderen.
             vor = trades[-1] if trades else None
-            if (vor and vor["paar"] == paar and vor["richtung"] == richtung
-                    and abs(vor["entry"] - entry) < 1e-9
-                    and (_zeit(r["created_at"]) - _zeit(vor["zeit"])).total_seconds() < 1800):
-                vor["tps"].update(tps)
+            if (vor and not vor["zu"] and vor["paar"] == paar and vor["richtung"] == richtung
+                    and lo - 1e-9 <= vor["hi"] and hi + 1e-9 >= vor["lo"]
+                    and (jetzt - _zeit(vor["zeit"])).total_seconds() < 1800):
+                vor["tps"].update(s["tps"])
                 vor["sl"] = sl
+                vor["ids"].append(r["id"])
+                # Die Fassungen zusammen ergeben die Spanne; gerechnet wird vom
+                # unguenstigen Ende. Und der Plausibilitaetswaechter gilt fuer
+                # den zusammengefuehrten Stand — ein Tippfehler in der zweiten
+                # Fassung darf nicht als Zahl auf den Streifen (Review 13.09.).
+                vor["lo"], vor["hi"] = min(vor["lo"], lo), max(vor["hi"], hi)
+                if vor["lo"] != vor["hi"]:
+                    vor["entry"] = vor["hi"] if richtung == "BUY" else vor["lo"]
+                ab = abs(vor["entry"] - vor["sl"])
+                vor["verdaechtig"] = bool(vor.get("verdaechtig") or s["verdaechtig"] or not ab
+                                          or ab / vor["entry"] > 0.02
+                                          or any(abs(vor["entry"] - p) > 20 * ab for p in vor["tps"].values()))
                 continue
-            trades.append({"id": r["id"], "paar": paar, "richtung": richtung,
-                           "entry": entry, "sl": sl, "tps": tps,
-                           "zeit": r["created_at"], "letzte": r["created_at"],
-                           "hits": {}, "max_tp": 0, "zu": None})
+            trades.append(_neuer_trade(r, s))
             continue
 
         if art == "fremdbilanz":
@@ -268,7 +506,11 @@ def baue_trades(rows):
             if b and b["art"] == "tag" and b["sl"] == 0 and (b["be"] or 0) == 0:
                 tag = r["created_at"][:10]
                 for t in trades:
-                    if not t["zu"] and t["zeit"][:10] == tag:
+                    # Gesperrt = sein Stop ist nachweislich gefallen — dem
+                    # schreibt die Bilanz kein Ziel gut. "BE gezogen" dagegen
+                    # schon: "0 BE" heisst, keiner ist auf Einstand raus.
+                    if (not t["zu"] and not t.get("gesperrt") and t["paar"] != "?"
+                            and not t.get("verdaechtig") and t["zeit"][:10] == tag):
                         t["zu"] = "gewinn"
                         t["max_tp"] = max(t["max_tp"], 1)
                         t["hits"].setdefault(1, None)
@@ -276,33 +518,66 @@ def baue_trades(rows):
                         t["per_bilanz"] = True
             continue
 
-        if art not in ("treffer", "stop"):
-            continue
-
-        # Dieselbe Meldung zweimal: der Reader hat sie doppelt geliefert, oder
-        # der Desk hat sie wiederholt. Ueber die Buchstaben erkannt, damit
-        # "SL ❌" und "30 SL ❌" als EIN Stop zaehlen.
-        k = df.kern(text)
-        jetzt = _zeit(r["created_at"])
-        if k and (jetzt - zuletzt.get(k, jetzt - datetime.timedelta(days=1))).total_seconds() < 1200:
-            continue
-        zuletzt[k] = jetzt
-
         # Nur Trades DIESES Handelstages kommen in Frage. Ein "TP1✅" von heute
         # frueh gehoert nicht zu einer Order von gestern Mittag, die nie
         # geschlossen wurde — der Desk laesst offene Positionen einfach
         # stehen, und ohne diese Grenze wandert ein heutiger Treffer auf eine
         # Karte von gestern.
-        offen = [t for t in trades if not t["zu"]
+        offen = [t for t in trades if not t["zu"] and not t.get("gesperrt")
                  and (jetzt - _zeit(t["zeit"])).total_seconds() < 12 * 3600]
+
+        if art == "anweisung":
+            # "BE ziehen": der Stop der laufenden Position steht jetzt auf dem
+            # Einstieg. Ein spaeteres "SL HIT" ist dann null, kein Verlust.
+            #
+            # Nur wenn eindeutig ist, WELCHE Position gemeint ist: laufen Long
+            # und Short gleichzeitig, wird keiner markiert — sonst verschwand
+            # ein echter Verlust des anderen als "be" (Review 13.09.).
+            if RE_BE_ZIEHEN.search(text) and not df.RE_KEIN_EREIGNIS.search(text) and offen:
+                paar_n = genanntes_paar(text, None)
+                kand = [t for t in offen if not paar_n or t["paar"] == paar_n]
+                kand = [t for t in kand if t["paar"] == kand[-1]["paar"]] if kand else []
+                if kand and len({t["richtung"] for t in kand}) == 1:
+                    kand[-1]["be_gezogen"] = True
+            continue
+
+        if art not in ("treffer", "stop", "be"):
+            continue
+
+        # Dieselbe Meldung zweimal: der Reader hat sie doppelt geliefert, oder
+        # der Desk hat sie wiederholt. Ueber die Buchstaben erkannt, damit
+        # "SL ❌" und "30 SL ❌" als EIN Stop zaehlen — bei Treffern aber MIT
+        # der Stufe: "TP1✅" und "TP2✅" haben dieselben Buchstaben, und so fiel
+        # am 18.08. jedes TP2 und TP3 als "Duplikat" weg, das binnen 20 Minuten
+        # nach dem TP1 kam (Code-Review 13.09.).
+        stufe = (df.tp_stufe(text) or 1) if art == "treffer" else None
+        k = df.kern(text) + (f":tp{stufe}" if stufe else "")
+        if df.kern(text) and (jetzt - zuletzt.get(k, jetzt - datetime.timedelta(days=1))).total_seconds() < 1200:
+            continue
+        zuletzt[k] = jetzt
+
+        # Nennt die Meldung ein Instrument, kommt nur dieses in Frage ("Nochmal
+        # SL Hit bei NAS" gehoert keinem Gold-Trade). Sagt sie, welche Position
+        # NICHT gemeint ist ("aber der Short ist noch am laufen"), faellt die raus.
+        ereignis = {"treffer": df.RE_TP_TREFFER, "stop": df.RE_STOP,
+                    "be": df.RE_BE_TREFFER}[art].search(text)
+        paar_n = genanntes_paar(text, ereignis.start() if ereignis else None)
+        if paar_n:
+            offen = [t for t in offen if t["paar"] == paar_n]
+        m = RE_LAEUFT_NOCH.search(text)
+        if m and art in ("stop", "be"):
+            nicht = "SELL" if m.group(1).lower() == "short" else "BUY"
+            offen = [t for t in offen if t["richtung"] != nicht]
+
         if art == "treffer":
-            stufe = df.tp_stufe(text) or 1
             # Mehrere Positionen in einer Zeile ("TP1 geknackt 140 + 130"):
             # jede Zahl sucht sich ihren eigenen Trade, keiner wird zweimal
             # bedient.
             zahlen = df.pips_liste(text) or [None]
+            gesperrte = [t for t in trades if not t["zu"] and t.get("gesperrt")
+                         and (jetzt - _zeit(t["zeit"])).total_seconds() < 12 * 3600]
             for pips in zahlen:
-                ziel = _waehle_trade(offen, stufe, pips)
+                ziel = _waehle_trade(offen, stufe, pips, beob, jetzt, gesperrte)
                 if ziel is None:
                     continue
                 ziel["hits"][stufe] = pips
@@ -311,15 +586,41 @@ def baue_trades(rows):
                 if stufe >= letzte_stufe(ziel):
                     ziel["zu"] = "gewinn"
                 offen = [t for t in offen if t is not ziel]
+            continue
+
+        if art == "be":
+            # Raus auf Einstand. Welcher Trade? Einer, dessen Stop auf Einstand
+            # steht — also nach "BE ziehen" oder einem Treffer. Ist das nicht
+            # genau einer, wird NICHTS geschlossen: ein falsch geschlossener
+            # Trade faengt keine Meldungen mehr, und seine Ziele wandern weiter.
+            kand = [t for t in offen if t.get("be_gezogen") or t["hits"]]
+            if len(kand) == 1:
+                ziel = kand[0]
+            elif not kand and len(offen) == 1:
+                ziel = offen[0]
+            else:
+                continue
         else:
+            # Der Stop gehoert dem juengsten offenen Trade: am 09.09. um 13:23
+            # kam "SL ❌ / 30 SL ❌" drei Minuten nach dem Short von 13:20 — 30
+            # Pips ist genau dessen Stop-Abstand.
             ziel = offen[-1] if offen else None
-            if ziel:
-                # Ein Stop NACH einem Treffer ist kein Verlust: der Desk zieht
-                # den Stop bei +50 Pips auf Einstand ("SL auf Breakeven
-                # ziehen", 09.09. 09:50). Was dann faellt, ist der nachgezogene
-                # Stop, nicht der urspruengliche.
-                ziel["zu"] = "gewinn" if ziel["hits"] else "stop"
-                ziel["letzte"] = r["created_at"]
+            if ziel is None:
+                continue
+
+        # Ein Stop NACH einem Treffer ist kein Verlust: der Desk zieht den Stop
+        # bei +50 Pips auf Einstand ("SL auf Breakeven ziehen", 09.09. 09:50).
+        # Was dann faellt, ist der nachgezogene Stop, nicht der urspruengliche.
+        # Dasselbe nach "BE ziehen" ohne Treffer: raus bei null — das bekommt
+        # keinen Streifen (Einstand gehoert in die Signalgruppe, Ansage 08.09.),
+        # aber der Trade ist zu und fischt keine Ziele mehr.
+        if ziel["hits"]:
+            ziel["zu"] = "gewinn"
+        elif art == "stop" and not ziel.get("be_gezogen"):
+            ziel["zu"] = "stop"
+        else:
+            ziel["zu"] = "be"
+        ziel["letzte"] = r["created_at"]
     return trades
 
 
@@ -339,6 +640,8 @@ def ergebnis_pips(t):
     Nur wenn das Ziel im Signal fehlte, bleibt die Desk-Angabe die einzige
     Quelle — dann steht sie auf der Karte.
     """
+    if t["paar"] == "?" or t.get("verdaechtig"):
+        return None
     pip = pip_wert(t["paar"])
     if t["zu"] == "stop":
         return -round(abs(t["entry"] - t["sl"]) / pip)
@@ -819,14 +1122,21 @@ def main():
     an denen done.json haengt.
     """
     e = env()
+    # Erst rechnen (Netz), dann sperren: die Queue wird nur in dem kurzen Stueck
+    # gehalten, in dem sie gelesen, ergaenzt und zurueckgeschrieben wird.
+    trades = baue_trades(lade_verlauf(e))
+    with ql.gesperrt():
+        _karten_einreihen(trades)
+
+
+def _karten_einreihen(trades):
     stand = json.load(open(STATE)) if os.path.exists(STATE) else {}
     if not isinstance(stand, dict):
         stand = {}          # altes Format war eine Liste erledigter relay_ids
-    queue = json.load(open(f"{BASE}/queue.json"))
+    queue = ql.lies()
     done = json.load(open(f"{BASE}/done.json")) if os.path.exists(f"{BASE}/done.json") else {}
     geaendert = 0
 
-    trades = baue_trades(lade_verlauf(e))
     erstlauf = not stand
     heute = datetime.datetime.utcnow().strftime("%Y-%m-%d")
     versatz = 0      # Minuten, damit mehrere Karten nicht als Schwall kommen
@@ -838,8 +1148,25 @@ def main():
         # "in der Infogruppe soll auch nicht alle Trades". Ein Ergebnis ohne
         # vorherige Live-Karte haette nichts, worunter es haengen koennte —
         # und waere genau die zusaetzliche Kachel, die zu viel ist.
-        antwort_auf = lebend.get(t["id"])
+        if t["paar"] == "?" or t.get("verdaechtig"):
+            continue                      # Instrument unbekannt / Zahlen unmoeglich -> keine Karte
+        # Die Live-Karte kann an jeder Fassung derselben Order haengen — der
+        # Teaser nimmt die erste, die Abstand und Tageslimit passiert, und das
+        # ist nicht immer die, deren id der zusammengefuehrte Trade traegt.
+        antwort_auf = next((lebend[i] for i in t.get("ids", [t["id"]]) if i in lebend), None)
         if antwort_auf is None:
+            continue
+        # Abgeschlossene Handelstage werden nicht mehr angefasst. Die Rechnung
+        # oben sieht nur ein Fenster des Desk-Stroms; rutscht es weiter, fallen
+        # die aeltesten Signale heraus, und ihre Treffer landen beim naechsten
+        # Trade. Genau so kamen am Sa 12.09. 22:00 und So 13.09. 00:20
+        # "closed in profit"-Streifen unter zwei Freitags-Trades, fuer die der
+        # Desk nie ein Ziel gemeldet hatte, und am Fr 22:20 wurde aus einem
+        # +180 nachtraeglich ein +700. Ein Ziel kann ohnehin nur binnen 12 h
+        # nach dem Signal zugeordnet werden (siehe `offen`), die Tagesbilanz
+        # kommt am selben Abend — was danach noch wechselt, ist ein Artefakt.
+        if (datetime.datetime.now(datetime.timezone.utc)
+                - _zeit(t["zeit"])).total_seconds() > FRIST_STUNDEN * 3600:
             continue
         if erstlauf and t["letzte"][:10] < heute:
             # Beim allerersten Lauf zaehlt alles von FRUEHEREN Tagen als
@@ -872,6 +1199,11 @@ def main():
         elif str(alt["index"]) not in done:
             index = alt["index"]
             eintrag["at"] = queue[index]["at"]     # Sendezeit nicht verschieben
+            # War der wartende Eintrag selbst schon ein Austausch, muss er es
+            # bleiben — sonst geht er als ZWEITER Streifen unter dieselbe
+            # Live-Karte, und der erste wird nie mehr ersetzt (Review 13.09.).
+            if queue[index].get("ersetzt_index") is not None:
+                eintrag["ersetzt_index"] = queue[index]["ersetzt_index"]
             queue[index] = eintrag
             print(f"aktualisiert (noch nicht raus): {signatur}")
         else:
@@ -886,9 +1218,7 @@ def main():
     if erstlauf:
         print(f"Erstlauf: {len(stand)} Trade(s) als Bestand vermerkt, nichts gesendet")
     if geaendert:
-        tmp = f"{BASE}/queue.json.tmp"
-        json.dump(queue, open(tmp, "w"), ensure_ascii=False, indent=1)
-        os.replace(tmp, f"{BASE}/queue.json")
+        ql.schreibe(queue)
     json.dump(stand, open(STATE, "w"), indent=1)
     print(f"{geaendert} Karte(n) neu oder nachgefuehrt")
 

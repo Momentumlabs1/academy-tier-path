@@ -147,7 +147,7 @@ def api():
     req = urllib.request.Request(
         f"{url}/rest/v1/app_secrets?key=eq.TELEGRAM_BOT_TOKEN&select=value",
         headers={"apikey": sk, "Authorization": f"Bearer {sk}"})
-    token = json.load(urllib.request.urlopen(req))[0]["value"]
+    token = json.load(urllib.request.urlopen(req, timeout=20))[0]["value"]
     return f"https://api.telegram.org/bot{token}"
 
 
@@ -242,8 +242,11 @@ def post(p, chat=CHAT, api_base=None):
         felder = {"chat_id": chat, "text": p["text"]}
         if antwort:
             felder["reply_to_message_id"] = antwort
+            # Ist die Bezugsnachricht geloescht, antwortet Telegram sonst mit
+            # 400 — und der Eintrag blockierte die ganze Warteschlange.
+            felder["allow_sending_without_reply"] = "true"
         data = urllib.parse.urlencode(felder).encode()
-        r = urllib.request.urlopen(urllib.request.Request(f"{API}/sendMessage", data=data))
+        r = urllib.request.urlopen(urllib.request.Request(f"{API}/sendMessage", data=data), timeout=30)
         j = json.load(r)
         return j.get("result") if j.get("ok") else None
 
@@ -253,6 +256,7 @@ def post(p, chat=CHAT, api_base=None):
     fields = {"chat_id": chat, "caption": p.get("caption", "")}
     if antwort:
         fields["reply_to_message_id"] = str(antwort)
+        fields["allow_sending_without_reply"] = "true"
     if field == "video":
         # Erst die Angaben aus der Warteschlange, sonst die aus der Datei.
         w = p.get("width")
@@ -299,11 +303,33 @@ def main():
             print("Datei meldet:", mp4_meta(f"{BASE}/media/{p['file']}"))
         res = post(p, chat=chat)
         print("gesendet:", describe(res))
+        # Neu gesetzt heisst neue Nachrichten-Nummer. Ohne diese Zeile antwortet
+        # der naechste Streifen auf die geloeschte alte (Review 13.09.).
+        if res and res.get("message_id") and chat == CHAT:
+            ids = _sent_ids()
+            ids[str(idx)] = res["message_id"]
+            json.dump(ids, open(f"{BASE}/sent_ids.json", "w"))
         return
 
     if not os.path.exists(f"{BASE}/ARM"):
         sys.exit(0)
 
+    # Die Runde laeuft unter der Queue-Sperre. Zwei Gruende: trade_card
+    # ueberschreibt einen noch nicht gesendeten Streifen an Ort und Stelle —
+    # das darf nicht mitten in dessen Versand passieren; und haengt ein Lauf
+    # (Telegram langsam), wartet der naechste, statt denselben Eintrag ein
+    # zweites Mal zu senden. Queue und done.json werden deshalb erst INNERHALB
+    # der Sperre gelesen.
+    sys.path.insert(0, BASE)
+    import queue_lock as ql
+    API = api()          # Netz VOR der Sperre — mit Frist, siehe api()
+    # Nicht blockierend: haelt gerade ein anderer Cron die Queue, kommt der
+    # Poster in zwei Minuten wieder. So stauen sich keine Poster-Laeufe.
+    with ql.gesperrt(warten=0):
+        _runde(ql.lies(), API)
+
+
+def _runde(queue, API):
     done = json.load(open(f"{BASE}/done.json")) if os.path.exists(f"{BASE}/done.json") else {}
     now = datetime.datetime.now(datetime.timezone.utc)
 
@@ -313,9 +339,9 @@ def main():
             if str(p["at"]).startswith("GO+"):
                 mins = int(p["at"][3:])
                 p["at"] = (now + datetime.timedelta(minutes=mins)).strftime("%Y-%m-%dT%H:%M:%SZ")
-        json.dump(queue, open(f"{BASE}/queue.json", "w"), ensure_ascii=False, indent=1)
+        import queue_lock as ql
+        ql.schreibe(queue)
 
-    API = api()
     for i, p in enumerate(queue):
         key = str(i)
         if key in done:
@@ -363,6 +389,15 @@ def main():
                 continue
             else:
                 print(f"FEHLER bei {key}", file=sys.stderr)
+        except urllib.error.HTTPError as e:
+            # Eine dauerhafte Ablehnung (4xx ausser 429) wird beim naechsten Mal
+            # nicht besser — abhaken statt die Warteschlange ewig anzuhalten.
+            if 400 <= e.code < 500 and e.code != 429:
+                done[key] = f"skipped: HTTP {e.code}"
+                json.dump(done, open(f"{BASE}/done.json", "w"))
+                print(f"uebersprungen: {key} — Telegram lehnt ab (HTTP {e.code})", file=sys.stderr)
+                continue
+            print(f"FEHLER bei {key}: HTTP {e.code}", file=sys.stderr)
         except Exception as e:
             print(f"FEHLER bei {key}: {e}", file=sys.stderr)
         break  # max 1 Post pro Lauf — wirkt organisch, nie ein Schwall
