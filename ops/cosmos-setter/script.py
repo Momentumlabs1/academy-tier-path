@@ -75,10 +75,24 @@ SIGNAL_QUESTION_AGAIN_2 = (
 )
 
 
+# Ansage Diego 14.09.: die Signal-Frage bleibt — wer "nein" sagt, bekommt in
+# einem Satz erklaert, was das ist; wer "ja" sagt, bekommt nur ein kurzes Okay.
+# Beides steht direkt VOR der Landfrage in derselben Nachricht (vorher ging das
+# "nein"-Okay auf dem Weg zur Landfrage verloren).
 SIGNAL_REPLY = {
     "yes": "Okay, so you know how it works.",
-    "no":  "No problem, it's simpler than it sounds.",
+    "no":  "No problem, it's simple: when we take a trade, you get the exact entry, "
+           "stop-loss and take-profit in the group and just copy it into your own account.",
 }
+
+# Nach der Landantwort (Ansage Diego 14.09.): erst ein kurzes Danke plus der
+# Satz, dass jetzt nur noch die Einzahlung fehlt — dann das Video als Erklaerung,
+# dann der Link. Der Link kommt NACH dem Video, weil Cosmo darin auf "the link
+# below" zeigt.
+LAND_DANKE = (
+    "Perfect, thanks! 🙌\n\n"
+    "Now you just need to fund your account — this short video shows you exactly how 👇"
+)
 
 # ── The value + handover. Sent as SHORT, separate messages. ────────────────
 # A single block with an emoji bullet list reads like a brochure — exactly the

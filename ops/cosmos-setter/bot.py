@@ -639,8 +639,11 @@ async def send_pitch(chat, lead: dict, intro: str | None = None):
     # daran: Hero nimmt US-Kunden, VT weist sie ab — und zwar erst nach dem
     # Klick. Eine Frage mehr ist billiger als ein Link, der ihn rauswirft.
     if not lead.get("country"):
-        await menschlich(chat, script.ASK_COUNTRY)
-        store.log_message(lead["id"], "assistant", script.ASK_COUNTRY)
+        # Das Okay bzw. die kurze Erklaerung zur Signal-Antwort gehoert mit in
+        # diese Nachricht — bis 14.09. fiel sie hier still weg.
+        frage = f"{intro}\n\n{script.ASK_COUNTRY}" if intro else script.ASK_COUNTRY
+        await menschlich(chat, frage)
+        store.log_message(lead["id"], "assistant", frage)
         # Den Schritt MERKEN. Ohne das blieb er auf "asked_signals", und die
         # Landantwort landete im Signal-Zweig — siehe on_message, 12.09.
         store.set_step(lead["telegram_user_id"], "asked_country")
@@ -657,10 +660,19 @@ async def send_pitch(chat, lead: dict, intro: str | None = None):
     # Ohne hinterlegtes Video bleibt alles beim Alten: der lange Pitch ist der
     # Rueckfall, nicht ein Fehler.
     video = store.video_for(lead.get("experience"))
+    intro_raus = False
     if video:
         try:
+            # Reihenfolge nach Ansage Diego 14.09.: kurzes Danke + "jetzt nur
+            # noch einzahlen" -> Video als Erklaerung -> Link -> Anleitung. Mit
+            # dem Danke vorweg braucht das Video keinen eigenen Untertext mehr.
+            if intro:
+                await menschlich(chat, intro)
+                store.log_message(lead["id"], "assistant", intro)
+                intro_raus = True
+                await asyncio.sleep(0.8)
             await chat.send_video(video["file_id"],
-                                  caption=(video.get("caption") or script.VIDEO_UNTERTEXT))
+                                  caption=None if intro else (video.get("caption") or script.VIDEO_UNTERTEXT))
             await asyncio.sleep(1.4)
             nachricht = script.VIDEO_LINK.format(link=link, min=f"{cfg.VIP_MIN_DEPOSIT:.0f}$")
             await chat.send_message(nachricht, disable_web_page_preview=True)
@@ -678,6 +690,12 @@ async def send_pitch(chat, lead: dict, intro: str | None = None):
             log.warning("Video-Antwort fehlgeschlagen (%s) — nehme den Text", e)
 
     parts = script.pitch_parts(link, cfg.VIP_MIN_DEPOSIT)
+    # Ohne Video kein "dieses Video zeigt dir …" — und was schon raus ist, nicht
+    # ein zweites Mal.
+    if intro == script.LAND_DANKE:
+        intro = "Perfect, thanks! 🙌"
+    if intro_raus:
+        intro = None
     if intro:
         # Glue the acknowledgement onto the first line — a one-line "Passt." on
         # its own is the machine-gun feel we are trying to avoid.
@@ -1114,7 +1132,7 @@ async def on_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         lead["country"] = land
         broker = "Hero" if land.upper() == "US" else "VT"
         await melde(f"🌍 LAND · {_wer(lead)}\n{land} → {broker}")
-        await send_pitch(update.effective_chat, lead)
+        await send_pitch(update.effective_chat, lead, intro=script.LAND_DANKE)
         return
 
     if step == "opened":
