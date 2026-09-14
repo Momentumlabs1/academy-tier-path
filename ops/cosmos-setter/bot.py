@@ -205,7 +205,14 @@ async def wallet_hinweis(bot, lead: dict) -> bool:
     except Exception as e:
         log.warning("Wallet-Stand nicht lesbar: %s", e)
         return False
-    if not st or float(st.get("current_balance_usd") or 0) > 0:
+    # Nur wenn wir SICHER wissen, dass auf den Handelskonten nichts liegt: NULL
+    # heisst "Hero hat den Kontostand diesmal nicht geliefert" — nicht null
+    # Dollar. Am 14.09. ging der Hinweis so an ein Konto mit 14,99 $, dessen
+    # Stand in einem Lauf nicht lesbar war. Wer schon einmal Geld auf dem
+    # Handelskonto hatte (net_deposit), braucht den Hinweis ohnehin nicht.
+    if not st or st.get("current_balance_usd") is None:
+        return False
+    if float(st["current_balance_usd"]) > 0 or float(st.get("net_deposit") or 0) > 0:
         return False
     text = script.WALLET_ANGEKOMMEN_KONTO if st.get("trading_account_at") else script.WALLET_ANGEKOMMEN
     await bot.send_message(chat_id=int(lead["telegram_user_id"]), text=text)

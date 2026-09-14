@@ -509,7 +509,7 @@ class Store:
         """
         if not self.rest.enabled:
             return None
-        cols = "client_id,email,wallet_deposit_at,trading_account_at,current_balance_usd"
+        cols = "client_id,email,wallet_deposit_at,trading_account_at,current_balance_usd,net_deposit"
         basis = {"select": cols, "broker": "eq.hero", "wallet_deposit_at": "not.is.null"}
         tok = lead.get("token")
         if tok:
