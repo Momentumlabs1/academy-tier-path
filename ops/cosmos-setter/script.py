@@ -89,6 +89,16 @@ SIGNAL_REPLY = {
 # Satz, dass jetzt nur noch die Einzahlung fehlt — dann das Video als Erklaerung,
 # dann der Link. Der Link kommt NACH dem Video, weil Cosmo darin auf "the link
 # below" zeigt.
+# Er fragt nach dem Link, bevor die Fragen durch sind. Nie vertroesten ("kommt
+# gleich automatisch") — am 12.09. versprach die KI genau das, und es kam nichts;
+# Jonny (HeroFX) hat sich dann selbst registriert. Stattdessen: der eine Schritt,
+# der wirklich noch fehlt, und sofort weiter.
+LINK_GLEICH = "Sure, coming right up 🙂"
+LINK_NUR_NOCH_LAND = (
+    "Coming right up — I just need your country first, so I send you the broker "
+    "that will actually accept you. Which country are you in?"
+)
+
 LAND_DANKE = (
     "Perfect, thanks! 🙌\n\n"
     "Now you just need to fund your account — this short video shows you exactly how 👇"

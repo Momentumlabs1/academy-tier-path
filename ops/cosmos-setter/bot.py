@@ -981,6 +981,21 @@ def _is_aside(text: str, matched: str | None) -> bool:
     return any(w in low for w in QUESTION_WORDS)
 
 
+# Fragt der Lead nach dem Link / der Anmeldung? Dann wird nicht vertroestet und
+# nicht weiter qualifiziert — siehe script.LINK_GLEICH.
+RE_WILL_LINK = re.compile(
+    r"\blink\b|\bsign\s*-?\s*up\b|\bregist|\banmeld|\bwhere\s+(?:do|can)\s+i\s+(?:join|start|sign)"
+    r"|\bhow\s+(?:do|can)\s+i\s+(?:join|get\s+in|start|sign)", re.I)
+
+
+def _will_link(text: str) -> bool:
+    t = (text or "").strip()
+    if not RE_WILL_LINK.search(t):
+        return False
+    return ("?" in t or len(t.split()) <= 3 or re.match(
+        r"(?i)\s*(?:how|where|send|give|can|could|pls|please|wo|wie|schick|gib)\b", t) is not None)
+
+
 async def _answer_aside(update, lead: dict, text: str) -> None:
     """Answer the aside briefly, then the caller continues the script."""
     try:
@@ -1110,6 +1125,31 @@ async def on_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     # der Schritt blieb aber auf "asked_signals"; also las der Signal-Zweig
     # "germany" als ungueltige Antwort, fragte neu, und nach "yes" kam wieder die
     # Landfrage. Eine Schleife, dazwischen KI-Smalltalk ("what part of NC?").
+    # 1c) Er will den Link, bevor alle Fragen durch sind: nicht vertroesten,
+    #     nicht weiterfragen. Fehlt noch das Land, ist das die EINE Frage; sonst
+    #     kommt der Ablauf sofort (12.09., Jonny: "how can i get the link?" ->
+    #     "It'll come through automatically" -> nichts).
+    if _will_link(msg) and step in ("opened", "asked_signals", "asked_country"):
+        if lead.get("country"):
+            await send_pitch(update.effective_chat, lead, intro=script.LINK_GLEICH)
+        elif step == "asked_country":
+            again = _reask(context, u.id, "land", [script.LINK_NUR_NOCH_LAND])
+            if again:
+                await menschlich(update.effective_chat, again)
+                store.log_message(lead["id"], "assistant", again)
+            else:
+                # Zweimal nach dem Link gefragt, Land weiter offen: Hero nimmt
+                # jeden — lieber jetzt den Link als eine dritte Frage.
+                store.set_country(u.id, "US")
+                lead["country"] = "US"
+                await send_pitch(update.effective_chat, lead, intro=script.LINK_GLEICH)
+        else:
+            await send_pitch(update.effective_chat, lead, intro=script.LINK_GLEICH)
+        return
+    if _will_link(msg) and step == "pitched":
+        await resend_link(update.effective_chat, lead)
+        return
+
     landfrage = step == "asked_country" or (
         not lead.get("country")
         and any(script.ASK_COUNTRY[:40] in (m.get("content") or "")
@@ -1295,6 +1335,12 @@ async def on_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
     text = setter_ai.ensure_link(text, lead)   # only until the link went out once
+    if not (text or "").strip():
+        # Nie eine leere Nachricht: Telegram lehnt sie ab, und der Kunde bekommt
+        # gar nichts (14.09.: leere KI-Antwort nach dem Link). Lieber melden.
+        log.warning("KI-Antwort leer fuer %s", u.id)
+        await melde(f"⚠️ KI-Antwort leer · {_wer(lead)}\nNachricht: {msg[:200]}")
+        return
     store.log_message(lead["id"], "assistant", text)
     if setter_ai.sent_link(text, lead["token"]):
         store.mark_link_sent(u.id)

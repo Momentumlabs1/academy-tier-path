@@ -61,12 +61,9 @@ LINK_GOAL = """THE LINK (handover) — this is your goal, get there briskly:
   depositing or "getting started", the link MUST be in THAT SAME message. Never write
   "register and deposit" without the link attached.
 - Paste the link VERBATIM and unchanged (it carries a tracking token). Do not spam it.
-- Then say EXACTLY this (in your own words): register + deposit, and as soon as the deposit
-  goes through, YOU unlock them AUTOMATICALLY and message them here with everything. So they
-  do not have to do anything else. Optional addition: if they want, they can still drop a
-  message once they are done.
-- NEVER say "let me know and I'll unlock you" — that sounds like they have to do something.
-  The unlock happens on its own."""
+- Then say (in your own words): open the account, fund it with at least the minimum, make
+  sure the money sits on the TRADING account (not just the wallet), then come back here and
+  tell you — you check and unlock the signal group and the academy."""
 
 
 def _link_section(lead: dict, link: str) -> str:
@@ -90,14 +87,17 @@ def _link_section(lead: dict, link: str) -> str:
     if lead.get("status") in ("link_sent", "deposited"):
         return (
             "THE LINK — IMPORTANT:\n"
-            "- This person ALREADY has the sign-up link, it is further up in the chat.\n"
-            "- Do NOT send it again and do NOT write out a URL.\n"
-            "- Do NOT ask \"want me to send you the link?\" — it is annoying.\n"
-            "- Just answer the question. Briefly. Nothing appended after it.\n"
-            "- If they say they deposited: say you are checking. Nothing more.\n"
-            "- NEVER say \"let me know once you deposited and I'll unlock you\".\n"
-            "  The unlock happens AUTOMATICALLY as soon as the deposit is visible.\n"
-            "  They do NOT need to report back or do anything — say it exactly that way."
+            "- This person ALREADY got everything further up in the chat: a short explainer\n"
+            "  video (open account → fund it → move the money from the wallet onto a TRADING\n"
+            "  account → come back and tell you), the sign-up link, and a written guide\n"
+            "  (crypto-only deposits, wallet vs. trading account, TradeLocker \"Cosmos Special\").\n"
+            "  Messages marked [video] in the history are that video plus the link.\n"
+            "- Do NOT send the link again and do NOT write out a URL. Do NOT ask\n"
+            "  \"want me to send you the link?\". Never talk about what you did or did not send.\n"
+            "- Just answer their question. Briefly, like a person. Nothing appended after it.\n"
+            "- Once they have funded, they come back here and tell you (and the e-mail they\n"
+            "  used at the broker) — then you check and unlock the signal group and the academy.\n"
+            "- If they say they deposited: say you are checking. Nothing more."
         )
     return LINK_GOAL.format(link=link)
 
@@ -214,6 +214,13 @@ def _ki(**kw):
         # BEWUSST der direkte Aufruf: hier steht der echte API-Zugriff. Ein
         # _ki(**kw) an dieser Stelle laesst die Funktion sich selbst rufen —
         # genau so am 07.09. in einer Endlosschleife gelandet.
+        # Ohne ausdrueckliches "kein Denken" denkt das aktuelle Modell selbst —
+        # und verbraucht dabei das ganze kleine Antwort-Budget (400/200/160
+        # Token). Heraus kam am 14.09. im Test eine LEERE Antwort (nur ein
+        # Denk-Block, stop_reason max_tokens): der Kunde bekam auf seine Frage
+        # nichts. Hier sind es kurze Chat-Saetze und Einordnungen — Denken
+        # bringt nichts, also aus.
+        kw.setdefault("thinking", {"type": "disabled"})
         return client().messages.create(**kw)
     except Exception as e:
         t = f"{type(e).__name__}: {e}"
