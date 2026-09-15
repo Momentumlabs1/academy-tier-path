@@ -323,9 +323,11 @@ def main():
     sys.path.insert(0, BASE)
     import queue_lock as ql
     API = api()          # Netz VOR der Sperre — mit Frist, siehe api()
-    # Nicht blockierend: haelt gerade ein anderer Cron die Queue, kommt der
-    # Poster in zwei Minuten wieder. So stauen sich keine Poster-Laeufe.
-    with ql.gesperrt(warten=0):
+    # Bis zu 30 s warten (kuerzer als der 2-Minuten-Takt, also kein Stau).
+    # Mit warten=0 verlor der Poster fast jeden Lauf gegen teaser_cron, der zur
+    # selben Sekunde startet: am 15.09. 1194 von 1310 Laeufen "Queue belegt",
+    # Posts kamen Stunden zu spaet (gemeldet von CC MAIN).
+    with ql.gesperrt(warten=30):
         _runde(ql.lies(), API)
 
 
@@ -348,6 +350,13 @@ def _runde(queue, API):
             continue
         at = datetime.datetime.fromisoformat(str(p["at"]).replace("Z", "+00:00"))
         if at > now:
+            continue
+        # Eine Live-Karte ("neuer Trade in VIP") ist nach 90 min keine Live-
+        # Meldung mehr. Lieber weglassen als eine Stunde zu spaet "NEW TRADE".
+        if str(p.get("quelle", "")).startswith("teaser relay ") and (now - at).total_seconds() > 90 * 60:
+            done[key] = "skipped: Live-Karte zu alt"
+            json.dump(done, open(f"{BASE}/done.json", "w"))
+            print(f"uebersprungen: {key} — Live-Karte {int((now - at).total_seconds() // 60)} min alt")
             continue
         try:
             # Gehirn-Check: haelt Posts zurueck, die im Trading-/Kanal-Kontext

@@ -1140,7 +1140,10 @@ def _karten_einreihen(trades):
     erstlauf = not stand
     heute = datetime.datetime.utcnow().strftime("%Y-%m-%d")
     versatz = 0      # Minuten, damit mehrere Karten nicht als Schwall kommen
-    lebend = live_karten(queue)
+    # Nur Live-Karten, die wirklich im Kanal stehen — eine verfallene (poster:
+    # "zu alt") hat keine Nachricht, unter die ein Streifen gehoeren koennte.
+    lebend = {k: v for k, v in live_karten(queue).items()
+              if not str(done.get(str(v), "")).startswith("skipped")}
     for t in trades:
         if not t["hits"] and t["zu"] != "stop":
             continue                      # nichts Belegtes -> keine Karte
