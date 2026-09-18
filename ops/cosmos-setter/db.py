@@ -451,6 +451,26 @@ class Store:
             log.warning("unlock_account failed: %s", e)
             return {"status": "nicht_gefunden"}
 
+    def freischalten_mail(self, email: str) -> dict:
+        """Nach der Freischaltung: Zugangs-Mail (VIP-Link + Akademie mit
+        Passwort-Einrichtung) ueber die Edge Function member-freischalten.
+        Ansage Diego 18.09.: dieselbe Mail wie beim Freischalten von Hand."""
+        if not self.rest.enabled or not email:
+            return {"ok": False}
+        try:
+            row = self.rest.select_one("app_secrets", key="BOT_UNLOCK_SECRET")
+            secret = (row or {}).get("value")
+            import json as _json, urllib.request as _u
+            req = _u.Request(
+                f"{cfg.SUPABASE_URL}/functions/v1/member-freischalten",
+                data=_json.dumps({"email": email}).encode(), method="POST",
+                headers={"Content-Type": "application/json", "x-bot-secret": secret or ""},
+            )
+            return _json.load(_u.urlopen(req, timeout=60))
+        except Exception as e:
+            log.warning("freischalten_mail failed: %s", e)
+            return {"ok": False, "error": str(e)}
+
     # ── broker e-mail: the fallback matcher ──────────────────────────────────
     # The tracking token is the primary link between a Telegram user and their
     # broker account, but it goes missing more often than you'd think: another

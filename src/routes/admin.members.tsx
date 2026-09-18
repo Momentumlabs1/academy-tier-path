@@ -1,8 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Search, Loader2, Users } from "lucide-react";
+import { Search, Loader2, Users, Unlock } from "lucide-react";
 import { AdminPageHeader } from "@/components/academy/admin/AdminShell";
 import { MemberDetailDialog } from "@/components/academy/admin/MemberDetailDialog";
+import { FreischaltenDialog } from "@/components/academy/admin/FreischaltenDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { TIERS, type TierKey } from "@/lib/academy-data";
 import { formatMoney } from "@/lib/format";
@@ -110,6 +111,7 @@ function AdminMembers() {
   const [sortKey, setSortKey] = useState<SortKey>("joinedAt");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [selected, setSelected] = useState<Member | null>(null);
+  const [freischalten, setFreischalten] = useState(false);
 
   function toggleSort(k: SortKey) {
     if (sortKey === k) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -150,7 +152,16 @@ function AdminMembers() {
       <AdminPageHeader
         title="Members"
         sub={`${filtered.length} members · ${active} active · ${formatMoney(totalDeposit, "€")} total`}
+        action={
+          <button onClick={() => setFreischalten(true)}
+            className="inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">
+            <Unlock className="h-4 w-4" /> Freischalten
+          </button>
+        }
       />
+      {freischalten && (
+        <FreischaltenDialog onClose={() => setFreischalten(false)} onDone={() => window.setTimeout(() => window.location.reload(), 2500)} />
+      )}
 
       {error && (
         <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">

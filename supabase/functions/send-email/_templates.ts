@@ -74,7 +74,7 @@ function p(t: string) { return `<p style="margin:0 0 14px;font-size:15px;line-he
 
 export type EmailKind =
   | "password_reset" | "partner_approved" | "doi" | "welcome" | "deposit_confirmed" | "tier_unlocked"
-  | "tier_nudge" | "inactivity_warning" | "new_lesson" | "broadcast" | "team_invite";
+  | "tier_nudge" | "inactivity_warning" | "new_lesson" | "broadcast" | "team_invite" | "access_granted";
 
 export interface BuildInput {
   kind: EmailKind;
@@ -92,6 +92,8 @@ export interface BuildInput {
   daysInactive?: number;
   lessonTitle?: string;
   lessonUrl?: string;
+  vipUrl?: string;    // access_granted: persoenlicher Einladungslink in die VIP-Signalgruppe
+  accessUrl?: string; // access_granted: /zugang?t=… (7 Tage gueltig, setzt beim ersten Mal das Passwort)
   title?: string;   // broadcast
   bodyHtml?: string; // broadcast (trusted, admin-authored)
 }
@@ -140,6 +142,27 @@ export function buildEmail(input: BuildInput): { subject: string; html: string }
           p(`Dein Zugang zum ${esc(brand.name)}-Team-Bereich ist eingerichtet: Scout-Liste, eigene Accounts eintragen und Partner-Bewerbungen bearbeiten.`) +
           `<div style="margin:22px 0">${button(a, input.resetUrl ?? dash, "Zugang einrichten")}</div>` +
           p(`<span style="color:#6b7788;font-size:13px">Der Knopf setzt einmalig dein Passwort. Danach erreichst du den Team-Bereich jederzeit unter cosmos-candles.com/team — die Anleitung bekommst du separat.</span>`)),
+      };
+
+    // Die Freischalt-Mail (Ansage Diego 18.09.): wer freigeschaltet wird — von
+    // Hand im Admin-Bereich oder vom Bot nach der Einzahlung —, bekommt beides
+    // in EINER Mail: die Signalgruppe und die Akademie. Die Akademie fuehrt
+    // beim ersten Mal durch "Passwort waehlen", danach ins Willkommen. So muss
+    // niemand etwas erklaert bekommen.
+    case "access_granted":
+      return {
+        subject: `You're in — welcome to ${brand.name} 🎉`,
+        html: wrap("Your signal group and your academy are unlocked.",
+          h1(`You're officially in${input.firstName ? `, ${esc(input.firstName)}` : ""}!`) +
+          p(`Your access to <b>${esc(brand.name)}</b> is unlocked: the VIP signal group and the full academy. Two steps and you're set.`) +
+          (input.vipUrl
+            ? p(`<b style="color:#e9edf3">1. Join the VIP signal group</b><br>Every signal lands there with entry, stop-loss and take-profit.`) +
+              `<div style="margin:6px 0 22px">${button(a, input.vipUrl, "Join the VIP group")}</div>` +
+              p(`<b style="color:#e9edf3">2. Open your academy</b><br>First you choose your own password, it takes 20 seconds. Then your welcome tour starts.`)
+            : p(`<b style="color:#e9edf3">Open your academy</b><br>First you choose your own password, it takes 20 seconds. Then your welcome tour starts.`)) +
+          `<div style="margin:6px 0 22px">${button(a, input.accessUrl ?? dash, "Open my academy")}</div>` +
+          p(`<span style="color:#6b7788;font-size:13px">${input.vipUrl ? "The group invite is personal and works once. " : ""}` +
+            `The academy button works for 7 days. After that, sign in at cosmos-candles.com/signup with this e-mail and use "Forgot password".</span>`)),
       };
 
     case "doi":

@@ -132,6 +132,7 @@ Deno.serve(async (req) => {
       email_confirm: true,
       user_metadata: {
         app: "academy",                       // ohne das legt der Trigger nichts an
+        needs_password: true,                 // 18.09.: die App fragt zuerst nach dem eigenen Passwort
         referred_by_tenant: partner ?? "",    // 024: danach nicht mehr aenderbar
         ...(token ? { setter_token: token } : {}),
       },
@@ -163,26 +164,10 @@ Deno.serve(async (req) => {
   if (linkFehler) return json({ error: `Link: ${linkFehler.message}` }, 500);
 
   const ziel = (link as { properties?: { action_link?: string } })?.properties?.action_link;
-  if (ziel) {
-    const sendSecret = Deno.env.get("SEND_EMAIL_SECRET");
-    await fetch(`${url}/functions/v1/send-email`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${serviceKey}`,
-        ...(sendSecret ? { "x-send-secret": sendSecret } : {}),
-      },
-      body: JSON.stringify({
-        to: email,
-        subject: "Your Cosmos Candles access is open",
-        html:
-          `<p>Your deposit is through — everything is unlocked.</p>` +
-          `<p><a href="${ziel}">Open your academy</a></p>` +
-          `<p style="color:#666;font-size:13px">This link signs you in. You never set a password; ` +
-          `you can add one later under Settings.</p>`,
-      }),
-    }).catch((e) => console.error("[bot-unlock] Mailversand:", e));
-  }
+  // Keine Mail mehr von hier (18.09.): sie behauptete "Your deposit is through",
+  // sobald jemand seine Broker-Mail nannte — auch ohne Einzahlung. Die
+  // Zugangs-Mail kommt jetzt bei der echten Freischaltung (Bot grant_vip ->
+  // member-freischalten). Der Link hier geht weiter in den Chat.
 
   return json({
     status,

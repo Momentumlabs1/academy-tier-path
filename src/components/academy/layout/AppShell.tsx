@@ -4,6 +4,7 @@ import { TopNav } from "./TopNav";
 import { RightRail } from "./RightRail";
 import { MobileNav } from "./MobileNav";
 import { RegistrationGate } from "@/components/academy/onboarding/RegistrationGate";
+import { PasswordSetupGate } from "@/components/academy/onboarding/PasswordSetupGate";
 import { MemberProvider } from "@/hooks/useMemberState";
 import { MentorChat } from "@/components/academy/mentor/MentorChat";
 
@@ -13,6 +14,7 @@ export function AppShell() {
   // which read as a "full reload" flash on each click.
   return (
     <RegistrationGate>
+      <PasswordSetupGate>
       <MemberProvider>
       <div className="min-h-screen p-3 pb-24 lg:p-4 lg:pb-4">
         <div className="flex gap-6">
@@ -27,6 +29,7 @@ export function AppShell() {
         <MentorChat />
       </div>
       </MemberProvider>
+      </PasswordSetupGate>
     </RegistrationGate>
   );
 }

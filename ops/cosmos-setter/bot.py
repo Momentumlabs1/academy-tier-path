@@ -88,6 +88,15 @@ async def grant_vip(bot, lead: dict) -> bool:
                   "(one-time link, just for you):\n" + invite.invite_link),
         )
         store.mark_vip_granted(uid)
+        # Dieselbe Zugangs-Mail wie beim Freischalten von Hand (Ansage 18.09.):
+        # VIP-Link + Akademie, beim ersten Oeffnen Passwort waehlen. Nur mit
+        # Broker-Mail — ohne wissen wir nicht, wohin.
+        if lead.get("broker_email"):
+            try:
+                r = await asyncio.to_thread(store.freischalten_mail, lead["broker_email"])
+                log.info("Zugangs-Mail an %s: %s", lead["broker_email"], "ok" if r.get("ok") else r)
+            except Exception as e:
+                log.warning("Zugangs-Mail fehlgeschlagen: %s", e)
         # The second door: signals arrived above, the academy comes now. Each
         # in its own message with a beat between them — one link per message,
         # and a failure here must never undo the VIP grant.

@@ -28,6 +28,7 @@ import { Route as TeamRouteImport } from './routes/team'
 import { Route as TelegramRouteImport } from './routes/telegram'
 import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as WillkommenRouteImport } from './routes/willkommen'
+import { Route as ZugangRouteImport } from './routes/zugang'
 import { Route as SlugAdminRouteImport } from './routes/$slug_.admin'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as AppLessonsRouteImport } from './routes/_app.lessons'
@@ -144,6 +145,11 @@ const WelcomeRoute = WelcomeRouteImport.update({
 const WillkommenRoute = WillkommenRouteImport.update({
   id: '/willkommen',
   path: '/willkommen',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ZugangRoute = ZugangRouteImport.update({
+  id: '/zugang',
+  path: '/zugang',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SlugAdminRoute = SlugAdminRouteImport.update({
@@ -282,6 +288,7 @@ export interface FileRoutesByFullPath {
   '/telegram': typeof TelegramRoute
   '/welcome': typeof WelcomeRoute
   '/willkommen': typeof WillkommenRoute
+  '/zugang': typeof ZugangRoute
   '/$slug/admin': typeof SlugAdminRoute
   '/lessons': typeof AppLessonsRouteWithChildren
   '/notifications': typeof AppNotificationsRoute
@@ -323,6 +330,7 @@ export interface FileRoutesByTo {
   '/telegram': typeof TelegramRoute
   '/welcome': typeof WelcomeRoute
   '/willkommen': typeof WillkommenRoute
+  '/zugang': typeof ZugangRoute
   '/$slug/admin': typeof SlugAdminRoute
   '/notifications': typeof AppNotificationsRoute
   '/settings': typeof AppSettingsRoute
@@ -367,6 +375,7 @@ export interface FileRoutesById {
   '/telegram': typeof TelegramRoute
   '/welcome': typeof WelcomeRoute
   '/willkommen': typeof WillkommenRoute
+  '/zugang': typeof ZugangRoute
   '/$slug_/admin': typeof SlugAdminRoute
   '/_app/lessons': typeof AppLessonsRouteWithChildren
   '/_app/notifications': typeof AppNotificationsRoute
@@ -413,6 +422,7 @@ export interface FileRouteTypes {
     | '/telegram'
     | '/welcome'
     | '/willkommen'
+    | '/zugang'
     | '/$slug/admin'
     | '/lessons'
     | '/notifications'
@@ -454,6 +464,7 @@ export interface FileRouteTypes {
     | '/telegram'
     | '/welcome'
     | '/willkommen'
+    | '/zugang'
     | '/$slug/admin'
     | '/notifications'
     | '/settings'
@@ -497,6 +508,7 @@ export interface FileRouteTypes {
     | '/telegram'
     | '/welcome'
     | '/willkommen'
+    | '/zugang'
     | '/$slug_/admin'
     | '/_app/lessons'
     | '/_app/notifications'
@@ -542,6 +554,7 @@ export interface RootRouteChildren {
   TelegramRoute: typeof TelegramRoute
   WelcomeRoute: typeof WelcomeRoute
   WillkommenRoute: typeof WillkommenRoute
+  ZugangRoute: typeof ZugangRoute
   SlugAdminRoute: typeof SlugAdminRoute
   TSlugRoute: typeof TSlugRoute
 }
@@ -679,6 +692,13 @@ declare module '@tanstack/react-router' {
       path: '/willkommen'
       fullPath: '/willkommen'
       preLoaderRoute: typeof WillkommenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/zugang': {
+      id: '/zugang'
+      path: '/zugang'
+      fullPath: '/zugang'
+      preLoaderRoute: typeof ZugangRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$slug_/admin': {
@@ -933,6 +953,7 @@ const rootRouteChildren: RootRouteChildren = {
   TelegramRoute: TelegramRoute,
   WelcomeRoute: WelcomeRoute,
   WillkommenRoute: WillkommenRoute,
+  ZugangRoute: ZugangRoute,
   SlugAdminRoute: SlugAdminRoute,
   TSlugRoute: TSlugRoute,
 }
