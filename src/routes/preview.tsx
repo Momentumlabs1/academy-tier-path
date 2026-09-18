@@ -1,37 +1,46 @@
 /**
- * /preview — das gesperrte Dashboard, ohne Anmeldung.
+ * /preview — die ECHTE Akademie, gesperrt, ohne Anmeldung.
  *
- * WARUM ES DIESE SEITE GIBT
- * Die Registrierung vorne hatte genau EINEN echten Nutzen: danach sah der
- * Besucher das Dashboard, in dem alles auf ihn wartet und alles zu ist. Dieses
- * Bild — "ich bin schon drin, es fehlt nur noch ein Schritt" — hat gezogen. Das
- * Formular davor hat gekostet.
+ * Ansage Diego 19.09.: "Man sollte doch dann in der echten Academy landen, die
+ * aber noch gesperrt ist, mit dem Video von Cosmo als Opener. Man soll auf dem
+ * Handy auch unten schon die Menueleiste sehen, um das Gefuehl zu bekommen, man
+ * ist da in was — dann leitet es zu Telegram."
  *
- * Also beides trennen: das Bild bleibt, das Formular faellt weg. Wer hier
- * landet, sieht dasselbe gesperrte Dashboard wie ein registriertes Mitglied vor
- * seiner Einzahlung — nur dass er dafuer nichts ausfuellen musste.
+ * Bis dahin war /preview eine eigene Seite (Film, Knopf, darunter ein Bild des
+ * Dashboards hinter einem Schloss). Jetzt ist es das Dashboard selbst: dieselbe
+ * Seitenleiste, dieselbe Kopfzeile, auf dem Handy dieselbe Leiste unten, und
+ * darin das Dashboard eines Mitglieds, das noch nicht eingezahlt hat. Cosmos
+ * Film kommt als Willkommensfenster (WelcomeModal, fuer Besucher ueber einen
+ * Partner), danach fuehrt alles nach Telegram.
  *
- * WAS HIER BEWUSST NICHT PASSIERT
- * Kein Konto, keine Adresse, kein Datensatz. Diese Seite liest nur das
- * Marken-Cookie, das die Partnerseite gesetzt hat, und schickt weiter. Das
- * Konto entsteht spaeter aus der Einzahlung (bot-unlock) — hier waere es ein
- * zweiter Weg zu demselben Ziel, und zwei Wege laufen irgendwann auseinander.
+ * WIE DAS OHNE KONTO GEHT
+ * Wie /filmset: MemberProvider mit festem Stand (override) — ein Gast mit 0 €
+ * Einzahlung. Es wird nichts angelegt und nichts gelesen; das Konto entsteht
+ * spaeter aus der Einzahlung (bot-unlock). RegistrationGate laeuft hier nicht,
+ * sonst wuerde der Besucher zu /signup umgeleitet.
  *
- * DIE HERKUNFT WIRD HIER NICHT NEU GESETZT.
- * stampAttribution laeuft absichtlich NICHT: der Besucher kommt von der
- * Partnerseite, sein cosmo_ref steht bereits. Ein Stempel hier koennte ihn
- * hoechstens ueberschreiben — und das Haus darf einen Partner nie ueberschreiben.
+ * ALLE KLICKS BLEIBEN HIER
+ * Die Menuepunkte zeigen auf Seiten, die eine Anmeldung brauchen. Ein Klick
+ * darauf wuerde den Besucher aus dem Gefuehl "ich bin drin" reissen. Deshalb
+ * faengt die Seite jeden Link ab: Telegram-Links gehen an den Telegram-Link des
+ * PARTNERS (dort reist seine Herkunft mit — tenant_invite_links), alles andere
+ * zeigt kurz "gesperrt, oeffnet sich ueber Telegram".
+ *
+ * DIE HERKUNFT WIRD HIER NICHT NEU GESETZT (stampAttribution laeuft nicht): der
+ * Besucher kommt von der Partnerseite, sein cosmo_ref steht bereits.
  */
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
-import { ArrowRight, PlayCircle, Lock } from "lucide-react";
-import { HeroBento } from "@/components/academy/hero/HeroBento";
-import { LockedGate } from "@/components/academy/onboarding/LockedGate";
+import { useMemo, useState } from "react";
+import { ArrowRight, Lock, Send, X } from "lucide-react";
+import { MemberProvider, type MemberOverride } from "@/hooks/useMemberState";
+import { Sidebar } from "@/components/academy/layout/Sidebar";
+import { TopNav } from "@/components/academy/layout/TopNav";
+import { RightRail } from "@/components/academy/layout/RightRail";
+import { MobileNav } from "@/components/academy/layout/MobileNav";
 import { usePartnerBrand } from "@/lib/partner-brand";
 import { TELEGRAM_ENTRY } from "@/lib/broker";
 import { COSMOS_MASTER } from "@/lib/tenants";
-import { cn } from "@/lib/utils";
-import { LevelRail } from "@/components/academy/tenant/LevelRail";
+import { Dashboard } from "./_app.index";
 
 export const Route = createFileRoute("/preview")({
   head: () => ({
@@ -45,149 +54,106 @@ export const Route = createFileRoute("/preview")({
 
 function Preview() {
   const brand = usePartnerBrand();
-  const video = useRef<HTMLVideoElement>(null);
-  const [gestartet, setGestartet] = useState(false);
-  const [ctaDa, setCtaDa] = useState(false);
-  // Sicherheitsnetz: wer nicht abspielt, bekommt den Knopf nach 12 s trotzdem.
-  useEffect(() => {
-    const t = setTimeout(() => setCtaDa(true), 12000);
-    return () => clearTimeout(t);
-  }, []);
-
   const primary = brand?.primaryColor ?? COSMOS_MASTER.primaryColor;
-  // Derselbe Vorrang wie auf der Landingpage: der Partner zuerst, sonst wir.
+  // Derselbe Vorrang wie auf der Partnerseite: der Partner zuerst, sonst wir.
   // Faellt der Partner hier weg, gehoert der Kunde spaeter dem Haus.
   const telegram = brand?.telegramChannel || COSMOS_MASTER.telegramChannel || TELEGRAM_ENTRY.url;
+  const [gesperrt, setGesperrt] = useState(false);
+
+  // Ein Gast: nichts eingezahlt, Willkommen noch nicht gesehen. Cosmos Film ist
+  // hier IMMER der Opener (Ansage 19.09.) — das WelcomeModal zeigt ihn jedem,
+  // dessen Herkunft nicht "cosmos-candles" ist, also steht hier der Partner
+  // oder, ohne Partner, "preview". Die Marke kommt erst nach dem ersten Render
+  // (Cookie), deshalb useMemo auf brand statt eines einmaligen Anfangswerts.
+  const gast = useMemo<MemberOverride>(() => ({
+    memberId: "preview",
+    profile: { name: "You", email: "", telegramHandle: "", joinedAt: new Date().toISOString(), avatarUrl: "" },
+    deposit: 0,
+    monthlyLots: 0,
+    activityStatus: "active",
+    disabled: false,
+    tierOverride: null,
+    referredBy: brand?.slug || "preview",
+    onboardingSeenAt: null,
+    notifications: [],
+  }), [brand?.slug]);
+
+  function abfangen(e: React.MouseEvent) {
+    const a = (e.target as HTMLElement).closest("a");
+    if (!a) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const href = a.getAttribute("href") ?? "";
+    if (/t\.me\//i.test(href) || a.dataset.telegram !== undefined) {
+      window.open(telegram, "_blank", "noopener,noreferrer");
+      return;
+    }
+    setGesperrt(true);
+  }
 
   return (
-    <div className="min-h-screen bg-[#05070e] text-white">
-      {/* Verlauf statt blur(120px): gleiches Licht, keine Neuberechnung beim
-          Scrollen auf dem Telefon (siehe TenantBridgeView, 08.09.). */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-[28rem]"
-        style={{ background: `radial-gradient(110% 70% at 50% 0%, color-mix(in oklch, ${primary} 26%, transparent) 0%, transparent 70%)` }}
-      />
+    <MemberProvider override={gast}>
+      <div onClickCapture={abfangen} className="min-h-screen p-3 pb-24 lg:p-4 lg:pb-4">
+        <div className="flex gap-6">
+          <Sidebar />
+          <main className="min-w-0 flex-1 overflow-x-hidden">
+            <TopNav />
 
-      <div className="relative mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
-        {/* Wer den Besucher hergeschickt hat, bleibt sichtbar. Er hat wegen
-            dieser Person geklickt, nicht wegen uns. */}
-        <div className="flex items-center gap-2.5 text-sm">
-          {brand ? (
-            <>
-              {brand.mascotHeadUrl ? (
-                <img src={brand.mascotHeadUrl} alt={brand.name}
-                     className="h-8 w-8 rounded-lg object-cover"
-                     style={{ boxShadow: `0 0 0 1.5px ${primary}` }} />
-              ) : (
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg text-[12px] font-black text-black"
-                      style={{ background: primary }}>{brand.logoInitials}</span>
-              )}
-              <span className="font-semibold">{brand.name}</span>
-              <span className="text-white/30">×</span>
-            </>
-          ) : null}
-          <span className="text-white/55">Cosmos Candles</span>
+            {/* Wer den Besucher hergeschickt hat, bleibt sichtbar — er hat wegen
+                dieser Person geklickt. Und der eine Schritt, der alles oeffnet. */}
+            <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
+              {brand ? (
+                <div className="flex items-center gap-2 text-sm">
+                  {brand.mascotHeadUrl ? (
+                    <img src={brand.mascotHeadUrl} alt={brand.name} className="h-7 w-7 rounded-lg bg-white object-contain"
+                         style={{ boxShadow: `0 0 0 1.5px ${primary}` }} />
+                  ) : (
+                    <span className="flex h-7 w-7 items-center justify-center rounded-lg text-[11px] font-black text-black"
+                          style={{ background: primary }}>{brand.logoInitials}</span>
+                  )}
+                  <span className="font-semibold">{brand.name}</span>
+                  <span className="text-white/30">×</span>
+                  <span className="text-white/55">Cosmos Candles</span>
+                </div>
+              ) : null}
+              <div className="flex items-center gap-1.5 text-xs text-white/55">
+                <Lock className="h-3.5 w-3.5" /> Your academy is ready — one step opens it.
+              </div>
+              <a href={telegram} data-telegram
+                 className="ml-auto inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-black text-black"
+                 style={{ background: `linear-gradient(180deg, color-mix(in oklch, ${primary} 88%, white), ${primary})` }}>
+                <Send className="h-4 w-4" /> Connect Telegram <ArrowRight className="h-4 w-4" />
+              </a>
+            </div>
+
+            <Dashboard />
+          </main>
+          <RightRail />
         </div>
+        <MobileNav />
+      </div>
 
-        {/* Das kleine Spiel geht hier weiter: Level 1 (Akademie ansehen) ist
-            mit dem Aufruf dieser Seite geschafft, Level 2 steht an. Dieselbe
-            Leiste wie auf der Partnerseite — der Besucher erkennt sie wieder. */}
-        <LevelRail current={2} primary={primary} compact className="mt-5" />
-
-        <h1 className="mt-7 font-display text-[1.9rem] font-black leading-[1.1] tracking-tight sm:text-4xl">
-          Everything is ready for you.
-          <br />
-          <span className="text-white/45">One step opens it.</span>
-        </h1>
-
-        {/* Der Film erklaert, was hinter den Kacheln liegt. Er laeuft hier und
-            nicht auf der Partnerseite: dort ist er Cosmos' Werbung, hier ist er
-            die Erklaerung zu dem, was der Besucher gerade vor sich sieht. */}
-        <div className="mt-7 overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl">
-          <div className="relative aspect-video bg-black">
-            {/* Die graue Browser-Leiste erst beim Abspielen (Diego, 10.09.):
-                vorher ist sie das einzige Element, das nicht gestaltet ist. */}
-            <video
-              ref={video}
-              controls={gestartet}
-              playsInline
-              preload="metadata"
-              poster={COSMOS_MASTER.pitchPoster}
-              onPlay={() => { setGestartet(true); setTimeout(() => setCtaDa(true), 450); }}
-              className="h-full w-full object-cover"
-            >
-              <source src={COSMOS_MASTER.pitchVideo} type="video/mp4" />
-            </video>
-            {!gestartet && (
-              <button
-                type="button"
-                onClick={() => video.current?.play()}
-                aria-label="Play video"
-                className="group absolute inset-0 flex items-center justify-center bg-black/25"
-              >
-                <span className="flex h-16 w-16 items-center justify-center rounded-full shadow-lg ring-1 ring-white/20 transition-transform group-hover:scale-105"
-                      style={{ background: primary }}>
-                  <PlayCircle className="h-8 w-8 text-black" />
-                </span>
-              </button>
-            )}
+      {gesperrt && (
+        <div className="fixed inset-x-3 bottom-24 z-[70] mx-auto max-w-md rounded-2xl border border-white/10 bg-[oklch(0.16_0.04_258)] p-4 shadow-2xl lg:bottom-6">
+          <div className="flex items-start gap-3">
+            <Lock className="mt-0.5 h-5 w-5 shrink-0" style={{ color: primary }} />
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-bold">Unlocks on Telegram</div>
+              <p className="mt-1 text-xs leading-relaxed text-white/65">
+                Everything in here opens once you're in: signals, lessons and tools. It all starts on Telegram.
+              </p>
+              <a href={telegram} target="_blank" rel="noopener noreferrer" onClick={() => setGesperrt(false)}
+                 className="mt-3 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-black text-black"
+                 style={{ background: primary }}>
+                Connect Telegram <ArrowRight className="h-4 w-4" />
+              </a>
+            </div>
+            <button onClick={() => setGesperrt(false)} aria-label="Close" className="text-white/50 hover:text-white">
+              <X className="h-4 w-4" />
+            </button>
           </div>
         </div>
-
-        {/* ERST DER FILM, DANN DER KNOPF (Diego, 10.09.: "Video, und wenn man
-            es anschaut, kommt der Button in den Telegram-Info-Kanal").
-            Der Knopf erscheint beim Abspielen. Damit an seiner Stelle kein
-            Loch steht (das Problem vom 05.09.), liegt dort vorher ein Hinweis
-            auf genau diesen Knopf. Und damit niemand haengen bleibt, der den
-            Ton gerade nicht anmachen kann, kommt er nach 12 Sekunden auch
-            ohne Abspielen. */}
-        <div className="relative mt-6 min-h-[54px]">
-          {!ctaDa && (
-            <button
-              type="button"
-              onClick={() => video.current?.play()}
-              className="flex min-h-[54px] w-full items-center justify-center gap-2 rounded-full border border-dashed border-white/15 text-[14px] font-semibold text-white/55 sm:w-auto sm:px-8"
-            >
-              <PlayCircle className="h-4 w-4" /> Watch first — your access link appears here
-            </button>
-          )}
-        <div className={cn(
-          "transition-all duration-500 ease-out",
-          ctaDa ? "translate-y-0 opacity-100" : "pointer-events-none absolute inset-x-0 top-0 translate-y-2 opacity-0",
-        )}>
-          <a
-            href={telegram}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex min-h-[54px] w-full items-center justify-center gap-2.5 rounded-full px-8 text-[15px] font-black text-black transition-transform active:scale-[0.98] sm:w-auto"
-            style={{
-              background: `linear-gradient(180deg, color-mix(in oklch, ${primary} 88%, white), ${primary})`,
-              boxShadow: `0 10px 30px -14px ${primary}, inset 0 1px 0 rgba(255,255,255,0.45)`,
-            }}
-          >
-            Level 2 · Connect Telegram
-            <ArrowRight className="h-4 w-4" />
-          </a>
-          <p className="mt-4 max-w-xl text-sm leading-relaxed text-white/60">
-            Everything runs on Telegram — that's where a call lands the second our desk
-            makes it. A trade you see ten minutes late is a trade you missed. One tap and
-            you're in.
-          </p>
-        </div>
-        </div>
-
-        {/* DAS EIGENTLICHE ARGUMENT: nicht die Beschreibung, sondern der Blick
-            auf das fertige Ding mit einem Schloss davor. */}
-        <div className="mt-12 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-white/40">
-          <Lock className="h-3.5 w-3.5" /> Waiting for you
-        </div>
-        <div className="mt-4">
-          <LockedGate locked label="Unlock live signals, the academy and the tools on Telegram">
-            <HeroBento />
-          </LockedGate>
-        </div>
-      </div>
-    </div>
+      )}
+    </MemberProvider>
   );
 }
