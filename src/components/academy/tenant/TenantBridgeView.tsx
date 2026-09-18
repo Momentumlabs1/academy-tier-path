@@ -210,7 +210,9 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
               ein gestaffelter Einstieg (br-in) statt eines statischen Blocks.
               Der Titel selbst bleibt Wort fuer Wort. */}
           <div className="br-in mt-9 text-[11px] font-black uppercase tracking-[0.28em]" style={{ color: primary, animationDelay: "0s" }}>
-            Live signals · Gold &amp; NASDAQ
+            {/* Seit 04.09. kommen nur noch Gold-Signale (Nachrechnung 16.09.) —
+                "& NASDAQ" versprach etwas, das der Desk nicht mehr schickt. */}
+            Live signals · Gold
           </div>
           <h1
             className="br-in mt-3 font-display text-[2.05rem] font-black leading-[1.06] tracking-[-0.025em] sm:text-[2.7rem]"
