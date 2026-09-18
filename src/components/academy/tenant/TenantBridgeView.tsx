@@ -238,11 +238,34 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
             {tenant.mascotAskUrl && (
               <img src={tenant.mascotAskUrl} alt="" aria-hidden className="mt-0.5 h-9 w-9 shrink-0 opacity-90" />
             )}
-            {/* Ein Satz, kein Absatz (Diego, 06.09.: "viel zu lang"). Die
-                Substanz steht im Telefon darunter, nicht hier. */}
-            <p className={cn("text-[16px] leading-relaxed", t.gedaempft)}>
-              Every trade from a live desk, straight to your phone. Copy it or don't — it costs you nothing.
-            </p>
+            {/* WORUM ES GEHT, auf einen Blick (Diego, 19.09.: "hier fehlt, was
+                passiert und um was es geht — Trades von einem Profi kopieren,
+                dabei lernen, alles vom Handy, alles umsonst, kein Haken, wir
+                arbeiten mit dem Broker zusammen"). Drei kurze Zeilen statt eines
+                Absatzes (06.09.: "viel zu lang").
+                Bewusst NICHT "ab Tag 1 Geld verdienen": das ist ein
+                Gewinnversprechen, und Trading kann Verlust bringen. Was stimmt
+                und genauso zieht: ab Tag 1 KOPIEREN. Ebenso kein "modernste der
+                Welt" — ein Superlativ, den niemand belegen kann. */}
+            <div className="min-w-0">
+              <p className={cn("text-[16px] font-semibold leading-snug", t.text)}>
+                Copy the trades of a professional trader — and learn from every one of them.
+              </p>
+              {/* Haarlinien, keine Emojis — die Regel dieser Seite. */}
+              <ol className={cn("mt-3 divide-y text-[15px] leading-snug", t.teiler, t.gedaempft)}>
+                {[
+                  "Every trade lands on your phone. Copy it from day one.",
+                  "The academy shows you why each trade was taken, so you learn as you go.",
+                  "Free. No course fee, no subscription: we're paid by our broker partner, not by you. Your money stays in your own account.",
+                ].map((zeile, i) => (
+                  <li key={i} className="flex gap-3 py-2">
+                    {/* Haarstrich statt Nummer: direkt darunter folgt "01 A signal lands", zweimal 01-03 hintereinander liest sich wie ein Fehler. */}
+                    <span aria-hidden className="mt-[0.6em] h-[2px] w-3 shrink-0 rounded-full" style={{ background: primary }} />
+                    <span>{zeile}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
           </div>
 
           {/* ── Sein Film, falls er einen hat ───────────────────────────
