@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
-  let body: { action?: string; slug?: string; email?: string; token?: string; password?: string };
+  let body: { action?: string; slug?: string; email?: string; token?: string; password?: string; noMail?: boolean };
   try {
     body = await req.json();
   } catch {
@@ -116,6 +116,12 @@ Deno.serve(async (req) => {
     if (iErr) return json({ error: iErr.message }, 500);
 
     const inviteUrl = `${SITE_URL}/${slug}/admin?invite=${token}`;
+
+    // Ohne Mail (19.09., SAIF): eine eigene Marke hat ihr Dashboard auf der
+    // eigenen Website, nicht unter cosmos-candles.com. Dann geht der Link nur an
+    // den Admin zurueck (samt Token, damit die Partnerseite ?invite=… baut) —
+    // eine Cosmos-Mail an den Partner waere dort genau falsch.
+    if (body.noMail) return json({ ok: true, emailed: false, inviteUrl, token });
     const brand = tenant.name ?? slug;
     const html = `
       <div style="font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:520px;margin:0 auto;padding:24px">
@@ -212,8 +218,13 @@ Deno.serve(async (req) => {
 
     // Same generic answer for "no such brand", "not a superpartner" and "wrong
     // password" — the form must not double as a way to probe which slugs exist.
+    //
+    // NICHT mehr an `active` gebunden (19.09.): `active` schaltet die Signal-
+    // Weiterleitung. Eine Marke vor dem Start (SAIF) soll ihr Dashboard schon
+    // einrichten koennen, bevor ihr Kanal Signale bekommt. Wer raus soll,
+    // verliert `superpartner` — das ist der Schalter fuer den Zugang.
     const deny = () => json({ error: "Wrong password." }, 401);
-    if (!tenant?.superpartner || !tenant.active || !tenant.owner_user_id) return deny();
+    if (!tenant?.superpartner || !tenant.owner_user_id) return deny();
 
     const { data: owner } = await db.auth.admin.getUserById(String(tenant.owner_user_id));
     const email = owner?.user?.email;
