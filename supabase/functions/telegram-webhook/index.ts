@@ -250,6 +250,22 @@ interface TenantRow {
   broker_affiliate_url: string | null;
   signal_footer: string | null;
   info_footer: string | null;
+  config: Record<string, unknown> | null;
+}
+
+/**
+ * Sprache des Partner-Kanals. Standard Englisch (Uebersetzung wie immer); eine
+ * eigene Marke auf Deutsch (SAIF Smart Trading, 18.09.) setzt in tenants.config
+ * language = 'de' und bekommt Tims Nachrichten im Original.
+ */
+function imOriginal(t: TenantRow): boolean {
+  return String(t.config?.language ?? "en").toLowerCase() === "de";
+}
+
+/** Einmal uebersetzen, und nur wenn ueberhaupt ein englischer Kanal es braucht. */
+function einmalEnglisch(text: string | null | undefined): () => Promise<string | null> {
+  let p: Promise<string | null> | null = null;
+  return () => (p ??= text ? toEnglish(text) : Promise.resolve(null));
 }
 
 function admin(): SupabaseClient {
@@ -263,7 +279,7 @@ function admin(): SupabaseClient {
 async function activeTenants(db: SupabaseClient): Promise<TenantRow[]> {
   const { data } = await db
     .from("tenants")
-    .select("slug, name, telegram_channel_id, telegram_info_channel_id, broker_affiliate_url, signal_footer, info_footer")
+    .select("slug, name, telegram_channel_id, telegram_info_channel_id, broker_affiliate_url, signal_footer, info_footer, config")
     .eq("active", true);
   return (data as TenantRow[]) ?? [];
 }
@@ -491,7 +507,7 @@ async function copyOne(t: TenantRow, post: TgMessage) {
     const footer = isTradeSignal(post.text ?? post.caption ?? "") ? footerFor(t) : null;
 
     if (post.text) {
-      const body = await toEnglish(post.text);
+      const body = imOriginal(t) ? post.text : await toEnglish(post.text);
       const res = await tg<{ message_id: number }>("sendMessage", {
         chat_id: t.telegram_channel_id,
         text: footer ? `${body}\n\n${footer}` : body,
@@ -501,7 +517,7 @@ async function copyOne(t: TenantRow, post: TgMessage) {
       return { ok: true, message_id: res.result?.message_id };
     }
 
-    const caption = post.caption ? await toEnglish(post.caption) : undefined;
+    const caption = post.caption ? (imOriginal(t) ? post.caption : await toEnglish(post.caption)) : undefined;
     const copy = await tg<{ message_id: number }>("copyMessage", {
       chat_id: t.telegram_channel_id,
       from_chat_id: post.chat.id,
@@ -582,7 +598,7 @@ async function storeMedia(db: SupabaseClient, post: TgMessage) {
  */
 async function relayMedia(db: SupabaseClient, post: TgMessage, tenants: TenantRow[]) {
   const chans = tenants.filter((t) => t.telegram_channel_id);
-  const body = post.caption ? await toEnglish(post.caption) : "";
+  const englisch = einmalEnglisch(post.caption);
   const wantsFooter = isTradeSignal(post.caption ?? "");
   const mime = post.media_mime ?? "image/jpeg";
 
@@ -591,6 +607,7 @@ async function relayMedia(db: SupabaseClient, post: TgMessage, tenants: TenantRo
 
   for (const t of chans) {
     const footer = wantsFooter ? footerFor(t) : null;
+    const body = imOriginal(t) ? (post.caption ?? "") : ((await englisch()) ?? "");
     // Telegram caps a caption at 1024 characters; body + footer stays well under.
     const caption = [body, footer].filter(Boolean).join("\n\n") || undefined;
 
@@ -733,8 +750,8 @@ async function relayEdit(db: SupabaseClient, post: TgMessage, tenants: TenantRow
   // Translate ONCE, not per tenant: same source text, and every tenant would
   // otherwise pay for the same call — and could get slightly different wording,
   // so the channels would drift apart.
-  const enText = post.text ? await toEnglish(post.text) : null;
-  const enCaption = post.caption ? await toEnglish(post.caption) : null;
+  const enTextFn = einmalEnglisch(post.text);
+  const enCaptionFn = einmalEnglisch(post.caption);
 
   // Decided once from the SOURCE text: an edit must not add a footer to a
   // message that never had one, nor drop one that did.
@@ -753,12 +770,14 @@ async function relayEdit(db: SupabaseClient, post: TgMessage, tenants: TenantRow
       // No caption_entities: they carry byte offsets into the ORIGINAL German
       // text, and applying them to the translation would bold the wrong words —
       // or be rejected outright for pointing past the end of the string.
+      const enCaption = imOriginal(t) ? null : await enCaptionFn();
       payload = { chat_id: t.telegram_channel_id, message_id: d.message_id, caption: enCaption ?? post.caption };
     } else {
       // The footer has to be re-appended. copyOne sends body and footer as ONE
       // message for plain text, so editing with the body alone would silently
       // delete every partner's broker link from that post.
       const footer = wantsFooter ? footerFor(t) : null;
+      const enText = imOriginal(t) ? null : await enTextFn();
       const body = enText ?? post.text ?? "";
       method = "editMessageText";
       payload = {
