@@ -1082,16 +1082,27 @@ async function deleteRelayed(db: SupabaseClient, ids: number[], chatId: number |
  * er verraet, ueber welchen Partner jemand kam.
  */
 async function meldeBeitritt(db: SupabaseClient, cm: TgChatMemberUpdated, infoId: number) {
-  if (!infoId || cm.chat.id !== infoId) return;
+  // Eigene Marke (SAIF, 19.09.): Beitritte in IHREN Info-Kanal gehen in IHRE
+  // Admin-Gruppe (tenants.config.admin_chat_id) — ueber admin_alert_tenant, das
+  // den Bot der Marke nimmt und ohne ihn bei uns abliefert statt zu verlieren.
+  let marke: { slug: string; name: string } | null = null;
+  if (!infoId || cm.chat.id !== infoId) {
+    const { data } = await db.from("tenants").select("slug, name, config")
+      .eq("telegram_info_channel_id", cm.chat.id).maybeSingle();
+    if (!data || !(data.config as Record<string, unknown> | null)?.admin_chat_id) return;
+    marke = { slug: data.slug as string, name: data.name as string };
+  }
   const drin = (st: string) => ["member", "administrator", "creator"].includes(st);
   if (drin(cm.old_chat_member.status) || !drin(cm.new_chat_member.status)) return;
   const u = cm.new_chat_member.user;
   if (u.is_bot) return;
   const name = [u.first_name ?? "?", u.username ? `@${u.username}` : ""].filter(Boolean).join(" ");
-  const zeilen = [`👋 Neu im Info-Kanal`, name];
+  const zeilen = [marke ? `👋 Neu im Info-Kanal · ${marke.name}` : `👋 Neu im Info-Kanal`, name];
   if (cm.invite_link?.name) zeilen.push(`über Link: ${cm.invite_link.name}`);
   if (u.username) zeilen.push(`Profil: https://t.me/${u.username}`);
-  const { error } = await db.rpc("admin_alert", { p_text: zeilen.join("\n") });
+  const { error } = marke
+    ? await db.rpc("admin_alert_tenant", { p_slug: marke.slug, p_text: zeilen.join("\n") })
+    : await db.rpc("admin_alert", { p_text: zeilen.join("\n") });
   if (error) console.log("[beitritt] admin_alert:", error.message);
 }
 
