@@ -103,6 +103,7 @@ Deno.serve(async (req) => {
   // ── 2. Der Partner, dem dieser Kunde gehoert ─────────────────────────────
   let partner: string | null = null;
   let token: string | null = null;
+  let marke: string | null = null;
   if (tgId) {
     const { data: lead } = await db
       .from("setter_leads")
@@ -111,6 +112,18 @@ Deno.serve(async (req) => {
       .maybeSingle();
     partner = lead?.partner_slug ?? lead?.tenant_slug ?? null;
     token = lead?.token ?? null;
+    marke = lead?.tenant_slug ?? null;
+  }
+
+  // Eigene Marken (19.09., SAIF) haben eine eigene Akademie auf ihrer Website.
+  // Der Anmeldelink muss DORTHIN fuehren, sonst landet ein SAIF-Kunde auf
+  // cosmos-candles.com. Massgeblich ist der Bot, mit dem der Lead geredet hat
+  // (tenant_slug), nicht ein Unterpartner. Ohne academy_url: wie bisher.
+  let akademie: string | null = null;
+  if (marke && marke !== "cosmos-candles") {
+    const { data: t } = await db.from("tenants").select("config").eq("slug", marke).maybeSingle();
+    const url = (t?.config as Record<string, unknown> | null)?.academy_url;
+    if (typeof url === "string" && url.startsWith("https://")) akademie = url;
   }
 
   // ── 3. Konto anlegen, falls es keins gibt ────────────────────────────────
@@ -160,6 +173,9 @@ Deno.serve(async (req) => {
   const { data: link, error: linkFehler } = await db.auth.admin.generateLink({
     type: "magiclink",
     email,
+    // Muss in der Redirect-Allowlist (Auth → URL Configuration) stehen, sonst
+    // ersetzt Supabase das Ziel still durch die Site URL.
+    ...(akademie ? { options: { redirectTo: akademie } } : {}),
   });
   if (linkFehler) return json({ error: `Link: ${linkFehler.message}` }, 500);
 

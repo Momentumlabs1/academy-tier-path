@@ -40,6 +40,14 @@ const RULE: Record<string, "funded" | "foundation" | "operator" | "elite"> = {
   "lesson-06.mp4": "elite",           // Volume Profile
 };
 
+// Eigene Marken (19.09., SAIF): alles unter "saif/" ist fuer jeden mit
+// Einzahlung frei. Das Muster ist absichtlich eng — ein Ordner, ein Dateiname,
+// kein "..", kein weiterer Schraegstrich —, damit ueber den Praefix niemand an
+// Dateien ausserhalb von saif/ kommt. Einzelne Eintraege in RULE gehen vor.
+const PREFIX_RULE: Array<[RegExp, "funded" | "foundation" | "operator" | "elite"]> = [
+  [/^saif\/[a-z0-9][a-z0-9_-]*(\.[a-z0-9_-]+)*\.(mp4|webm|mov|m3u8)$/i, "funded"],
+];
+
 const TIER_RANK = { foundation: 0, operator: 1, elite: 2 } as const;
 function tierRankForDeposit(d: number): number {
   if (d >= 50_000) return TIER_RANK.elite;
@@ -54,7 +62,7 @@ Deno.serve(async (req) => {
 
   let object = "";
   try { object = String((await req.json())?.object ?? ""); } catch { /* bad body */ }
-  const rule = RULE[object];
+  const rule = RULE[object] ?? PREFIX_RULE.find(([muster]) => muster.test(object))?.[1];
   if (!rule) return json({ error: "unknown video" }, 400);
 
   const auth = req.headers.get("Authorization") ?? "";

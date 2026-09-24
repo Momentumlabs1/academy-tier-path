@@ -22,6 +22,12 @@
  *    complete the flow. It used to point at /login, the admin Command Center,
  *    which no member can get through.
  *
+ *  · Eigene Marken (19.09., SAIF): mit { email, tenant } und einer
+ *    tenants.config.academy_url fuehrt der Link auf <academy_url>/passwort der
+ *    Marke, und die Mail kommt deutsch, unter deren Namen, ohne Cosmos. Das Ziel
+ *    kommt aus der Datenbank, nie aus der Anfrage — sonst koennte jeder einen
+ *    Recovery-Link auf eine eigene Seite umbiegen lassen.
+ *
  * Deploy with --no-verify-jwt: a signed-out member is precisely who needs it.
  */
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -56,7 +62,7 @@ Deno.serve(async (req) => {
   }
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
 
-  let body: { email?: string };
+  let body: { email?: string; tenant?: string };
   try { body = await req.json(); } catch { return json({ error: "invalid json" }, 400); }
 
   const email = String(body.email ?? "").trim().toLowerCase();
@@ -72,10 +78,27 @@ Deno.serve(async (req) => {
     { auth: { persistSession: false } },
   );
 
+  // Eigene Marke? Nur wenn sie eine Akademie-URL hinterlegt hat; sonst wie bisher.
+  let marke: { name: string; akademie: string; accent?: string; lang?: string } | null = null;
+  const slug = String(body.tenant ?? "").trim().toLowerCase();
+  if (slug && slug !== "cosmos-candles") {
+    const { data: t } = await admin.from("tenants").select("name, config").eq("slug", slug).maybeSingle();
+    const c = (t?.config ?? {}) as Record<string, unknown>;
+    if (t && typeof c.academy_url === "string" && c.academy_url.startsWith("https://")) {
+      marke = {
+        name: String(t.name),
+        akademie: c.academy_url.replace(/\/+$/, ""),
+        accent: typeof c.mail_accent === "string" ? c.mail_accent : undefined,
+        lang: typeof c.language === "string" ? c.language : undefined,
+      };
+    }
+  }
+
   const { data, error } = await admin.auth.admin.generateLink({
     type: "recovery",
     email,
-    options: { redirectTo: `${SITE_URL}/reset-password` },
+    // Das Ziel muss in der Redirect-Allowlist stehen, sonst nimmt Supabase die Site URL.
+    options: { redirectTo: marke ? `${marke.akademie}/passwort` : `${SITE_URL}/reset-password` },
   });
 
   // Unknown address, rate limit, anything else — the member sees the same reply.
@@ -95,7 +118,14 @@ Deno.serve(async (req) => {
       kind: "password_reset",
       to: email,
       resetUrl: data.properties.action_link,
-      dashboardUrl: SITE_URL,
+      dashboardUrl: marke?.akademie ?? SITE_URL,
+      // Eigene Marke: ihr Name als Absender und im Kopf, kein Cosmos-Logo, keine
+      // Cosmos-Kontaktadresse. Die Absenderdomain bleibt send.cosmos-candles.com,
+      // solange die Marke keine eigene verifizierte Domain hat.
+      ...(marke ? {
+        brand: { name: marke.name, logoUrl: "", supportEmail: "", ...(marke.accent ? { accent: marke.accent } : {}) },
+        lang: marke.lang,
+      } : {}),
     }),
   });
 

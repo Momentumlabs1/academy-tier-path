@@ -31,7 +31,8 @@ const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 /** Shared responsive shell. `body` is trusted HTML built below; user text is escaped by callers. */
-function shell(brand: Brand, opts: { preheader: string; body: string; unsubUrl?: string }) {
+function shell(brand: Brand, opts: { preheader: string; body: string; unsubUrl?: string; lang?: string }) {
+  const de = opts.lang === "de";
   const b = { ...DEFAULT_BRAND, ...brand };
   // Images are blocked by default in most clients, so the logo carries alt text
   // that reads as the brand name rather than "image".
@@ -40,7 +41,7 @@ function shell(brand: Brand, opts: { preheader: string; body: string; unsubUrl?:
          style="width:150px;height:auto;display:block;border:0;outline:none;text-decoration:none">`
     : `<span style="font-weight:800;font-size:18px;color:#f2ede4;letter-spacing:.02em">${esc(b.name)}</span>`;
   return `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<html lang="${de ? "de" : "en"}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark">
 <title>${esc(b.name)}</title></head>
 <body style="margin:0;padding:0;background:#070a10;color:#e9edf3;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased">
@@ -54,11 +55,12 @@ function shell(brand: Brand, opts: { preheader: string; body: string; unsubUrl?:
     <tr><td style="padding:0 32px 32px">${opts.body}</td></tr>
     <tr><td style="padding:20px 32px;border-top:1px solid #1b2534;background:#0a101a;color:#6b7788;font-size:11px;line-height:1.7">
       <div style="color:#8fa2b8;font-weight:700;font-size:12px;margin-bottom:6px">${esc(b.name)}</div>
-      Trading involves risk — 74–89% of retail CFD accounts lose money when trading CFDs.
-      Past performance does not predict future results.<br>
+      ${de
+        ? "Trading ist mit Risiken verbunden — 74–89 % der Kleinanlegerkonten verlieren beim CFD-Handel Geld. Frühere Ergebnisse sind kein Hinweis auf künftige Ergebnisse."
+        : "Trading involves risk — 74–89% of retail CFD accounts lose money when trading CFDs. Past performance does not predict future results."}<br>
       ${b.supportEmail ? `<a href="mailto:${b.supportEmail}" style="color:#8fa2b8;text-decoration:underline">${b.supportEmail}</a>` : ""}
       ${b.supportEmail && opts.unsubUrl ? ` &nbsp;·&nbsp; ` : ""}
-      ${opts.unsubUrl ? `<a href="${opts.unsubUrl}" style="color:#8fa2b8;text-decoration:underline">Unsubscribe</a>` : ""}
+      ${opts.unsubUrl ? `<a href="${opts.unsubUrl}" style="color:#8fa2b8;text-decoration:underline">${de ? "Abmelden" : "Unsubscribe"}</a>` : ""}
     </td></tr>
   </table>
   <div style="color:#3f4a5a;font-size:11px;margin-top:16px">© ${esc(b.name)}</div>
@@ -92,6 +94,7 @@ export interface BuildInput {
   daysInactive?: number;
   lessonTitle?: string;
   lessonUrl?: string;
+  lang?: string;     // "de": deutsche Fassung (bisher nur password_reset + Rahmen), sonst Englisch
   vipUrl?: string;    // access_granted: persoenlicher Einladungslink in die VIP-Signalgruppe
   accessUrl?: string; // access_granted: /zugang?t=… (7 Tage gueltig, setzt beim ersten Mal das Passwort)
   title?: string;   // broadcast
@@ -105,7 +108,7 @@ export function buildEmail(input: BuildInput): { subject: string; html: string }
   const hi = input.firstName ? `${esc(input.firstName)}, ` : "";
   const dash = input.dashboardUrl ?? "https://cosmos-candles.com";
   const wrap = (preheader: string, body: string) =>
-    shell(brand, { preheader, body, unsubUrl: input.unsubUrl });
+    shell(brand, { preheader, body, unsubUrl: input.unsubUrl, lang: input.lang });
 
   switch (input.kind) {
     // Sent by the `password-reset` function, which mints the recovery link with
@@ -113,6 +116,9 @@ export function buildEmail(input: BuildInput): { subject: string; html: string }
     // send this from noreply@mail.app.supabase.io, which reads as phishing and
     // lands in spam — the whole reason this kind exists.
     case "password_reset":
+      // Eigene Marken auf Deutsch (19.09., SAIF) — gleiche Aussage, gleicher Knopf.
+      if (input.lang === "de") return { subject: `Passwort zurücksetzen — ${brand.name}`,
+        html: wrap("Neues Passwort festlegen — der Link gilt nur kurz.", h1("Neues Passwort festlegen") + p(`${input.firstName ? esc(input.firstName) + ", w" : "W"}ir haben eine Anfrage bekommen, das Passwort für dein <b>${esc(brand.name)}</b>-Konto zurückzusetzen. Über den Knopf wählst du ein neues.`) + `<div style="margin:22px 0">${button(a, input.resetUrl ?? dash, "Neues Passwort festlegen")}</div>` + p(`<span style="color:#6b7788;font-size:13px">Der Link funktioniert einmal und läuft bald ab. Wenn du das nicht angefordert hast, ignoriere diese E-Mail — es ändert sich nichts.</span>`)) };
       return { subject: `Reset your password — ${brand.name}`,
         html: wrap("Set a new password — the link expires shortly.", h1("Set a new password") + p(`${hi}we got a request to reset the password for your <b>${esc(brand.name)}</b> account. Click below to choose a new one.`) + `<div style="margin:22px 0">${button(a, input.resetUrl ?? dash, "Set a new password")}</div>` + p(`<span style="color:#6b7788;font-size:13px">The link works once and expires shortly. If you didn't ask for this, ignore this e-mail — nothing changes.</span>`)) };
     /**
@@ -186,6 +192,15 @@ export function buildEmail(input: BuildInput): { subject: string; html: string }
       };
 
     case "deposit_confirmed":
+      // Deutsche Fassung fuer eigene Marken (19.09., SAIF) — gleiche Aussage.
+      if (input.lang === "de") return {
+        subject: `Einzahlung bestätigt — willkommen auf Stufe ${input.tierName ?? "neu"} 🎉`,
+        html: wrap("Deine Einzahlung ist da — neue Inhalte sind frei.",
+          h1("Einzahlung bestätigt 🎉") +
+          p(`${input.firstName ? esc(input.firstName) + ", d" : "D"}eine Einzahlung${input.depositAmount ? ` über <b>${money(input.depositAmount)}</b>` : ""} ist angekommen${input.tierName ? ` — du bist jetzt in der Stufe <b style="color:${a}">${esc(input.tierName)}</b>` : ""}.`) +
+          p("Deine Signale, Lektionen und Werkzeuge sind ab sofort freigeschaltet. Viel Erfolg — und behalte dein Risiko pro Trade im Griff.") +
+          `<div style="margin:22px 0">${button(a, dash, "Ansehen, was frei ist")}</div>`),
+      };
       return {
         subject: `Deposit confirmed — welcome to the ${input.tierName ?? "next"} level 🎉`,
         html: wrap("Your deposit landed — new content unlocked.",

@@ -10,7 +10,7 @@
  * Runs from pg_cron every 2 minutes. Also callable by hand:
  *   POST { "dry_run": true }   // report what would be sent, send nothing
  *
- * Auth: service-role key in the Authorization header (that's what cron sends).
+ * Auth: the x-cron-secret header (what pg_cron sends), or a service-role key.
  */
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -21,7 +21,7 @@ const BATCH = 50;
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-cron-secret",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 const json = (b: unknown, s = 200) =>
@@ -132,8 +132,18 @@ Deno.serve(async (req) => {
         firstName: String(member?.name ?? "").split(" ")[0] || undefined,
         depositAmount: Number(row.amount),
         tierName: name,
-        dashboardUrl: SITE_URL,
-        brand: t ? { name: String(t.name), accent: cfg.accentColor ?? cfg.primaryColor } : undefined,
+        // Eigene Marken (19.09., SAIF): eigene Akademie als Ziel, eigener Name,
+        // KEIN Cosmos-Logo (sonst steht unser Wortbild im Kopf der Mail) und die
+        // Sprache der Marke. Cosmos-Partner bleiben wie bisher.
+        dashboardUrl: typeof cfg.academy_url === "string" ? cfg.academy_url : SITE_URL,
+        brand: t
+          ? {
+              name: String(t.name),
+              accent: cfg.mail_accent ?? cfg.accentColor ?? cfg.primaryColor,
+              ...(cfg.academy_url ? { logoUrl: "", supportEmail: "" } : {}),
+            }
+          : undefined,
+        ...(cfg.academy_url && cfg.language === "de" ? { lang: "de" } : {}),
       }),
     });
 
