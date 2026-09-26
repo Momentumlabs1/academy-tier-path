@@ -47,9 +47,14 @@ export interface Lesson {
 }
 
 
-/** Preview image for a lesson: the custom poster if set, else the YouTube thumbnail. */
+/** Preview image for a lesson: the custom poster if set, else the YouTube thumbnail.
+ *
+ * `size: "mq"` hiess bisher nur fuer YouTube etwas — bei eigenen Postern kam
+ * immer das volle Bild zurueck. Fuenf Daumennaegel von 112x64 px zogen so
+ * 1,6 MB (Pruefung 26.09.). /posters/klein/* ist dieselbe Datei auf 320 px,
+ * zusammen rund 100 KB. */
 export function lessonThumb(l: Pick<Lesson, "poster" | "youtubeId">, size: "mq" | "maxres" = "maxres"): string {
-  if (l.poster) return l.poster;
+  if (l.poster) return size === "mq" ? l.poster.replace("/posters/", "/posters/klein/") : l.poster;
   return `https://i.ytimg.com/vi/${l.youtubeId}/${size === "mq" ? "mqdefault" : "maxresdefault"}.jpg`;
 }
 

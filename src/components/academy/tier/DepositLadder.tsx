@@ -104,7 +104,11 @@ export function DepositLadder({ compact = false }: { compact?: boolean }) {
                   onFocus={() => !isStart && setSelectedKey(n.key)}
                   aria-label={isStart ? "Start" : `${(n as Tier).name} — ${formatMoney(n.minDeposit, "€")}`}
                   aria-pressed={isActive}
-                  className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 disabled:cursor-default"
+                  // Die Tippflaeche war der 24-px-Punkt selbst — halb so gross,
+                  // wie ein Daumen sicher trifft. before:-inset-3 legt eine
+                  // unsichtbare 48-px-Flaeche darueber, ohne das Aussehen zu
+                  // aendern (Pruefung 26.09.).
+                  className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 before:absolute before:-inset-3 before:content-[''] disabled:cursor-default disabled:before:hidden"
                   style={{ left: `${pct}%` }}
                 >
                   <span
@@ -122,8 +126,11 @@ export function DepositLadder({ compact = false }: { compact?: boolean }) {
                       : <Lock className="h-3 w-3 text-white/45" />}
                   </span>
                   <span className="absolute left-1/2 mt-2 -translate-x-1/2 whitespace-nowrap text-center">
+                    {/* Auf dem Handy nur der Betrag: "FOUNDATION" (43 %) und
+                        "OPERATOR" (70 %) sind nowrap und ueberlappten sich auf
+                        375 px. Der Stufenname steht ohnehin im Feld darunter. */}
                     <span className={cn(
-                      "block text-[10px] font-semibold uppercase tracking-[0.14em]",
+                      "hidden text-[10px] font-semibold uppercase tracking-[0.14em] sm:block",
                       isActive ? "text-primary" : "text-muted-foreground",
                     )}>
                       {isStart ? "Start" : (n as Tier).name}

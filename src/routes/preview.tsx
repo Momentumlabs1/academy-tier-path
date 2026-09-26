@@ -93,7 +93,10 @@ function Preview() {
 
   return (
     <MemberProvider override={gast}>
-      <div onClickCapture={abfangen} className="min-h-screen p-3 pb-24 lg:p-4 lg:pb-4">
+      {/* Derselbe Grund wie die Seite davor: der Uebergang von der Partnerseite
+          hierher soll unsichtbar sein, nicht wie ein Seitenwechsel wirken. */}
+      <div onClickCapture={abfangen}
+           className="min-h-screen bg-[color:var(--surface-public)] p-3 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:p-4 lg:pb-4">
         <div className="flex gap-6">
           <Sidebar />
           <main className="min-w-0 flex-1 overflow-x-hidden">

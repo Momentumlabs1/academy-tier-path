@@ -37,7 +37,7 @@ export function Sidebar() {
   return (
     <aside className="hidden lg:flex h-[calc(100vh-2rem)] w-[260px] shrink-0 flex-col rounded-[28px] bg-[color:var(--surface-1)] p-5 shadow-[var(--shadow-card)] sticky top-4">
       <Link to="/" className="flex items-center gap-2.5 px-1 py-2">
-        <img src="/cosmos-logo.png" alt="Cosmos Candles Academy" className="h-14 w-auto" />
+        <img src="/cosmos-logo-klein.png" alt="Cosmos Candles Academy" width={116} height={56} className="h-14 w-auto" />
       </Link>
 
       <div className="mt-8 px-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground/80">Menu</div>

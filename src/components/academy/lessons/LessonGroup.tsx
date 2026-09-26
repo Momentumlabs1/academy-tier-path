@@ -16,8 +16,11 @@ export function LessonGroup({
 
   return (
     <Card variant="inner" className="p-5 lg:p-6">
-      <div className="mb-4 flex items-center justify-between gap-4">
-        <h3 className="font-display text-xl font-bold">{title}</h3>
+      {/* Ohne Titel (Dashboard) keine leere Ueberschrift: dort stand eine leere
+          h3 mit Abstand darunter, daneben einsam "0/5" — es las sich wie ein
+          fehlender Text. Der Fortschritt rueckt dann nach rechts. */}
+      <div className={`mb-4 flex items-center gap-4 ${title ? "justify-between" : "justify-end"}`}>
+        {title && <h3 className="font-display text-xl font-bold">{title}</h3>}
         <div className="flex items-center gap-2.5">
           <div className="h-1.5 w-20 overflow-hidden rounded-full bg-white/10 sm:w-28">
             <div className="h-full rounded-full bg-primary transition-all duration-500" style={{ width: `${pct}%` }} />

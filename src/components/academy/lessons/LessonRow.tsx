@@ -38,6 +38,8 @@ export function LessonRow({ lesson }: { lesson: Lesson }) {
           src={lessonThumb(lesson, "mq")}
           alt=""
           loading="lazy"
+          width={112}
+          height={64}
           className={cn("h-full w-full object-cover transition-transform duration-300 group-hover:scale-105", locked && "opacity-40 blur-[1px]")}
         />
         <div className="absolute inset-0 flex items-center justify-center">

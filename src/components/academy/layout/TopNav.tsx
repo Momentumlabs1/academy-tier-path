@@ -68,7 +68,7 @@ export function TopNav() {
             />
           </span>
           <span className="flex flex-col leading-none">
-            <img src="/cosmos-logo.png" alt="Cosmos Candles Academy" className="h-6 w-auto" />
+            <img src="/cosmos-logo-klein.png" alt="Cosmos Candles Academy" width={50} height={24} className="h-6 w-auto" />
           </span>
         </Link>
         {pageTitle !== "Dashboard" && (
@@ -119,8 +119,11 @@ export function TopNav() {
           to="/tier"
           className="inline-flex items-center gap-1.5 rounded-full bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground shadow-[var(--shadow-lime)] transition-transform hover:-translate-y-0.5 md:px-4 md:py-2.5 md:text-sm"
         >
+          {/* "Top up" setzt ein Guthaben voraus. Wer noch nie eingezahlt hat,
+              liest hier bisher eine Aufforderung zum Nachlegen — gemeint ist
+              der erste Schritt. */}
           <span className="hidden sm:inline">Connect Broker</span>
-          <span className="sm:hidden">Top up</span>
+          <span className="sm:hidden">{state.accessDeposit > 0 ? "Top up" : "Start"}</span>
           <ArrowRight className="h-3.5 w-3.5" />
         </Link>
       </div>

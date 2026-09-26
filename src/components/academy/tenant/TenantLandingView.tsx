@@ -510,10 +510,16 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
                   Weg offen — /welcome, /signals und das Willkommensfenster
                   fuehren dorthin, und der bezahlte Signalkanal kommt ohnehin
                   partnerweise aus create-telegram-link. */}
-              <button onClick={goTelegram}
+              {/* Zwei Knoepfe nebeneinander, die BEIDE goTelegram riefen: wer
+                  "Watch the signals" drueckte, erwartete Signale zu sehen und
+                  landete im selben Chat wie beim Hauptknopf. Der zweite Weg
+                  bleibt jetzt im Browser und zeigt, was die Seite belegen kann
+                  — ein echter Zweitweg statt eines zweiten Hauptknopfes
+                  (Pruefung 26.09.). */}
+              <a href="#beweise"
                 className="inline-flex items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-5 py-3.5 text-[13px] font-semibold hover:bg-white/10 sm:px-6 sm:py-3">
-                Watch the signals <ArrowRight className="h-4 w-4" />
-              </button>
+                See the results first <ArrowRight className="h-4 w-4 rotate-90" />
+              </a>
             </div>
 
             <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-[11px] text-white/50 sm:mt-7 sm:gap-x-6 sm:text-xs lg:justify-start">
@@ -714,7 +720,9 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           Zahlen vor Preisen. Rendert nichts, wenn keine Daten da sind — darum
           bleibt sie AUSSERHALB der Band-Abfolge: eine leere erhabene Flaeche
           waere schlimmer als gar keine Sektion. */}
-      <DeskResults primary={primary} />
+      <div id="beweise" className="scroll-mt-20">
+        <DeskResults primary={primary} />
+      </div>
 
       {/* ─────────────────────── HOW IT WORKS ─────────────────────── */}
       <Band tone="raised">
@@ -735,8 +743,12 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
           <div aria-hidden className="absolute left-[16%] right-[16%] top-[26px] hidden h-px lg:block"
                style={{ background: `linear-gradient(90deg, transparent, color-mix(in oklch, ${primary} 45%, transparent), transparent)` }} />
           {[
-            { step: "01", icon: GraduationCap, you: "1 minute", title: "Create your free account", body: "Takes a minute. No card, no subscription, nothing to cancel." },
-            { step: "02", icon: Radio, you: "guided in chat", title: "Connect Telegram", body: "We walk you through the setup in the chat and send your personal invite." },
+            // Schritt 01 beschrieb einen Weg, den es seit dem 05.09. nicht mehr
+            // gibt: ein Konto kann hier niemand anlegen, jeder Knopf fuehrt nach
+            // Telegram, und das Konto entsteht spaeter aus der Einzahlung. Ein
+            // Fremder las also als Erstes eine Aufforderung, die ins Leere ging.
+            { step: "01", icon: Radio, you: "1 minute", title: "Say hi on Telegram", body: "No form, no card, no subscription. One message and you're in." },
+            { step: "02", icon: GraduationCap, you: "guided in chat", title: "Get your access", body: "We walk you through the setup in the chat and send your personal invite." },
             { step: "03", icon: LineChart, you: "at your pace", title: "Trade with confidence", body: "Follow the signals, work through the lessons, and level up tier by tier." },
           ].map((s, i) => (
             <div key={s.step} className={cn("relative", i === 1 && "lg:translate-y-6", i === 2 && "lg:translate-y-12")}>
@@ -949,12 +961,12 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
 
       {/* Mobile-only sticky CTA. sm:hidden keeps desktop clean; the footer
           below reserves room so the last lines are never covered. */}
-      <div className="m-cta fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#05070e]/90 px-4 pt-2.5 backdrop-blur-xl sm:hidden"
-           style={{ paddingBottom: "calc(0.625rem + env(safe-area-inset-bottom))" }}>
+      <div className="m-cta fixed inset-x-0 z-40 border-t border-white/10 bg-[#05070e]/90 px-4 pt-2.5 backdrop-blur-xl sm:hidden"
+           style={{ bottom: "var(--consent-h, 0px)", paddingBottom: "calc(0.625rem + env(safe-area-inset-bottom))" }}>
         <div className="flex items-center gap-3">
           <div className="min-w-0 flex-1">
             <div className="truncate text-[12px] font-bold">{tenant.name}</div>
-            <div className="truncate text-[10px] text-white/50">Free — no card, your money stays yours</div>
+            <div className="truncate text-[12px] text-white/65">Free — no card, your money stays yours</div>
           </div>
           <button onClick={goTelegram} className="inline-flex shrink-0 items-center gap-1.5 rounded-full px-5 py-3 text-[13px] font-black text-black" style={cta}>
             Start free <ArrowRight className="h-4 w-4" />
@@ -962,7 +974,11 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         </div>
       </div>
 
-      <footer className="border-t border-white/[0.06] px-4 pt-6 pb-24 text-center text-[11px] text-white/40 sm:pb-6">
+      {/* 11 px bei 40 % Deckkraft ergaben auf dem fast schwarzen Grund rund
+          3,6:1 — unter der Lesbarkeitsgrenze, und ausgerechnet hier stehen
+          Risikohinweis, Impressum und Datenschutz. Das ist kein Kleingedrucktes,
+          das ist der Teil, der die Seite ehrlich macht (Pruefung 26.09.). */}
+      <footer className="border-t border-white/[0.06] px-4 pt-6 pb-24 text-center text-[12px] text-white/65 sm:pb-6">
         <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
           <Link to="/impressum" className="hover:text-white">Legal notice</Link>
           <span aria-hidden>·</span>
@@ -971,8 +987,8 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
         <div className="mt-2">
           {tenant.name} · Powered by <Link to="/" className="underline hover:text-white">Cosmos Candles Academy</Link>
         </div>
-        <div className="mt-1 inline-flex items-center gap-1">
-          <Lock className="inline h-2.5 w-2.5" /> Trading involves risk — 74–89% of retail CFD accounts lose money.
+        <div className="mt-1 inline-flex items-center gap-1 text-white/70">
+          <Lock className="inline h-3 w-3" /> Trading involves risk — 74–89% of retail CFD accounts lose money.
         </div>
       </footer>
     </div>

@@ -382,8 +382,13 @@ export function TenantBridgeView({ tenant }: { tenant: TenantConfig }) {
       {/* Am Handy bleibt der Knopf immer erreichbar — die Seite ist jetzt länger
           als ein Bildschirm, und der Weg weiter darf nie außer Sicht sein. */}
       <div
-        className="fixed inset-x-0 bottom-0 z-20 px-5 pb-5 pt-10 sm:hidden"
-        style={{ background: `linear-gradient(180deg, transparent, ${t.grund} 55%)` }}
+        className="fixed inset-x-0 z-20 px-5 pt-10 sm:hidden"
+        style={{
+          background: `linear-gradient(180deg, transparent, ${t.grund} 55%)`,
+          // ueber dem Cookie-Hinweis (--consent-h) und ueber dem Home-Balken
+          bottom: "var(--consent-h, 0px)",
+          paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))",
+        }}
       >
         <Knopf className="w-full" />
       </div>

@@ -74,7 +74,12 @@ export function MobileNav() {
         </div>
       )}
 
-      <nav className="fixed inset-x-3 bottom-3 z-30 flex items-stretch rounded-[22px] bg-[color:var(--surface-1)] p-1.5 shadow-[var(--shadow-card)] lg:hidden">
+      {/* bottom aus der Safe Area, nicht fest: die Seite laeuft mit
+          viewport-fit=cover bis an die Geraetekante, und 12 px darueber liegt
+          auf jedem iPhone ohne Home-Knopf der Home-Balken. Er lag bisher auf
+          "Cosmo" und "More" — ein Wisch von unten schloss die App, statt den
+          Knopf zu treffen (Pruefung 26.09.). */}
+      <nav className="fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom)+var(--consent-h,0px))] z-30 flex items-stretch rounded-[22px] bg-[color:var(--surface-1)] p-1.5 shadow-[var(--shadow-card)] lg:hidden">
         {NAV.map((n) => {
           const active = n.to === "/" ? pathname === "/" : pathname.startsWith(n.to);
           const Icon = n.icon;

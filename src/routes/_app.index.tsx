@@ -88,7 +88,15 @@ export function Dashboard() {
   // Before the first deposit, everything gated should "breathe" — a gentle pull
   // toward the deposit that unlocks it. Once funded, the glow/veil fall away.
   const { isCompleted } = useCompletedLessons();
-  const notFunded = state.loaded && state.accessDeposit <= 0;
+  // Solange die Mitgliedsdaten unterwegs sind, gilt die GESPERRTE Ansicht.
+  //
+  // Vorher stand hier `state.loaded && …`: beim ersten Bild war das falsch,
+  // also erschien kurz das Dashboard eines Einzahlers — offene Kacheln, keine
+  // Leiter —, und eine halbe Sekunde spaeter ordnete sich alles um. Ausgerechnet
+  // die Leute, die noch nicht eingezahlt haben, sahen zuerst ein zuckendes
+  // Layout. Andersherum ist der Wechsel ein Aufhellen statt eines Umbaus
+  // (Pruefung 26.09.).
+  const notFunded = !state.loaded || state.accessDeposit <= 0;
   const tierRank = state.currentTier
     ? ["foundation", "operator", "elite"].indexOf(state.currentTier.key)
     : -1;
@@ -184,15 +192,26 @@ export function Dashboard() {
                 <div className="pointer-events-none absolute inset-0 -m-1 rounded-full blur-lg" style={{ background: "radial-gradient(circle, color-mix(in oklch, #75B9F5 60%, transparent), transparent 70%)" }} aria-hidden />
                 <img src="/cosmo/cosmo-head.png" alt="Cosmo" className="cosmo-float relative h-9 w-9 rounded-full object-contain ring-1 ring-primary/40" />
               </div>
+              {/* Zwei Saetze, nicht einer: "jump back into your lessons" sagte
+                  auch jemandem, der noch nie etwas gemacht hat, er solle
+                  zurueckkehren — und zeigte auf Raeume, die fuer ihn zu sind. */}
               <p className="text-sm leading-snug text-foreground/75">
-                <span className="font-semibold text-primary">Cosmo</span> has your next moves ready — jump back into your lessons, signals & tools below.
+                <span className="font-semibold text-primary">Cosmo</span>{" "}
+                {notFunded
+                  ? "is holding the door — your first step is right below."
+                  : "has your next moves ready — jump back into your lessons, signals & tools below."}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Quick-action launcher */}
-        <div className="relative">
+        {/* Quick-action launcher — ERST NACH DER EINZAHLUNG.
+            Davor fuehrten die drei Kacheln nach /signals ("Locked"), /lessons
+            (Schloesser) und /tools (hinter dem Schleier, nicht bedienbar): der
+            auffaelligste Block der Seite bestand aus drei Sackgassen und stand
+            ausserdem in Konkurrenz zur Einzahl-Leiter, die direkt darunter
+            dasselbe will. Ein Ziel, ein Knopf (Pruefung 26.09.). */}
+        <div className={`relative ${notFunded ? "hidden" : ""}`}>
           <div className="mt-6 grid grid-cols-1 gap-2.5 sm:grid-cols-3">
             {QUICK_ACTIONS.map((a) => {
               const Icon = a.icon;

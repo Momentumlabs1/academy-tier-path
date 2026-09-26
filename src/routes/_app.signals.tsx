@@ -129,7 +129,7 @@ export function SignalsPage() {
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_280px]">
+      <div className="grid gap-6 lg:grid-cols-[1fr_280px] xl:grid-cols-1">
         <div>
           <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
             {SIGNALS.length > 0 ? "Last 10 signals" : "Where the signals are"}
@@ -159,7 +159,11 @@ export function SignalsPage() {
             three strategies by nothing at all, on the one page where a member
             comes looking for what the desk actually called. Replaced with the
             real feed, redacted server-side for anyone who has not deposited. */}
-        <aside className="space-y-4">
+        {/* Ab 1280 px zeigt die globale rechte Spalte (RightRail) dasselbe
+            Panel — dann stand "Live signals" zweimal nebeneinander mit
+            denselben Eintraegen. Hier also nur, solange die rechte Spalte
+            versteckt ist. */}
+        <aside className="space-y-4 xl:hidden">
           <SignalTeaserRail locked={signalsLocked} />
         </aside>
       </div>

@@ -21,7 +21,7 @@ export function LegalPage({ title, updated, children }: { title: string; updated
           <Link to="/" className="inline-flex items-center gap-2 text-sm text-white/60 hover:text-white">
             <ArrowLeft className="h-4 w-4" /> Back
           </Link>
-          <img src="/cosmos-logo.png" alt="Cosmos Candles Academy" className="h-7 w-auto opacity-80" />
+          <img src="/cosmos-logo-klein.png" alt="Cosmos Candles Academy" width={58} height={28} className="h-7 w-auto opacity-80" />
         </div>
       </header>
 

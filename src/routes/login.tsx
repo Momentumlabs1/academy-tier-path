@@ -29,7 +29,7 @@ function LoginPage() {
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[oklch(0.11_0.03_255)] px-4 py-10 text-foreground [background-image:var(--gradient-page-wash)]">
       {/* Cosmos Candles brand mark — quiet, this is the staff door. */}
       <div className="flex items-center gap-2.5 text-muted-foreground">
-        <img src="/cosmos-logo.png" alt="Cosmos Candles Academy" className="h-8 w-auto opacity-90" />
+        <img src="/cosmos-logo-klein.png" alt="Cosmos Candles Academy" width={67} height={32} className="h-8 w-auto opacity-90" />
       </div>
 
       <form onSubmit={submit} className="w-full max-w-sm rounded-2xl border border-white/10 bg-[oklch(0.15_0.045_255)] p-7 shadow-2xl">

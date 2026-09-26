@@ -16,7 +16,9 @@ export function AppShell() {
     <RegistrationGate>
       <PasswordSetupGate>
       <MemberProvider>
-      <div className="min-h-screen p-3 pb-24 lg:p-4 lg:pb-4">
+      {/* Der Platz unten haelt die schwebende Leiste frei — auf dem iPhone
+          zusaetzlich die Safe Area, sonst endet der letzte Inhalt darunter. */}
+      <div className="min-h-screen p-3 pb-[calc(6rem+env(safe-area-inset-bottom))] lg:p-4 lg:pb-4">
         <div className="flex gap-6">
           <Sidebar />
           <main className="min-w-0 flex-1 overflow-x-hidden">

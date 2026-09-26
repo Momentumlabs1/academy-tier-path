@@ -64,6 +64,7 @@
   --color-surface-1: var(--surface-1);
   --color-surface-2: var(--surface-2);
   --color-surface-3: var(--surface-3);
+  --color-surface-public: var(--surface-public);
   /* 21.08.2026: Space Grotesk + Inter waren die zwei meistgenerierten
      Fonts im Netz — der staerkste einzelne "vibecoded"-Marker. Unbounded ist
      die Cosmos-Schrift (breit, kosmisch, unverwechselbar), Instrument Sans
@@ -90,6 +91,14 @@
   --surface-1: oklch(0.155 0.042 258);
   --surface-2: oklch(0.126 0.032 258);
   --surface-3: oklch(0.30 0.07 256);
+  /* Der fast schwarze Grund der OEFFENTLICHEN Seiten (#05070e). Er stand bisher
+     an neun Stellen hand-getippt im Code, und /preview erbte stattdessen den
+     helleren App-Ton: Der Besucher druckte den einen Knopf der Partnerseite und
+     die Seite wurde sichtbar heller und blauer — genau der Schritt, den wir als
+     "du bist schon drin" verkaufen, las sich als Sprung auf eine fremde Seite
+     (Pruefung 26.09.). Hinter der Anmeldung darf es heller werden, nur nicht
+     mitten im Verkaufsweg. */
+  --surface-public: #05070e;
   --card: var(--surface-2);
   --card-foreground: oklch(0.985 0.004 250);
   --popover: var(--surface-2);
