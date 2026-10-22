@@ -39,7 +39,7 @@ const COSMO_HEAD = "/cosmo/cosmo-head.png";
 // Eine Quelle fuer Modal UND Dashboard-Karte — laufen sonst auseinander,
 // sobald jemand die Version nur an einer Stelle hochzaehlt.
 export const INTRO_VIDEO_SRC = "/pitch.mp4?v=3";
-export const INTRO_VIDEO_POSTER = "/pitch-poster.jpg?v=7";
+export const INTRO_VIDEO_POSTER = "/pitch-poster.jpg?v=8";
 
 export function WelcomeModal() {
   const state = useMemberState();

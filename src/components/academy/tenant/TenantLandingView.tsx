@@ -20,7 +20,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight, CheckCircle2, Lock, Shield, Star,
-  PlayCircle, BadgeCheck, Wallet, Building2, Radio, GraduationCap, LineChart, Zap,
+  Play, PlayCircle, BadgeCheck, Wallet, Building2, Radio, GraduationCap, LineChart, Zap,
   Bot, Trophy, ListChecks, Layers,
 } from "lucide-react";
 import { TIERS, LESSONS } from "@/lib/academy-data";
@@ -98,6 +98,8 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
   // jetzt sichtbar.
   const [pitchStarted, setPitchStarted] = useState(false);
   const [pitchEnded, setPitchEnded] = useState(false);
+  // Laufzeit aus den Metadaten — preload="metadata" laedt sie ohnehin.
+  const [pitchDur, setPitchDur] = useState<number | null>(null);
   /* Die weiche Einblendung der Knoepfe haengt an DIESEM Zustand, nicht an
      einer CSS-Animation.
      Erst lief sie ueber `animation` mit Verzoegerung und fill-mode. Live
@@ -205,8 +207,20 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
   // Desktop als schwarze Flaeche neben der Ueberschrift stand.
   const heroHasVideo = !heroHasMascot && Boolean(tenant.pitchVideo);
 
+  /* Diego 22.10.: "Wenn man auf dem Handy runterscrollt, rafft man gefuehlt
+     gar nicht, dass da ein Video ist. Da ist zwar ein Play-Button kleiner, aber
+     das Video ist auch sehr dunkel. Das Video ist nicht eingerahmt."
+     Gemessen bei 390 px: 356x200, Poster-Helligkeit 71/255, Rahmen white/10
+     unsichtbar, native Leiste schon vor dem Start. Deshalb: Rahmen in
+     Markenfarbe mit Schein, helles Poster mit Cosmos Gesicht, Play-Knopf
+     88 px mit Puls und Laufzeit, Bedienleiste erst nach dem Start. */
+  const pitchDauer = pitchDur ? `${Math.floor(pitchDur / 60)}:${String(pitchDur % 60).padStart(2, "0")}` : null;
   const pitchPlayer = (
-      <div className="overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl">
+      <div className="overflow-hidden rounded-2xl bg-black"
+        style={{
+          border: `2px solid ${primary}`,
+          boxShadow: `0 0 0 5px color-mix(in oklch, ${primary} 14%, transparent), 0 18px 60px -14px color-mix(in oklch, ${primary} 70%, transparent)`,
+        }}>
         <div className="relative aspect-video bg-black">
           {/* Der Platzhalter lag mit `pointer-events-none absolute inset-0`
               dauerhaft ueber dem Player — das Video war auch mit Datei nie
@@ -214,13 +228,19 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               Play-Knopf verschwindet beim Start. */}
           <video
             ref={pitchRef}
-            controls
+            // Vor dem Start keine native Leiste: sie legte sich ueber das
+            // Poster und sah nach Standbild mit Fehler aus, nicht nach Film.
+            controls={pitchStarted}
             playsInline
+            onLoadedMetadata={(e) => {
+              const d = e.currentTarget.duration;
+              if (Number.isFinite(d) && d > 0) setPitchDur(Math.round(d));
+            }}
             // metadata statt none: laedt beim Seitenaufruf NUR den Video-Index
             // (faststart legt ihn an den Dateianfang, wenige hundert KB) —
             // der Klick startet dadurch sofort, gestreamt wird progressiv.
             preload="metadata"
-            poster={tenant.pitchPoster ?? "/pitch-poster.jpg?v=7"}
+            poster={tenant.pitchPoster ?? "/pitch-poster.jpg?v=8"}
             onPlay={() => {
               setPitchPlaying(true); setPitchStarted(true); setPitchEnded(false);
               // Kurz warten, damit die Knoepfe in die Aufmerksamkeit
@@ -240,10 +260,22 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
               type="button"
               onClick={() => pitchRef.current?.play()}
               aria-label="Play video"
-              className="group absolute inset-0 flex cursor-pointer items-center justify-center bg-black/25"
+              className="group absolute inset-0 flex cursor-pointer flex-col items-center justify-center gap-2.5"
             >
-              <span className="flex h-16 w-16 items-center justify-center rounded-full shadow-lg ring-1 ring-white/20 transition-transform duration-200 group-hover:scale-105" style={{ background: primary }}>
-                <PlayCircle className="h-8 w-8 text-black" />
+              {/* Kein Grauschleier mehr ueber dem ganzen Bild, nur unten ein
+                  Verlauf: er traegt die Beschriftung und deckt die Untertitel
+                  ab, die im Standbild mitten im Satz stehen. */}
+              <span aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/75 to-transparent" />
+              <span className="relative flex h-[88px] w-[88px] items-center justify-center">
+                {!pitchStarted && (
+                  <span aria-hidden className="absolute inset-0 rounded-full opacity-60 motion-safe:animate-ping" style={{ background: primary }} />
+                )}
+                <span className="relative flex h-full w-full items-center justify-center rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.55)] ring-4 ring-white/25 transition-transform duration-200 group-hover:scale-105 group-active:scale-95" style={{ background: primary }}>
+                  <Play className="ml-1.5 h-10 w-10 fill-black text-black" />
+                </span>
+              </span>
+              <span className="relative rounded-full bg-black/55 px-3.5 py-1 text-[13px] font-black tracking-wide text-white backdrop-blur-sm">
+                {pitchStarted ? "Continue" : "Play"}{pitchDauer && <span className="font-semibold text-white/70"> · {pitchDauer}</span>}
               </span>
             </button>
           )}
@@ -592,11 +624,11 @@ export function TenantLandingView({ tenant }: { tenant: TenantConfig }) {
 
       {/* ─────────────────────── DEMO VIDEO ─────────────────────── */}
       {tenant.pitchVideo && !heroHasVideo && (
-      <Band tone="raised" max="max-w-4xl" className="py-8 sm:py-12">
+      <Band tone="raised" max="max-w-4xl" className="pt-5 pb-8 sm:py-12">
         {/* Das Video laeuft 1:19 — "60 seconds" stand hier noch aus der Zeit
             vor dem fertigen Schnitt. */}
         <SectionHead kicker="Watch first" title={showCosmo ? "The whole thing in 70 seconds" : "The whole thing in 73 seconds"} primary={primary} />
-        <div className="relative mt-8">
+        <div className="relative mt-5 sm:mt-8">
           {/* KEIN nachgebautes Browserfenster mehr.
               Hier sassen Ampelpunkte und eine Adresszeile — die Seite tat so,
               als zeige sie einen Screenshot von sich selbst. Auf der echten
