@@ -13,7 +13,7 @@
  */
 import { ArrowUpRight, Send } from "lucide-react";
 
-/** t.me URL → tg:// deep link. Handles +invite, joinchat and bot?start=. */
+/** t.me URL → tg:// deep link. Handles +invite, joinchat, addlist (folder) and bot?start=. */
 export function toDeepLink(httpsUrl: string): string | null {
   try {
     const u = new URL(httpsUrl);
@@ -21,6 +21,9 @@ export function toDeepLink(httpsUrl: string): string | null {
     const path = u.pathname.replace(/^\/+/, "");
     if (path.startsWith("+")) return `tg://join?invite=${path.slice(1)}`;
     if (path.startsWith("joinchat/")) return `tg://join?invite=${path.split("/")[1]}`;
+    // Ordnerlink (mehrere Kanaele mit einem Tipp). Ohne diese Zeile wurde
+    // daraus tg://resolve?domain=addlist — ein Nutzer namens "addlist".
+    if (path.startsWith("addlist/")) return `tg://addlist?slug=${path.split("/")[1]}`;
     const name = path.split("/")[0];
     if (!name) return null;
     const start = u.searchParams.get("start");
