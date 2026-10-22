@@ -263,9 +263,9 @@ function imOriginal(t: TenantRow): boolean {
 }
 
 /** Einmal uebersetzen, und nur wenn ueberhaupt ein englischer Kanal es braucht. */
-function einmalEnglisch(text: string | null | undefined): () => Promise<string | null> {
-  let p: Promise<string | null> | null = null;
-  return () => (p ??= text ? toEnglish(text) : Promise.resolve(null));
+function einmalEnglisch(text: string | null | undefined): () => Promise<Translation | null> {
+  let p: Promise<Translation | null> | null = null;
+  return () => (p ??= text ? toEnglishR(text) : Promise.resolve(null));
 }
 
 function admin(): SupabaseClient {
@@ -354,12 +354,22 @@ const TRANSLATE_SYSTEM = [
 /** Digits only, for verifying the model changed no number. */
 const digitsOf = (s: string) => (s.match(/\d/g) ?? []).join("");
 
-async function toEnglish(text: string): Promise<string> {
+/**
+ * Ergebnis plus Fehlerflag. `failed` heisst: was zurueckkommt, ist das Original
+ * und keine Uebersetzung. Die Aufrufer schicken es trotzdem sofort raus (Regel 2)
+ * und melden die Kopie danach mit queueTranslation() an den Mac-Nachuebersetzer,
+ * der sie mit Gemini nachzieht (22.10.2026: Guthaben leer, drei Wochen lang
+ * kamen Tims Signale auf Deutsch an).
+ */
+interface Translation { text: string; failed: boolean }
+
+async function toEnglishR(text: string): Promise<Translation> {
+  const failed = { text, failed: true };
   const src = (text ?? "").trim();
-  if (!src) return text;
+  if (!src) return { text, failed: false };
 
   const apiKey = await cfg("ANTHROPIC_API_KEY");
-  if (!apiKey) return text; // not configured — relay untranslated rather than not at all
+  if (!apiKey) return failed; // not configured — relay untranslated rather than not at all
 
   try {
     const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -378,7 +388,7 @@ async function toEnglish(text: string): Promise<string> {
     });
     if (!res.ok) {
       console.error("[translate] HTTP", res.status, (await res.text()).slice(0, 160));
-      return text;
+      return failed;
     }
     const j = await res.json();
     const out = (j?.content ?? [])
@@ -386,17 +396,76 @@ async function toEnglish(text: string): Promise<string> {
       .map((b: { text?: string }) => b.text ?? "")
       .join("")
       .trim();
-    if (!out) return text;
+    if (!out) return failed;
 
     // The guard: same digits in, same digits out, or we keep the original.
     if (digitsOf(out) !== digitsOf(src)) {
       console.error("[translate] digits changed — keeping original");
-      return text;
+      return failed;
     }
-    return out;
+    return { text: out, failed: false };
   } catch (e) {
     console.error("[translate] failed:", e);
-    return text;
+    return failed;
+  }
+}
+
+/**
+ * Eine im Original gesendete Kopie fuer den Mac-Nachuebersetzer vormerken.
+ *
+ * `source` ist nur der Textteil, der uebersetzt werden soll; `suffix` (die
+ * Broker-Fusszeile) haengt der Nachuebersetzer unveraendert wieder an — sonst
+ * verloere jeder Partner beim Editieren seinen Link. Wirft nie: ein Fehler hier
+ * darf kein Signal aufhalten, die Kopie ist zu diesem Zeitpunkt schon raus.
+ */
+async function queueTranslation(
+  db: SupabaseClient,
+  job: {
+    chat_id: number | string;
+    message_id: number | undefined;
+    kind: "text" | "caption";
+    source: string;
+    suffix?: string | null;
+    tenant_key?: string;
+    info_chat_id?: number;
+    info_message_id?: number;
+  },
+) {
+  if (!job.message_id || !job.source.trim()) return;
+  try {
+    const { error } = await db.from("translation_jobs").upsert({
+      chat_id: Number(job.chat_id),
+      message_id: job.message_id,
+      kind: job.kind,
+      source: job.source,
+      suffix: job.suffix ?? null,
+      tenant_key: job.tenant_key ?? null,
+      info_chat_id: job.info_chat_id ?? null,
+      info_message_id: job.info_message_id ?? null,
+      // Neu oder nach einer Bearbeitung der Quelle: wieder von vorn.
+      status: "offen",
+      attempts: 0,
+      last_error: null,
+      result: null,
+      alerted: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "chat_id,message_id" });
+    if (error) console.error("[translate] queue failed:", error.message);
+  } catch (e) {
+    console.error("[translate] queue failed:", e);
+  }
+}
+
+/** Offenen Auftrag einer Kopie schliessen, weil sie gerade englisch editiert wurde. Wirft nie. */
+async function closeTranslation(db: SupabaseClient, chat_id: number | string, message_id: number) {
+  try {
+    const { error } = await db.from("translation_jobs")
+      .update({ status: "fertig", last_error: "durch neue Bearbeitung erledigt", updated_at: new Date().toISOString() })
+      .eq("chat_id", Number(chat_id)).eq("message_id", message_id).eq("status", "offen");
+    if (error) console.error("[translate] close failed:", error.message);
+  } catch (e) {
+    console.error("[translate] close failed:", e);
   }
 }
 
@@ -501,23 +570,32 @@ async function storeRecap(db: SupabaseClient, post: TgMessage) {
  * this cannot simply forward: a forward carries the original caption and no way
  * to change it.
  */
-async function copyOne(t: TenantRow, post: TgMessage) {
+async function copyOne(db: SupabaseClient, t: TenantRow, post: TgMessage) {
   try {
     // Only under real calls, not under every exchange in the desk.
     const footer = isTradeSignal(post.text ?? post.caption ?? "") ? footerFor(t) : null;
 
     if (post.text) {
-      const body = imOriginal(t) ? post.text : await toEnglish(post.text);
+      const tr = imOriginal(t) ? null : await toEnglishR(post.text);
+      const body = tr?.text ?? post.text;
       const res = await tg<{ message_id: number }>("sendMessage", {
         chat_id: t.telegram_channel_id,
         text: footer ? `${body}\n\n${footer}` : body,
         disable_web_page_preview: true,
       });
       if (!res.ok) throw new Error(res.description ?? "sendMessage failed");
+      // Im Original rausgegangen: der Mac-Nachuebersetzer zieht die Kopie nach.
+      if (tr?.failed) {
+        await queueTranslation(db, {
+          chat_id: t.telegram_channel_id!, message_id: res.result?.message_id,
+          kind: "text", source: post.text, suffix: footer, tenant_key: t.slug,
+        });
+      }
       return { ok: true, message_id: res.result?.message_id };
     }
 
-    const caption = post.caption ? (imOriginal(t) ? post.caption : await toEnglish(post.caption)) : undefined;
+    const tr = post.caption && !imOriginal(t) ? await toEnglishR(post.caption) : null;
+    const caption = post.caption ? (tr?.text ?? post.caption) : undefined;
     const copy = await tg<{ message_id: number }>("copyMessage", {
       chat_id: t.telegram_channel_id,
       from_chat_id: post.chat.id,
@@ -526,6 +604,13 @@ async function copyOne(t: TenantRow, post: TgMessage) {
       ...(caption !== undefined ? { caption } : {}),
     });
     if (!copy.ok) throw new Error(copy.description ?? "copyMessage failed");
+    // Die Fusszeile ist hier eine eigene Nachricht, deshalb ohne suffix.
+    if (tr?.failed && post.caption) {
+      await queueTranslation(db, {
+        chat_id: t.telegram_channel_id!, message_id: copy.result?.message_id,
+        kind: "caption", source: post.caption, tenant_key: t.slug,
+      });
+    }
     if (footer) await tg("sendMessage", { chat_id: t.telegram_channel_id, text: footer, disable_web_page_preview: true });
     return { ok: true, message_id: copy.result?.message_id };
   } catch (e) {
@@ -607,9 +692,18 @@ async function relayMedia(db: SupabaseClient, post: TgMessage, tenants: TenantRo
 
   for (const t of chans) {
     const footer = wantsFooter ? footerFor(t) : null;
-    const body = imOriginal(t) ? (post.caption ?? "") : ((await englisch()) ?? "");
+    const tr = imOriginal(t) ? null : await englisch();
+    const body = imOriginal(t) ? (post.caption ?? "") : (tr?.text ?? "");
     // Telegram caps a caption at 1024 characters; body + footer stays well under.
     const caption = [body, footer].filter(Boolean).join("\n\n") || undefined;
+    // Im Original rausgegangen: nach dem Senden fuer den Nachuebersetzer vormerken.
+    const nachziehen = (message_id: number | undefined) =>
+      tr?.failed && post.caption
+        ? queueTranslation(db, {
+          chat_id: t.telegram_channel_id!, message_id,
+          kind: "caption", source: post.caption, suffix: footer, tenant_key: t.slug,
+        })
+        : Promise.resolve();
 
     if (!fileId) {
       const up = await uploadMedia(Number(t.telegram_channel_id), post.media_b64!, mime, caption);
@@ -618,6 +712,7 @@ async function relayMedia(db: SupabaseClient, post: TgMessage, tenants: TenantRo
         ? { ok: true, message_id: up.message_id }
         : { ok: false, error: up.error };
       if (!up.ok) console.error(`[media] upload → ${t.slug} failed:`, up.error);
+      else await nachziehen(up.message_id);
       continue;
     }
 
@@ -631,6 +726,7 @@ async function relayMedia(db: SupabaseClient, post: TgMessage, tenants: TenantRo
       ? { ok: true, message_id: res.result?.message_id }
       : { ok: false, error: res.description };
     if (!res.ok) console.error(`[media] → ${t.slug} failed:`, res.description);
+    else await nachziehen(res.result?.message_id);
   }
 
   await logRelay(db, post.chat.id, post.message_id, post.caption ?? "[media]", delivered);
@@ -663,7 +759,7 @@ async function relaySingle(db: SupabaseClient, post: TgMessage, tenants: TenantR
   // activeTenants now returns partners that may have only an INFO channel, so
   // the signal paths filter here rather than in the query.
   for (const t of tenants.filter((x) => x.telegram_channel_id)) {
-    delivered[t.slug] = await copyOne(t, post);
+    delivered[t.slug] = await copyOne(db, t, post);
   }
   await logRelay(db, post.chat.id, post.message_id, post.text ?? post.caption ?? "[media]", delivered);
   // Both AFTER the relay: a parser or storage bug must not stop a signal.
@@ -765,20 +861,23 @@ async function relayEdit(db: SupabaseClient, post: TgMessage, tenants: TenantRow
 
     let method: string;
     let payload: Record<string, unknown>;
+    let tr: Translation | null;
+    let job: { kind: "text" | "caption"; source: string; suffix: string | null } | null;
     if (isCaption) {
       method = "editMessageCaption";
       // No caption_entities: they carry byte offsets into the ORIGINAL German
       // text, and applying them to the translation would bold the wrong words —
       // or be rejected outright for pointing past the end of the string.
-      const enCaption = imOriginal(t) ? null : await enCaptionFn();
-      payload = { chat_id: t.telegram_channel_id, message_id: d.message_id, caption: enCaption ?? post.caption };
+      tr = imOriginal(t) ? null : await enCaptionFn();
+      payload = { chat_id: t.telegram_channel_id, message_id: d.message_id, caption: tr?.text ?? post.caption };
+      job = post.caption ? { kind: "caption", source: post.caption, suffix: null } : null;
     } else {
       // The footer has to be re-appended. copyOne sends body and footer as ONE
       // message for plain text, so editing with the body alone would silently
       // delete every partner's broker link from that post.
       const footer = wantsFooter ? footerFor(t) : null;
-      const enText = imOriginal(t) ? null : await enTextFn();
-      const body = enText ?? post.text ?? "";
+      tr = imOriginal(t) ? null : await enTextFn();
+      const body = tr?.text ?? post.text ?? "";
       method = "editMessageText";
       payload = {
         chat_id: t.telegram_channel_id,
@@ -786,12 +885,22 @@ async function relayEdit(db: SupabaseClient, post: TgMessage, tenants: TenantRow
         text: footer ? `${body}\n\n${footer}` : body,
         disable_web_page_preview: true,
       };
+      job = post.text ? { kind: "text", source: post.text, suffix: footer } : null;
     }
 
     const res = await tg(method, payload);
     // "message is not modified" means the copy already matches — treat as ok.
     const notModified = !res.ok && (res.description ?? "").includes("not modified");
     results[t.slug] = res.ok || notModified ? { ok: true, message_id: d.message_id } : { ok: false, error: res.description };
+
+    // Nachuebersetzung: neue Fassung im Original -> Auftrag (ueberschreibt einen
+    // alten); neue Fassung uebersetzt -> offener Auftrag erledigt, sonst schriebe
+    // der Mac-Dienst den ALTEN Quelltext zurueck.
+    if (tr?.failed && job) {
+      await queueTranslation(db, { chat_id: t.telegram_channel_id!, message_id: d.message_id, ...job, tenant_key: t.slug });
+    } else if (tr) {
+      await closeTranslation(db, t.telegram_channel_id!, d.message_id);
+    }
   }
 
   await db.from("signal_relays")
@@ -942,12 +1051,14 @@ async function storeInfoPost(db: SupabaseClient, msg: TgMessage) {
   const photo = msg.photo?.length ? msg.photo[msg.photo.length - 1].file_id : null;
   if (!raw && !photo) return;
 
-  const body = raw ? await toEnglish(raw) : "";
+  const tr = raw ? await toEnglishR(raw) : null;
+  const body = tr?.text ?? "";
   const delivered: Record<string, unknown> = {};
 
   for (const t of await infoTargets(db, msg.chat.id)) {
     try {
       const text = t.footer ? `${body}\n\n${t.footer}` : body;
+      let sent: number | undefined;
       if (msg.text) {
         const res = await tg<{ message_id: number }>("sendMessage", {
           chat_id: t.channel_id,
@@ -955,7 +1066,7 @@ async function storeInfoPost(db: SupabaseClient, msg: TgMessage) {
           disable_web_page_preview: true,
         });
         if (!res.ok) throw new Error(res.description ?? "sendMessage failed");
-        delivered[t.key] = { ok: true, message_id: res.result?.message_id };
+        sent = res.result?.message_id;
       } else {
         const copy = await tg<{ message_id: number }>("copyMessage", {
           chat_id: t.channel_id,
@@ -964,7 +1075,15 @@ async function storeInfoPost(db: SupabaseClient, msg: TgMessage) {
           ...(raw ? { caption: text } : {}),
         });
         if (!copy.ok) throw new Error(copy.description ?? "copyMessage failed");
-        delivered[t.key] = { ok: true, message_id: copy.result?.message_id };
+        sent = copy.result?.message_id;
+      }
+      delivered[t.key] = { ok: true, message_id: sent };
+      if (tr?.failed) {
+        await queueTranslation(db, {
+          chat_id: t.channel_id, message_id: sent, kind: msg.text ? "text" : "caption",
+          source: raw, suffix: t.footer, tenant_key: t.key,
+          info_chat_id: msg.chat.id, info_message_id: msg.message_id,
+        });
       }
     } catch (e) {
       console.error(`[info] → ${t.key} failed:`, e);
@@ -996,7 +1115,8 @@ async function editInfoPost(db: SupabaseClient, msg: TgMessage) {
     .eq("chat_id", msg.chat.id).eq("message_id", msg.message_id).maybeSingle();
 
   const raw = (msg.text ?? msg.caption ?? "").trim();
-  const body = raw ? await toEnglish(raw) : "";
+  const tr = raw ? await toEnglishR(raw) : null;
+  const body = tr?.text ?? "";
   const delivered = (row?.delivered ?? null) as Record<string, DeliveredEntry> | null;
 
   // Dieselbe Zielliste wie bei der Erstzustellung — sonst korrigiert sich ein
@@ -1013,6 +1133,15 @@ async function editInfoPost(db: SupabaseClient, msg: TgMessage) {
       message_id: d.message_id,
       ...(isCaption ? { caption: text } : { text, disable_web_page_preview: true }),
     });
+    if (tr?.failed) {
+      await queueTranslation(db, {
+        chat_id: t.channel_id, message_id: d.message_id, kind: isCaption ? "caption" : "text",
+        source: raw, suffix: t.footer, tenant_key: t.key,
+        info_chat_id: msg.chat.id, info_message_id: msg.message_id,
+      });
+    } else if (tr) {
+      await closeTranslation(db, t.channel_id, d.message_id);
+    }
   }
 
   await db.from("info_posts")
