@@ -23,6 +23,7 @@ import { Route as PartnerProgrammRouteImport } from './routes/partner-programm'
 import { Route as PreviewRouteImport } from './routes/preview'
 import { Route as RegistrierenRouteImport } from './routes/registrieren'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as ScanRouteImport } from './routes/scan'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as TeamRouteImport } from './routes/team'
 import { Route as TelegramRouteImport } from './routes/telegram'
@@ -120,6 +121,11 @@ const RegistrierenRoute = RegistrierenRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ScanRoute = ScanRouteImport.update({
+  id: '/scan',
+  path: '/scan',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignupRoute = SignupRouteImport.update({
@@ -283,6 +289,7 @@ export interface FileRoutesByFullPath {
   '/preview': typeof PreviewRoute
   '/registrieren': typeof RegistrierenRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/scan': typeof ScanRoute
   '/signup': typeof SignupRoute
   '/team': typeof TeamRoute
   '/telegram': typeof TelegramRoute
@@ -325,6 +332,7 @@ export interface FileRoutesByTo {
   '/preview': typeof PreviewRoute
   '/registrieren': typeof RegistrierenRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/scan': typeof ScanRoute
   '/signup': typeof SignupRoute
   '/team': typeof TeamRoute
   '/telegram': typeof TelegramRoute
@@ -370,6 +378,7 @@ export interface FileRoutesById {
   '/preview': typeof PreviewRoute
   '/registrieren': typeof RegistrierenRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/scan': typeof ScanRoute
   '/signup': typeof SignupRoute
   '/team': typeof TeamRoute
   '/telegram': typeof TelegramRoute
@@ -417,6 +426,7 @@ export interface FileRouteTypes {
     | '/preview'
     | '/registrieren'
     | '/reset-password'
+    | '/scan'
     | '/signup'
     | '/team'
     | '/telegram'
@@ -459,6 +469,7 @@ export interface FileRouteTypes {
     | '/preview'
     | '/registrieren'
     | '/reset-password'
+    | '/scan'
     | '/signup'
     | '/team'
     | '/telegram'
@@ -503,6 +514,7 @@ export interface FileRouteTypes {
     | '/preview'
     | '/registrieren'
     | '/reset-password'
+    | '/scan'
     | '/signup'
     | '/team'
     | '/telegram'
@@ -549,6 +561,7 @@ export interface RootRouteChildren {
   PreviewRoute: typeof PreviewRoute
   RegistrierenRoute: typeof RegistrierenRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ScanRoute: typeof ScanRoute
   SignupRoute: typeof SignupRoute
   TeamRoute: typeof TeamRoute
   TelegramRoute: typeof TelegramRoute
@@ -657,6 +670,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/scan': {
+      id: '/scan'
+      path: '/scan'
+      fullPath: '/scan'
+      preLoaderRoute: typeof ScanRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/signup': {
@@ -948,6 +968,7 @@ const rootRouteChildren: RootRouteChildren = {
   PreviewRoute: PreviewRoute,
   RegistrierenRoute: RegistrierenRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ScanRoute: ScanRoute,
   SignupRoute: SignupRoute,
   TeamRoute: TeamRoute,
   TelegramRoute: TelegramRoute,
