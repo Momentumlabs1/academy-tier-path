@@ -1,5 +1,5 @@
 /**
- * /join — kurzer Deep Link für die Instagram-Bio: cosmos-candles.com/join springt direkt in Cosmos Info-Kanal.
+ * /join — kurzer Deep Link für die Instagram-Bio: cosmos-candles.com/join springt direkt in Cosmos Earth Scan.
  *
  * WARUM (Diego, 25.10.2026): „wir brauchen dann halt aber auch einen Deep Link noch bei Insta am besten, wenn es
  * geht, in der Bio oder so. Und dann halt einen Deep Link, der auch cool aussieht“.
@@ -9,12 +9,13 @@
  * TikTok) verlässlicher an die Telegram-App als ein tg://-Link, den diese oft schlucken. Ohne UTM im Link liest
  * das Skript die Herkunft aus dem User-Agent (instagram / tiktok), sonst utm_source=join-link.
  * Die Seite darunter ist nur das Netz, falls ein Browser das Weiterleiten blockt: Cosmo und ein Knopf.
+ *
+ * ZIEL seit 25.10. ~17:40 der Nachrichten-Kanal Earth Scan statt Info: Das Instagram-Video endet mit „join my news
+ * channel“, und Diego (16:55): „Der Info-Channel … hat ja was mit Trading zu tun. Das soll weiter unten kommen.“
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { TELEGRAM_ENTRY } from "@/lib/broker";
-
-const ZIEL = TELEGRAM_ENTRY.url;
+const ZIEL = "https://t.me/+TQaO3Y-pTpVhYTU0"; // Cosmo Earth Scan
 const RPC = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/rpc/record_affiliate_click`;
 const KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
@@ -37,11 +38,11 @@ const SPRUNG = `(function(){
 export const Route = createFileRoute("/join")({
   head: () => ({
     meta: [
-      { title: "Join Cosmo on Telegram" },
+      { title: "Join Cosmo Earth Scan" },
       { name: "robots", content: "noindex" },
-      { property: "og:title", content: "Join Cosmo on Telegram" },
-      { property: "og:description", content: "Cosmo's info channel. Gold and NASDAQ, traded live by a real desk." },
-      { property: "og:image", content: "https://cosmos-candles.com/cosmo/kanal-info.png" },
+      { property: "og:title", content: "Join Cosmo Earth Scan" },
+      { property: "og:description", content: "An alien scans your planet. Buried files and leaked deals, each with its source." },
+      { property: "og:image", content: "https://cosmos-candles.com/cosmo/profil-pixel.png" },
       { name: "theme-color", content: "#070B1A" },
     ],
     links: [{ rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Silkscreen:wght@700&display=swap" }],
@@ -77,11 +78,11 @@ function JoinSprung() {
       }}
     >
       <img
-        src="/cosmo/kanal-info.png"
+        src="/cosmo/profil-pixel.png"
         alt="Cosmo"
-        width={112}
-        height={112}
-        style={{ borderRadius: "50%", boxShadow: "0 0 0 3px #070B1A,0 0 0 5px #64FA6455,0 0 28px #64FA6430" }}
+        width={120}
+        height={120}
+        style={{ imageRendering: "pixelated", filter: "drop-shadow(0 0 22px #FF3B4E40)" }}
       />
       <div style={{ fontSize: 15, color: "#929BB8" }}>Opening Telegram…</div>
       <a
@@ -94,11 +95,11 @@ function JoinSprung() {
           textDecoration: "none",
           color: "#EEF1F8",
           font: '700 19px/1 Silkscreen,system-ui,sans-serif',
-          background: "linear-gradient(#123018,#0C1F12)",
-          boxShadow: "inset 0 0 0 3px #64FA64",
+          background: "linear-gradient(#2A0E16,#1A0A12)",
+          boxShadow: "inset 0 0 0 3px #FF3B4E",
         }}
       >
-        Join my info channel
+        Join Earth Scan
       </a>
       <a href="/cosmo" style={{ fontSize: 13.5, color: "#AAB2CC" }}>
         All of Cosmo's links
