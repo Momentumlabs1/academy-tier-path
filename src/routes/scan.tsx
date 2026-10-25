@@ -10,7 +10,13 @@
  * WIE
  * Die Seite liest nur eine Datei: earth-scan/index.json im öffentlichen Supabase-Speicher. Die schreibt der
  * Cosmo-Server (/opt/cc-news/plattform.py) nach jedem Lauf des News-Planers: jeder freigegebene SKYNET-Beitrag
- * mit fertigem Scan-Clip (Mac, scan_clip.py). Kein Login, keine Datenbank, keine Tabelle.
+ * mit fertigem Scan-Clip (Mac, scan_clip.py). Keine Datenbank, keine Tabelle.
+ *
+ * SPERRE (Diego, 25.10.2026): „dass die Leute da durchklicken können, nach 15 Sekunden ist es halt gesperrt. Und sie
+ * müssen sich registrieren, genau. … Und bei Telegram kommt man einfach so rein.“ Ohne Konto läuft eine Vorschau von
+ * 15 Sekunden (ab dem ersten Besuch, gemerkt in localStorage, sonst reicht Neuladen), dann legt sich die Sperre über
+ * die Seite: Konto mit E-Mail und Passwort direkt hier (gleiche Supabase-Registrierung wie /signup, Partner aus dem
+ * cosmo_ref-Cookie), oder ohne Konto weiter in den Telegram-Kanal. Mit Konto ist die Seite offen.
  *
  * Grenzen (Cosmo-Kern §6): Cosmo ist eine KI-Figur, jeder Beitrag nennt seine Quelle mit Link, Unbelegtes steht
  * als Frage oder "my systems say". Der Trading-Kanal wird nie als "free" beworben.
@@ -18,10 +24,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { openTelegramApp } from "@/components/academy/signals/telegram-handoff";
+import { supabase } from "@/integrations/supabase/client";
 
 const INDEX = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/earth-scan/index.json`;
 const ORDNER = "https://t.me/addlist/Cvk1zi2Y6jwyZDg0"; // News + Info + Trading in einem Tipp
 const INFO = "https://t.me/+W3EHV-PZp4M0MWJk";
+const EARTH_SCAN_TG = "https://t.me/+TQaO3Y-pTpVhYTU0"; // der Kanal allein, ohne Konto
+const VORSCHAU_S = 15;
+const VORSCHAU_KEY = "cc_scan_vorschau"; // Zeitpunkt des ersten Besuchs (ms)
 
 type Quelle = { name?: string; url?: string; datum?: string };
 type Video = { titel?: string; url?: string; quelle?: string };
@@ -194,8 +204,167 @@ function Bericht({ b, onTeilen }: { b: Beitrag; onTeilen: (b: Beitrag) => void }
   );
 }
 
+type SperrStand = "pruefen" | "vorschau" | "gesperrt" | "offen";
+
+/** Vorschau-Uhr: offen mit Konto, sonst 15 s ab dem ersten Besuch, danach gesperrt. */
+function useScanSperre() {
+  const [stand, setStand] = useState<SperrStand>("pruefen");
+  const [rest, setRest] = useState(VORSCHAU_S);
+  useEffect(() => {
+    let lebt = true;
+    let uhr: number | undefined;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!lebt) return;
+      if (data.session) return setStand("offen");
+      let start = Date.now();
+      try {
+        const alt = Number(localStorage.getItem(VORSCHAU_KEY));
+        if (alt > 0 && alt <= start) start = alt;
+        else localStorage.setItem(VORSCHAU_KEY, String(start));
+      } catch {
+        /* privater Modus: Vorschau gilt je Besuch */
+      }
+      const ticken = () => {
+        if (!lebt) return;
+        const r = Math.max(0, VORSCHAU_S - Math.floor((Date.now() - start) / 1000));
+        setRest(r);
+        setStand((s) => (s === "offen" ? s : r > 0 ? "vorschau" : "gesperrt"));
+        if (r > 0) uhr = window.setTimeout(ticken, 250);
+      };
+      ticken();
+    });
+    const { data: abo } = supabase.auth.onAuthStateChange((_e, session) => {
+      if (session) setStand("offen");
+    });
+    return () => {
+      lebt = false;
+      window.clearTimeout(uhr);
+      abo.subscription.unsubscribe();
+    };
+  }, []);
+
+  // Gesperrt: Clips anhalten, Seite steht still.
+  useEffect(() => {
+    if (stand !== "gesperrt") return;
+    document.querySelectorAll<HTMLVideoElement>(".es video").forEach((v) => v.pause());
+    const vorher = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = vorher;
+    };
+  }, [stand]);
+
+  return { stand, rest };
+}
+
+function cookieLesen(name: string): string | null {
+  const m = document.cookie.match(new RegExp("(?:^|; )" + name + "=([^;]*)"));
+  return m ? decodeURIComponent(m[1]) : null;
+}
+
+/** Die Sperre: Konto hier anlegen (oder einloggen), oder ohne Konto weiter auf Telegram. */
+function Sperre() {
+  const [modus, setModus] = useState<"neu" | "login">("neu");
+  const [mail, setMail] = useState("");
+  const [passwort, setPasswort] = useState("");
+  const [laeuft, setLaeuft] = useState(false);
+  const [fehler, setFehler] = useState<string | null>(null);
+  const [bestaetigen, setBestaetigen] = useState(false);
+
+  async function einloggen() {
+    const { error } = await supabase.auth.signInWithPassword({ email: mail.trim(), password: passwort });
+    if (error) setFehler("Email or password doesn't match. Try again, or create a new account.");
+  }
+
+  async function senden(e: React.FormEvent) {
+    e.preventDefault();
+    setLaeuft(true);
+    setFehler(null);
+    if (modus === "login") {
+      await einloggen();
+      setLaeuft(false);
+      return;
+    }
+    const { data, error } = await supabase.auth.signUp({
+      email: mail.trim(),
+      password: passwort,
+      options: {
+        emailRedirectTo: `${window.location.origin}/scan`,
+        data: { app: "academy", referred_by_tenant: cookieLesen("cosmo_ref"), signup_source: "earth-scan" },
+      },
+    });
+    // Schon registriert (Fehler oder leere identities wegen Enumeration-Schutz, wie in /signup): einloggen.
+    const gibtEs =
+      (error && /already|registered|exists/i.test(error.message)) ||
+      (!error && data?.user && Array.isArray(data.user.identities) && data.user.identities.length === 0);
+    if (gibtEs) await einloggen();
+    else if (error) setFehler(error.message);
+    else if (!data.session) setBestaetigen(true);
+    setLaeuft(false);
+  }
+
+  return (
+    <div className="es-sperre" role="dialog" aria-modal="true" aria-labelledby="es-sperre-titel">
+      <div className="es-sperre-box">
+        <img src="/cosmo/profil-pixel.png" alt="" width={84} height={84} className="es-sperre-cosmo" />
+        <div className="es-klein rot">SCANNER LOCKED</div>
+        {bestaetigen ? (
+          <>
+            <h2 id="es-sperre-titel">Check your inbox.</h2>
+            <p>I sent you a link. Tap it and the scanner opens again.</p>
+          </>
+        ) : (
+          <>
+            <h2 id="es-sperre-titel">{modus === "neu" ? "Free preview over." : "Welcome back."}</h2>
+            <p>
+              {modus === "neu"
+                ? "Make a free account to keep scanning. Takes 20 seconds, just email and password."
+                : "Log in and the scanner opens again."}
+            </p>
+            <form onSubmit={senden} className="es-form">
+              <input
+                type="email"
+                required
+                placeholder="Email"
+                autoComplete="email"
+                value={mail}
+                onChange={(e) => setMail(e.target.value)}
+              />
+              <input
+                type="password"
+                required
+                minLength={6}
+                placeholder={modus === "neu" ? "Choose a password" : "Password"}
+                autoComplete={modus === "neu" ? "new-password" : "current-password"}
+                value={passwort}
+                onChange={(e) => setPasswort(e.target.value)}
+              />
+              <button type="submit" className="es-knopf rot" disabled={laeuft}>
+                {laeuft ? "SCANNING…" : modus === "neu" ? "UNLOCK EARTH SCAN" : "LOG IN"}
+              </button>
+            </form>
+            {fehler && <p className="es-fehler">{fehler}</p>}
+            <button
+              type="button"
+              className="es-wechsel"
+              onClick={() => (setModus(modus === "neu" ? "login" : "neu"), setFehler(null))}
+            >
+              {modus === "neu" ? "I already have an account" : "New here? Make a free account"}
+            </button>
+          </>
+        )}
+        <div className="es-oder">or, no account</div>
+        <a href={EARTH_SCAN_TG} onClick={(e) => telegram(e, EARTH_SCAN_TG)} className="es-knopf">
+          READ THE SCANS ON TELEGRAM
+        </a>
+      </div>
+    </div>
+  );
+}
+
 function ScanSeite() {
   const { f } = Route.useSearch();
+  const { stand, rest: sekunden } = useScanSperre();
   const navigate = Route.useNavigate();
   const [alle, setAlle] = useState<Beitrag[] | null>(null);
   const [fehler, setFehler] = useState(false);
@@ -263,6 +432,12 @@ function ScanSeite() {
         <a href={ORDNER} onClick={(e) => telegram(e, ORDNER)} className="es-knopf rot klein">
           JOIN<span className="es-lang"> ON TELEGRAM</span>
         </a>
+        {stand === "vorschau" && (
+          <>
+            <i className="es-uhr-balken" style={{ width: `${(sekunden / VORSCHAU_S) * 100}%` }} aria-hidden="true" />
+            <span className="es-uhr">FREE PREVIEW {sekunden}s</span>
+          </>
+        )}
       </header>
 
       <section className="es-intro">
@@ -343,6 +518,7 @@ function ScanSeite() {
         </p>
       </footer>
       {kopiert && <div className="es-toast">LINK COPIED</div>}
+      {stand === "gesperrt" && <Sperre />}
     </div>
   );
 }
@@ -423,6 +599,29 @@ const CSS = `
 .es-werbung span{color:#C9D3E3}
 .es-fuss{max-width:1100px;margin:48px auto 0;padding:18px 16px 0;border-top:1px solid var(--grau2);color:var(--grau);font-size:13px;line-height:1.6}
 .es-toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);font-family:Silkscreen,monospace;background:var(--rot);color:#fff;padding:10px 14px;z-index:9}
+.es-uhr-balken{position:absolute;left:0;bottom:-2px;height:2px;background:#FFD34E;box-shadow:0 0 8px #FFD34E;transition:width .25s linear}
+.es-uhr{position:absolute;right:16px;bottom:-24px;font-family:Silkscreen,monospace;font-size:10px;letter-spacing:.08em;color:#FFD34E;
+  background:rgba(5,7,10,.9);padding:3px 6px}
+.es-sperre{position:fixed;inset:0;z-index:50;display:grid;place-items:center;padding:16px;overflow-y:auto;
+  background:rgba(5,7,10,.72);backdrop-filter:blur(7px) saturate(.6);-webkit-backdrop-filter:blur(7px) saturate(.6);animation:es-sperre-an .35s steps(6) both}
+@keyframes es-sperre-an{from{opacity:0}to{opacity:1}}
+.es-sperre-box{width:100%;max-width:400px;background:var(--bg1);border:2px solid var(--rot);box-shadow:0 0 0 4px #05070A,0 0 40px rgba(255,59,78,.25);
+  padding:22px 20px 20px;text-align:center}
+.es-sperre-cosmo{display:block;margin:0 auto 12px;width:84px;height:84px;image-rendering:pixelated}
+.es-sperre h2{font-family:Silkscreen,monospace;font-weight:400;font-size:19px;line-height:1.25;margin:8px 0 8px}
+.es-sperre p{color:#C9D3E3;font-size:15px;line-height:1.5;margin:0 0 14px}
+.es-form{display:flex;flex-direction:column;gap:10px;margin-top:6px}
+.es-form input{font:16px "Instrument Sans",system-ui,sans-serif;color:var(--weiss);background:#05070A;border:1px solid var(--grau2);padding:12px;width:100%}
+.es-form input:focus{outline:2px solid var(--rot);outline-offset:0;border-color:var(--rot)}
+.es-form .es-knopf{width:100%;font-size:14px;padding:13px}
+.es-form .es-knopf:disabled{opacity:.7;cursor:wait}
+.es-fehler{color:#FF8A96 !important;font-size:14px !important;margin:10px 0 0 !important}
+.es-wechsel{background:none;border:0;color:var(--grau);font-size:14px;text-decoration:underline;text-underline-offset:3px;cursor:pointer;margin-top:12px;padding:4px}
+.es-oder{display:flex;align-items:center;gap:10px;margin:16px 0 12px;font-family:Silkscreen,monospace;font-size:10px;letter-spacing:.1em;color:var(--grau)}
+.es-oder::before,.es-oder::after{content:"";flex:1;height:1px;background:var(--grau2)}
+.es-sperre-box > .es-knopf{width:100%;font-size:12px}
+.es-sperre a:focus-visible,.es-sperre button:focus-visible{outline:3px solid #FFD34E;outline-offset:2px}
+@media (prefers-reduced-motion:reduce){.es-sperre{animation:none}.es-uhr-balken{transition:none}}
 @media (max-width:760px){
   .es-gross{grid-template-columns:1fr;gap:16px}
   .es-intro{flex-direction:column;align-items:flex-start;gap:12px;padding-top:20px}

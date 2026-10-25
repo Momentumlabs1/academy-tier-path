@@ -6,13 +6,18 @@
  * im Vibe von Cosmo sein.“ Zu V.1: „Der Info-Channel … hat ja was mit Trading zu tun. Das soll weiter unten kommen.
  * Oben soll Cosmo Earth und YouTube verlinken wir und TikTok-mäßig und einen Link für Anfragen. … Und halt dann
  * eben, wie man Geld verdienen kann, mäßig. Halt nicht so in die Fresse, sonst wirkt es scheiße, weißt du.“
+ * Zu V.2: „Das Profilbild soll ein bisschen besser sein. Er soll ein bisschen weiter weg sein. Und auch ein
+ * Pixelmodus. Und ja, es kann trotzdem auch noch ein bisschen geiler gestaltet sein alles“, kein Cookie-Banner,
+ * und: Website nach 15 Sekunden nur mit Konto, „bei Telegram kommt man einfach so rein“.
  *
  * WIE
- * Aufbau wie ein Linktree: Profilbild (dasselbe wie auf Instagram), Name, ein Satz, darunter Knöpfe.
- * Oben der Inhalt: Earth Scan groß, das Scan-Archiv, YouTube, TikTok und „Ask Cosmo“. Darunter leise, in einer
- * ruhigen Liste ohne Leuchtfarben, die Trading-Seite: Info-Kanal, Signals, Academy, Partner.
+ * Aufbau wie ein Linktree: Profilbild, Name, ein Satz, darunter Knöpfe. Das Profilbild ist Cosmo im Pixelmodus aus
+ * dem echten Rig (~/Downloads/cc-launch/linkseite/werk/avatar.py), um ihn kreist ein Radar-Arm (das eine
+ * Bewegungsmoment der Seite). Oben der Inhalt: der neueste Scan live aus earth-scan/index.json (Bild + Titel, führt
+ * auf /scan), Earth Scan auf Telegram („no sign-up“) und auf der Website („free account“, dort sperrt sich die Seite
+ * nach 15 s), YouTube, TikTok und „Ask Cosmo“. Darunter leise, in einer ruhigen Liste ohne Leuchtfarben, die
+ * Trading-Seite: Info-Kanal, Signals, Academy, Partner. Kein Cookie-Banner (__root.tsx), die Seite setzt keine.
  * YouTube und TikTok erscheinen erst, wenn ihre Adresse unten eingetragen ist (nie auf ein fremdes Konto raten).
- * Beim Laden läuft einmal eine rote Scanlinie über die Seite (Cosmos Earth Scan), sonst ruhig.
  *
  * Telegram-Knöpfe sind normale t.me-Links: aus In-App-Browsern (Instagram, TikTok) übergibt die t.me-Seite
  * verlässlicher an die App als ein tg://-Link (Befund /telegram, 11.09.). Gezählt wird über
@@ -31,6 +36,7 @@ const SIGNALS_BOT = "https://t.me/cosmoscandlesbot?start=linkpage"; // bis Diego
 const YOUTUBE = ""; // Cosmos Kanal, sobald die Adresse feststeht; leer = Knopf ausgeblendet
 const TIKTOK = "";
 const FRAGEN = "mailto:kontakt@momentumlabs.at?subject=Question%20for%20Cosmo"; // bis Diegos Telegram-Konto steht
+const INDEX = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/earth-scan/index.json`;
 const RPC = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/rpc/record_affiliate_click`;
 const KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
@@ -41,7 +47,7 @@ export const Route = createFileRoute("/cosmo")({
       { name: "description", content: "Cosmo, the alien who scans your planet. Earth Scan, videos and a way to ask him anything." },
       { property: "og:title", content: "Cosmo, the alien who scans your planet" },
       { property: "og:description", content: "Earth Scan, Cosmo's videos and a way to ask him anything. All in one place." },
-      { property: "og:image", content: "https://cosmos-candles.com/cosmo/profil.png" },
+      { property: "og:image", content: "https://cosmos-candles.com/cosmo/profil-pixel.png" },
       { name: "theme-color", content: "#070B1A" },
     ],
     links: [
@@ -95,7 +101,10 @@ type Knopf = {
   bild?: string;
   icon?: ReactNode;
   extern?: boolean;
+  marke?: { text: string; art: "frei" | "konto" };
 };
+
+type Scan = { id: string; titel?: string; poster?: string; datum?: string };
 
 const PIXEL = { shapeRendering: "crispEdges" as const };
 
@@ -140,13 +149,6 @@ const SymbolPartner = (
 
 /** Oben: Cosmos Inhalt. YouTube und TikTok nur mit eingetragener Adresse. */
 const OBEN: Knopf[] = [
-  {
-    id: "scan-archiv",
-    href: "/scan",
-    titel: "Watch every scan",
-    zeile: "The whole Earth Scan archive, each one as a clip.",
-    icon: SymbolArchiv,
-  },
   ...(YOUTUBE
     ? [{ id: "youtube", href: YOUTUBE, titel: "Cosmo on YouTube", zeile: "Watch Cosmo's videos.", icon: SymbolYoutube, extern: true }]
     : []),
@@ -207,6 +209,47 @@ function LinkKnopf({ k }: { k: Knopf }) {
       <span className="lt-text">
         <span className="lt-titel">{k.titel}</span>
         <span className="lt-zeile">{k.zeile}</span>
+        {k.marke && <span className={`lt-marke ${k.marke.art}`}>{k.marke.text}</span>}
+      </span>
+    </a>
+  );
+}
+
+const SCAN_WEB: Knopf = {
+  id: "scan-web",
+  href: "/scan",
+  titel: "Earth Scan website",
+  zeile: "Every scan as a clip, sorted by topic.",
+  icon: SymbolArchiv,
+  marke: { text: "Free account", art: "konto" },
+};
+
+function datumKurz(iso?: string) {
+  const d = new Date(iso || "");
+  return Number.isNaN(d.getTime()) ? "" : d.toLocaleDateString("en-GB", { day: "2-digit", month: "short" }).toUpperCase();
+}
+
+/** Der neueste Scan, live aus dem Earth-Scan-Index. Ohne Index bleibt der Platz leer statt kaputt. */
+function NeuesterScan() {
+  const [scans, setScans] = useState<Scan[] | null>(null);
+  useEffect(() => {
+    fetch(INDEX, { cache: "no-cache" })
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((d) => setScans((d.beitraege || []) as Scan[]))
+      .catch(() => setScans([]));
+  }, []);
+  const neu = scans?.[0];
+  if (!neu) return <div className="lt-neu-platz" aria-hidden="true" />;
+  return (
+    <a className="lt-neu" href={`/scan?f=${encodeURIComponent(neu.id)}`} onClick={() => zaehlen("neuester-scan")}>
+      <span className="lt-neu-bild">{neu.poster && <img src={neu.poster} alt="" width={86} height={108} />}</span>
+      <span className="lt-neu-text">
+        <span className="lt-live">
+          <i aria-hidden="true" />
+          Latest scan{datumKurz(neu.datum) ? ` · ${datumKurz(neu.datum)}` : ""}
+        </span>
+        <span className="lt-neu-titel">{neu.titel}</span>
+        <span className="lt-neu-zahl">{scans.length} scans in the archive</span>
       </span>
     </a>
   );
@@ -260,11 +303,13 @@ function CosmoLinks() {
 
         <header className="lt-kopf">
           <div className="lt-profil">
-            <img src="/cosmo/profil.png" alt="Cosmo, a blue pixel alien in his scout probe" width={128} height={128} />
+            <img src="/cosmo/profil-pixel.png" alt="Cosmo, a blue pixel alien at his desk" width={148} height={148} />
           </div>
           <h1>Cosmo</h1>
           <p className="lt-bio">Alien in a scout probe. I scan your planet and tell you what I find.</p>
         </header>
+
+        <NeuesterScan />
 
         <a className="lt-haupt" href={EARTH_SCAN} target="_blank" rel="noopener noreferrer" onClick={() => zaehlen("earth-scan")}>
           <span className="lt-bild">
@@ -272,11 +317,13 @@ function CosmoLinks() {
           </span>
           <span className="lt-text">
             <span className="lt-titel">Cosmo Earth Scan</span>
-            <span className="lt-zeile">Free on Telegram. Buried files and leaked deals, each with its source.</span>
+            <span className="lt-zeile">Buried files and leaked deals, each with its source. On Telegram.</span>
+            <span className="lt-marke frei">No sign-up</span>
           </span>
         </a>
 
         <div className="lt-liste">
+          <LinkKnopf k={SCAN_WEB} />
           {OBEN.map((k) => (
             <LinkKnopf key={k.id} k={k} />
           ))}
@@ -327,11 +374,17 @@ const CSS = `
   border:2px solid var(--kante);padding:8px 10px;cursor:pointer;clip-path:${STUFEN}}
 .lt-teilen:hover{background:var(--tafel2)}
 .lt-kopf{text-align:center;padding-top:28px}
-.lt-profil{width:128px;height:128px;margin:0 auto;border-radius:50%;overflow:hidden;
-  box-shadow:0 0 0 3px var(--nacht),0 0 0 5px #4C8DFF66,0 0 32px #4C8DFF40}
-.lt-profil img{display:block;width:100%;height:100%;image-rendering:auto}
+.lt-profil{position:relative;width:148px;height:148px;margin:0 auto}
+.lt-profil img{position:relative;display:block;width:100%;height:100%;image-rendering:pixelated;filter:drop-shadow(0 0 22px #FF3B4E40)}
+/* Radar-Arm: kreist in Pixelschritten um Cosmo, das eine Bewegungsmoment der Seite. */
+.lt-profil::before{content:"";position:absolute;inset:-9px;border-radius:50%;
+  background:conic-gradient(from 0deg,transparent 0 250deg,#FF3B4E55 300deg,#FF3B4E 358deg,transparent 360deg);
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 4px));
+  mask:radial-gradient(farthest-side,transparent calc(100% - 4px),#000 calc(100% - 4px));
+  animation:radar 4.8s steps(48) infinite}
+@keyframes radar{to{transform:rotate(360deg)}}
 .lt-kopf h1{font:700 32px/1.05 Silkscreen,system-ui,sans-serif;margin:16px 0 2px;letter-spacing:.02em}
-.lt-bio{margin:10px auto 22px;max-width:30ch;font-size:16px;line-height:1.45;color:#D6DBEA}
+.lt-bio{margin:10px auto 20px;max-width:30ch;font-size:16px;line-height:1.45;color:#D6DBEA}
 .lt-haupt,.lt-knopf{position:relative;display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--weiss);
   clip-path:${STUFEN};transition:transform .12s steps(2);isolation:isolate}
 .lt-haupt::before,.lt-knopf::before{content:"";position:absolute;z-index:-1;inset:var(--rand);clip-path:${STUFEN};background:var(--innen)}
@@ -342,6 +395,23 @@ const CSS = `
 .lt-haupt:hover,.lt-knopf:hover{transform:translateY(-2px)}
 .lt-haupt:active,.lt-knopf:active{transform:translateY(1px)}
 .lt-liste{display:grid;gap:12px;margin-top:12px}
+/* Der neueste Scan: ein kleiner Monitor mit Standbild, rotem Live-Punkt und Titel. */
+.lt-neu,.lt-neu-platz{position:relative;isolation:isolate;display:flex;gap:14px;align-items:stretch;margin-bottom:14px;padding:12px;
+  text-decoration:none;color:var(--weiss);background:#FF3B4E66;clip-path:${STUFEN}}
+.lt-neu::before,.lt-neu-platz::before{content:"";position:absolute;z-index:-1;inset:2px;clip-path:${STUFEN};background:linear-gradient(#140A16,#0B0A18)}
+.lt-neu-platz{height:136px}
+.lt-neu:hover{background:var(--rot)}
+.lt-neu-bild{flex:none;width:86px;height:108px;background:#000;box-shadow:0 0 0 2px #2A0E16}
+.lt-neu-bild img{display:block;width:100%;height:100%;object-fit:cover;image-rendering:pixelated}
+.lt-neu-text{display:flex;flex-direction:column;gap:6px;min-width:0;padding:2px 2px 0}
+.lt-live{display:flex;align-items:center;gap:7px;font:400 11px/1 Silkscreen,system-ui,sans-serif;color:var(--rot);letter-spacing:.04em}
+.lt-live i{width:7px;height:7px;background:var(--rot);box-shadow:0 0 8px var(--rot);animation:blinken 1.2s steps(2) infinite}
+@keyframes blinken{50%{opacity:.15}}
+.lt-neu-titel{font-size:15.5px;line-height:1.3;font-weight:600;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.lt-neu-zahl{margin-top:auto;font-size:12.5px;color:var(--grau)}
+.lt-marke{align-self:flex-start;margin-top:5px;font:400 10.5px/1 Silkscreen,system-ui,sans-serif;letter-spacing:.05em;padding:4px 6px 3px}
+.lt-marke.frei{color:#0A1A0C;background:#64FA64}
+.lt-marke.konto{color:#1A1405;background:#F6D648}
 .lt-knopf{--rand:2px;--innen:var(--tafel);padding:12px 14px;min-height:70px;background:#3A4780}
 .lt-knopf:hover{--innen:var(--tafel2)}
 .lt-bild{flex:none;display:grid;place-items:center;width:52px;height:52px}
@@ -372,6 +442,6 @@ const CSS = `
 @keyframes weg{to{opacity:0}}
 @keyframes freilegen{from{clip-path:inset(0 0 100% 0)}to{clip-path:inset(0 0 0 0)}}
 @media (prefers-reduced-motion:reduce){.lt-scan{display:none}.lt-spalte{animation:none}
-  .lt-haupt,.lt-knopf{transition:none}}
+  .lt-haupt,.lt-knopf{transition:none}.lt-profil::before,.lt-live i{animation:none}}
 @media (max-width:360px){.lt-titel{font-size:14px}.lt-haupt .lt-titel{font-size:15px}}
 `;

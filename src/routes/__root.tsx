@@ -6,6 +6,7 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  useRouterState,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
@@ -172,15 +173,20 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+// Cosmos eigene Seiten (Link-Seite, Deep Link, Earth Scan) ohne den alten Banner (Diego 25.10.: „Den Cookie-Banner.
+// Das brauchen wir nicht"). Sie setzen nur nötige Cookies (Login), dafür braucht es keine Einwilligung.
+const OHNE_COOKIE_BANNER = new Set(["/cosmo", "/join", "/scan"]);
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pfad = useRouterState({ select: (s) => s.location.pathname.replace(/\/$/, "") || "/" });
 
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       {/* Globaler DSGVO-Hinweis — erscheint einmal, überall. */}
-      <CookieBanner />
+      {!OHNE_COOKIE_BANNER.has(pfad) && <CookieBanner />}
     </QueryClientProvider>
   );
 }
