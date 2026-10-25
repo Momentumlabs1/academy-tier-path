@@ -3,14 +3,16 @@
  *
  * WARUM (Diego, 25.10.2026): „Ja, dann bau einen eigenen Linktree … Es soll aber auch wirklich aussehen wie ein
  * Linktree und das Gefühl geben und intuitiv verständlich dann machen, was wir alles haben. Verstehst du? Und auch
- * im Vibe von Cosmo sein.“ Davor: „oben halt Informationen … einfach die Infogruppe halt und halt cool gebrandet
- * und unten dann Geld verdienen. Möglichkeiten.“
+ * im Vibe von Cosmo sein.“ Zu V.1: „Der Info-Channel … hat ja was mit Trading zu tun. Das soll weiter unten kommen.
+ * Oben soll Cosmo Earth und YouTube verlinken wir und TikTok-mäßig und einen Link für Anfragen. … Und halt dann
+ * eben, wie man Geld verdienen kann, mäßig. Halt nicht so in die Fresse, sonst wirkt es scheiße, weißt du.“
  *
  * WIE
- * Aufbau wie ein Linktree: Profilbild, Name, ein Satz, darunter Knöpfe. Ganz oben groß die Info-Gruppe, dann
- * Earth Scan und das Scan-Archiv, unten „Trade with Cosmo“ (Signals über den Setter-Bot, Academy, Partner).
- * Jeder Kanal zeigt sein eigenes Telegram-Profilbild (grün Info, rot Earth Scan, blau Signals), damit man ihn
- * in Telegram wiedererkennt. Beim Laden läuft einmal eine Scanlinie über die Seite (Cosmos Scan), sonst ruhig.
+ * Aufbau wie ein Linktree: Profilbild (dasselbe wie auf Instagram), Name, ein Satz, darunter Knöpfe.
+ * Oben der Inhalt: Earth Scan groß, das Scan-Archiv, YouTube, TikTok und „Ask Cosmo“. Darunter leise, in einer
+ * ruhigen Liste ohne Leuchtfarben, die Trading-Seite: Info-Kanal, Signals, Academy, Partner.
+ * YouTube und TikTok erscheinen erst, wenn ihre Adresse unten eingetragen ist (nie auf ein fremdes Konto raten).
+ * Beim Laden läuft einmal eine rote Scanlinie über die Seite (Cosmos Earth Scan), sonst ruhig.
  *
  * Telegram-Knöpfe sind normale t.me-Links: aus In-App-Browsern (Instagram, TikTok) übergibt die t.me-Seite
  * verlässlicher an die App als ein tg://-Link (Befund /telegram, 11.09.). Gezählt wird über
@@ -23,9 +25,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { TELEGRAM_ENTRY } from "@/lib/broker";
 
-const INFO = TELEGRAM_ENTRY.url; // Cosmos-Candles-Info (öffentlich, @cosmoscandles)
+const INFO = TELEGRAM_ENTRY.url; // Cosmos-Candles-Info (öffentlich, @cosmoscandles), der Trading-Kanal
 const EARTH_SCAN = "https://t.me/+TQaO3Y-pTpVhYTU0";
-const SIGNALS_BOT = "https://t.me/cosmoscandlesbot?start=linkpage"; // landet als setter_leads.source = linkpage
+const SIGNALS_BOT = "https://t.me/cosmoscandlesbot?start=linkpage"; // bis Diegos eigenes Konto steht (C136)
+const YOUTUBE = ""; // Cosmos Kanal, sobald die Adresse feststeht; leer = Knopf ausgeblendet
+const TIKTOK = "";
+const FRAGEN = "mailto:kontakt@momentumlabs.at?subject=Question%20for%20Cosmo"; // bis Diegos Telegram-Konto steht
 const RPC = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/rpc/record_affiliate_click`;
 const KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
@@ -33,10 +38,10 @@ export const Route = createFileRoute("/cosmo")({
   head: () => ({
     meta: [
       { title: "Cosmo · all links" },
-      { name: "description", content: "Cosmo, the alien trader. Join the info channel, the Earth Scan and the academy." },
-      { property: "og:title", content: "Cosmo, the alien trader" },
-      { property: "og:description", content: "Info channel, Earth Scan, signals and academy. All in one place." },
-      { property: "og:image", content: "https://cosmos-candles.com/cosmo/kanal-info.png" },
+      { name: "description", content: "Cosmo, the alien who scans your planet. Earth Scan, videos and a way to ask him anything." },
+      { property: "og:title", content: "Cosmo, the alien who scans your planet" },
+      { property: "og:description", content: "Earth Scan, Cosmo's videos and a way to ask him anything. All in one place." },
+      { property: "og:image", content: "https://cosmos-candles.com/cosmo/profil.png" },
       { name: "theme-color", content: "#070B1A" },
     ],
     links: [
@@ -89,7 +94,6 @@ type Knopf = {
   zeile: string;
   bild?: string;
   icon?: ReactNode;
-  farbe: "gruen" | "rot" | "blau" | "gelb" | "grau";
   extern?: boolean;
 };
 
@@ -97,83 +101,124 @@ const PIXEL = { shapeRendering: "crispEdges" as const };
 
 /** 12×12-Pixel-Symbole, gezeichnet wie Cosmos Kunstpixel. */
 const SymbolArchiv = (
-  <svg viewBox="0 0 12 12" width="28" height="28" aria-hidden="true" style={PIXEL}>
-    <path fill="currentColor" d="M1 2h10v8H1z" />
-    <polygon fill="#0E1530" points="4.5,4 8.5,6 4.5,8" />
+  <svg viewBox="0 0 12 12" width="30" height="30" aria-hidden="true" style={PIXEL}>
+    <path fill="#4C8DFF" d="M4 1h4v1h2v2h1v4h-1v2H8v1H4v-1H2V8H1V4h1V2h2z" />
+    <path fill="#64FA64" d="M4 3h2v1h1v2H5V5H3V4h1zM7 7h2v1H8v1H6V8h1z" />
+    <path fill="#FF3B4E" d="M0 6h12v1H0z" />
+  </svg>
+);
+const SymbolYoutube = (
+  <svg viewBox="0 0 12 12" width="30" height="30" aria-hidden="true" style={PIXEL}>
+    <path fill="#FF3B4E" d="M2 2h8v1h1v6h-1v1H2V9H1V3h1z" />
+    <path fill="#fff" d="M5 3h1v6H5zM6 4h1v4H6zM7 5h1v2H7z" />
+  </svg>
+);
+const SymbolTiktok = (
+  <svg viewBox="0 0 12 12" width="30" height="30" aria-hidden="true" style={PIXEL}>
+    <path fill="#25F4EE" d="M6 0h2v7H7v2H6v1H3V9H2V7h1V6h3z" transform="translate(-1 1)" />
+    <path fill="#FE2C55" d="M6 0h2v7H7v2H6v1H3V9H2V7h1V6h3z" transform="translate(1 1)" />
+    <path fill="#fff" d="M6 0h2v7H7v2H6v1H3V9H2V7h1V6h3zM8 1h1v1h1v1H8z" transform="translate(0 1)" />
+  </svg>
+);
+const SymbolFrage = (
+  <svg viewBox="0 0 12 12" width="30" height="30" aria-hidden="true" style={PIXEL}>
+    <path fill="#EEF1F8" d="M1 1h10v7H6v1H5v1H4v1H3V8H1z" />
+    <path fill="#0E1530" d="M4 2h4v1h1v1H8v1H7v1H5V5h1V4h1V3H5v1H4zM5 6h2v1H5z" />
   </svg>
 );
 const SymbolAcademy = (
-  <svg viewBox="0 0 12 12" width="28" height="28" aria-hidden="true" style={PIXEL}>
+  <svg viewBox="0 0 12 12" width="22" height="22" aria-hidden="true" style={PIXEL}>
     <path fill="currentColor" d="M3 1h1v2H3zM3 9h1v2H3zM2 3h3v6H2zM8 2h1v2H8zM8 7h1v3H8zM7 4h3v3H7z" />
   </svg>
 );
 const SymbolPartner = (
-  <svg viewBox="0 0 12 12" width="28" height="28" aria-hidden="true" style={PIXEL}>
+  <svg viewBox="0 0 12 12" width="22" height="22" aria-hidden="true" style={PIXEL}>
     <path fill="currentColor" d="M4 1h4v1h1v1h1v6H9v1H8v1H4v-1H3V9H2V3h1V2h1zM5 3v1H4v4h1v1h2V8h1V4H7V3z" />
     <path fill="currentColor" d="M5 5h2v2H5z" />
   </svg>
 );
 
+/** Oben: Cosmos Inhalt. YouTube und TikTok nur mit eingetragener Adresse. */
 const OBEN: Knopf[] = [
-  {
-    id: "earth-scan",
-    href: EARTH_SCAN,
-    titel: "Cosmo Earth Scan",
-    zeile: "Buried files and leaked deals. Every scan with its source.",
-    bild: "/cosmo/kanal-news-mini.png",
-    farbe: "rot",
-    extern: true,
-  },
   {
     id: "scan-archiv",
     href: "/scan",
     titel: "Watch every scan",
     zeile: "The whole Earth Scan archive, each one as a clip.",
     icon: SymbolArchiv,
-    farbe: "rot",
+  },
+  ...(YOUTUBE
+    ? [{ id: "youtube", href: YOUTUBE, titel: "Cosmo on YouTube", zeile: "Watch Cosmo's videos.", icon: SymbolYoutube, extern: true }]
+    : []),
+  ...(TIKTOK
+    ? [{ id: "tiktok", href: TIKTOK, titel: "Cosmo on TikTok", zeile: "Cosmo's short clips.", icon: SymbolTiktok, extern: true }]
+    : []),
+  {
+    id: "fragen",
+    href: FRAGEN,
+    titel: "Ask Cosmo something",
+    zeile: "Questions, ideas or business. A human on the team reads it.",
+    icon: SymbolFrage,
   },
 ];
 
-const GELD: Knopf[] = [
+/** Unten, leise: die Trading-Seite. */
+const TRADING: Knopf[] = [
+  {
+    id: "info",
+    href: INFO,
+    titel: "Trading channel",
+    zeile: "Free on Telegram. Gold and NASDAQ, live.",
+    bild: "/cosmo/kanal-info-mini.png",
+    extern: true,
+  },
   {
     id: "signals",
     href: SIGNALS_BOT,
-    titel: "Get Cosmo's signals",
-    zeile: "No fees, no subscription. Cosmo sets you up in a short chat.",
+    titel: "Cosmo's signals",
+    zeile: "No fees, no subscription.",
     bild: "/cosmo/kanal-signals-mini.png",
-    farbe: "blau",
     extern: true,
   },
   {
     id: "academy",
     href: "/?utm_source=linkpage&utm_medium=cosmo",
     titel: "Learn to trade",
-    zeile: "Lessons, a mentor and a live desk. Your money stays in your account.",
+    zeile: "Lessons, a mentor and a live desk.",
     icon: SymbolAcademy,
-    farbe: "blau",
   },
   {
     id: "partner",
     href: "/partner-program",
-    titel: "Earn as a partner",
-    zeile: "Bring traders to Cosmo and get paid for it.",
+    titel: "Partner program",
+    zeile: "Bring traders, get paid for it.",
     icon: SymbolPartner,
-    farbe: "gelb",
   },
 ];
 
+function aussen(k: Knopf) {
+  return k.extern ? { target: "_blank", rel: "noopener noreferrer" } : {};
+}
+
 function LinkKnopf({ k }: { k: Knopf }) {
   return (
-    <a
-      className={`lt-knopf ${k.farbe}`}
-      href={k.href}
-      onClick={() => zaehlen(k.id)}
-      {...(k.extern ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-    >
+    <a className="lt-knopf" href={k.href} onClick={() => zaehlen(k.id)} {...aussen(k)}>
       <span className="lt-bild">{k.bild ? <img src={k.bild} alt="" width={44} height={44} /> : k.icon}</span>
       <span className="lt-text">
         <span className="lt-titel">{k.titel}</span>
         <span className="lt-zeile">{k.zeile}</span>
+      </span>
+    </a>
+  );
+}
+
+function LeiseZeile({ k }: { k: Knopf }) {
+  return (
+    <a className="lt-leise" href={k.href} onClick={() => zaehlen(k.id)} {...aussen(k)}>
+      <span className="lt-mini">{k.bild ? <img src={k.bild} alt="" width={28} height={28} /> : k.icon}</span>
+      <span className="lt-text">
+        <span className="lt-leise-titel">{k.titel}</span>
+        <span className="lt-leise-zeile">{k.zeile}</span>
       </span>
     </a>
   );
@@ -190,7 +235,7 @@ function CosmoLinks() {
     const url = "https://cosmos-candles.com/cosmo";
     try {
       if (navigator.share) {
-        await navigator.share({ title: "Cosmo, the alien trader", url });
+        await navigator.share({ title: "Cosmo, the alien who scans your planet", url });
         return;
       }
       await navigator.clipboard.writeText(url);
@@ -215,19 +260,19 @@ function CosmoLinks() {
 
         <header className="lt-kopf">
           <div className="lt-profil">
-            <img src="/cosmo/kanal-info.png" alt="Cosmo, a blue pixel alien in his scout probe" width={128} height={128} />
+            <img src="/cosmo/profil.png" alt="Cosmo, a blue pixel alien in his scout probe" width={128} height={128} />
           </div>
           <h1>Cosmo</h1>
-          <p className="lt-bio">Alien trader. I scan your planet and its markets, and tell you what I find.</p>
+          <p className="lt-bio">Alien in a scout probe. I scan your planet and tell you what I find.</p>
         </header>
 
-        <a className="lt-haupt" href={INFO} target="_blank" rel="noopener noreferrer" onClick={() => zaehlen("info")}>
+        <a className="lt-haupt" href={EARTH_SCAN} target="_blank" rel="noopener noreferrer" onClick={() => zaehlen("earth-scan")}>
           <span className="lt-bild">
-            <img src="/cosmo/kanal-info-mini.png" alt="" width={52} height={52} />
+            <img src="/cosmo/kanal-news-mini.png" alt="" width={52} height={52} />
           </span>
           <span className="lt-text">
-            <span className="lt-titel">Join my info channel</span>
-            <span className="lt-zeile">Free on Telegram. Gold and NASDAQ, traded live by a real desk.</span>
+            <span className="lt-titel">Cosmo Earth Scan</span>
+            <span className="lt-zeile">Free on Telegram. Buried files and leaked deals, each with its source.</span>
           </span>
         </a>
 
@@ -237,12 +282,12 @@ function CosmoLinks() {
           ))}
         </div>
 
-        <h2 className="lt-abschnitt">Trade with Cosmo</h2>
-        <div className="lt-liste">
-          {GELD.map((k) => (
-            <LinkKnopf key={k.id} k={k} />
+        <section className="lt-trading" aria-labelledby="lt-trading-titel">
+          <h2 id="lt-trading-titel">Cosmo also trades</h2>
+          {TRADING.map((k) => (
+            <LeiseZeile key={k.id} k={k} />
           ))}
-        </div>
+        </section>
 
         <footer className="lt-fuss">
           <p>Cosmo is an AI character. Trading carries risk of loss, and nothing here is financial advice.</p>
@@ -262,7 +307,7 @@ const STUFEN =
 
 const CSS = `
 .lt{--nacht:#070B1A;--tafel:#0E1530;--tafel2:#141D3E;--kante:#2A3563;--weiss:#EEF1F8;--grau:#929BB8;
-  --gruen:#64FA64;--rot:#FF3B4E;--blau:#4C8DFF;--gelb:#F6D648;
+  --rot:#FF3B4E;--blau:#4C8DFF;--gelb:#F6D648;
   position:relative;min-height:100vh;color:var(--weiss);font-family:"Instrument Sans",system-ui,sans-serif;
   background:
     radial-gradient(1px 1px at 12% 18%,#fff8 50%,transparent 51%),
@@ -282,44 +327,46 @@ const CSS = `
   border:2px solid var(--kante);padding:8px 10px;cursor:pointer;clip-path:${STUFEN}}
 .lt-teilen:hover{background:var(--tafel2)}
 .lt-kopf{text-align:center;padding-top:28px}
-.lt-profil{width:128px;height:128px;margin:0 auto;border-radius:50%;overflow:hidden;box-shadow:0 0 30px #64FA6438}
+.lt-profil{width:128px;height:128px;margin:0 auto;border-radius:50%;overflow:hidden;
+  box-shadow:0 0 0 3px var(--nacht),0 0 0 5px #4C8DFF66,0 0 32px #4C8DFF40}
 .lt-profil img{display:block;width:100%;height:100%;image-rendering:auto}
 .lt-kopf h1{font:700 32px/1.05 Silkscreen,system-ui,sans-serif;margin:16px 0 2px;letter-spacing:.02em}
 .lt-bio{margin:10px auto 22px;max-width:30ch;font-size:16px;line-height:1.45;color:#D6DBEA}
 .lt-haupt,.lt-knopf{position:relative;display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--weiss);
-  clip-path:${STUFEN};transition:transform .12s steps(2)}
-.lt-haupt,.lt-knopf{isolation:isolate}
+  clip-path:${STUFEN};transition:transform .12s steps(2);isolation:isolate}
 .lt-haupt::before,.lt-knopf::before{content:"";position:absolute;z-index:-1;inset:var(--rand);clip-path:${STUFEN};background:var(--innen)}
-.lt-haupt{--rand:3px;--innen:linear-gradient(#123018,#0C1F12);padding:14px 14px;min-height:84px;background:var(--gruen)}
+.lt-haupt{--rand:3px;--innen:linear-gradient(#2A0E16,#1A0A12);padding:14px 14px;min-height:84px;background:var(--rot)}
 .lt-haupt .lt-titel{font-size:17px}
-.lt-haupt .lt-zeile{color:#C6F5C6}
+.lt-haupt .lt-zeile{color:#F7C3CA}
 .lt-haupt .lt-bild img{width:52px;height:52px}
 .lt-haupt:hover,.lt-knopf:hover{transform:translateY(-2px)}
 .lt-haupt:active,.lt-knopf:active{transform:translateY(1px)}
 .lt-liste{display:grid;gap:12px;margin-top:12px}
-.lt-knopf{--rand:2px;--innen:var(--tafel);padding:12px 14px;min-height:70px;background:var(--kante)}
+.lt-knopf{--rand:2px;--innen:var(--tafel);padding:12px 14px;min-height:70px;background:#3A4780}
 .lt-knopf:hover{--innen:var(--tafel2)}
-.lt-knopf.rot{background:#FF3B4E99}
-.lt-knopf.blau{background:#4C8DFF99}
-.lt-knopf.gelb{background:#F6D64899}
-.lt-knopf.rot .lt-bild{color:var(--rot)}
-.lt-knopf.blau .lt-bild{color:var(--blau)}
-.lt-knopf.gelb .lt-bild{color:var(--gelb)}
 .lt-bild{flex:none;display:grid;place-items:center;width:52px;height:52px}
 .lt-bild img{display:block;width:44px;height:44px;border-radius:50%}
 .lt-text{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}
 .lt-titel{font:400 16px/1.2 Silkscreen,system-ui,sans-serif;letter-spacing:.01em}
 .lt-zeile{font-size:13.5px;line-height:1.35;color:var(--grau)}
-.lt-abschnitt{font:700 15px/1 Silkscreen,system-ui,sans-serif;color:var(--grau);margin:30px 2px 0;
-  display:flex;align-items:center;gap:10px}
-.lt-abschnitt::after{content:"";flex:1;height:2px;background:repeating-linear-gradient(90deg,var(--kante) 0 4px,transparent 4px 8px)}
-.lt-fuss{margin-top:34px;text-align:center;font-size:12.5px;line-height:1.5;color:#7D86A3}
+/* Trading leise: eine ruhige Liste, kleine Bilder, keine Leuchtfarben. */
+.lt-trading{margin-top:36px;padding-top:6px;border-top:2px dashed #222B52}
+.lt-trading h2{font:400 13px/1 Silkscreen,system-ui,sans-serif;color:#7D86A3;margin:14px 2px 6px;letter-spacing:.02em}
+.lt-leise{display:flex;align-items:center;gap:12px;padding:10px 4px;text-decoration:none;color:var(--weiss);
+  border-bottom:1px solid #1A2244}
+.lt-leise:last-child{border-bottom:0}
+.lt-leise:hover .lt-leise-titel{text-decoration:underline;text-underline-offset:3px}
+.lt-mini{flex:none;display:grid;place-items:center;width:32px;height:32px;color:#8E9AC4}
+.lt-mini img{display:block;width:28px;height:28px;border-radius:50%;opacity:.85}
+.lt-leise-titel{font-size:14.5px;font-weight:600;color:#C9CFE2}
+.lt-leise-zeile{font-size:12.5px;line-height:1.35;color:#7D86A3}
+.lt-fuss{margin-top:30px;text-align:center;font-size:12.5px;line-height:1.5;color:#7D86A3}
 .lt-fuss p{margin:0 auto 8px;max-width:38ch}
 .lt-fuss a{color:#AAB2CC;margin:0 8px}
 .lt a:focus-visible,.lt button:focus-visible{outline:3px solid var(--gelb);outline-offset:3px}
-/* Cosmos Scan beim Öffnen: eine Linie fährt einmal von oben nach unten und legt die Seite frei. */
-.lt-scan{position:fixed;left:0;right:0;top:0;height:3px;z-index:3;pointer-events:none;background:var(--gruen);
-  box-shadow:0 0 12px 2px #64FA6499;animation:scanlauf .6s steps(16) both,weg .15s linear .6s both}
+/* Cosmos Scan beim Öffnen: eine rote Linie fährt einmal von oben nach unten und legt die Seite frei. */
+.lt-scan{position:fixed;left:0;right:0;top:0;height:3px;z-index:3;pointer-events:none;background:var(--rot);
+  box-shadow:0 0 12px 2px #FF3B4E99;animation:scanlauf .6s steps(16) both,weg .15s linear .6s both}
 .lt-spalte{animation:freilegen .6s steps(16) both}
 @keyframes scanlauf{from{transform:translateY(0)}to{transform:translateY(100vh)}}
 @keyframes weg{to{opacity:0}}
