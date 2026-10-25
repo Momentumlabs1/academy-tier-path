@@ -12,10 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SlugRouteImport } from './routes/$slug'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as CosmoRouteImport } from './routes/cosmo'
 import { Route as DatenschutzRouteImport } from './routes/datenschutz'
 import { Route as FilmsetRouteImport } from './routes/filmset'
 import { Route as HegemonyRouteImport } from './routes/hegemony'
 import { Route as ImpressumRouteImport } from './routes/impressum'
+import { Route as JoinRouteImport } from './routes/join'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as PartnerRouteImport } from './routes/partner'
 import { Route as PartnerProgramRouteImport } from './routes/partner-program'
@@ -68,6 +70,11 @@ const AdminRoute = AdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CosmoRoute = CosmoRouteImport.update({
+  id: '/cosmo',
+  path: '/cosmo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DatenschutzRoute = DatenschutzRouteImport.update({
   id: '/datenschutz',
   path: '/datenschutz',
@@ -86,6 +93,11 @@ const HegemonyRoute = HegemonyRouteImport.update({
 const ImpressumRoute = ImpressumRouteImport.update({
   id: '/impressum',
   path: '/impressum',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JoinRoute = JoinRouteImport.update({
+  id: '/join',
+  path: '/join',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -278,10 +290,12 @@ export interface FileRoutesByFullPath {
   '/$slug': typeof SlugRoute
   '/': typeof AppIndexRoute
   '/admin': typeof AdminRouteWithChildren
+  '/cosmo': typeof CosmoRoute
   '/datenschutz': typeof DatenschutzRoute
   '/filmset': typeof FilmsetRoute
   '/hegemony': typeof HegemonyRoute
   '/impressum': typeof ImpressumRoute
+  '/join': typeof JoinRoute
   '/login': typeof LoginRoute
   '/partner': typeof PartnerRoute
   '/partner-program': typeof PartnerProgramRoute
@@ -321,10 +335,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/$slug': typeof SlugRoute
+  '/cosmo': typeof CosmoRoute
   '/datenschutz': typeof DatenschutzRoute
   '/filmset': typeof FilmsetRoute
   '/hegemony': typeof HegemonyRoute
   '/impressum': typeof ImpressumRoute
+  '/join': typeof JoinRoute
   '/login': typeof LoginRoute
   '/partner': typeof PartnerRoute
   '/partner-program': typeof PartnerProgramRoute
@@ -367,10 +383,12 @@ export interface FileRoutesById {
   '/$slug': typeof SlugRoute
   '/_app': typeof AppRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
+  '/cosmo': typeof CosmoRoute
   '/datenschutz': typeof DatenschutzRoute
   '/filmset': typeof FilmsetRoute
   '/hegemony': typeof HegemonyRoute
   '/impressum': typeof ImpressumRoute
+  '/join': typeof JoinRoute
   '/login': typeof LoginRoute
   '/partner': typeof PartnerRoute
   '/partner-program': typeof PartnerProgramRoute
@@ -415,10 +433,12 @@ export interface FileRouteTypes {
     | '/$slug'
     | '/'
     | '/admin'
+    | '/cosmo'
     | '/datenschutz'
     | '/filmset'
     | '/hegemony'
     | '/impressum'
+    | '/join'
     | '/login'
     | '/partner'
     | '/partner-program'
@@ -458,10 +478,12 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/$slug'
+    | '/cosmo'
     | '/datenschutz'
     | '/filmset'
     | '/hegemony'
     | '/impressum'
+    | '/join'
     | '/login'
     | '/partner'
     | '/partner-program'
@@ -503,10 +525,12 @@ export interface FileRouteTypes {
     | '/$slug'
     | '/_app'
     | '/admin'
+    | '/cosmo'
     | '/datenschutz'
     | '/filmset'
     | '/hegemony'
     | '/impressum'
+    | '/join'
     | '/login'
     | '/partner'
     | '/partner-program'
@@ -550,10 +574,12 @@ export interface RootRouteChildren {
   SlugRoute: typeof SlugRoute
   AppRoute: typeof AppRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
+  CosmoRoute: typeof CosmoRoute
   DatenschutzRoute: typeof DatenschutzRoute
   FilmsetRoute: typeof FilmsetRoute
   HegemonyRoute: typeof HegemonyRoute
   ImpressumRoute: typeof ImpressumRoute
+  JoinRoute: typeof JoinRoute
   LoginRoute: typeof LoginRoute
   PartnerRoute: typeof PartnerRoute
   PartnerProgramRoute: typeof PartnerProgramRoute
@@ -595,6 +621,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/cosmo': {
+      id: '/cosmo'
+      path: '/cosmo'
+      fullPath: '/cosmo'
+      preLoaderRoute: typeof CosmoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/datenschutz': {
       id: '/datenschutz'
       path: '/datenschutz'
@@ -621,6 +654,13 @@ declare module '@tanstack/react-router' {
       path: '/impressum'
       fullPath: '/impressum'
       preLoaderRoute: typeof ImpressumRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/join': {
+      id: '/join'
+      path: '/join'
+      fullPath: '/join'
+      preLoaderRoute: typeof JoinRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -957,10 +997,12 @@ const rootRouteChildren: RootRouteChildren = {
   SlugRoute: SlugRoute,
   AppRoute: AppRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
+  CosmoRoute: CosmoRoute,
   DatenschutzRoute: DatenschutzRoute,
   FilmsetRoute: FilmsetRoute,
   HegemonyRoute: HegemonyRoute,
   ImpressumRoute: ImpressumRoute,
+  JoinRoute: JoinRoute,
   LoginRoute: LoginRoute,
   PartnerRoute: PartnerRoute,
   PartnerProgramRoute: PartnerProgramRoute,
