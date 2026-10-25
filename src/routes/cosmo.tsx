@@ -19,8 +19,12 @@
  * Trading-Seite: Info-Kanal, Signals, Academy, Partner. Kein Cookie-Banner (__root.tsx), die Seite setzt keine.
  * YouTube und TikTok erscheinen erst, wenn ihre Adresse unten eingetragen ist (nie auf ein fremdes Konto raten).
  *
- * Telegram-Knöpfe sind normale t.me-Links: aus In-App-Browsern (Instagram, TikTok) übergibt die t.me-Seite
- * verlässlicher an die App als ein tg://-Link (Befund /telegram, 11.09.). Gezählt wird über
+ * Telegram-Knöpfe öffnen beim Tippen direkt die Telegram-App (tg:// über openTelegramApp, wie /scan), sonst die
+ * t.me-Seite. Recherche 25.10.2026: Die Seite selbst lässt sich aus Instagrams In-App-Browser nicht verlässlich
+ * herausholen (x-safari-https blockt Instagram seit März 2026, instagram://extbrowser ist undokumentiert und will
+ * eine Bestätigung). Automatische Weiterleitungen öffnen dort keine App, ein Tipp auf einen App-Link schon
+ * (deckt sich mit /telegram, 11.09.). Also bleibt die Link-Seite in Instagram, der Sprung passiert am Knopf.
+ * Gezählt wird über
  * record_affiliate_click (Haus cosmos-candles): ein Aufruf beim Öffnen (utm_content=view) und einer je Knopf.
  *
  * Grenzen (Cosmo-Kern): Cosmo ist eine KI-Figur und steht so im Fuß, Trading-Risiko steht dabei, der
@@ -29,6 +33,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { TELEGRAM_ENTRY } from "@/lib/broker";
+import { openTelegramApp } from "@/components/academy/signals/telegram-handoff";
 
 const INFO = TELEGRAM_ENTRY.url; // Cosmos-Candles-Info (öffentlich, @cosmoscandles), der Trading-Kanal
 const EARTH_SCAN = "https://t.me/+TQaO3Y-pTpVhYTU0";
@@ -202,9 +207,19 @@ function aussen(k: Knopf) {
   return k.extern ? { target: "_blank", rel: "noopener noreferrer" } : {};
 }
 
+/** Tipp zählen; Telegram-Ziele direkt in der App öffnen (tg://), ohne App weiter auf t.me. */
+function tippen(e: React.MouseEvent, id: string, href: string) {
+  zaehlen(id);
+  if (!/^https:\/\/t\.me\//.test(href)) return;
+  e.preventDefault();
+  openTelegramApp(href).then((ok) => {
+    if (!ok) window.location.href = href;
+  });
+}
+
 function LinkKnopf({ k }: { k: Knopf }) {
   return (
-    <a className="lt-knopf" href={k.href} onClick={() => zaehlen(k.id)} {...aussen(k)}>
+    <a className="lt-knopf" href={k.href} onClick={(e) => tippen(e, k.id, k.href)} {...aussen(k)}>
       <span className="lt-bild">{k.bild ? <img src={k.bild} alt="" width={44} height={44} /> : k.icon}</span>
       <span className="lt-text">
         <span className="lt-titel">{k.titel}</span>
@@ -257,7 +272,7 @@ function NeuesterScan() {
 
 function LeiseZeile({ k }: { k: Knopf }) {
   return (
-    <a className="lt-leise" href={k.href} onClick={() => zaehlen(k.id)} {...aussen(k)}>
+    <a className="lt-leise" href={k.href} onClick={(e) => tippen(e, k.id, k.href)} {...aussen(k)}>
       <span className="lt-mini">{k.bild ? <img src={k.bild} alt="" width={28} height={28} /> : k.icon}</span>
       <span className="lt-text">
         <span className="lt-leise-titel">{k.titel}</span>
@@ -311,7 +326,7 @@ function CosmoLinks() {
 
         <NeuesterScan />
 
-        <a className="lt-haupt" href={EARTH_SCAN} target="_blank" rel="noopener noreferrer" onClick={() => zaehlen("earth-scan")}>
+        <a className="lt-haupt" href={EARTH_SCAN} onClick={(e) => tippen(e, "earth-scan", EARTH_SCAN)}>
           <span className="lt-bild">
             <img src="/cosmo/kanal-news-mini.png" alt="" width={52} height={52} />
           </span>
